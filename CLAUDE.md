@@ -67,6 +67,18 @@ MathematicalModeling/
         │       ├── test_flow_shop.py       # 57 tests, original PFSP algorithms
         │       ├── test_new_algorithms.py  # 38 tests, new algorithms + variants
         │       └── test_ts_aco_sdst.py     # 35 tests, TS, ACO, SDST variant
+        ├── parallel_machine/ # FULLY IMPLEMENTED (7 Python files, 43-test suite)
+        │   ├── instance.py              # ParallelMachineInstance (Pm, Qm, Rm)
+        │   ├── exact/
+        │   │   └── mip_makespan.py      # MIP formulation via SciPy HiGHS
+        │   ├── heuristics/
+        │   │   ├── lpt.py               # LPT (4/3 approx) + SPT for ΣCj
+        │   │   ├── multifit.py          # MULTIFIT (1.22 approx), FFD + binary search
+        │   │   └── list_scheduling.py   # Greedy list scheduling (2-1/m approx)
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py # GA with integer-vector encoding
+        │   └── tests/
+        │       └── test_parallel_machine.py  # 43 tests, 8 test classes
         ├── single_machine/   # FULLY IMPLEMENTED (7 Python files, 55-test suite)
         │   ├── instance.py              # SingleMachineInstance, objective functions
         │   ├── exact/
@@ -92,11 +104,14 @@ MathematicalModeling/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run all scheduling tests (185 tests)
+# Run all scheduling tests (228 tests)
 python -m pytest problems/scheduling/ -v
 
 # Run all flow shop tests (130 tests)
 python -m pytest problems/scheduling/flow_shop/tests/ -v
+
+# Run parallel machine tests (43 tests)
+python -m pytest problems/scheduling/parallel_machine/tests/ -v
 
 # Run single machine tests (55 tests)
 python -m pytest problems/scheduling/single_machine/tests/ -v
@@ -173,6 +188,29 @@ manufacturing, semiconductor fabrication, food processing.
 
 **Algorithms:** NEH-SDST (setup-aware workload sorting), GRASP-SDST (randomized
 greedy with local search), Iterated Greedy (IG-SDST).
+
+## Parallel Machine Problem Family
+
+### Problem Definition (Pm | β | γ)
+
+n jobs must be assigned to m parallel machines. Three machine environments:
+- **Identical (Pm)**: all machines have equal speed
+- **Uniform (Qm)**: machine i has speed s_i
+- **Unrelated (Rm)**: processing time p_ij depends on both job and machine
+
+Primary objective: Cmax (makespan). NP-hard even for P2||Cmax (reduces to PARTITION).
+
+**Exact methods:**
+- MIP — assignment-based formulation via SciPy HiGHS
+
+**Constructive heuristics:**
+- LPT (Longest Processing Time) — 4/3 - 1/(3m) approximation for Cmax
+- SPT (Shortest Processing Time) — optimal for Pm||ΣCj with round-robin
+- MULTIFIT (Coffman, Garey & Johnson, 1978) — FFD + binary search, 1.22 approximation
+- List Scheduling (Graham, 1966) — 2 - 1/m approximation
+
+**Metaheuristics:**
+- Genetic Algorithm — integer-vector encoding, uniform crossover, load-balancing LS
 
 ## Single Machine Problem Family
 
