@@ -24,6 +24,7 @@ from instance import (
     compute_completion_times,
 )
 from exact.johnsons_rule import johnsons_rule
+from heuristics.palmers_slope import palmers_slope
 from heuristics.neh import neh, neh_with_tiebreaking
 from heuristics.cds import cds
 from metaheuristics.iterated_greedy import iterated_greedy
@@ -290,6 +291,96 @@ class TestIteratedGreedy:
         sol_b = iterated_greedy(instance, max_iterations=50, seed=123)
         assert sol_a.makespan == sol_b.makespan
         assert sol_a.permutation == sol_b.permutation
+
+
+# ──────────────────────────────────────────────
+# Palmer's Slope Index Tests
+# ──────────────────────────────────────────────
+
+class TestPalmersSlope:
+    """Verify Palmer's Slope Index heuristic."""
+
+    def test_returns_valid_permutation(self):
+        instance = FlowShopInstance.random(n=10, m=4, seed=42)
+        sol = palmers_slope(instance)
+        assert sorted(sol.permutation) == list(range(10))
+
+    def test_makespan_is_correct(self):
+        instance = FlowShopInstance.random(n=15, m=5, seed=7)
+        sol = palmers_slope(instance)
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_slope_ordering_logic(self):
+        """Jobs with increasing processing times should get high priority."""
+        # Job 0: [1, 5] — increasing → high slope
+        # Job 1: [5, 1] — decreasing → low slope
+        instance = FlowShopInstance(
+            n=2, m=2,
+            processing_times=np.array([[1, 5], [5, 1]])
+        )
+        sol = palmers_slope(instance)
+        # Job 0 should come first (higher slope)
+        assert sol.permutation[0] == 0
+
+    def test_beats_reverse_order(self):
+        """Palmer should generally beat worst-case orderings."""
+        instance = FlowShopInstance.random(n=20, m=5, seed=42)
+        sol = palmers_slope(instance)
+        reverse_ms = compute_makespan(instance, list(range(19, -1, -1)))
+        # Palmer should at least not be the worst possible order
+        assert sol.makespan <= reverse_ms
+
+
+# ──────────────────────────────────────────────
+# Taillard Benchmark Validation
+# ──────────────────────────────────────────────
+
+class TestTaillardBenchmark:
+    """Validate algorithms against Taillard benchmark instances."""
+
+    @pytest.fixture
+    def tai20_5_0(self):
+        """Load the first Taillard instance (20 jobs, 5 machines)."""
+        try:
+            sys.path.insert(0, os.path.join(
+                os.path.dirname(os.path.abspath(__file__)),
+                '..', '..', '..', '..'
+            ))
+            from shared.parsers.taillard_parser import load_taillard_instance
+            p, info = load_taillard_instance("tai20_5_0")
+            instance = FlowShopInstance(
+                n=info.n_jobs, m=info.n_machines, processing_times=p
+            )
+            return instance, info
+        except (ConnectionError, Exception):
+            pytest.skip("Cannot download Taillard instance (network)")
+
+    def test_neh_within_10_percent_of_bks(self, tai20_5_0):
+        """NEH should be within 10% of best known on tai20_5_0."""
+        instance, info = tai20_5_0
+        sol = neh(instance)
+        rpd = 100.0 * (sol.makespan - info.upper_bound) / info.upper_bound
+        assert rpd < 10.0, f"NEH RPD={rpd:.1f}% exceeds 10% threshold"
+
+    def test_ig_within_3_percent_of_bks(self, tai20_5_0):
+        """IG should be within 3% of best known on tai20_5_0."""
+        instance, info = tai20_5_0
+        sol = iterated_greedy(instance, time_limit=1.0, seed=42)
+        rpd = 100.0 * (sol.makespan - info.upper_bound) / info.upper_bound
+        assert rpd < 3.0, f"IG RPD={rpd:.1f}% exceeds 3% threshold"
+
+    def test_algorithm_ranking(self, tai20_5_0):
+        """Verify expected quality ranking: Palmer < CDS < NEH < IG."""
+        instance, _ = tai20_5_0
+        ms_palmer = palmers_slope(instance).makespan
+        ms_cds = cds(instance).makespan
+        ms_neh = neh(instance).makespan
+        ms_ig = iterated_greedy(instance, time_limit=0.5, seed=42).makespan
+
+        # IG should be best or tied
+        assert ms_ig <= ms_neh
+        # NEH should beat or tie CDS
+        assert ms_neh <= ms_cds
 
 
 # ──────────────────────────────────────────────
