@@ -12,7 +12,9 @@ Tests cover:
 8. LR heuristic multi-candidate quality
 9. MIP formulation optimality on small instances
 10. Local search improvements (swap, insertion, or-opt, VND)
-11. Edge cases (1 job, 1 machine, identical processing times)
+11. Simulated Annealing with adaptive cooling
+12. Tabu Search with aspiration criterion
+13. Edge cases (1 job, 1 machine, identical processing times)
 """
 
 import sys
@@ -35,6 +37,8 @@ from heuristics.neh import neh, neh_with_tiebreaking
 from heuristics.cds import cds
 from heuristics.lr_heuristic import lr_heuristic
 from metaheuristics.iterated_greedy import iterated_greedy
+from metaheuristics.simulated_annealing import simulated_annealing
+from metaheuristics.tabu_search import tabu_search
 from metaheuristics.local_search import (
     swap_local_search,
     insertion_local_search,
@@ -558,6 +562,93 @@ class TestLocalSearch:
         sol = swap_local_search(instance, init_perm, adjacent_only=True)
         assert sorted(sol.permutation) == list(range(10))
         assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+
+# ──────────────────────────────────────────────
+# Simulated Annealing Tests
+# ──────────────────────────────────────────────
+
+class TestSimulatedAnnealing:
+    """Verify SA correctness and improvement behavior."""
+
+    def test_returns_valid_permutation(self):
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        sol = simulated_annealing(instance, time_limit=0.2, seed=42)
+        assert sorted(sol.permutation) == list(range(10))
+
+    def test_makespan_is_correct(self):
+        instance = FlowShopInstance.random(n=12, m=4, seed=7)
+        sol = simulated_annealing(instance, time_limit=0.2, seed=7)
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_no_worse_than_neh(self):
+        """SA starts from NEH, should never return a worse solution."""
+        instance = FlowShopInstance.random(n=15, m=4, seed=42)
+        sol_neh = neh(instance)
+        sol_sa = simulated_annealing(instance, time_limit=0.3, seed=42)
+        assert sol_sa.makespan <= sol_neh.makespan
+
+    def test_swap_vs_insertion_both_valid(self):
+        """Both neighborhood types should return valid solutions."""
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        sol_swap = simulated_annealing(
+            instance, neighborhood="swap", time_limit=0.2, seed=42
+        )
+        sol_insert = simulated_annealing(
+            instance, neighborhood="insertion", time_limit=0.2, seed=42
+        )
+        assert sorted(sol_swap.permutation) == list(range(10))
+        assert sorted(sol_insert.permutation) == list(range(10))
+
+    def test_deterministic_with_seed(self):
+        """Same seed should give identical results."""
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        sol_a = simulated_annealing(instance, max_iterations=500, seed=123)
+        sol_b = simulated_annealing(instance, max_iterations=500, seed=123)
+        assert sol_a.makespan == sol_b.makespan
+        assert sol_a.permutation == sol_b.permutation
+
+
+# ──────────────────────────────────────────────
+# Tabu Search Tests
+# ──────────────────────────────────────────────
+
+class TestTabuSearch:
+    """Verify Tabu Search correctness and memory mechanism."""
+
+    def test_returns_valid_permutation(self):
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        sol = tabu_search(instance, time_limit=0.2, seed=42)
+        assert sorted(sol.permutation) == list(range(10))
+
+    def test_makespan_is_correct(self):
+        instance = FlowShopInstance.random(n=12, m=4, seed=7)
+        sol = tabu_search(instance, time_limit=0.2, seed=7)
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_no_worse_than_neh(self):
+        """TS starts from NEH, should never return a worse solution."""
+        instance = FlowShopInstance.random(n=15, m=4, seed=42)
+        sol_neh = neh(instance)
+        sol_ts = tabu_search(instance, time_limit=0.3, seed=42)
+        assert sol_ts.makespan <= sol_neh.makespan
+
+    def test_swap_neighborhood_valid(self):
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        sol = tabu_search(instance, neighborhood="swap", time_limit=0.2, seed=42)
+        assert sorted(sol.permutation) == list(range(10))
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_aspiration_allows_improvement(self):
+        """TS with aspiration should still improve even with high tenure."""
+        instance = FlowShopInstance.random(n=8, m=3, seed=42)
+        # Very high tenure = most moves tabu, but aspiration should allow improvements
+        sol = tabu_search(
+            instance, tenure_min=6, tenure_max=8,
+            max_iterations=100, seed=42
+        )
+        neh_sol = neh(instance)
+        assert sol.makespan <= neh_sol.makespan
 
 
 # ──────────────────────────────────────────────

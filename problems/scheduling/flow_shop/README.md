@@ -98,22 +98,73 @@ $$\min\ C_{\max} = C_{m,\pi(n)}$$
 
 ```
 flow_shop/
+├── instance.py                    # Data structures + makespan evaluation
+├── benchmark_runner.py            # CLI benchmarking tool for Taillard instances
 ├── exact/
-│   ├── johnsons_rule.py           # Optimal for F2||Cmax
-│   └── branch_and_bound.py        # B&B with Taillard bound
+│   ├── johnsons_rule.py           # Optimal for F2||Cmax — O(n log n)
+│   ├── branch_and_bound.py        # B&B with machine-based lower bounds + NEH warm start
+│   └── mip_formulation.py         # MIP (SciPy HiGHS) + CP-SAT (OR-Tools)
 ├── heuristics/
-│   ├── neh.py                     # NEH constructive heuristic
-│   ├── cds.py                     # CDS heuristic
-│   └── palmers_slope.py           # Palmer's slope index
+│   ├── palmers_slope.py           # Palmer's slope index (1965)
+│   ├── guptas_algorithm.py        # Gupta's composite index (1971)
+│   ├── cds.py                     # CDS multi-Johnson heuristic (1970)
+│   ├── lr_heuristic.py            # LR multi-candidate constructive (2001)
+│   └── neh.py                     # NEH + tie-breaking variant (1983/2014)
 ├── metaheuristics/
-│   ├── iterated_greedy.py         # IG (Ruiz & Stützle)
-│   └── genetic_algorithm.py       # GA with permutation encoding
+│   ├── local_search.py            # Swap, insertion, or-opt, VND
+│   ├── simulated_annealing.py     # SA with adaptive cooling schedule
+│   ├── tabu_search.py             # TS with aspiration criterion
+│   └── iterated_greedy.py         # IG destroy/reconstruct (state-of-the-art)
 └── tests/
-    └── test_flow_shop.py
+    └── test_flow_shop.py          # 67 tests covering all algorithms
+```
+
+### Benchmark Results (Taillard tai20_5, 10 instances)
+
+| Algorithm | ARPD | Best RPD | Worst RPD | Avg Time |
+|-----------|------|----------|-----------|----------|
+| Palmer (1965) | 10.81% | 5.89% | 15.93% | <0.001s |
+| Gupta (1971) | 12.90% | 1.55% | 20.19% | <0.001s |
+| CDS (1970) | 9.57% | 4.78% | 16.10% | <0.001s |
+| LR (2001) | 18.35% | 4.49% | 42.00% | 0.016s |
+| NEH (1983) | 3.25% | 0.44% | 7.22% | 0.004s |
+| NEH+VND | 1.89% | 0.41% | 4.72% | 0.038s |
+| SA (0.5s) | ~3% | — | — | 0.5s |
+| TS (0.5s) | ~2% | — | — | 0.5s |
+| **IG (0.5s)** | **0.56%** | **0.00%** | **1.26%** | **0.5s** |
+
+*ARPD = Average Relative Percentage Deviation from best known solution*
+
+---
+
+## Algorithm Taxonomy
+
+```
+                    PFSP Solution Methods
+                           │
+          ┌────────────────┼─────────────────┐
+          │                │                 │
+       Exact         Constructive      Improvement
+          │           Heuristics        Methods
+          │                │                 │
+    ┌─────┼─────┐    ┌────┼────┐      ┌─────┼──────┐
+    │     │     │    │    │    │      │     │      │
+ Johnson B&B  MIP  Palmer CDS NEH  Local  Tabu  Simulated
+  Rule              Gupta  LR      Search Search Annealing
+ (F2)                                │
+                                    ┌┼──────┐
+                               Swap Insert Or-opt VND
+                                          │
+                                   Iterated Greedy
+                                  (destroy + NEH rebuild)
 ```
 
 ---
 
-## Key Insight
+## Key Insights
 
-> The **NEH heuristic** (1983) is remarkable — a simple constructive algorithm that remains competitive with metaheuristics after 40+ years. Its quality comes from the insertion mechanism: by trying each job in every position, it implicitly explores $O(n^2)$ solutions. Modern algorithms like Iterated Greedy still use NEH as their reconstruction phase.
+> **NEH (1983)** remains the gold standard constructive heuristic after 40+ years. Its insertion mechanism implicitly explores $O(n^2)$ solutions, and it serves as the foundation for modern methods like Iterated Greedy.
+
+> **Iterated Greedy** dominates PFSP because its destroy-reconstruct cycle creates large jumps in the solution space that single-move neighborhoods (swap, insertion) cannot achieve. By removing $d$ jobs and reinserting them via NEH, IG effectively "teleports" between basins of attraction.
+
+> **Adaptive cooling** is critical for SA — the temperature schedule must match the time budget. Without it, SA either explores too long (never converges) or converges too fast (misses good regions).

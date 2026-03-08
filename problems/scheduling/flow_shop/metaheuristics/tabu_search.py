@@ -1,40 +1,53 @@
 """
-Tabu Search (TS) — Classic Metaheuristic for Fm | prmu | Cmax
+Tabu Search (TS) for Fm | prmu | Cmax
 
-A fast tabu search algorithm for the permutation flow shop scheduling problem.
-Maintains a short-term memory (tabu list) that forbids recently visited moves,
-preventing cycling and encouraging exploration of new regions of the search space.
+A memory-based metaheuristic that explores the search space by always moving
+to the best non-tabu neighbor (even if it worsens the objective). A short-term
+memory (tabu list) prevents revisiting recently explored solutions.
 
 Algorithm:
-    1. Generate initial solution using NEH.
-    2. Repeat until termination:
-       a. Generate all neighbors using insertion moves.
-       b. Select the best non-tabu neighbor (or override tabu if it improves
-          the global best — aspiration criterion).
-       c. Record the reverse move in the tabu list.
-       d. Update the best solution found.
-    3. Return the best solution found.
+    1. Generate initial solution (NEH)
+    2. At each iteration:
+        a. Evaluate all neighbors in the neighborhood
+        b. Select the best non-tabu neighbor (or any neighbor if it beats
+           the global best — aspiration criterion)
+        c. Make the move and add its reverse to the tabu list
+        d. Update global best if improved
+    3. Repeat until stopping criterion
 
-Key parameters:
-    - tabu_tenure: Number of iterations a move stays tabu (typically n/2 to n).
-    - max_iterations: Maximum number of TS iterations.
-    - neighborhood: Insertion-based (strongest single-job neighborhood for PFSP).
+Tabu Structure (for insertion neighborhood):
+    When job j is removed from position i and inserted at position k,
+    the reverse move (placing j back at position i) is declared tabu
+    for 'tenure' iterations. This prevents cycling.
 
-The tabu list stores (job, position) pairs representing the reverse of the
-last applied move. A move that inserts job j at position p is tabu if
-(j, original_position) is in the tabu list.
+    tabu[job][position] = iteration + tenure
+
+    A tabu move is allowed if it leads to a new global best
+    (aspiration criterion).
+
+Key Parameters:
+    - Tabu tenure: Controls memory horizon. Following Taillard (1990):
+      random tenure in [n/2, 3n/2] works well for PFSP.
+    - Neighborhood: Full insertion neighborhood evaluated each iteration.
+
+Tabu Search vs SA:
+    - TS is deterministic given a neighborhood ordering
+    - TS always moves to the best neighbor (intensification-oriented)
+    - SA randomly accepts/rejects (exploration-oriented)
+    - TS uses explicit memory; SA uses temperature as implicit memory
 
 Notation: Fm | prmu | Cmax
 Complexity: O(n^2 * m) per iteration (evaluate all insertion neighbors)
 Reference: Nowicki, E. & Smutnicki, C. (1996). "A Fast Taboo Search Algorithm
            for the Permutation Flow-Shop Problem"
            European Journal of Operational Research, 91(1):160-175.
-           DOI: 10.1016/0377-2217(95)00037-2
 
            Grabowski, J. & Wodecki, M. (2004). "A Very Fast Tabu Search Algorithm
            for the Permutation Flow Shop Problem with Makespan Criterion"
            Computers & Operations Research, 31(11):1891-1909.
-           DOI: 10.1016/S0305-0548(03)00145-X
+
+           Glover, F. (1989). "Tabu Search — Part I"
+           ORSA Journal on Computing, 1(3):190-206.
 """
 
 from __future__ import annotations
@@ -51,23 +64,26 @@ from heuristics.neh import neh
 
 def tabu_search(
     instance: FlowShopInstance,
-    tabu_tenure: int | None = None,
+    tenure_min: int | None = None,
+    tenure_max: int | None = None,
     time_limit: float | None = None,
     max_iterations: int = 1000,
     neighborhood: str = "insertion",
     seed: int | None = None,
+    verbose: bool = False,
 ) -> FlowShopSolution:
     """
-    Apply Tabu Search to a permutation flow shop instance.
+    Apply Tabu Search to the permutation flow shop.
 
     Args:
         instance: A FlowShopInstance.
-        tabu_tenure: Number of iterations a move remains tabu.
-            Default: max(5, n // 2).
-        time_limit: Maximum runtime in seconds. If None, uses max_iterations.
-        max_iterations: Maximum number of TS iterations (if no time_limit).
-        neighborhood: Neighborhood type — "insertion" or "swap".
-        seed: Random seed for tie-breaking.
+        tenure_min: Minimum tabu tenure. Default: n // 2.
+        tenure_max: Maximum tabu tenure. Default: 3 * n // 2.
+        time_limit: Maximum wall-clock seconds.
+        max_iterations: Maximum iterations. Default: 1000.
+        neighborhood: "insertion" (stronger) or "swap". Default: "insertion".
+        seed: Random seed for tenure randomization.
+        verbose: Print progress.
 
     Returns:
         FlowShopSolution with the best permutation found.
@@ -75,206 +91,152 @@ def tabu_search(
     rng = np.random.default_rng(seed)
     n = instance.n
 
-    # Default tabu tenure
-    if tabu_tenure is None:
-        tabu_tenure = max(5, n // 2)
+    if tenure_min is None:
+        tenure_min = max(n // 2, 3)
+    if tenure_max is None:
+        tenure_max = max(3 * n // 2, tenure_min + 2)
 
-    # Initial solution via NEH
-    initial = neh(instance)
-    current_perm = list(initial.permutation)
-    current_ms = initial.makespan
-
+    # Initialize with NEH
+    neh_sol = neh(instance)
+    current_perm = list(neh_sol.permutation)
+    current_ms = neh_sol.makespan
     best_perm = list(current_perm)
     best_ms = current_ms
 
-    # Tabu list: maps (job, position) -> iteration when tabu expires
-    tabu_list: dict[tuple[int, int], int] = {}
-
-    if neighborhood == "insertion":
-        search_fn = _insertion_neighborhood
-    else:
-        search_fn = _swap_neighborhood
+    # Tabu matrix: tabu[job][position] = iteration until which this move is tabu
+    tabu_matrix = np.zeros((n, n), dtype=int)
 
     start_time = time.time()
+    no_improve_count = 0
 
-    for iteration in range(max_iterations):
-        # Check time limit
+    if verbose:
+        print(f"TS: tenure=[{tenure_min},{tenure_max}], "
+              f"neighborhood={neighborhood}")
+        print(f"TS: Initial makespan={current_ms} (NEH)")
+
+    for iteration in range(1, max_iterations + 1):
         if time_limit is not None and time.time() - start_time >= time_limit:
             break
 
-        # Evaluate neighborhood and find best admissible move
+        # Find the best admissible neighbor
         best_neighbor = None
-        best_neighbor_ms = float('inf')
-        best_move = None
+        best_neighbor_ms = float("inf")
+        best_move = None  # (job, old_pos, new_pos)
 
-        for neighbor_perm, move, reverse_move in search_fn(current_perm):
-            neighbor_ms = compute_makespan(instance, neighbor_perm)
+        if neighborhood == "insertion":
+            # Full insertion neighborhood: remove job at pos i, insert at pos j
+            for i in range(n):
+                job = current_perm[i]
+                remaining = current_perm[:i] + current_perm[i + 1:]
 
-            # Check if move is tabu
-            is_tabu = reverse_move in tabu_list and tabu_list[reverse_move] > iteration
+                for j in range(n):
+                    if j == i:
+                        continue
 
-            # Aspiration criterion: override tabu if it improves global best
-            if is_tabu and neighbor_ms >= best_ms:
-                continue
+                    candidate = remaining[:j] + [job] + remaining[j:]
+                    ms = compute_makespan(instance, candidate)
 
-            if neighbor_ms < best_neighbor_ms:
-                best_neighbor = neighbor_perm
-                best_neighbor_ms = neighbor_ms
-                best_move = move
+                    # Check if move is tabu
+                    is_tabu = tabu_matrix[job, j] >= iteration
+
+                    # Aspiration: accept if new global best regardless of tabu
+                    if ms < best_ms:
+                        best_neighbor = candidate
+                        best_neighbor_ms = ms
+                        best_move = (job, i, j)
+                    elif not is_tabu and ms < best_neighbor_ms:
+                        best_neighbor = candidate
+                        best_neighbor_ms = ms
+                        best_move = (job, i, j)
+        else:
+            # Swap neighborhood
+            for i in range(n - 1):
+                for j in range(i + 1, n):
+                    candidate = list(current_perm)
+                    candidate[i], candidate[j] = candidate[j], candidate[i]
+                    ms = compute_makespan(instance, candidate)
+
+                    job_i = current_perm[i]
+                    job_j = current_perm[j]
+
+                    # Tabu check: is placing job_i at pos j or job_j at pos i tabu?
+                    is_tabu = (tabu_matrix[job_i, j] >= iteration or
+                               tabu_matrix[job_j, i] >= iteration)
+
+                    if ms < best_ms:
+                        best_neighbor = candidate
+                        best_neighbor_ms = ms
+                        best_move = (job_i, i, j)
+                    elif not is_tabu and ms < best_neighbor_ms:
+                        best_neighbor = candidate
+                        best_neighbor_ms = ms
+                        best_move = (job_i, i, j)
 
         if best_neighbor is None:
-            # All moves are tabu — accept the least-tabu move
-            best_neighbor, best_neighbor_ms, best_move = _least_tabu_move(
-                instance, current_perm, search_fn, tabu_list, iteration
-            )
+            # All moves are tabu and none improves global best — very rare
+            break
 
-        # Apply the move
+        # Make the move
         current_perm = best_neighbor
         current_ms = best_neighbor_ms
 
-        # Record the reverse move as tabu
+        # Update tabu list: forbid reverse move
         if best_move is not None:
-            tabu_list[best_move] = iteration + tabu_tenure
+            job, old_pos, new_pos = best_move
+            tenure = int(rng.integers(tenure_min, tenure_max + 1))
+            tabu_matrix[job, old_pos] = iteration + tenure
 
         # Update global best
         if current_ms < best_ms:
             best_perm = list(current_perm)
             best_ms = current_ms
+            no_improve_count = 0
+        else:
+            no_improve_count += 1
+
+    if verbose:
+        elapsed = time.time() - start_time
+        print(f"TS: Best={best_ms}, iterations={iteration}, "
+              f"time={elapsed:.2f}s")
 
     return FlowShopSolution(permutation=best_perm, makespan=best_ms)
 
 
-def _insertion_neighborhood(permutation: list[int]):
-    """
-    Generate all insertion neighbors.
-
-    For each job at position i, remove it and try inserting at every other
-    position j. Yields (new_permutation, move, reverse_move) tuples.
-
-    The move is recorded as (job, new_position) and the reverse move is
-    (job, original_position) — used for tabu tracking.
-
-    Args:
-        permutation: Current permutation.
-
-    Yields:
-        Tuples of (neighbor_perm, move, reverse_move).
-    """
-    n = len(permutation)
-    for i in range(n):
-        job = permutation[i]
-        remaining = permutation[:i] + permutation[i + 1:]
-
-        for j in range(n):
-            if j == i:
-                continue
-            neighbor = remaining[:j] + [job] + remaining[j:]
-            move = (job, j)
-            reverse_move = (job, i)
-            yield neighbor, move, reverse_move
-
-
-def _swap_neighborhood(permutation: list[int]):
-    """
-    Generate all swap neighbors.
-
-    Swaps jobs at positions i and j (i < j). The move is (i, j) and the
-    reverse is also (i, j) since swaps are self-inverse, but we track
-    (job_i, pos_j) for asymmetric tabu.
-
-    Args:
-        permutation: Current permutation.
-
-    Yields:
-        Tuples of (neighbor_perm, move, reverse_move).
-    """
-    n = len(permutation)
-    for i in range(n - 1):
-        for j in range(i + 1, n):
-            neighbor = list(permutation)
-            neighbor[i], neighbor[j] = neighbor[j], neighbor[i]
-            move = (permutation[i], j)
-            reverse_move = (permutation[j], i)
-            yield neighbor, move, reverse_move
-
-
-def _least_tabu_move(
-    instance: FlowShopInstance,
-    permutation: list[int],
-    search_fn,
-    tabu_list: dict[tuple[int, int], int],
-    iteration: int,
-) -> tuple[list[int], int, tuple[int, int] | None]:
-    """
-    When all moves are tabu, select the one whose tabu expires soonest.
-
-    Args:
-        instance: A FlowShopInstance.
-        permutation: Current permutation.
-        search_fn: Neighborhood generator function.
-        tabu_list: Current tabu list.
-        iteration: Current iteration number.
-
-    Returns:
-        Tuple of (best_neighbor, best_ms, best_move).
-    """
-    best_neighbor = list(permutation)
-    best_ms = compute_makespan(instance, permutation)
-    best_move = None
-    earliest_expiry = float('inf')
-
-    for neighbor_perm, move, reverse_move in search_fn(permutation):
-        expiry = tabu_list.get(reverse_move, 0)
-        neighbor_ms = compute_makespan(instance, neighbor_perm)
-
-        # Prefer moves that expire soonest; break ties by makespan
-        if expiry < earliest_expiry or (expiry == earliest_expiry and neighbor_ms < best_ms):
-            best_neighbor = neighbor_perm
-            best_ms = neighbor_ms
-            best_move = move
-            earliest_expiry = expiry
-
-    return best_neighbor, best_ms, best_move
-
-
 if __name__ == "__main__":
-    print("=" * 60)
-    print("Tabu Search — Permutation Flow Shop")
-    print("=" * 60)
+    print("=== Tabu Search for PFSP ===\n")
 
     instance = FlowShopInstance.random(n=20, m=5, seed=42)
 
-    from heuristics.cds import cds
-    sol_cds = cds(instance)
-    sol_neh = neh(instance)
+    from heuristics.neh import neh as neh_heuristic
+    neh_sol = neh_heuristic(instance)
+    print(f"NEH baseline:       {neh_sol.makespan}")
 
-    print(f"\nCDS  Makespan:  {sol_cds.makespan}")
-    print(f"NEH  Makespan:  {sol_neh.makespan}")
+    # Test TS with insertion neighborhood
+    sol_ts = tabu_search(
+        instance, neighborhood="insertion",
+        time_limit=0.5, seed=42, verbose=True
+    )
+    print(f"TS (insert, 0.5s):  {sol_ts.makespan}\n")
 
-    # Tabu Search with insertion neighborhood
-    sol_ts = tabu_search(instance, max_iterations=500, seed=42)
-    print(f"TS   Makespan:  {sol_ts.makespan}")
+    # Test with swap
+    sol_ts_swap = tabu_search(
+        instance, neighborhood="swap",
+        time_limit=0.5, seed=42, verbose=True
+    )
+    print(f"TS (swap, 0.5s):    {sol_ts_swap.makespan}\n")
 
-    # Compare with other metaheuristics
-    from metaheuristics.iterated_greedy import iterated_greedy
+    # Longer run
+    sol_ts_long = tabu_search(
+        instance, neighborhood="insertion",
+        time_limit=2.0, seed=42, verbose=True
+    )
+    print(f"TS (insert, 2.0s):  {sol_ts_long.makespan}\n")
+
+    # Compare with SA and IG
     from metaheuristics.simulated_annealing import simulated_annealing
+    from metaheuristics.iterated_greedy import iterated_greedy
 
-    sol_ig = iterated_greedy(instance, max_iterations=500, seed=42)
-    sol_sa = simulated_annealing(instance, max_iterations=5000, seed=42)
-
-    print(f"IG   Makespan:  {sol_ig.makespan}")
-    print(f"SA   Makespan:  {sol_sa.makespan}")
-
-    # Larger instance with time limit
-    print("\n" + "=" * 60)
-    print("Larger Instance: 50x10")
-    print("=" * 60)
-
-    large_instance = FlowShopInstance.random(n=50, m=10, seed=123)
-    sol_neh_lg = neh(large_instance)
-    print(f"NEH Makespan:   {sol_neh_lg.makespan}")
-
-    t0 = time.time()
-    sol_ts_lg = tabu_search(large_instance, time_limit=2.0, seed=42)
-    elapsed = time.time() - t0
-    print(f"TS  Makespan:   {sol_ts_lg.makespan}  ({elapsed:.1f}s)")
+    sol_sa = simulated_annealing(instance, time_limit=0.5, seed=42)
+    sol_ig = iterated_greedy(instance, time_limit=0.5, seed=42)
+    print(f"SA (0.5s):          {sol_sa.makespan}")
+    print(f"IG (0.5s):          {sol_ig.makespan}")
