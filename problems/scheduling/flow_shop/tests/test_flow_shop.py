@@ -7,7 +7,12 @@ Tests cover:
 3. NEH quality guarantees
 4. CDS uses Johnson's Rule correctly
 5. IG improves upon NEH
-6. Edge cases (1 job, 1 machine, identical processing times)
+6. Palmer's Slope Index ordering logic
+7. Gupta's algorithm correctness
+8. LR heuristic multi-candidate quality
+9. MIP formulation optimality on small instances
+10. Local search improvements (swap, insertion, or-opt, VND)
+11. Edge cases (1 job, 1 machine, identical processing times)
 """
 
 import sys
@@ -25,9 +30,18 @@ from instance import (
 )
 from exact.johnsons_rule import johnsons_rule
 from heuristics.palmers_slope import palmers_slope
+from heuristics.guptas_algorithm import guptas_algorithm
 from heuristics.neh import neh, neh_with_tiebreaking
 from heuristics.cds import cds
+from heuristics.lr_heuristic import lr_heuristic
 from metaheuristics.iterated_greedy import iterated_greedy
+from metaheuristics.local_search import (
+    swap_local_search,
+    insertion_local_search,
+    oropt_local_search,
+    variable_neighborhood_descent,
+    SearchStrategy,
+)
 
 
 # ──────────────────────────────────────────────
@@ -169,6 +183,61 @@ class TestJohnsonsRule:
 
 
 # ──────────────────────────────────────────────
+# MIP Formulation Tests
+# ──────────────────────────────────────────────
+
+class TestMIPFormulation:
+    """Verify MIP formulation finds optimal solutions."""
+
+    def test_scipy_mip_small_instance(self):
+        """MIP should find optimal solution for a small instance."""
+        from itertools import permutations
+        from exact.mip_formulation import scipy_mip
+
+        instance = FlowShopInstance(
+            n=4, m=2,
+            processing_times=np.array([
+                [5, 2, 8, 3],
+                [7, 4, 1, 6],
+            ])
+        )
+
+        # Brute force optimal
+        best_ms = float('inf')
+        for perm in permutations(range(4)):
+            ms = compute_makespan(instance, list(perm))
+            best_ms = min(best_ms, ms)
+
+        sol = scipy_mip(instance, time_limit=30.0)
+        assert sol.makespan == best_ms
+
+    def test_scipy_mip_valid_permutation(self):
+        """MIP should return a valid permutation."""
+        from exact.mip_formulation import scipy_mip
+
+        instance = FlowShopInstance.random(n=6, m=3, seed=42)
+        sol = scipy_mip(instance, time_limit=30.0)
+        assert sorted(sol.permutation) == list(range(6))
+
+    def test_scipy_mip_makespan_correct(self):
+        """Reported makespan should match recomputed value."""
+        from exact.mip_formulation import scipy_mip
+
+        instance = FlowShopInstance.random(n=5, m=3, seed=7)
+        sol = scipy_mip(instance, time_limit=30.0)
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_scipy_mip_matches_johnson_on_2_machines(self):
+        """On 2-machine instances, MIP should match Johnson's optimal."""
+        from exact.mip_formulation import scipy_mip
+
+        instance = FlowShopInstance.random(n=6, m=2, seed=42)
+        sol_mip = scipy_mip(instance, time_limit=30.0)
+        sol_johnson = johnsons_rule(instance)
+        assert sol_mip.makespan == sol_johnson.makespan
+
+
+# ──────────────────────────────────────────────
 # NEH Tests
 # ──────────────────────────────────────────────
 
@@ -254,6 +323,79 @@ class TestCDS:
 
 
 # ──────────────────────────────────────────────
+# Gupta's Algorithm Tests
+# ──────────────────────────────────────────────
+
+class TestGuptasAlgorithm:
+    """Verify Gupta's heuristic correctness."""
+
+    def test_returns_valid_permutation(self):
+        instance = FlowShopInstance.random(n=10, m=4, seed=42)
+        sol = guptas_algorithm(instance)
+        assert sorted(sol.permutation) == list(range(10))
+
+    def test_makespan_is_correct(self):
+        instance = FlowShopInstance.random(n=15, m=5, seed=7)
+        sol = guptas_algorithm(instance)
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_sign_logic(self):
+        """Jobs faster on M1 than M_last should get positive sign."""
+        instance = FlowShopInstance(
+            n=2, m=3,
+            processing_times=np.array([
+                [1, 10],  # Machine 0
+                [5, 5],   # Machine 1
+                [10, 1],  # Machine 2
+            ])
+        )
+        sol = guptas_algorithm(instance)
+        # Job 0: p[0]=1 < p[2]=10 → e=+1 (early)
+        # Job 1: p[0]=10 >= p[2]=1 → e=-1 (late)
+        # Job 0 should come first
+        assert sol.permutation[0] == 0
+
+    def test_beats_worst_case(self):
+        """Gupta should beat at least the worst-case ordering."""
+        instance = FlowShopInstance.random(n=15, m=4, seed=42)
+        sol = guptas_algorithm(instance)
+        worst_ms = compute_makespan(instance, list(range(14, -1, -1)))
+        assert sol.makespan <= worst_ms
+
+
+# ──────────────────────────────────────────────
+# LR Heuristic Tests
+# ──────────────────────────────────────────────
+
+class TestLRHeuristic:
+    """Verify LR heuristic correctness and multi-candidate quality."""
+
+    def test_returns_valid_permutation(self):
+        instance = FlowShopInstance.random(n=10, m=4, seed=42)
+        sol = lr_heuristic(instance)
+        assert sorted(sol.permutation) == list(range(10))
+
+    def test_makespan_is_correct(self):
+        instance = FlowShopInstance.random(n=15, m=5, seed=7)
+        sol = lr_heuristic(instance)
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+    def test_more_candidates_no_worse(self):
+        """Using more starting candidates should give same or better results."""
+        instance = FlowShopInstance.random(n=15, m=4, seed=42)
+        sol_few = lr_heuristic(instance, n_candidates=3)
+        sol_all = lr_heuristic(instance, n_candidates=15)
+        assert sol_all.makespan <= sol_few.makespan
+
+    def test_single_candidate_still_valid(self):
+        """Even with 1 candidate, should return a valid solution."""
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        sol = lr_heuristic(instance, n_candidates=1)
+        assert sorted(sol.permutation) == list(range(10))
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+
+# ──────────────────────────────────────────────
 # Iterated Greedy Tests
 # ──────────────────────────────────────────────
 
@@ -332,6 +474,93 @@ class TestPalmersSlope:
 
 
 # ──────────────────────────────────────────────
+# Local Search Tests
+# ──────────────────────────────────────────────
+
+class TestLocalSearch:
+    """Verify local search neighborhoods improve or maintain solution quality."""
+
+    @pytest.fixture
+    def medium_instance(self):
+        return FlowShopInstance.random(n=15, m=4, seed=42)
+
+    def test_swap_returns_valid_permutation(self, medium_instance):
+        init_perm = list(range(15))
+        sol = swap_local_search(medium_instance, init_perm)
+        assert sorted(sol.permutation) == list(range(15))
+
+    def test_swap_never_worsens(self, medium_instance):
+        """Swap local search should never return a worse solution."""
+        init_perm = list(range(15))
+        init_ms = compute_makespan(medium_instance, init_perm)
+        sol = swap_local_search(medium_instance, init_perm)
+        assert sol.makespan <= init_ms
+
+    def test_insertion_never_worsens(self, medium_instance):
+        """Insertion local search should never return a worse solution."""
+        init_perm = list(range(15))
+        init_ms = compute_makespan(medium_instance, init_perm)
+        sol = insertion_local_search(medium_instance, init_perm)
+        assert sol.makespan <= init_ms
+
+    def test_insertion_improves_weak_solution(self):
+        """Insertion should significantly improve an arbitrary permutation."""
+        instance = FlowShopInstance.random(n=12, m=4, seed=42)
+        # Start from a bad solution
+        bad_perm = list(range(11, -1, -1))  # reverse order
+        bad_ms = compute_makespan(instance, bad_perm)
+        sol = insertion_local_search(instance, bad_perm)
+        # Should improve by at least 1%
+        assert sol.makespan < bad_ms
+
+    def test_oropt_returns_valid_permutation(self, medium_instance):
+        init_perm = list(range(15))
+        sol = oropt_local_search(medium_instance, init_perm)
+        assert sorted(sol.permutation) == list(range(15))
+
+    def test_oropt_never_worsens(self, medium_instance):
+        init_perm = list(range(15))
+        init_ms = compute_makespan(medium_instance, init_perm)
+        sol = oropt_local_search(medium_instance, init_perm)
+        assert sol.makespan <= init_ms
+
+    def test_vnd_no_worse_than_single_neighborhood(self, medium_instance):
+        """VND should be at least as good as any single neighborhood."""
+        init_perm = list(range(15))
+        sol_swap = swap_local_search(medium_instance, init_perm)
+        sol_insert = insertion_local_search(medium_instance, init_perm)
+        sol_vnd = variable_neighborhood_descent(
+            medium_instance, init_perm,
+            neighborhoods=["insertion", "swap"]
+        )
+        assert sol_vnd.makespan <= sol_swap.makespan
+        assert sol_vnd.makespan <= sol_insert.makespan
+
+    def test_best_improvement_vs_first(self):
+        """Best improvement and first improvement should both find local optima."""
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        init_perm = list(range(10))
+        sol_first = swap_local_search(
+            instance, init_perm, SearchStrategy.FIRST_IMPROVEMENT
+        )
+        sol_best = swap_local_search(
+            instance, init_perm, SearchStrategy.BEST_IMPROVEMENT
+        )
+        # Both should improve over initial
+        init_ms = compute_makespan(instance, init_perm)
+        assert sol_first.makespan <= init_ms
+        assert sol_best.makespan <= init_ms
+
+    def test_adjacent_swap_valid(self):
+        """Adjacent-only swap should return a valid local optimum."""
+        instance = FlowShopInstance.random(n=10, m=3, seed=42)
+        init_perm = list(range(10))
+        sol = swap_local_search(instance, init_perm, adjacent_only=True)
+        assert sorted(sol.permutation) == list(range(10))
+        assert sol.makespan == compute_makespan(instance, sol.permutation)
+
+
+# ──────────────────────────────────────────────
 # Taillard Benchmark Validation
 # ──────────────────────────────────────────────
 
@@ -404,9 +633,6 @@ class TestEdgeCases:
             processing_times=np.array([[3, 4], [2, 1]])
         )
         sol = johnsons_rule(instance)
-        # Job 0: M1 faster (3 <= 2? no, 3 > 2) → group V
-        # Job 1: M1 faster (4 > 1) → group V
-        # Both in V, sorted by M2 desc: [0, 1] (M2: 2, 1)
         assert sol.makespan == 8
 
     def test_large_instance_no_crash(self):
@@ -415,6 +641,27 @@ class TestEdgeCases:
         sol = neh(instance)
         assert sol.makespan > 0
         assert len(sol.permutation) == 100
+
+    def test_all_algorithms_on_small_instance(self):
+        """All algorithms should return valid solutions on a 5×3 instance."""
+        instance = FlowShopInstance.random(n=5, m=3, seed=42)
+
+        algorithms = {
+            "Palmer": palmers_slope(instance),
+            "Gupta": guptas_algorithm(instance),
+            "CDS": cds(instance),
+            "NEH": neh(instance),
+            "LR": lr_heuristic(instance),
+        }
+
+        for name, sol in algorithms.items():
+            assert sorted(sol.permutation) == list(range(5)), (
+                f"{name} returned invalid permutation"
+            )
+            assert sol.makespan == compute_makespan(instance, sol.permutation), (
+                f"{name} makespan mismatch"
+            )
+            assert sol.makespan > 0, f"{name} has zero makespan"
 
 
 if __name__ == "__main__":

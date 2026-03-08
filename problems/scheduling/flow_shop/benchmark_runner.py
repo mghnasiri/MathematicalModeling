@@ -33,9 +33,12 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
 from instance import FlowShopInstance, compute_makespan
 from exact.johnsons_rule import johnsons_rule
 from heuristics.palmers_slope import palmers_slope
+from heuristics.guptas_algorithm import guptas_algorithm
 from heuristics.cds import cds
 from heuristics.neh import neh, neh_with_tiebreaking
+from heuristics.lr_heuristic import lr_heuristic
 from metaheuristics.iterated_greedy import iterated_greedy
+from metaheuristics.local_search import variable_neighborhood_descent
 from shared.parsers.taillard_parser import (
     load_taillard_instance,
     BEST_KNOWN_UPPER_BOUNDS,
@@ -70,9 +73,14 @@ def run_benchmark(
         algorithms["Johnson"] = lambda inst: johnsons_rule(inst)
 
     algorithms["Palmer"] = lambda inst: palmers_slope(inst)
+    algorithms["Gupta"] = lambda inst: guptas_algorithm(inst)
     algorithms["CDS"] = lambda inst: cds(inst)
+    algorithms["LR"] = lambda inst: lr_heuristic(inst)
     algorithms["NEH"] = lambda inst: neh(inst)
     algorithms["NEH-TB"] = lambda inst: neh_with_tiebreaking(inst)
+    algorithms["NEH+VND"] = lambda inst: variable_neighborhood_descent(
+        inst, neh(inst).permutation, neighborhoods=["insertion", "swap"]
+    )
     algorithms["IG"] = lambda inst: iterated_greedy(
         inst, time_limit=ig_time_limit, seed=ig_seed
     )
