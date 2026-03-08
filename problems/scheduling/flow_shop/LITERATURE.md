@@ -20,6 +20,16 @@
   > Iterated Greedy — current state-of-the-art framework.
 
 - Nowicki, E. & Smutnicki, C. (1996). "A Fast Taboo Search Algorithm for the Permutation Flow-Shop Problem" — *European Journal of Operational Research* — [DOI](https://doi.org/10.1016/0377-2217(95)00037-2)
+  > Fast tabu search with insertion neighborhood and aspiration criterion.
+
+- Stützle, T. (1998). "An Ant Approach to the Flow Shop Problem" — *Proceedings of EUFIT '98*, pp. 1560-1564.
+  > Ant Colony Optimization with position-based pheromone model for PFSP.
+
+- Grabowski, J. & Wodecki, M. (2004). "A Very Fast Tabu Search Algorithm for the Permutation Flow Shop Problem with Makespan Criterion" — *Computers & Operations Research* — [DOI](https://doi.org/10.1016/S0305-0548(03)00145-X)
+  > Enhanced tabu search with block-based moves.
+
+- Rajendran, C. & Ziegler, H. (2004). "Ant-Colony Algorithms for Permutation Flowshop Scheduling to Minimize Makespan/Total Flowtime of Jobs" — *European Journal of Operational Research* — [DOI](https://doi.org/10.1016/S0377-2217(02)00908-6)
+  > Improved ACO variants with local search enhancement.
 
 - Campbell, H.G., Dudek, R.A. & Smith, M.L. (1970). "A Heuristic Algorithm for the n Job, m Machine Sequencing Problem" — *Management Science* — [DOI](https://doi.org/10.1287/mnsc.16.10.B630)
   > CDS heuristic.
@@ -39,3 +49,14 @@
 - Vallada, E., Ruiz, R. & Framinan, J.M. (2015). "New Hard Benchmark for Flowshop Scheduling Problems Minimising Makespan" — *European Journal of Operational Research* — [DOI](https://doi.org/10.1016/j.ejor.2015.02.060)
 
 - Kizilay, D., Tasgetiren, M.F., Pan, Q.-K. & Gao, L. (2023). "A Variable Block Insertion Heuristic for the Blocking Flowshop Scheduling Problem" — *European Journal of Operational Research* — [DOI](https://doi.org/10.1016/j.ejor.2022.08.029)
+
+## Setup Times
+
+- Ruiz, R., Maroto, C. & Alcaraz, J. (2005). "Solving the Flowshop Scheduling Problem with Sequence Dependent Setup Times Using Advanced Metaheuristics" — *European Journal of Operational Research* — [DOI](https://doi.org/10.1016/j.ejor.2004.01.022)
+  > Iterated Greedy and Genetic Algorithm for SDST flow shop.
+
+- Allahverdi, A., Ng, C.T., Cheng, T.C.E. & Kovalyov, M.Y. (2008). "A Survey of Scheduling Problems with Setup Times or Costs" — *European Journal of Operational Research* — [DOI](https://doi.org/10.1016/j.ejor.2006.06.060)
+  > Comprehensive survey of setup time models across scheduling problems.
+
+- Rios-Mercado, R.Z. & Bard, J.F. (1998). "Computational Experience with a Branch-and-Cut Algorithm for Flowshop Scheduling with Setups" — *Computers & Operations Research* — [DOI](https://doi.org/10.1016/S0305-0548(97)00079-8)
+  > Exact methods for SDST flow shop.

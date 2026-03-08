@@ -44,6 +44,8 @@ MathematicalModeling/
         │   │   ├── iterated_greedy.py      # Ruiz & Stuetzle (2007), state-of-the-art
         │   │   ├── simulated_annealing.py  # Osman & Potts (1989), classic SA
         │   │   ├── genetic_algorithm.py    # Reeves (1995), OX crossover + insertion mutation
+        │   │   ├── tabu_search.py          # Nowicki & Smutnicki (1996), fast TS
+        │   │   ├── ant_colony.py           # Stützle (1998), ACO with MMAS pheromone bounds
         │   │   └── local_search.py         # Swap, insertion, or-opt, VND neighborhoods
         │   ├── variants/
         │   │   ├── no_wait/           # Fm | prmu, no-wait | Cmax
@@ -51,14 +53,20 @@ MathematicalModeling/
         │   │   │   ├── heuristics.py  # NN, NEH-NW, Gangadharan-Rajendran
         │   │   │   ├── metaheuristics.py  # Iterated Greedy for no-wait
         │   │   │   └── README.md
-        │   │   └── blocking/          # Fm | prmu, blocking | Cmax
-        │   │       ├── instance.py    # BlockingFlowShopInstance, departure times
-        │   │       ├── heuristics.py  # NEH-B, Profile Fitting
-        │   │       ├── metaheuristics.py  # Iterated Greedy for blocking
+        │   │   ├── blocking/          # Fm | prmu, blocking | Cmax
+        │   │   │   ├── instance.py    # BlockingFlowShopInstance, departure times
+        │   │   │   ├── heuristics.py  # NEH-B, Profile Fitting
+        │   │   │   ├── metaheuristics.py  # Iterated Greedy for blocking
+        │   │   │   └── README.md
+        │   │   └── setup_times/       # Fm | prmu, Ssd | Cmax
+        │   │       ├── instance.py    # SDSTFlowShopInstance, setup time matrices
+        │   │       ├── heuristics.py  # NEH-SDST, GRASP-SDST
+        │   │       ├── metaheuristics.py  # Iterated Greedy for SDST
         │   │       └── README.md
         │   └── tests/
         │       ├── test_flow_shop.py       # 57 tests, original PFSP algorithms
-        │       └── test_new_algorithms.py  # 38 tests, new algorithms + variants
+        │       ├── test_new_algorithms.py  # 38 tests, new algorithms + variants
+        │       └── test_ts_aco_sdst.py     # 35 tests, TS, ACO, SDST variant
         ├── single_machine/   # FULLY IMPLEMENTED (7 Python files, 55-test suite)
         │   ├── instance.py              # SingleMachineInstance, objective functions
         │   ├── exact/
@@ -84,10 +92,10 @@ MathematicalModeling/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run all scheduling tests (150 tests)
+# Run all scheduling tests (185 tests)
 python -m pytest problems/scheduling/ -v
 
-# Run all flow shop tests (95 tests)
+# Run all flow shop tests (130 tests)
 python -m pytest problems/scheduling/flow_shop/tests/ -v
 
 # Run single machine tests (55 tests)
@@ -130,6 +138,8 @@ of the last job on the last machine). NP-hard for m >= 3.
 - Local Search — swap, insertion, or-opt, VND neighborhoods
 - Simulated Annealing (Osman & Potts, 1989) — Boltzmann acceptance, insertion neighborhood
 - Genetic Algorithm (Reeves, 1995) — OX crossover, insertion mutation, steady-state
+- Tabu Search (Nowicki & Smutnicki, 1996) — short-term memory, aspiration criterion
+- Ant Colony Optimization (Stützle, 1998) — pheromone trails, MMAS bounds, elitist update
 - Iterated Greedy (Ruiz & Stuetzle, 2007) — state-of-the-art destroy-and-repair
 
 ### No-Wait Flow Shop (Fm | prmu, no-wait | Cmax)
@@ -151,6 +161,18 @@ standard completion times. NP-hard for m >= 3.
 **Applications:** Manufacturing with limited buffers, robotic cells, paint shops.
 
 **Algorithms:** NEH-B, Profile Fitting, Iterated Greedy (IG-B).
+
+### Sequence-Dependent Setup Times Flow Shop (Fm | prmu, Ssd | Cmax)
+
+Setup times depend on both the current and preceding job on each machine.
+Models real-world changeover times that vary by product sequence. NP-hard
+for m >= 2.
+
+**Applications:** Printing (color changeovers), chemical processing, automotive
+manufacturing, semiconductor fabrication, food processing.
+
+**Algorithms:** NEH-SDST (setup-aware workload sorting), GRASP-SDST (randomized
+greedy with local search), Iterated Greedy (IG-SDST).
 
 ## Single Machine Problem Family
 
