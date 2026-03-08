@@ -196,13 +196,33 @@ MathematicalModeling/
         │   │   └── greedy_pmedian.py    # Greedy, Teitz-Bart interchange
         │   └── tests/
         │       └── test_p_median.py     # 13 tests, 5 test classes
-        └── shortest_path/    # FULLY IMPLEMENTED (3 Python files, 21-test suite)
-            ├── instance.py              # ShortestPathInstance, edge/matrix creation
+        ├── shortest_path/    # FULLY IMPLEMENTED (3 Python files, 21-test suite)
+        │   ├── instance.py              # ShortestPathInstance, edge/matrix creation
+        │   ├── exact/
+        │   │   ├── dijkstra.py          # Dijkstra O((V+E)logV), non-negative weights
+        │   │   └── bellman_ford.py      # Bellman-Ford O(VE), negative cycle detection
+        │   └── tests/
+        │       └── test_shortest_path.py # 21 tests, 7 test classes
+        ├── max_flow/         # FULLY IMPLEMENTED (2 Python files, 16-test suite)
+        │   ├── instance.py              # MaxFlowInstance, capacity matrix, validation
+        │   ├── exact/
+        │   │   └── edmonds_karp.py      # Edmonds-Karp O(VE^2), min-cut extraction
+        │   └── tests/
+        │       └── test_max_flow.py     # 16 tests, 5 test classes
+        ├── min_spanning_tree/ # FULLY IMPLEMENTED (2 Python files, 16-test suite)
+        │   ├── instance.py              # MSTInstance, undirected graph, validation
+        │   ├── exact/
+        │   │   └── mst_algorithms.py    # Kruskal O(E log E), Prim O(E log V)
+        │   └── tests/
+        │       └── test_mst.py          # 16 tests, 5 test classes
+        └── assignment/       # FULLY IMPLEMENTED (3 Python files, 17-test suite)
+            ├── instance.py              # AssignmentInstance, cost matrix
             ├── exact/
-            │   ├── dijkstra.py          # Dijkstra O((V+E)logV), non-negative weights
-            │   └── bellman_ford.py      # Bellman-Ford O(VE), negative cycle detection
+            │   └── hungarian.py         # Hungarian (Kuhn-Munkres) O(n^3)
+            ├── heuristics/
+            │   └── greedy_assignment.py # Greedy min-cost assignment O(n^2)
             └── tests/
-                └── test_shortest_path.py # 21 tests, 7 test classes
+                └── test_assignment.py   # 17 tests, 6 test classes
 ```
 
 ## Build & Test Commands
@@ -262,7 +282,7 @@ python -m pytest problems/packing/bin_packing/tests/ -v
 # Run cutting stock tests (21 tests)
 python -m pytest problems/packing/cutting_stock/tests/ -v
 
-# Run all location/network tests (50 tests)
+# Run all location/network tests (99 tests)
 python -m pytest problems/location_network/ -v
 
 # Run facility location tests (16 tests)
@@ -273,6 +293,15 @@ python -m pytest problems/location_network/p_median/tests/ -v
 
 # Run shortest path tests (21 tests)
 python -m pytest problems/location_network/shortest_path/tests/ -v
+
+# Run max flow tests (16 tests)
+python -m pytest problems/location_network/max_flow/tests/ -v
+
+# Run MST tests (16 tests)
+python -m pytest problems/location_network/min_spanning_tree/tests/ -v
+
+# Run assignment tests (17 tests)
+python -m pytest problems/location_network/assignment/tests/ -v
 ```
 
 ### Dependencies
@@ -539,6 +568,45 @@ Find minimum-weight path from source s to target t in a directed graph.
 **Exact methods:**
 - Dijkstra's Algorithm — O((V+E) log V) with binary heap, non-negative weights
 - Bellman-Ford — O(VE), handles negative weights, detects negative cycles
+
+## Maximum Flow Problem Family
+
+### Problem Definition (Max-Flow)
+
+Given a directed graph G = (V, E) with edge capacities c(u,v), a source s,
+and a sink t, find the maximum flow from s to t such that flow on each edge
+does not exceed capacity, and flow conservation holds at all non-terminal nodes.
+
+The Max-Flow Min-Cut Theorem: maximum flow equals minimum s-t cut capacity.
+
+**Exact methods:**
+- Edmonds-Karp — O(V * E^2), BFS augmenting paths with min-cut extraction
+
+## Minimum Spanning Tree Problem Family
+
+### Problem Definition (MST)
+
+Given an undirected, weighted, connected graph G = (V, E), find the spanning
+tree of minimum total edge weight (n-1 edges connecting all n vertices).
+
+**Exact methods:**
+- Kruskal's Algorithm — O(E log E) with union-find
+- Prim's Algorithm — O(E log V) with binary heap
+
+## Linear Assignment Problem Family
+
+### Problem Definition (LAP)
+
+Given an n×n cost matrix C, find a one-to-one assignment of agents to tasks
+minimizing total cost: min Σ c_{i,σ(i)} where σ is a permutation.
+
+Complexity: Polynomial — O(n^3) via Hungarian method.
+
+**Exact methods:**
+- Hungarian (Kuhn-Munkres, 1955) — O(n^3), shortest augmenting path variant
+
+**Heuristics:**
+- Greedy — assign cheapest available task, O(n^2)
 
 ## 0-1 Knapsack Problem Family
 

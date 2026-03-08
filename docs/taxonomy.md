@@ -149,6 +149,31 @@
 | General SSSP | SPP | P | Bellman-Ford O(VE) |
 | All-pairs | APSP | P | Floyd-Warshall O(V^3) |
 
+### 16. Maximum Flow
+**Path**: `problems/location_network/max_flow/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Max Flow / Min Cut | Max-Flow | P | Edmonds-Karp O(VE^2) |
+| Min Cost Flow | MCFP | P | — |
+
+### 17. Minimum Spanning Tree
+**Path**: `problems/location_network/min_spanning_tree/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| MST | MST | P | Kruskal O(E log E), Prim O(E log V) |
+| Steiner Tree | STP | NP-hard | — |
+
+### 18. Linear Assignment
+**Path**: `problems/location_network/assignment/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Square LAP | LAP | P | Hungarian O(n^3) |
+| Bottleneck AP | BAP | P | — |
+| Quadratic AP | QAP | NP-hard | — |
+
 ---
 
 ## Future Phases (Planned)
