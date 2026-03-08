@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), and **Phase 3** (Packing & Cutting), with future phases planned for Location/Network and Stochastic problems.
+Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), **Phase 3** (Packing & Cutting), and **Phase 4** (Location & Network), with a future phase planned for Stochastic/Robust optimization.
 
 **Author**: Mohammad Ghafourian Nasiri
 **License**: MIT
@@ -181,6 +181,28 @@ MathematicalModeling/
             │   └── greedy_csp.py        # Greedy largest-first, FFD-based
             └── tests/
                 └── test_cutting_stock.py # 21 tests, 6 test classes
+    └── location_network/
+        ├── facility_location/ # FULLY IMPLEMENTED (3 Python files, 16-test suite)
+        │   ├── instance.py              # FacilityLocationInstance, validation
+        │   ├── heuristics/
+        │   │   └── greedy_facility.py   # Greedy add, greedy drop
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py # Toggle/swap with Boltzmann acceptance
+        │   └── tests/
+        │       └── test_facility_location.py # 16 tests, 6 test classes
+        ├── p_median/         # FULLY IMPLEMENTED (2 Python files, 13-test suite)
+        │   ├── instance.py              # PMedianInstance, validation
+        │   ├── heuristics/
+        │   │   └── greedy_pmedian.py    # Greedy, Teitz-Bart interchange
+        │   └── tests/
+        │       └── test_p_median.py     # 13 tests, 5 test classes
+        └── shortest_path/    # FULLY IMPLEMENTED (3 Python files, 21-test suite)
+            ├── instance.py              # ShortestPathInstance, edge/matrix creation
+            ├── exact/
+            │   ├── dijkstra.py          # Dijkstra O((V+E)logV), non-negative weights
+            │   └── bellman_ford.py      # Bellman-Ford O(VE), negative cycle detection
+            └── tests/
+                └── test_shortest_path.py # 21 tests, 7 test classes
 ```
 
 ## Build & Test Commands
@@ -239,6 +261,18 @@ python -m pytest problems/packing/bin_packing/tests/ -v
 
 # Run cutting stock tests (21 tests)
 python -m pytest problems/packing/cutting_stock/tests/ -v
+
+# Run all location/network tests (50 tests)
+python -m pytest problems/location_network/ -v
+
+# Run facility location tests (16 tests)
+python -m pytest problems/location_network/facility_location/tests/ -v
+
+# Run p-median tests (13 tests)
+python -m pytest problems/location_network/p_median/tests/ -v
+
+# Run shortest path tests (21 tests)
+python -m pytest problems/location_network/shortest_path/tests/ -v
 ```
 
 ### Dependencies
@@ -465,6 +499,46 @@ Complexity: NP-hard (generalizes both TSP and Bin Packing).
 **Metaheuristics:**
 - Simulated Annealing — relocate/swap/2-opt* inter-route neighborhoods
 - Genetic Algorithm — giant-tour encoding (Prins, 2004), OX crossover, split decoder
+
+## Facility Location Problem Family
+
+### Problem Definition (UFLP)
+
+Given m potential facility sites with opening costs f_i and n customers
+with assignment costs c_ij, select facilities to open and assign each
+customer to minimize total fixed + assignment cost.
+
+Complexity: NP-hard. Best known approximation: 1.488 (Li, 2013).
+
+**Heuristics:**
+- Greedy Add — iteratively open most cost-reducing facility
+- Greedy Drop — start all open, drop least impactful facility
+
+**Metaheuristics:**
+- Simulated Annealing — toggle/swap moves with Boltzmann acceptance
+
+## p-Median Problem Family
+
+### Problem Definition (PMP)
+
+Open exactly p facilities from m candidates to minimize total weighted
+distance from n customers to their nearest open facility.
+
+Complexity: NP-hard for general p (Kariv & Hakimi, 1979).
+
+**Heuristics:**
+- Greedy — iteratively add most cost-reducing facility until p open
+- Teitz-Bart Interchange — swap open/closed facilities until no improvement
+
+## Shortest Path Problem Family
+
+### Problem Definition (SPP)
+
+Find minimum-weight path from source s to target t in a directed graph.
+
+**Exact methods:**
+- Dijkstra's Algorithm — O((V+E) log V) with binary heap, non-negative weights
+- Bellman-Ford — O(VE), handles negative weights, detects negative cycles
 
 ## 0-1 Knapsack Problem Family
 

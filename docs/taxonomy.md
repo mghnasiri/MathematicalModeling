@@ -122,10 +122,36 @@
 
 ---
 
-## Future Phases (Planned)
+## Location & Network Problems (Phase 4)
 
-### Phase 4: Location & Network
-- Facility Location, p-Median, Hub Location, QAP, Shortest Path, Max Flow
+### 13. Facility Location
+**Path**: `problems/location_network/facility_location/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Uncapacitated | UFLP | NP-hard | Greedy add/drop, SA |
+| Capacitated | CFLP | NP-hard | — |
+
+### 14. p-Median
+**Path**: `problems/location_network/p_median/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| p-Median | PMP | NP-hard | Greedy, Teitz-Bart |
+| p-Center | PCP | NP-hard | — |
+
+### 15. Shortest Path
+**Path**: `problems/location_network/shortest_path/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Non-negative SSSP | SPP | P | Dijkstra O((V+E) log V) |
+| General SSSP | SPP | P | Bellman-Ford O(VE) |
+| All-pairs | APSP | P | Floyd-Warshall O(V^3) |
+
+---
+
+## Future Phases (Planned)
 
 ### Phase 5: Stochastic & Robust
 - Two-Stage SP, Robust Optimization, Chance-Constrained
