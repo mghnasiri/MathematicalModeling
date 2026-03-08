@@ -136,16 +136,25 @@ MathematicalModeling/
         │   │   └── genetic_algorithm.py # OX crossover, swap mutation
         │   └── tests/
         │       └── test_tsp.py          # 55 tests, 10 test classes
-        └── cvrp/             # FULLY IMPLEMENTED (5 Python files, 41-test suite)
-            ├── instance.py              # CVRPInstance, CVRPSolution, validation
+        ├── cvrp/             # FULLY IMPLEMENTED (5 Python files, 41-test suite)
+        │   ├── instance.py              # CVRPInstance, CVRPSolution, validation
+        │   ├── heuristics/
+        │   │   ├── clarke_wright.py     # Clarke-Wright savings, O(n^2 log n)
+        │   │   └── sweep.py            # Angular sweep + multi-start, O(n log n)
+        │   ├── metaheuristics/
+        │   │   ├── simulated_annealing.py # Relocate/swap/2-opt* neighborhoods
+        │   │   └── genetic_algorithm.py # Giant-tour encoding, OX crossover
+        │   └── tests/
+        │       └── test_cvrp.py         # 41 tests, 8 test classes
+        └── vrptw/            # FULLY IMPLEMENTED (4 Python files, 31-test suite)
+            ├── instance.py              # VRPTWInstance, VRPTWSolution, validation
             ├── heuristics/
-            │   ├── clarke_wright.py     # Clarke-Wright savings, O(n^2 log n)
-            │   └── sweep.py            # Angular sweep + multi-start, O(n log n)
+            │   └── solomon_insertion.py # Solomon I1 + nearest neighbor TW
             ├── metaheuristics/
-            │   ├── simulated_annealing.py # Relocate/swap/2-opt* neighborhoods
-            │   └── genetic_algorithm.py # Giant-tour encoding, OX crossover
+            │   ├── simulated_annealing.py # Relocate/swap with TW feasibility
+            │   └── genetic_algorithm.py # Giant-tour encoding, TW-aware split
             └── tests/
-                └── test_cvrp.py         # 41 tests, 8 test classes
+                └── test_vrptw.py        # 31 tests, 8 test classes
 ```
 
 ## Build & Test Commands
@@ -181,7 +190,7 @@ python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py::TestNEH 
 # Run benchmarks (example: 20 jobs, 5 machines)
 python problems/scheduling/flow_shop/benchmark_runner.py --class 20_5 --all
 
-# Run all routing tests (96 tests)
+# Run all routing tests (127 tests)
 python -m pytest problems/routing/ -v
 
 # Run TSP tests (55 tests)
@@ -189,6 +198,9 @@ python -m pytest problems/routing/tsp/tests/ -v
 
 # Run CVRP tests (41 tests)
 python -m pytest problems/routing/cvrp/tests/ -v
+
+# Run VRPTW tests (31 tests)
+python -m pytest problems/routing/vrptw/tests/ -v
 ```
 
 ### Dependencies
@@ -416,6 +428,26 @@ Complexity: NP-hard (generalizes both TSP and Bin Packing).
 - Simulated Annealing — relocate/swap/2-opt* inter-route neighborhoods
 - Genetic Algorithm — giant-tour encoding (Prins, 2004), OX crossover, split decoder
 
+## VRPTW Problem Family
+
+### Problem Definition (VRPTW)
+
+Extends CVRP with time window constraints [e_i, l_i] for each customer.
+Vehicles must arrive before l_i; if arriving before e_i, they wait.
+Each customer requires s_i service time. The depot has a planning horizon.
+
+Complexity: NP-hard (generalizes CVRP).
+
+**Constructive heuristics:**
+- Solomon I1 Insertion (1987) — iterative insertion with composite criterion (distance + urgency), O(n^2 K)
+- Nearest Neighbor TW — greedy nearest feasible customer, O(n^2)
+
+**Metaheuristics:**
+- Simulated Annealing — relocate/swap with time window feasibility checks
+- Genetic Algorithm — giant-tour encoding with TW-aware split decoder
+
+**Benchmark instances:** solomon_c101_mini (8 customers, clustered), tight_tw5 (5 customers, narrow windows)
+
 ## Code Conventions
 
 ### Architecture Pattern
@@ -522,6 +554,9 @@ Each problem folder should contain:
 - **Giant tour**: Single permutation of all customers, split into capacity-feasible routes for CVRP
 - **2-opt**: Local search that reverses a tour segment — fundamental TSP improvement
 - **1-tree**: Minimum spanning tree plus one extra edge — basis for TSP lower bounds
+- **VRPTW**: Vehicle Routing Problem with Time Windows — CVRP with arrival time constraints [e_i, l_i]
+- **Time window**: Interval [earliest, latest] during which service can begin at a customer
+- **Solomon benchmarks**: Standard VRPTW instances (C/R/RC classes) with 25-100 customers
 
 ## Adding New Problems
 

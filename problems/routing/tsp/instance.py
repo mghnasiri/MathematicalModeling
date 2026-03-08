@@ -13,6 +13,12 @@ References:
     Applegate, D.L., Bixby, R.E., Chvátal, V. & Cook, W.J. (2006).
     The Traveling Salesman Problem: A Computational Study.
     Princeton University Press.
+    https://doi.org/10.1515/9781400841103
+
+    Karp, R.M. (1972). Reducibility among combinatorial problems.
+    In: Miller, R.E. & Thatcher, J.W. (eds) Complexity of Computer
+    Computations, Plenum Press, New York, 85-103.
+    https://doi.org/10.1007/978-1-4684-2001-2_9
 """
 
 from __future__ import annotations

@@ -2,6 +2,7 @@
 Genetic Algorithm for TSP — Order Crossover (OX) with 2-opt local search.
 
 Problem: TSP (Traveling Salesman Problem)
+Complexity: O(pop_size * generations * n) per run
 
 Encoding: Permutation of city indices.
 Crossover: Order Crossover (OX) — preserves relative order.
@@ -11,10 +12,18 @@ Local search: Optional 2-opt applied to offspring.
 
 References:
     Davis, L. (1985). Applying adaptive algorithms to epistatic domains.
-    Proceedings of IJCAI, 162-164.
+    Proceedings of the 9th International Joint Conference on Artificial
+    Intelligence (IJCAI-85), Los Angeles, CA, 162-164.
 
     Goldberg, D.E. & Lingle, R. (1985). Alleles, loci, and the
-    traveling salesman problem. Proceedings of ICGA, 154-159.
+    traveling salesman problem. Proceedings of the 1st International
+    Conference on Genetic Algorithms (ICGA), Pittsburgh, PA, 154-159.
+
+    Larranaga, P., Kuijpers, C.M.H., Murga, R.H., Inza, I. &
+    Dizdarevic, S. (1999). Genetic algorithms for the travelling
+    salesman problem: A review of representations and operators.
+    Artificial Intelligence Review, 13(2), 129-170.
+    https://doi.org/10.1023/A:1006529012972
 """
 
 from __future__ import annotations

@@ -18,7 +18,8 @@ References:
     https://doi.org/10.1287/mnsc.6.1.80
 
     Toth, P. & Vigo, D. (2014). Vehicle Routing: Problems, Methods,
-    and Applications (2nd ed.). SIAM.
+    and Applications (2nd ed.). MOS-SIAM Series on Optimization, SIAM.
+    https://doi.org/10.1137/1.9781611973594
 """
 
 from __future__ import annotations
