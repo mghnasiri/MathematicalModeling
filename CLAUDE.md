@@ -92,10 +92,34 @@ MathematicalModeling/
         │   │   └── simulated_annealing.py  # SA for ΣwjTj and ΣTj
         │   └── tests/
         │       └── test_single_machine.py  # 55 tests, 12 test classes
-        ├── parallel_machine/ # Scaffolding only
-        ├── job_shop/         # Scaffolding only
-        ├── flexible_job_shop/# Scaffolding only
-        └── rcpsp/            # Scaffolding only
+        ├── job_shop/         # FULLY IMPLEMENTED (5 Python files, 41-test suite)
+        │   ├── instance.py              # JobShopInstance, ft06/ft10 benchmarks
+        │   ├── heuristics/
+        │   │   ├── dispatching_rules.py # SPT, LPT, MWR, LWR, FIFO (Giffler-Thompson)
+        │   │   └── shifting_bottleneck.py # Adams-Balas-Zawack (1988)
+        │   ├── metaheuristics/
+        │   │   ├── simulated_annealing.py # Critical-path neighborhood SA
+        │   │   └── tabu_search.py         # N1 neighborhood with aspiration
+        │   └── tests/
+        │       └── test_job_shop.py       # 41 tests, 7 test classes
+        ├── flexible_job_shop/ # FULLY IMPLEMENTED (4 Python files, 37-test suite)
+        │   ├── instance.py              # FlexibleJobShopInstance (total/partial)
+        │   ├── heuristics/
+        │   │   ├── dispatching_rules.py # SPT/LPT/MWR/LWR + ECT/SPT machine selection
+        │   │   └── hierarchical.py      # Route-then-sequence decomposition
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py # Pezzella-style integrated encoding
+        │   └── tests/
+        │       └── test_fjsp.py         # 37 tests, 6 test classes
+        └── rcpsp/            # FULLY IMPLEMENTED (4 Python files, 35-test suite)
+            ├── instance.py              # RCPSPInstance, precedence DAG, resources
+            ├── heuristics/
+            │   ├── serial_sgs.py        # Serial SGS (LFT/EST/MTS/GRPW rules)
+            │   └── parallel_sgs.py      # Parallel SGS (non-delay schedules)
+            ├── metaheuristics/
+            │   └── genetic_algorithm.py # Activity-list GA (Hartmann 1998)
+            └── tests/
+                └── test_rcpsp.py        # 35 tests, 7 test classes
 ```
 
 ## Build & Test Commands
@@ -104,7 +128,7 @@ MathematicalModeling/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run all scheduling tests (228 tests)
+# Run all scheduling tests (341 tests)
 python -m pytest problems/scheduling/ -v
 
 # Run all flow shop tests (130 tests)
@@ -115,6 +139,15 @@ python -m pytest problems/scheduling/parallel_machine/tests/ -v
 
 # Run single machine tests (55 tests)
 python -m pytest problems/scheduling/single_machine/tests/ -v
+
+# Run job shop tests (41 tests)
+python -m pytest problems/scheduling/job_shop/tests/ -v
+
+# Run flexible job shop tests (37 tests)
+python -m pytest problems/scheduling/flexible_job_shop/tests/ -v
+
+# Run RCPSP tests (35 tests)
+python -m pytest problems/scheduling/rcpsp/tests/ -v
 
 # Run specific test class
 python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py::TestNEH -v
@@ -248,6 +281,62 @@ solvable to strongly NP-hard.
 **Metaheuristics:**
 - Simulated Annealing — swap/insertion neighborhood for ΣwjTj and ΣTj
 
+## Job Shop Problem Family
+
+### Problem Definition (Jm | | Cmax)
+
+n jobs, each consisting of a sequence of operations on specific machines.
+Different jobs may visit machines in different orders (job-specific routing).
+The disjunctive graph (Roy & Sussmann, 1964) is the central data structure.
+
+Complexity: NP-hard even for J2||Cmax. The ft10 (10x10) instance remained
+unsolved for 26 years (1963-1989).
+
+**Constructive heuristics:**
+- Dispatching Rules (SPT, LPT, MWR, LWR, FIFO) — Giffler & Thompson (1960) active schedule generation
+- Shifting Bottleneck — Adams, Balas & Zawack (1988), iterative single-machine sub-problems
+
+**Metaheuristics:**
+- Simulated Annealing — Van Laarhoven et al. (1992), critical-path neighborhood
+- Tabu Search — Nowicki & Smutnicki (1996), N1 neighborhood with aspiration criterion
+
+**Benchmark instances:** ft06 (6x6, optimal=55), ft10 (10x10, optimal=930)
+
+## Flexible Job Shop Problem Family
+
+### Problem Definition (FJm | | Cmax)
+
+Extends JSP: each operation can be processed on any machine from a set of
+eligible machines. Introduces routing (machine assignment) + sequencing.
+Total FJSP: all machines eligible; Partial FJSP: subsets of eligible machines.
+
+**Constructive heuristics:**
+- Dispatching Rules — SPT/LPT/MWR/LWR priority + ECT/SPT machine assignment
+- Hierarchical — Route-then-sequence decomposition (Brandimarte, 1993)
+
+**Metaheuristics:**
+- Genetic Algorithm — Pezzella et al. (2008), integrated routing+sequencing encoding
+
+## RCPSP Problem Family
+
+### Problem Definition (PS | prec | Cmax)
+
+n activities with precedence constraints and renewable resource requirements.
+Schedule all activities to minimize project duration. Activities 0 (source)
+and n+1 (sink) are dummies.
+
+Strongly NP-hard even with 2 resource types.
+
+**Schedule Generation Schemes (SGS):**
+- Serial SGS — schedule one activity at a time, generates active schedules
+- Parallel SGS — at each time step schedule all feasible, generates non-delay schedules
+
+**Priority rules:** LFT (Latest Finish Time), EST (Earliest Start Time),
+MTS (Most Total Successors), GRPW (Greatest Rank Positional Weight)
+
+**Metaheuristics:**
+- Genetic Algorithm — Hartmann (1998), activity-list encoding with Serial SGS decoder
+
 ## Code Conventions
 
 ### Architecture Pattern
@@ -341,6 +430,11 @@ Each problem folder should contain:
 - **Weighted tardiness**: ΣwjTj — strongly NP-hard single machine objective
 - **SPT/WSPT/EDD**: Optimal dispatching rules for tractable single machine objectives
 - **ATC**: Apparent Tardiness Cost — composite dispatching rule combining WSPT ratio with due date urgency
+- **Disjunctive graph**: Standard JSP model — conjunctive arcs for job precedence, disjunctive arcs for machine conflicts
+- **Critical path**: Longest path in the disjunctive graph, determines the makespan
+- **Critical block**: Consecutive operations on same machine on the critical path — key for effective neighborhoods
+- **SGS**: Schedule Generation Scheme — decodes a priority list into a feasible RCPSP schedule
+- **Activity list**: Precedence-feasible permutation of activities — standard encoding for RCPSP metaheuristics
 
 ## Adding New Problems
 
