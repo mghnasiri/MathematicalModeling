@@ -68,13 +68,61 @@
 
 ---
 
+## Routing Problems (Phase 2)
+
+### 7. Traveling Salesman Problem
+**Path**: `problems/routing/tsp/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Symmetric TSP | TSP | NP-hard | Held-Karp DP, B&B |
+| Asymmetric TSP | ATSP | NP-hard | B&B |
+
+### 8. Capacitated Vehicle Routing
+**Path**: `problems/routing/cvrp/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| CVRP | CVRP | NP-hard | Clarke-Wright, Sweep |
+
+### 9. VRP with Time Windows
+**Path**: `problems/routing/vrptw/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| VRPTW | VRPTW | NP-hard | Solomon I1, SA, GA |
+
+---
+
+## Packing & Cutting Problems (Phase 3)
+
+### 10. 0-1 Knapsack
+**Path**: `problems/packing/knapsack/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| 0-1 Knapsack | KP01 | NP-hard (weakly) | DP O(nW), B&B |
+| Fractional Knapsack | — | P | Greedy (ratio sort) |
+| Bounded Knapsack | BKP | NP-hard | DP |
+
+### 11. 1D Bin Packing
+**Path**: `problems/packing/bin_packing/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| 1D Bin Packing | BPP1D | NP-hard (strongly) | FFD (11/9 approx) |
+| 2D Bin Packing | BPP2D | NP-hard | — |
+
+### 12. 1D Cutting Stock
+**Path**: `problems/packing/cutting_stock/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| 1D Cutting Stock | CSP1D | NP-hard | Column generation |
+
+---
+
 ## Future Phases (Planned)
-
-### Phase 2: Routing
-- TSP, ATSP, CVRP, VRPTW, PDVRP, Arc Routing
-
-### Phase 3: Packing & Cutting
-- 0-1 Knapsack, Bin Packing (1D, 2D, 3D), Cutting Stock
 
 ### Phase 4: Location & Network
 - Facility Location, p-Median, Hub Location, QAP, Shortest Path, Max Flow

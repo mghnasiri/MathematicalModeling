@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling) and **Phase 2** (Routing), with future phases planned for Packing, Location, and Stochastic problems.
+Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), and **Phase 3** (Packing & Cutting), with future phases planned for Location/Network and Stochastic problems.
 
 **Author**: Mohammad Ghafourian Nasiri
 **License**: MIT
@@ -155,6 +155,32 @@ MathematicalModeling/
             │   └── genetic_algorithm.py # Giant-tour encoding, TW-aware split
             └── tests/
                 └── test_vrptw.py        # 31 tests, 8 test classes
+    └── packing/
+        ├── knapsack/         # FULLY IMPLEMENTED (5 Python files, 37-test suite)
+        │   ├── instance.py              # KnapsackInstance, KnapsackSolution, validation
+        │   ├── exact/
+        │   │   ├── dynamic_programming.py # Bitmask DP, O(n*W) pseudo-polynomial
+        │   │   └── branch_and_bound.py    # B&B with LP relaxation bound
+        │   ├── heuristics/
+        │   │   └── greedy.py              # Value-density, max-value, combined (1/2-approx)
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py   # Binary encoding with repair operator
+        │   └── tests/
+        │       └── test_knapsack.py       # 37 tests, 8 test classes
+        ├── bin_packing/      # FULLY IMPLEMENTED (3 Python files, 29-test suite)
+        │   ├── instance.py              # BinPackingInstance, L1/L2 lower bounds
+        │   ├── heuristics/
+        │   │   └── first_fit.py         # FF, FFD (11/9 approx), BFD
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py # Permutation encoding, FF decoder
+        │   └── tests/
+        │       └── test_bin_packing.py  # 29 tests, 7 test classes
+        └── cutting_stock/    # FULLY IMPLEMENTED (2 Python files, 21-test suite)
+            ├── instance.py              # CuttingStockInstance, pattern validation
+            ├── heuristics/
+            │   └── greedy_csp.py        # Greedy largest-first, FFD-based
+            └── tests/
+                └── test_cutting_stock.py # 21 tests, 6 test classes
 ```
 
 ## Build & Test Commands
@@ -201,6 +227,18 @@ python -m pytest problems/routing/cvrp/tests/ -v
 
 # Run VRPTW tests (31 tests)
 python -m pytest problems/routing/vrptw/tests/ -v
+
+# Run all packing tests (87 tests)
+python -m pytest problems/packing/ -v
+
+# Run knapsack tests (37 tests)
+python -m pytest problems/packing/knapsack/tests/ -v
+
+# Run bin packing tests (29 tests)
+python -m pytest problems/packing/bin_packing/tests/ -v
+
+# Run cutting stock tests (21 tests)
+python -m pytest problems/packing/cutting_stock/tests/ -v
 ```
 
 ### Dependencies
@@ -427,6 +465,65 @@ Complexity: NP-hard (generalizes both TSP and Bin Packing).
 **Metaheuristics:**
 - Simulated Annealing — relocate/swap/2-opt* inter-route neighborhoods
 - Genetic Algorithm — giant-tour encoding (Prins, 2004), OX crossover, split decoder
+
+## 0-1 Knapsack Problem Family
+
+### Problem Definition (KP01)
+
+Given n items with weights w_i and values v_i, and a knapsack with
+capacity W, select a subset to maximize total value subject to
+sum(w_i) <= W.
+
+Complexity: NP-hard (weakly) — admits pseudo-polynomial DP in O(nW).
+
+**Exact methods:**
+- Dynamic Programming — O(n * W) pseudo-polynomial, practical for moderate W
+- Branch and Bound — LP relaxation upper bound, greedy warm-start
+
+**Heuristics:**
+- Greedy value density — sort by v_i/w_i, O(n log n)
+- Greedy combined — best of density and max-value, 1/2-approximation
+
+**Metaheuristics:**
+- Genetic Algorithm — binary encoding, uniform crossover, repair operator
+
+**Benchmark instances:** small4 (4 items, opt=35), medium8 (8 items, opt=300),
+strongly_correlated_10 (10 items, v_i = w_i + 10)
+
+## 1D Bin Packing Problem Family
+
+### Problem Definition (BPP1D)
+
+Given n items with sizes s_i and bins of capacity C, pack all items
+into the minimum number of bins.
+
+Complexity: NP-hard (strongly).
+
+**Heuristics:**
+- First Fit (FF) — O(n^2), place in first bin that fits
+- First Fit Decreasing (FFD) — O(n log n), 11/9 * OPT + 6/9 approximation
+- Best Fit Decreasing (BFD) — O(n log n), place in tightest fitting bin
+
+**Metaheuristics:**
+- Genetic Algorithm — permutation encoding, FF decoder
+
+**Benchmark instances:** easy6, tight8, uniform10
+
+## 1D Cutting Stock Problem Family
+
+### Problem Definition (CSP1D)
+
+Given stock material of length L and m item types with lengths l_i
+and demands d_i, cut stock rolls to satisfy all demands using minimum
+rolls. Generalization of Bin Packing where identical items are interchangeable.
+
+Complexity: NP-hard (reduces from Bin Packing).
+
+**Heuristics:**
+- Greedy largest-first — fill each roll with largest remaining items
+- FFD-based — expand demands to individual items, apply FFD, aggregate patterns
+
+**Benchmark instances:** simple3 (3 types, L=100), classic4 (4 types, L=10)
 
 ## VRPTW Problem Family
 
