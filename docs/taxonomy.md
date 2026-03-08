@@ -68,16 +68,115 @@
 
 ---
 
+## Routing Problems (Phase 2)
+
+### 7. Traveling Salesman Problem
+**Path**: `problems/routing/tsp/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Symmetric TSP | TSP | NP-hard | Held-Karp DP, B&B |
+| Asymmetric TSP | ATSP | NP-hard | B&B |
+
+### 8. Capacitated Vehicle Routing
+**Path**: `problems/routing/cvrp/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| CVRP | CVRP | NP-hard | Clarke-Wright, Sweep |
+
+### 9. VRP with Time Windows
+**Path**: `problems/routing/vrptw/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| VRPTW | VRPTW | NP-hard | Solomon I1, SA, GA |
+
+---
+
+## Packing & Cutting Problems (Phase 3)
+
+### 10. 0-1 Knapsack
+**Path**: `problems/packing/knapsack/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| 0-1 Knapsack | KP01 | NP-hard (weakly) | DP O(nW), B&B |
+| Fractional Knapsack | — | P | Greedy (ratio sort) |
+| Bounded Knapsack | BKP | NP-hard | DP |
+
+### 11. 1D Bin Packing
+**Path**: `problems/packing/bin_packing/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| 1D Bin Packing | BPP1D | NP-hard (strongly) | FFD (11/9 approx) |
+| 2D Bin Packing | BPP2D | NP-hard | — |
+
+### 12. 1D Cutting Stock
+**Path**: `problems/packing/cutting_stock/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| 1D Cutting Stock | CSP1D | NP-hard | Column generation |
+
+---
+
+## Location & Network Problems (Phase 4)
+
+### 13. Facility Location
+**Path**: `problems/location_network/facility_location/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Uncapacitated | UFLP | NP-hard | Greedy add/drop, SA |
+| Capacitated | CFLP | NP-hard | — |
+
+### 14. p-Median
+**Path**: `problems/location_network/p_median/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| p-Median | PMP | NP-hard | Greedy, Teitz-Bart |
+| p-Center | PCP | NP-hard | — |
+
+### 15. Shortest Path
+**Path**: `problems/location_network/shortest_path/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Non-negative SSSP | SPP | P | Dijkstra O((V+E) log V) |
+| General SSSP | SPP | P | Bellman-Ford O(VE) |
+| All-pairs | APSP | P | Floyd-Warshall O(V^3) |
+
+### 16. Maximum Flow
+**Path**: `problems/location_network/max_flow/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Max Flow / Min Cut | Max-Flow | P | Edmonds-Karp O(VE^2) |
+| Min Cost Flow | MCFP | P | — |
+
+### 17. Minimum Spanning Tree
+**Path**: `problems/location_network/min_spanning_tree/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| MST | MST | P | Kruskal O(E log E), Prim O(E log V) |
+| Steiner Tree | STP | NP-hard | — |
+
+### 18. Linear Assignment
+**Path**: `problems/location_network/assignment/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Square LAP | LAP | P | Hungarian O(n^3) |
+| Bottleneck AP | BAP | P | — |
+| Quadratic AP | QAP | NP-hard | — |
+
+---
+
 ## Future Phases (Planned)
-
-### Phase 2: Routing
-- TSP, ATSP, CVRP, VRPTW, PDVRP, Arc Routing
-
-### Phase 3: Packing & Cutting
-- 0-1 Knapsack, Bin Packing (1D, 2D, 3D), Cutting Stock
-
-### Phase 4: Location & Network
-- Facility Location, p-Median, Hub Location, QAP, Shortest Path, Max Flow
 
 ### Phase 5: Stochastic & Robust
 - Two-Stage SP, Robust Optimization, Chance-Constrained

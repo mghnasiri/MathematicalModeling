@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently in **Phase 1** (Scheduling problems), with future phases planned for Routing, Packing, Location, and Stochastic problems.
+Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), **Phase 3** (Packing & Cutting), and **Phase 4** (Location & Network), with a future phase planned for Stochastic/Robust optimization.
 
 **Author**: Mohammad Ghafourian Nasiri
 **License**: MIT
@@ -92,10 +92,137 @@ MathematicalModeling/
         │   │   └── simulated_annealing.py  # SA for ΣwjTj and ΣTj
         │   └── tests/
         │       └── test_single_machine.py  # 55 tests, 12 test classes
-        ├── parallel_machine/ # Scaffolding only
-        ├── job_shop/         # Scaffolding only
-        ├── flexible_job_shop/# Scaffolding only
-        └── rcpsp/            # Scaffolding only
+        ├── job_shop/         # FULLY IMPLEMENTED (5 Python files, 41-test suite)
+        │   ├── instance.py              # JobShopInstance, ft06/ft10 benchmarks
+        │   ├── heuristics/
+        │   │   ├── dispatching_rules.py # SPT, LPT, MWR, LWR, FIFO (Giffler-Thompson)
+        │   │   └── shifting_bottleneck.py # Adams-Balas-Zawack (1988)
+        │   ├── metaheuristics/
+        │   │   ├── simulated_annealing.py # Critical-path neighborhood SA
+        │   │   └── tabu_search.py         # N1 neighborhood with aspiration
+        │   └── tests/
+        │       └── test_job_shop.py       # 41 tests, 7 test classes
+        ├── flexible_job_shop/ # FULLY IMPLEMENTED (4 Python files, 37-test suite)
+        │   ├── instance.py              # FlexibleJobShopInstance (total/partial)
+        │   ├── heuristics/
+        │   │   ├── dispatching_rules.py # SPT/LPT/MWR/LWR + ECT/SPT machine selection
+        │   │   └── hierarchical.py      # Route-then-sequence decomposition
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py # Pezzella-style integrated encoding
+        │   └── tests/
+        │       └── test_fjsp.py         # 37 tests, 6 test classes
+        └── rcpsp/            # FULLY IMPLEMENTED (4 Python files, 35-test suite)
+            ├── instance.py              # RCPSPInstance, precedence DAG, resources
+            ├── heuristics/
+            │   ├── serial_sgs.py        # Serial SGS (LFT/EST/MTS/GRPW rules)
+            │   └── parallel_sgs.py      # Parallel SGS (non-delay schedules)
+            ├── metaheuristics/
+            │   └── genetic_algorithm.py # Activity-list GA (Hartmann 1998)
+            └── tests/
+                └── test_rcpsp.py        # 35 tests, 7 test classes
+    └── routing/
+        ├── tsp/              # FULLY IMPLEMENTED (8 Python files, 55-test suite)
+        │   ├── instance.py              # TSPInstance, TSPSolution, benchmark instances
+        │   ├── exact/
+        │   │   ├── held_karp.py         # Held-Karp DP, O(2^n * n^2), optimal for n <= 23
+        │   │   └── branch_and_bound.py  # B&B with 1-tree lower bound, NN warm-start
+        │   ├── heuristics/
+        │   │   ├── nearest_neighbor.py  # NN + multi-start, O(n^2)
+        │   │   ├── cheapest_insertion.py # Cheapest/farthest/nearest insertion, O(n^3)
+        │   │   └── greedy.py            # Greedy nearest-edge, O(n^2 log n)
+        │   ├── metaheuristics/
+        │   │   ├── local_search.py      # 2-opt, Or-opt, VND neighborhoods
+        │   │   ├── simulated_annealing.py # SA with 2-opt moves
+        │   │   └── genetic_algorithm.py # OX crossover, swap mutation
+        │   └── tests/
+        │       └── test_tsp.py          # 55 tests, 10 test classes
+        ├── cvrp/             # FULLY IMPLEMENTED (5 Python files, 41-test suite)
+        │   ├── instance.py              # CVRPInstance, CVRPSolution, validation
+        │   ├── heuristics/
+        │   │   ├── clarke_wright.py     # Clarke-Wright savings, O(n^2 log n)
+        │   │   └── sweep.py            # Angular sweep + multi-start, O(n log n)
+        │   ├── metaheuristics/
+        │   │   ├── simulated_annealing.py # Relocate/swap/2-opt* neighborhoods
+        │   │   └── genetic_algorithm.py # Giant-tour encoding, OX crossover
+        │   └── tests/
+        │       └── test_cvrp.py         # 41 tests, 8 test classes
+        └── vrptw/            # FULLY IMPLEMENTED (4 Python files, 31-test suite)
+            ├── instance.py              # VRPTWInstance, VRPTWSolution, validation
+            ├── heuristics/
+            │   └── solomon_insertion.py # Solomon I1 + nearest neighbor TW
+            ├── metaheuristics/
+            │   ├── simulated_annealing.py # Relocate/swap with TW feasibility
+            │   └── genetic_algorithm.py # Giant-tour encoding, TW-aware split
+            └── tests/
+                └── test_vrptw.py        # 31 tests, 8 test classes
+    └── packing/
+        ├── knapsack/         # FULLY IMPLEMENTED (5 Python files, 37-test suite)
+        │   ├── instance.py              # KnapsackInstance, KnapsackSolution, validation
+        │   ├── exact/
+        │   │   ├── dynamic_programming.py # Bitmask DP, O(n*W) pseudo-polynomial
+        │   │   └── branch_and_bound.py    # B&B with LP relaxation bound
+        │   ├── heuristics/
+        │   │   └── greedy.py              # Value-density, max-value, combined (1/2-approx)
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py   # Binary encoding with repair operator
+        │   └── tests/
+        │       └── test_knapsack.py       # 37 tests, 8 test classes
+        ├── bin_packing/      # FULLY IMPLEMENTED (3 Python files, 29-test suite)
+        │   ├── instance.py              # BinPackingInstance, L1/L2 lower bounds
+        │   ├── heuristics/
+        │   │   └── first_fit.py         # FF, FFD (11/9 approx), BFD
+        │   ├── metaheuristics/
+        │   │   └── genetic_algorithm.py # Permutation encoding, FF decoder
+        │   └── tests/
+        │       └── test_bin_packing.py  # 29 tests, 7 test classes
+        └── cutting_stock/    # FULLY IMPLEMENTED (2 Python files, 21-test suite)
+            ├── instance.py              # CuttingStockInstance, pattern validation
+            ├── heuristics/
+            │   └── greedy_csp.py        # Greedy largest-first, FFD-based
+            └── tests/
+                └── test_cutting_stock.py # 21 tests, 6 test classes
+    └── location_network/
+        ├── facility_location/ # FULLY IMPLEMENTED (3 Python files, 16-test suite)
+        │   ├── instance.py              # FacilityLocationInstance, validation
+        │   ├── heuristics/
+        │   │   └── greedy_facility.py   # Greedy add, greedy drop
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py # Toggle/swap with Boltzmann acceptance
+        │   └── tests/
+        │       └── test_facility_location.py # 16 tests, 6 test classes
+        ├── p_median/         # FULLY IMPLEMENTED (2 Python files, 13-test suite)
+        │   ├── instance.py              # PMedianInstance, validation
+        │   ├── heuristics/
+        │   │   └── greedy_pmedian.py    # Greedy, Teitz-Bart interchange
+        │   └── tests/
+        │       └── test_p_median.py     # 13 tests, 5 test classes
+        ├── shortest_path/    # FULLY IMPLEMENTED (3 Python files, 21-test suite)
+        │   ├── instance.py              # ShortestPathInstance, edge/matrix creation
+        │   ├── exact/
+        │   │   ├── dijkstra.py          # Dijkstra O((V+E)logV), non-negative weights
+        │   │   └── bellman_ford.py      # Bellman-Ford O(VE), negative cycle detection
+        │   └── tests/
+        │       └── test_shortest_path.py # 21 tests, 7 test classes
+        ├── max_flow/         # FULLY IMPLEMENTED (2 Python files, 16-test suite)
+        │   ├── instance.py              # MaxFlowInstance, capacity matrix, validation
+        │   ├── exact/
+        │   │   └── edmonds_karp.py      # Edmonds-Karp O(VE^2), min-cut extraction
+        │   └── tests/
+        │       └── test_max_flow.py     # 16 tests, 5 test classes
+        ├── min_spanning_tree/ # FULLY IMPLEMENTED (2 Python files, 16-test suite)
+        │   ├── instance.py              # MSTInstance, undirected graph, validation
+        │   ├── exact/
+        │   │   └── mst_algorithms.py    # Kruskal O(E log E), Prim O(E log V)
+        │   └── tests/
+        │       └── test_mst.py          # 16 tests, 5 test classes
+        └── assignment/       # FULLY IMPLEMENTED (3 Python files, 17-test suite)
+            ├── instance.py              # AssignmentInstance, cost matrix
+            ├── exact/
+            │   └── hungarian.py         # Hungarian (Kuhn-Munkres) O(n^3)
+            ├── heuristics/
+            │   └── greedy_assignment.py # Greedy min-cost assignment O(n^2)
+            └── tests/
+                └── test_assignment.py   # 17 tests, 6 test classes
 ```
 
 ## Build & Test Commands
@@ -104,7 +231,7 @@ MathematicalModeling/
 # Install dependencies
 pip install -r requirements.txt
 
-# Run all scheduling tests (228 tests)
+# Run all scheduling tests (341 tests)
 python -m pytest problems/scheduling/ -v
 
 # Run all flow shop tests (130 tests)
@@ -116,11 +243,65 @@ python -m pytest problems/scheduling/parallel_machine/tests/ -v
 # Run single machine tests (55 tests)
 python -m pytest problems/scheduling/single_machine/tests/ -v
 
+# Run job shop tests (41 tests)
+python -m pytest problems/scheduling/job_shop/tests/ -v
+
+# Run flexible job shop tests (37 tests)
+python -m pytest problems/scheduling/flexible_job_shop/tests/ -v
+
+# Run RCPSP tests (35 tests)
+python -m pytest problems/scheduling/rcpsp/tests/ -v
+
 # Run specific test class
 python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py::TestNEH -v
 
 # Run benchmarks (example: 20 jobs, 5 machines)
 python problems/scheduling/flow_shop/benchmark_runner.py --class 20_5 --all
+
+# Run all routing tests (127 tests)
+python -m pytest problems/routing/ -v
+
+# Run TSP tests (55 tests)
+python -m pytest problems/routing/tsp/tests/ -v
+
+# Run CVRP tests (41 tests)
+python -m pytest problems/routing/cvrp/tests/ -v
+
+# Run VRPTW tests (31 tests)
+python -m pytest problems/routing/vrptw/tests/ -v
+
+# Run all packing tests (87 tests)
+python -m pytest problems/packing/ -v
+
+# Run knapsack tests (37 tests)
+python -m pytest problems/packing/knapsack/tests/ -v
+
+# Run bin packing tests (29 tests)
+python -m pytest problems/packing/bin_packing/tests/ -v
+
+# Run cutting stock tests (21 tests)
+python -m pytest problems/packing/cutting_stock/tests/ -v
+
+# Run all location/network tests (99 tests)
+python -m pytest problems/location_network/ -v
+
+# Run facility location tests (16 tests)
+python -m pytest problems/location_network/facility_location/tests/ -v
+
+# Run p-median tests (13 tests)
+python -m pytest problems/location_network/p_median/tests/ -v
+
+# Run shortest path tests (21 tests)
+python -m pytest problems/location_network/shortest_path/tests/ -v
+
+# Run max flow tests (16 tests)
+python -m pytest problems/location_network/max_flow/tests/ -v
+
+# Run MST tests (16 tests)
+python -m pytest problems/location_network/min_spanning_tree/tests/ -v
+
+# Run assignment tests (17 tests)
+python -m pytest problems/location_network/assignment/tests/ -v
 ```
 
 ### Dependencies
@@ -248,6 +429,264 @@ solvable to strongly NP-hard.
 **Metaheuristics:**
 - Simulated Annealing — swap/insertion neighborhood for ΣwjTj and ΣTj
 
+## Job Shop Problem Family
+
+### Problem Definition (Jm | | Cmax)
+
+n jobs, each consisting of a sequence of operations on specific machines.
+Different jobs may visit machines in different orders (job-specific routing).
+The disjunctive graph (Roy & Sussmann, 1964) is the central data structure.
+
+Complexity: NP-hard even for J2||Cmax. The ft10 (10x10) instance remained
+unsolved for 26 years (1963-1989).
+
+**Constructive heuristics:**
+- Dispatching Rules (SPT, LPT, MWR, LWR, FIFO) — Giffler & Thompson (1960) active schedule generation
+- Shifting Bottleneck — Adams, Balas & Zawack (1988), iterative single-machine sub-problems
+
+**Metaheuristics:**
+- Simulated Annealing — Van Laarhoven et al. (1992), critical-path neighborhood
+- Tabu Search — Nowicki & Smutnicki (1996), N1 neighborhood with aspiration criterion
+
+**Benchmark instances:** ft06 (6x6, optimal=55), ft10 (10x10, optimal=930)
+
+## Flexible Job Shop Problem Family
+
+### Problem Definition (FJm | | Cmax)
+
+Extends JSP: each operation can be processed on any machine from a set of
+eligible machines. Introduces routing (machine assignment) + sequencing.
+Total FJSP: all machines eligible; Partial FJSP: subsets of eligible machines.
+
+**Constructive heuristics:**
+- Dispatching Rules — SPT/LPT/MWR/LWR priority + ECT/SPT machine assignment
+- Hierarchical — Route-then-sequence decomposition (Brandimarte, 1993)
+
+**Metaheuristics:**
+- Genetic Algorithm — Pezzella et al. (2008), integrated routing+sequencing encoding
+
+## RCPSP Problem Family
+
+### Problem Definition (PS | prec | Cmax)
+
+n activities with precedence constraints and renewable resource requirements.
+Schedule all activities to minimize project duration. Activities 0 (source)
+and n+1 (sink) are dummies.
+
+Strongly NP-hard even with 2 resource types.
+
+**Schedule Generation Schemes (SGS):**
+- Serial SGS — schedule one activity at a time, generates active schedules
+- Parallel SGS — at each time step schedule all feasible, generates non-delay schedules
+
+**Priority rules:** LFT (Latest Finish Time), EST (Earliest Start Time),
+MTS (Most Total Successors), GRPW (Greatest Rank Positional Weight)
+
+**Metaheuristics:**
+- Genetic Algorithm — Hartmann (1998), activity-list encoding with Serial SGS decoder
+
+## TSP Problem Family
+
+### Problem Definition (TSP / ATSP)
+
+Given n cities and pairwise distances, find the shortest Hamiltonian cycle
+(tour) visiting each city exactly once and returning to the start.
+
+Complexity: NP-hard (Karp, 1972). Symmetric TSP for undirected graphs,
+Asymmetric TSP (ATSP) for directed graphs.
+
+**Exact methods:**
+- Held-Karp DP (1962) — O(2^n × n^2), optimal for n ≤ 23
+- Branch and Bound — 1-tree lower bound, NN warm-start, practical for n ≤ ~25
+
+**Constructive heuristics:**
+- Nearest Neighbor — greedy O(n^2), multi-start variant
+- Insertion heuristics — cheapest, farthest, nearest; O(n^3), 2-approx for metric TSP
+- Greedy (nearest edge) — O(n^2 log n)
+
+**Metaheuristics:**
+- Local Search — 2-opt (segment reversal), Or-opt (segment relocation), VND
+- Simulated Annealing — 2-opt neighborhood, auto-calibrated temperature
+- Genetic Algorithm — OX crossover, swap mutation, optional 2-opt LS
+
+**Benchmark instances:** small4 (4 cities), small5 (5 cities), gr17 (17 cities, optimal=2016)
+
+## CVRP Problem Family
+
+### Problem Definition (CVRP)
+
+n customers with demands, a depot (node 0), and identical vehicles with
+capacity Q. Find routes (depot → customers → depot) minimizing total
+distance, visiting each customer exactly once, respecting capacity.
+
+Complexity: NP-hard (generalizes both TSP and Bin Packing).
+
+**Constructive heuristics:**
+- Clarke-Wright Savings (1964) — merge route pairs by largest savings, O(n^2 log n)
+- Sweep Algorithm (Gillett & Miller, 1974) — angular sweep from depot, O(n log n)
+
+**Metaheuristics:**
+- Simulated Annealing — relocate/swap/2-opt* inter-route neighborhoods
+- Genetic Algorithm — giant-tour encoding (Prins, 2004), OX crossover, split decoder
+
+## Facility Location Problem Family
+
+### Problem Definition (UFLP)
+
+Given m potential facility sites with opening costs f_i and n customers
+with assignment costs c_ij, select facilities to open and assign each
+customer to minimize total fixed + assignment cost.
+
+Complexity: NP-hard. Best known approximation: 1.488 (Li, 2013).
+
+**Heuristics:**
+- Greedy Add — iteratively open most cost-reducing facility
+- Greedy Drop — start all open, drop least impactful facility
+
+**Metaheuristics:**
+- Simulated Annealing — toggle/swap moves with Boltzmann acceptance
+
+## p-Median Problem Family
+
+### Problem Definition (PMP)
+
+Open exactly p facilities from m candidates to minimize total weighted
+distance from n customers to their nearest open facility.
+
+Complexity: NP-hard for general p (Kariv & Hakimi, 1979).
+
+**Heuristics:**
+- Greedy — iteratively add most cost-reducing facility until p open
+- Teitz-Bart Interchange — swap open/closed facilities until no improvement
+
+## Shortest Path Problem Family
+
+### Problem Definition (SPP)
+
+Find minimum-weight path from source s to target t in a directed graph.
+
+**Exact methods:**
+- Dijkstra's Algorithm — O((V+E) log V) with binary heap, non-negative weights
+- Bellman-Ford — O(VE), handles negative weights, detects negative cycles
+
+## Maximum Flow Problem Family
+
+### Problem Definition (Max-Flow)
+
+Given a directed graph G = (V, E) with edge capacities c(u,v), a source s,
+and a sink t, find the maximum flow from s to t such that flow on each edge
+does not exceed capacity, and flow conservation holds at all non-terminal nodes.
+
+The Max-Flow Min-Cut Theorem: maximum flow equals minimum s-t cut capacity.
+
+**Exact methods:**
+- Edmonds-Karp — O(V * E^2), BFS augmenting paths with min-cut extraction
+
+## Minimum Spanning Tree Problem Family
+
+### Problem Definition (MST)
+
+Given an undirected, weighted, connected graph G = (V, E), find the spanning
+tree of minimum total edge weight (n-1 edges connecting all n vertices).
+
+**Exact methods:**
+- Kruskal's Algorithm — O(E log E) with union-find
+- Prim's Algorithm — O(E log V) with binary heap
+
+## Linear Assignment Problem Family
+
+### Problem Definition (LAP)
+
+Given an n×n cost matrix C, find a one-to-one assignment of agents to tasks
+minimizing total cost: min Σ c_{i,σ(i)} where σ is a permutation.
+
+Complexity: Polynomial — O(n^3) via Hungarian method.
+
+**Exact methods:**
+- Hungarian (Kuhn-Munkres, 1955) — O(n^3), shortest augmenting path variant
+
+**Heuristics:**
+- Greedy — assign cheapest available task, O(n^2)
+
+## 0-1 Knapsack Problem Family
+
+### Problem Definition (KP01)
+
+Given n items with weights w_i and values v_i, and a knapsack with
+capacity W, select a subset to maximize total value subject to
+sum(w_i) <= W.
+
+Complexity: NP-hard (weakly) — admits pseudo-polynomial DP in O(nW).
+
+**Exact methods:**
+- Dynamic Programming — O(n * W) pseudo-polynomial, practical for moderate W
+- Branch and Bound — LP relaxation upper bound, greedy warm-start
+
+**Heuristics:**
+- Greedy value density — sort by v_i/w_i, O(n log n)
+- Greedy combined — best of density and max-value, 1/2-approximation
+
+**Metaheuristics:**
+- Genetic Algorithm — binary encoding, uniform crossover, repair operator
+
+**Benchmark instances:** small4 (4 items, opt=35), medium8 (8 items, opt=300),
+strongly_correlated_10 (10 items, v_i = w_i + 10)
+
+## 1D Bin Packing Problem Family
+
+### Problem Definition (BPP1D)
+
+Given n items with sizes s_i and bins of capacity C, pack all items
+into the minimum number of bins.
+
+Complexity: NP-hard (strongly).
+
+**Heuristics:**
+- First Fit (FF) — O(n^2), place in first bin that fits
+- First Fit Decreasing (FFD) — O(n log n), 11/9 * OPT + 6/9 approximation
+- Best Fit Decreasing (BFD) — O(n log n), place in tightest fitting bin
+
+**Metaheuristics:**
+- Genetic Algorithm — permutation encoding, FF decoder
+
+**Benchmark instances:** easy6, tight8, uniform10
+
+## 1D Cutting Stock Problem Family
+
+### Problem Definition (CSP1D)
+
+Given stock material of length L and m item types with lengths l_i
+and demands d_i, cut stock rolls to satisfy all demands using minimum
+rolls. Generalization of Bin Packing where identical items are interchangeable.
+
+Complexity: NP-hard (reduces from Bin Packing).
+
+**Heuristics:**
+- Greedy largest-first — fill each roll with largest remaining items
+- FFD-based — expand demands to individual items, apply FFD, aggregate patterns
+
+**Benchmark instances:** simple3 (3 types, L=100), classic4 (4 types, L=10)
+
+## VRPTW Problem Family
+
+### Problem Definition (VRPTW)
+
+Extends CVRP with time window constraints [e_i, l_i] for each customer.
+Vehicles must arrive before l_i; if arriving before e_i, they wait.
+Each customer requires s_i service time. The depot has a planning horizon.
+
+Complexity: NP-hard (generalizes CVRP).
+
+**Constructive heuristics:**
+- Solomon I1 Insertion (1987) — iterative insertion with composite criterion (distance + urgency), O(n^2 K)
+- Nearest Neighbor TW — greedy nearest feasible customer, O(n^2)
+
+**Metaheuristics:**
+- Simulated Annealing — relocate/swap with time window feasibility checks
+- Genetic Algorithm — giant-tour encoding with TW-aware split decoder
+
+**Benchmark instances:** solomon_c101_mini (8 customers, clustered), tight_tw5 (5 customers, narrow windows)
+
 ## Code Conventions
 
 ### Architecture Pattern
@@ -341,6 +780,22 @@ Each problem folder should contain:
 - **Weighted tardiness**: ΣwjTj — strongly NP-hard single machine objective
 - **SPT/WSPT/EDD**: Optimal dispatching rules for tractable single machine objectives
 - **ATC**: Apparent Tardiness Cost — composite dispatching rule combining WSPT ratio with due date urgency
+- **Disjunctive graph**: Standard JSP model — conjunctive arcs for job precedence, disjunctive arcs for machine conflicts
+- **Critical path**: Longest path in the disjunctive graph, determines the makespan
+- **Critical block**: Consecutive operations on same machine on the critical path — key for effective neighborhoods
+- **SGS**: Schedule Generation Scheme — decodes a priority list into a feasible RCPSP schedule
+- **Activity list**: Precedence-feasible permutation of activities — standard encoding for RCPSP metaheuristics
+- **TSP**: Traveling Salesman Problem — find shortest Hamiltonian cycle visiting all cities exactly once
+- **ATSP**: Asymmetric TSP — directed distances, d(i,j) ≠ d(j,i)
+- **Hamiltonian cycle**: A cycle visiting every vertex exactly once — the tour structure in TSP
+- **CVRP**: Capacitated Vehicle Routing Problem — TSP generalization with multiple vehicles and capacity constraints
+- **Savings**: Clarke-Wright measure s(i,j) = d(0,i) + d(0,j) - d(i,j) — benefit of merging two routes
+- **Giant tour**: Single permutation of all customers, split into capacity-feasible routes for CVRP
+- **2-opt**: Local search that reverses a tour segment — fundamental TSP improvement
+- **1-tree**: Minimum spanning tree plus one extra edge — basis for TSP lower bounds
+- **VRPTW**: Vehicle Routing Problem with Time Windows — CVRP with arrival time constraints [e_i, l_i]
+- **Time window**: Interval [earliest, latest] during which service can begin at a customer
+- **Solomon benchmarks**: Standard VRPTW instances (C/R/RC classes) with 25-100 customers
 
 ## Adding New Problems
 
