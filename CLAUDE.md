@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently in **Phase 1** (Scheduling problems), with future phases planned for Routing, Packing, Location, and Stochastic problems.
+Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling) and **Phase 2** (Routing), with future phases planned for Packing, Location, and Stochastic problems.
 
 **Author**: Mohammad Ghafourian Nasiri
 **License**: MIT
@@ -120,6 +120,32 @@ MathematicalModeling/
             │   └── genetic_algorithm.py # Activity-list GA (Hartmann 1998)
             └── tests/
                 └── test_rcpsp.py        # 35 tests, 7 test classes
+    └── routing/
+        ├── tsp/              # FULLY IMPLEMENTED (8 Python files, 55-test suite)
+        │   ├── instance.py              # TSPInstance, TSPSolution, benchmark instances
+        │   ├── exact/
+        │   │   ├── held_karp.py         # Held-Karp DP, O(2^n * n^2), optimal for n <= 23
+        │   │   └── branch_and_bound.py  # B&B with 1-tree lower bound, NN warm-start
+        │   ├── heuristics/
+        │   │   ├── nearest_neighbor.py  # NN + multi-start, O(n^2)
+        │   │   ├── cheapest_insertion.py # Cheapest/farthest/nearest insertion, O(n^3)
+        │   │   └── greedy.py            # Greedy nearest-edge, O(n^2 log n)
+        │   ├── metaheuristics/
+        │   │   ├── local_search.py      # 2-opt, Or-opt, VND neighborhoods
+        │   │   ├── simulated_annealing.py # SA with 2-opt moves
+        │   │   └── genetic_algorithm.py # OX crossover, swap mutation
+        │   └── tests/
+        │       └── test_tsp.py          # 55 tests, 10 test classes
+        └── cvrp/             # FULLY IMPLEMENTED (5 Python files, 41-test suite)
+            ├── instance.py              # CVRPInstance, CVRPSolution, validation
+            ├── heuristics/
+            │   ├── clarke_wright.py     # Clarke-Wright savings, O(n^2 log n)
+            │   └── sweep.py            # Angular sweep + multi-start, O(n log n)
+            ├── metaheuristics/
+            │   ├── simulated_annealing.py # Relocate/swap/2-opt* neighborhoods
+            │   └── genetic_algorithm.py # Giant-tour encoding, OX crossover
+            └── tests/
+                └── test_cvrp.py         # 41 tests, 8 test classes
 ```
 
 ## Build & Test Commands
@@ -154,6 +180,15 @@ python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py::TestNEH 
 
 # Run benchmarks (example: 20 jobs, 5 machines)
 python problems/scheduling/flow_shop/benchmark_runner.py --class 20_5 --all
+
+# Run all routing tests (96 tests)
+python -m pytest problems/routing/ -v
+
+# Run TSP tests (55 tests)
+python -m pytest problems/routing/tsp/tests/ -v
+
+# Run CVRP tests (41 tests)
+python -m pytest problems/routing/cvrp/tests/ -v
 ```
 
 ### Dependencies
@@ -337,6 +372,50 @@ MTS (Most Total Successors), GRPW (Greatest Rank Positional Weight)
 **Metaheuristics:**
 - Genetic Algorithm — Hartmann (1998), activity-list encoding with Serial SGS decoder
 
+## TSP Problem Family
+
+### Problem Definition (TSP / ATSP)
+
+Given n cities and pairwise distances, find the shortest Hamiltonian cycle
+(tour) visiting each city exactly once and returning to the start.
+
+Complexity: NP-hard (Karp, 1972). Symmetric TSP for undirected graphs,
+Asymmetric TSP (ATSP) for directed graphs.
+
+**Exact methods:**
+- Held-Karp DP (1962) — O(2^n × n^2), optimal for n ≤ 23
+- Branch and Bound — 1-tree lower bound, NN warm-start, practical for n ≤ ~25
+
+**Constructive heuristics:**
+- Nearest Neighbor — greedy O(n^2), multi-start variant
+- Insertion heuristics — cheapest, farthest, nearest; O(n^3), 2-approx for metric TSP
+- Greedy (nearest edge) — O(n^2 log n)
+
+**Metaheuristics:**
+- Local Search — 2-opt (segment reversal), Or-opt (segment relocation), VND
+- Simulated Annealing — 2-opt neighborhood, auto-calibrated temperature
+- Genetic Algorithm — OX crossover, swap mutation, optional 2-opt LS
+
+**Benchmark instances:** small4 (4 cities), small5 (5 cities), gr17 (17 cities, optimal=2016)
+
+## CVRP Problem Family
+
+### Problem Definition (CVRP)
+
+n customers with demands, a depot (node 0), and identical vehicles with
+capacity Q. Find routes (depot → customers → depot) minimizing total
+distance, visiting each customer exactly once, respecting capacity.
+
+Complexity: NP-hard (generalizes both TSP and Bin Packing).
+
+**Constructive heuristics:**
+- Clarke-Wright Savings (1964) — merge route pairs by largest savings, O(n^2 log n)
+- Sweep Algorithm (Gillett & Miller, 1974) — angular sweep from depot, O(n log n)
+
+**Metaheuristics:**
+- Simulated Annealing — relocate/swap/2-opt* inter-route neighborhoods
+- Genetic Algorithm — giant-tour encoding (Prins, 2004), OX crossover, split decoder
+
 ## Code Conventions
 
 ### Architecture Pattern
@@ -435,6 +514,14 @@ Each problem folder should contain:
 - **Critical block**: Consecutive operations on same machine on the critical path — key for effective neighborhoods
 - **SGS**: Schedule Generation Scheme — decodes a priority list into a feasible RCPSP schedule
 - **Activity list**: Precedence-feasible permutation of activities — standard encoding for RCPSP metaheuristics
+- **TSP**: Traveling Salesman Problem — find shortest Hamiltonian cycle visiting all cities exactly once
+- **ATSP**: Asymmetric TSP — directed distances, d(i,j) ≠ d(j,i)
+- **Hamiltonian cycle**: A cycle visiting every vertex exactly once — the tour structure in TSP
+- **CVRP**: Capacitated Vehicle Routing Problem — TSP generalization with multiple vehicles and capacity constraints
+- **Savings**: Clarke-Wright measure s(i,j) = d(0,i) + d(0,j) - d(i,j) — benefit of merging two routes
+- **Giant tour**: Single permutation of all customers, split into capacity-feasible routes for CVRP
+- **2-opt**: Local search that reverses a tour segment — fundamental TSP improvement
+- **1-tree**: Minimum spanning tree plus one extra edge — basis for TSP lower bounds
 
 ## Adding New Problems
 
