@@ -59,7 +59,19 @@ MathematicalModeling/
         │   └── tests/
         │       ├── test_flow_shop.py       # 57 tests, original PFSP algorithms
         │       └── test_new_algorithms.py  # 38 tests, new algorithms + variants
-        ├── single_machine/   # Scaffolding only (docs, no implementations)
+        ├── single_machine/   # FULLY IMPLEMENTED (7 Python files, 55-test suite)
+        │   ├── instance.py              # SingleMachineInstance, objective functions
+        │   ├── exact/
+        │   │   ├── dynamic_programming.py  # Bitmask DP for 1||ΣTj, O(2^n * n)
+        │   │   └── branch_and_bound.py     # B&B for 1||ΣwjTj, ATC warm-start
+        │   ├── heuristics/
+        │   │   ├── dispatching_rules.py    # SPT, WSPT, EDD, LPT — O(n log n)
+        │   │   ├── moores_algorithm.py     # 1||ΣUj — O(n log n)
+        │   │   └── apparent_tardiness_cost.py  # ATC for 1||ΣwjTj — O(n²)
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py  # SA for ΣwjTj and ΣTj
+        │   └── tests/
+        │       └── test_single_machine.py  # 55 tests, 12 test classes
         ├── parallel_machine/ # Scaffolding only
         ├── job_shop/         # Scaffolding only
         ├── flexible_job_shop/# Scaffolding only
@@ -72,14 +84,14 @@ MathematicalModeling/
 # Install dependencies
 pip install -r requirements.txt
 
+# Run all scheduling tests (150 tests)
+python -m pytest problems/scheduling/ -v
+
 # Run all flow shop tests (95 tests)
 python -m pytest problems/scheduling/flow_shop/tests/ -v
 
-# Run original PFSP tests only
-python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py -v
-
-# Run new algorithm + variant tests only
-python -m pytest problems/scheduling/flow_shop/tests/test_new_algorithms.py -v
+# Run single machine tests (55 tests)
+python -m pytest problems/scheduling/single_machine/tests/ -v
 
 # Run specific test class
 python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py::TestNEH -v
@@ -139,6 +151,42 @@ standard completion times. NP-hard for m >= 3.
 **Applications:** Manufacturing with limited buffers, robotic cells, paint shops.
 
 **Algorithms:** NEH-B, Profile Fitting, Iterated Greedy (IG-B).
+
+## Single Machine Problem Family
+
+### Problem Definition (1 | β | γ)
+
+n jobs processed on one machine. The schedule is fully determined by the
+processing order. Multiple objectives supported, ranging from polynomial-time
+solvable to strongly NP-hard.
+
+### Tractable Objectives (polynomial-time optimal rules)
+
+| Objective | Rule | Complexity | Reference |
+|-----------|------|------------|-----------|
+| 1 \|\| ΣCj | SPT (Shortest Processing Time) | O(n log n) | Conway et al. (1967) |
+| 1 \|\| ΣwjCj | WSPT (Smith's Rule: sort by pj/wj) | O(n log n) | Smith (1956) |
+| 1 \|\| Lmax | EDD (Earliest Due Date) | O(n log n) | Jackson (1955) |
+| 1 \|\| ΣUj | Moore's Algorithm | O(n log n) | Moore (1968) |
+
+### NP-Hard Objectives
+
+| Objective | Methods | Reference |
+|-----------|---------|-----------|
+| 1 \|\| ΣTj | DP (bitmask, exact for n ≤ 20), SA | Lawler (1977), Du & Leung (1990) |
+| 1 \|\| ΣwjTj | B&B (ATC warm-start), ATC heuristic, SA | Potts & Van Wassenhove (1985) |
+
+**Constructive heuristics:**
+- SPT, WSPT, EDD, LPT — optimal dispatching rules for tractable objectives
+- Moore's Algorithm — greedy EDD-based with longest-job removal for ΣUj
+- ATC (Apparent Tardiness Cost) — composite dispatching rule for ΣwjTj, O(n²)
+
+**Exact methods:**
+- Dynamic Programming — bitmask DP for 1 || ΣTj, O(2^n × n), practical for n ≤ 20
+- Branch and Bound — DFS with EDD lower bounds for 1 || ΣwjTj, ATC warm-start
+
+**Metaheuristics:**
+- Simulated Annealing — swap/insertion neighborhood for ΣwjTj and ΣTj
 
 ## Code Conventions
 
@@ -229,6 +277,10 @@ Each problem folder should contain:
 - **Taillard benchmarks**: 120 standard PFSP instances across 12 size classes (20-500 jobs, 5-20 machines)
 - **Delay matrix**: For NWFSP, asymmetric matrix D[j][k] giving minimum start-to-start gap between jobs
 - **Departure time**: For BFSP, time when a job leaves a machine (may be after processing completes due to blocking)
+- **Tardiness**: Tj = max(0, Cj - dj) — lateness clipped at zero
+- **Weighted tardiness**: ΣwjTj — strongly NP-hard single machine objective
+- **SPT/WSPT/EDD**: Optimal dispatching rules for tractable single machine objectives
+- **ATC**: Apparent Tardiness Cost — composite dispatching rule combining WSPT ratio with due date urgency
 
 ## Adding New Problems
 
