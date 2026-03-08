@@ -37,8 +37,11 @@ from heuristics.guptas_algorithm import guptas_algorithm
 from heuristics.cds import cds
 from heuristics.neh import neh, neh_with_tiebreaking
 from heuristics.lr_heuristic import lr_heuristic
+from heuristics.dannenbring import dannenbring_ra
 from metaheuristics.iterated_greedy import iterated_greedy
 from metaheuristics.local_search import variable_neighborhood_descent
+from metaheuristics.simulated_annealing import simulated_annealing
+from metaheuristics.genetic_algorithm import genetic_algorithm
 from shared.parsers.taillard_parser import (
     load_taillard_instance,
     BEST_KNOWN_UPPER_BOUNDS,
@@ -74,12 +77,19 @@ def run_benchmark(
 
     algorithms["Palmer"] = lambda inst: palmers_slope(inst)
     algorithms["Gupta"] = lambda inst: guptas_algorithm(inst)
+    algorithms["Dannen"] = lambda inst: dannenbring_ra(inst)
     algorithms["CDS"] = lambda inst: cds(inst)
     algorithms["LR"] = lambda inst: lr_heuristic(inst)
     algorithms["NEH"] = lambda inst: neh(inst)
     algorithms["NEH-TB"] = lambda inst: neh_with_tiebreaking(inst)
     algorithms["NEH+VND"] = lambda inst: variable_neighborhood_descent(
         inst, neh(inst).permutation, neighborhoods=["insertion", "swap"]
+    )
+    algorithms["SA"] = lambda inst: simulated_annealing(
+        inst, time_limit=ig_time_limit, seed=ig_seed
+    )
+    algorithms["GA"] = lambda inst: genetic_algorithm(
+        inst, time_limit=ig_time_limit, seed=ig_seed
     )
     algorithms["IG"] = lambda inst: iterated_greedy(
         inst, time_limit=ig_time_limit, seed=ig_seed
