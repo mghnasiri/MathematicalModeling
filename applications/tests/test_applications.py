@@ -349,3 +349,160 @@ class TestHealthcareBedManagement:
         results = self.mod.solve_bed_management(verbose=False)
         assert results["bed_packing"]["FFD"]["n_wards_needed"] <= \
                results["bed_packing"]["FF"]["n_wards_needed"]
+
+
+# ── Healthcare Applications (Batch 2) ────────────────────────────────────────
+
+
+class TestHealthcareHomeVisits:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("hc_home_test", "healthcare_home_visits.py")
+
+    def test_create_instance(self):
+        data = self.mod.create_home_visit_instance()
+        assert data["n_patients"] == 15
+        assert len(data["coords"]) == 16  # +agency
+        assert data["capacity"] == 200
+
+    def test_time_windows_valid(self):
+        data = self.mod.create_home_visit_instance()
+        for i in range(1, 16):
+            assert data["time_windows"][i][0] <= data["time_windows"][i][1]
+
+    def test_tsp_solve(self):
+        results = self.mod.solve_home_visits(verbose=False)
+        assert "tsp" in results
+        for method in ["NN", "2-opt", "SA"]:
+            assert results["tsp"][method]["distance"] > 0
+
+    def test_vrptw_solve(self):
+        results = self.mod.solve_home_visits(verbose=False)
+        assert "vrptw" in results
+        assert results["vrptw"]["Solomon-I1"]["distance"] > 0
+        assert results["vrptw"]["Solomon-I1"]["n_nurses"] >= 1
+
+    def test_2opt_improves_nn(self):
+        results = self.mod.solve_home_visits(verbose=False)
+        assert results["tsp"]["2-opt"]["distance"] <= \
+               results["tsp"]["NN"]["distance"] + 1e-6
+
+
+class TestHealthcarePatientFlow:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("hc_pflow_test", "healthcare_patient_flow.py")
+
+    def test_create_instance(self):
+        data = self.mod.create_patient_flow_instance()
+        assert data["n_patients"] == 10
+        assert data["n_departments"] == 5
+
+    def test_all_methods_produce_results(self):
+        results = self.mod.solve_patient_flow(verbose=False)
+        for method in ["SPT", "LPT", "MWR", "Shifting-Bottleneck", "SA"]:
+            assert method in results
+            assert results[method]["makespan"] > 0
+
+    def test_sa_improves_dispatching(self):
+        results = self.mod.solve_patient_flow(verbose=False)
+        best_dispatch = min(
+            results[m]["makespan"] for m in ["SPT", "LPT", "MWR"]
+        )
+        assert results["SA"]["makespan"] <= best_dispatch
+
+
+class TestHealthcareParallelOR:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("hc_por_test", "healthcare_parallel_or.py")
+
+    def test_create_instance(self):
+        data = self.mod.create_or_scheduling_instance()
+        assert data["n_surgeries"] == 16
+        assert data["n_ors"] == 4
+
+    def test_all_methods_produce_results(self):
+        results = self.mod.solve_parallel_or(verbose=False)
+        for method in ["LPT", "MULTIFIT", "List-Scheduling", "GA"]:
+            assert method in results
+            assert results[method]["makespan"] > 0
+            assert len(results[method]["assignment"]) == 4
+
+    def test_lpt_reasonable(self):
+        results = self.mod.solve_parallel_or(verbose=False)
+        data = self.mod.create_or_scheduling_instance()
+        ideal = data["total_minutes"] / data["n_ors"]
+        # LPT should be within 4/3 of ideal
+        assert results["LPT"]["makespan"] <= ideal * 1.4
+
+    def test_all_surgeries_assigned(self):
+        results = self.mod.solve_parallel_or(verbose=False)
+        for method, res in results.items():
+            all_jobs = []
+            for machine_jobs in res["assignment"]:
+                all_jobs.extend(machine_jobs)
+            assert sorted(all_jobs) == list(range(16))
+
+
+class TestHealthcareEmergencyNetwork:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("hc_enet_test", "healthcare_emergency_network.py")
+
+    def test_create_network(self):
+        data = self.mod.create_emergency_network()
+        assert data["n"] == 8
+        assert len(data["transfer_links"]) == 13
+
+    def test_max_flow(self):
+        results = self.mod.solve_emergency_network(verbose=False)
+        assert results["max_flow"]["max_throughput"] > 0
+        s_set, t_set = results["max_flow"]["min_cut"]
+        assert 0 in s_set  # trauma center in source side
+        assert 7 in t_set  # hub in sink side
+
+    def test_shortest_path(self):
+        results = self.mod.solve_emergency_network(verbose=False)
+        # Path to hub should exist
+        assert results["shortest_path"][7]["distance"] > 0
+        assert results["shortest_path"][7]["path"][0] == 0
+        assert results["shortest_path"][7]["path"][-1] == 7
+
+    def test_mst_backbone(self):
+        results = self.mod.solve_emergency_network(verbose=False)
+        assert results["mst"]["Kruskal"]["total_cost"] > 0
+        assert len(results["mst"]["Kruskal"]["backbone_links"]) == 7  # n-1
+
+    def test_kruskal_equals_prim(self):
+        results = self.mod.solve_emergency_network(verbose=False)
+        assert abs(results["mst"]["Kruskal"]["total_cost"] -
+                   results["mst"]["Prim"]["total_cost"]) < 1e-6
+
+
+class TestHealthcareClinicalTrial:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("hc_trial_test", "healthcare_clinical_trial.py")
+
+    def test_create_instance(self):
+        data = self.mod.create_clinical_trial_instance()
+        assert data["n"] == 12
+        assert data["num_resources"] == 3
+
+    def test_critical_path(self):
+        results = self.mod.solve_clinical_trial(verbose=False)
+        assert results["critical_path_length"] > 0
+
+    def test_all_methods_produce_results(self):
+        results = self.mod.solve_clinical_trial(verbose=False)
+        for method in ["Serial-SGS (LFT)", "Serial-SGS (GRPW)",
+                       "Parallel-SGS (LFT)", "GA"]:
+            assert method in results
+            assert results[method]["makespan"] > 0
+
+    def test_makespan_ge_critical_path(self):
+        results = self.mod.solve_clinical_trial(verbose=False)
+        cp = results["critical_path_length"]
+        for method in ["Serial-SGS (LFT)", "GA"]:
+            assert results[method]["makespan"] >= cp

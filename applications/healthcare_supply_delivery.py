@@ -41,7 +41,9 @@ References:
     Journal of Advanced Manufacturing Technology, 95, 3141-3153.
     https://doi.org/10.1007/s00170-017-1363-1
 
-    WHO (2014). Temperature sensitivity of vaccines. WHO/IVB/06.10.
+    World Health Organization (2014). Temperature sensitivity of vaccines.
+    Department of Immunization, Vaccines and Biologicals, WHO/IVB/06.10.
+    https://apps.who.int/iris/handle/10665/69387
 """
 
 from __future__ import annotations
