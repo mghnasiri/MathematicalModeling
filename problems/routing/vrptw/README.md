@@ -53,6 +53,12 @@ vrptw/
     └── test_vrptw.py        # 31 tests, 8 test classes
 ```
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Soft Time Windows](variants/soft_time_windows/) | `variants/soft_time_windows/` | Time window violations allowed with penalty costs |
+
 ## Key References
 
 - Solomon, M.M. (1987). Algorithms for the vehicle routing and scheduling problems with time window constraints. *Oper. Res.*, 35(2), 254-265. https://doi.org/10.1287/opre.35.2.254

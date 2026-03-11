@@ -107,3 +107,12 @@ parallel_machine/
 └── tests/
     └── test_parallel_machine.py
 ```
+
+---
+
+## Variant Implementations
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [SDST Parallel Machine](variants/sdst/) | `variants/sdst/` | Sequence-dependent setup times on unrelated machines ($R_m \mid S_{sd} \mid C_{\max}$) |
+| [Unrelated Machine Tardiness](variants/unrelated_tardiness/) | `variants/unrelated_tardiness/` | Minimize total tardiness on unrelated machines ($R_m \mid\mid \Sigma T_j$) |

@@ -25,6 +25,14 @@ NP-hard (Garey & Johnson, 1979). Strong NP-hardness (no FPTAS unless P=NP).
 | Best Fit Decreasing (BFD) | $O(n \log n)$ | $\leq 11/9 \cdot OPT + 6/9$ | Sort descending, place in tightest bin |
 | Genetic Algorithm | $O(\text{pop} \cdot \text{gen} \cdot n)$ | — | Permutation encoding, FF decoder |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Online Bin Packing](variants/online/) | `variants/online/` | Items arrive one at a time; irrevocable placement decisions |
+| [Variable-Size Bin Packing (VS-BPP)](variants/variable_size/) | `variants/variable_size/` | Bins of different sizes with associated costs |
+| [2D Bin Packing (2D-BPP)](variants/two_dimensional/) | `variants/two_dimensional/` | Pack rectangular items into 2D bins |
+
 ## Key References
 
 - Garey, M.R. & Johnson, D.S. (1979). *Computers and Intractability*. W.H. Freeman.

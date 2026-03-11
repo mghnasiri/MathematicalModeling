@@ -161,6 +161,22 @@ flow_shop/
 
 ---
 
+## Variant Implementations
+
+| Variant | Directory | Notation | Description |
+|---------|-----------|----------|-------------|
+| [No-Wait Flow Shop](variants/no_wait/) | `variants/no_wait/` | $F_m \mid no\text{-}wait \mid C_{\max}$ | Jobs cannot wait between machines |
+| [Blocking Flow Shop](variants/blocking/) | `variants/blocking/` | $F_m \mid block \mid C_{\max}$ | No intermediate buffers between machines |
+| [Setup Times (SDST)](variants/setup_times/) | `variants/setup_times/` | $F_m \mid S_{sd} \mid C_{\max}$ | Sequence-dependent setup times |
+| [Total Weighted Tardiness](variants/tardiness/) | `variants/tardiness/` | $F_m \mid prmu \mid \Sigma w_j T_j$ | Minimize weighted tardiness |
+| [Hybrid Flow Shop](variants/hybrid/) | `variants/hybrid/` | $HF_m \mid prmu \mid C_{\max}$ | Multiple machines at each stage |
+| [Distributed Flow Shop](variants/distributed/) | `variants/distributed/` | $DF_m \mid prmu \mid C_{\max}$ | Jobs assigned to one of several factories |
+| [Lot Streaming](variants/lot_streaming/) | `variants/lot_streaming/` | $F_m \mid lot \mid C_{\max}$ | Jobs split into sublots for overlapping |
+| [Stochastic Flow Shop](variants/stochastic/) | `variants/stochastic/` | $F_m \mid stoch \mid E[C_{\max}]$ | Processing times are random variables |
+| [Open Shop](variants/open_shop/) | `variants/open_shop/` | $O_m \mid\mid C_{\max}$ | No fixed machine order per job |
+
+---
+
 ## Key Insights
 
 > **NEH (1983)** remains the gold standard constructive heuristic after 40+ years. Its insertion mechanism implicitly explores $O(n^2)$ solutions, and it serves as the foundation for modern methods like Iterated Greedy.

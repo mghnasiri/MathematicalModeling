@@ -94,6 +94,15 @@ tsp/
 | small5 | 5 | 19 | Handcrafted |
 | gr17 | 17 | 2016 | TSPLIB (Groetschel) |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Asymmetric TSP (ATSP)](variants/asymmetric/) | `variants/asymmetric/` | Directed distances, $d(i,j) \neq d(j,i)$ |
+| [TSP with Time Windows (TSPTW)](variants/time_windows/) | `variants/time_windows/` | Each city has a service time window $[e_i, l_i]$ |
+| [Prize-Collecting TSP (PCTSP)](variants/prize_collecting/) | `variants/prize_collecting/` | Collect prizes from a subset of cities; trade off travel cost vs. prize |
+| [Pickup and Delivery (PDP)](variants/pickup_delivery/) | `variants/pickup_delivery/` | Paired pickup-delivery requests with precedence constraints |
+
 ## Key References
 
 - Karp, R.M. (1972). Reducibility among combinatorial problems. *Complexity of Computer Computations*, 85-103. https://doi.org/10.1007/978-1-4684-2001-2_9

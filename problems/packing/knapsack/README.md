@@ -26,6 +26,15 @@ $$\text{s.t.} \quad \sum_{i=1}^{n} w_i x_i \leq W, \quad x_i \in \{0, 1\}$$
 | Greedy (combined) | $O(n \log n)$ | Heuristic | Best of density and max-value, 1/2-approx |
 | Genetic Algorithm | $O(\text{pop} \cdot \text{gen} \cdot n)$ | Metaheuristic | Binary encoding, repair operator |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Bounded Knapsack (BKP)](variants/bounded/) | `variants/bounded/` | Each item has a maximum number of copies available |
+| [Multiple Knapsack (mKP)](variants/multiple/) | `variants/multiple/` | Multiple knapsacks with different capacities |
+| [Multidimensional Knapsack (MKP)](variants/multidimensional/) | `variants/multidimensional/` | Multiple resource dimensions (weight, volume, etc.) |
+| [Subset Sum (SSP)](variants/subset_sum/) | `variants/subset_sum/` | Find subset summing to exactly a target value |
+
 ## Key References
 
 - Karp, R.M. (1972). Reducibility among combinatorial problems. *Complexity of Computer Computations*, 85-103. https://doi.org/10.1007/978-1-4684-2001-2_9

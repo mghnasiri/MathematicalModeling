@@ -19,6 +19,12 @@ NP-hard for general $p$ (Kariv & Hakimi, 1979).
 | Greedy | $O(m \cdot p \cdot n)$ | Iteratively add most cost-reducing facility |
 | Teitz-Bart Interchange | $O(m \cdot p \cdot n \cdot \text{iter})$ | Swap open/closed facilities until no improvement |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Capacitated p-Median (CPMP)](variants/capacitated/) | `variants/capacitated/` | Facilities have limited capacity; customer demands must not exceed it |
+
 ## Key References
 
 - Hakimi, S.L. (1964). Optimum locations of switching centers. *Oper. Res.*, 12(3), 450-459. https://doi.org/10.1287/opre.12.3.450

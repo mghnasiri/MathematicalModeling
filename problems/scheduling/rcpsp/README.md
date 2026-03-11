@@ -134,6 +134,14 @@ rcpsp/
 
 ---
 
+## Variant Implementations
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Multi-Mode RCPSP (MRCPSP)](variants/multi_mode/) | `variants/multi_mode/` | Each activity can execute in multiple modes with different durations and resource usage |
+
+---
+
 ## Key Insight
 
 > The **Schedule Generation Scheme** is RCPSP's secret weapon. Unlike JSP/FSP where solutions are permutations, RCPSP solutions must respect both precedence and resource constraints simultaneously. The SGS decodes a priority list into a feasible schedule — making it possible to apply any metaheuristic to RCPSP by simply searching over priority orderings and feeding them through SGS.

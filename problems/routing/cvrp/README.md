@@ -75,6 +75,20 @@ cvrp/
 | christofides1 | 5 | 6 | Clarke-Wright example |
 | medium12 | 12 | 40 | Random with mixed demands |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Multi-Depot VRP (MDVRP)](variants/multi_depot/) | `variants/multi_depot/` | Multiple depots, each vehicle assigned to a home depot |
+| [Split Delivery VRP (SDVRP)](variants/split_delivery/) | `variants/split_delivery/` | Customer demand can be split across multiple vehicles |
+| [Open VRP (OVRP)](variants/open_vrp/) | `variants/open_vrp/` | Vehicles need not return to the depot |
+| [Periodic VRP (PVRP)](variants/periodic/) | `variants/periodic/` | Customers require service on specific day combinations over a planning horizon |
+| [Cumulative VRP (CumVRP)](variants/cumulative/) | `variants/cumulative/` | Minimize sum of arrival times (latency) rather than total distance |
+| [VRP with Backhauls (VRPB)](variants/backhaul/) | `variants/backhaul/` | Linehaul deliveries before backhaul pickups |
+| [Electric VRP (EVRP)](variants/electric/) | `variants/electric/` | Battery constraints with recharging stations |
+| [Multi-Compartment VRP (MCVRP)](variants/multi_compartment/) | `variants/multi_compartment/` | Vehicles have separate compartments for incompatible goods |
+| [Multi-Trip VRP (MTVRP)](variants/multi_trip/) | `variants/multi_trip/` | Vehicles can make multiple trips to reduce fleet size |
+
 ## Key References
 
 - Dantzig, G.B. & Ramser, J.H. (1959). The truck dispatching problem. *Management Science*, 6(1), 80-91. https://doi.org/10.1287/mnsc.6.1.80
