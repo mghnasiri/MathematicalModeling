@@ -143,18 +143,6 @@ pytest problems/scheduling/job_shop/tests/
 
 ---
 
-## Development Phases
-
-| Phase | Family | Status |
-|-------|--------|--------|
-| Phase 1 | Scheduling (6 problems) | In Progress |
-| Phase 2 | Routing (TSP, VRP variants) | Planned |
-| Phase 3 | Packing & Cutting | Planned |
-| Phase 4 | Location & Network | Planned |
-| Phase 5 | Stochastic & Robust | Planned |
-
----
-
 ## License
 
 MIT — see [LICENSE](LICENSE)
