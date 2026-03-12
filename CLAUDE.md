@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), **Phase 3** (Packing & Cutting), **Phase 4** (Location & Network), and **Phase 5** (Stochastic & Robust Optimization).
+Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). **57 top-level problems** across **10 families**: Scheduling, Routing, Packing & Cutting, Location & Network, Stochastic & Robust, Combinatorial, Supply Chain, Continuous Optimization, Multi-Objective, plus 48 problem variants. **2339 total tests**.
 
 **Author**: Mohammad Ghafourian Nasiri
 **License**: MIT
@@ -296,6 +296,28 @@ MathematicalModeling/
             │   └── moment_dro.py        # Moment-based DRO with inner LP
             └── tests/
                 └── test_dro.py          # 12 tests, 4 test classes
+    └── combinatorial/
+        ├── set_covering/         # FULLY IMPLEMENTED
+        ├── graph_coloring/       # FULLY IMPLEMENTED
+        ├── quadratic_assignment/ # FULLY IMPLEMENTED
+        ├── max_independent_set/  # FULLY IMPLEMENTED
+        ├── vertex_cover/         # FULLY IMPLEMENTED
+        ├── max_clique/           # FULLY IMPLEMENTED (Bron-Kerbosch)
+        ├── set_packing/          # FULLY IMPLEMENTED
+        └── job_sequencing/       # FULLY IMPLEMENTED
+    └── supply_chain/
+        ├── eoq/                  # FULLY IMPLEMENTED (classic, backorder, discounts)
+        ├── lot_sizing/           # FULLY IMPLEMENTED (Silver-Meal, Wagner-Whitin)
+        ├── wagner_whitin/        # FULLY IMPLEMENTED (exact DP)
+        ├── capacitated_lot_sizing/ # FULLY IMPLEMENTED
+        ├── multi_echelon_inventory/ # FULLY IMPLEMENTED
+        └── safety_stock/         # FULLY IMPLEMENTED
+    └── continuous/
+        ├── linear_programming/   # FULLY IMPLEMENTED (sensitivity analysis)
+        └── quadratic_programming/ # FULLY IMPLEMENTED (scipy minimize)
+    └── multi_objective/
+        ├── bi_objective_knapsack/ # FULLY IMPLEMENTED (epsilon-constraint)
+        └── multi_objective_tsp/  # FULLY IMPLEMENTED (weighted sum NN)
 ```
 
 ## Build & Test Commands
@@ -405,6 +427,21 @@ python -m pytest problems/stochastic_robust/robust_scheduling/tests/ -v
 
 # Run DRO tests (12 tests)
 python -m pytest problems/stochastic_robust/dro/tests/ -v
+
+# Run all combinatorial tests
+python -m pytest problems/combinatorial/ -v
+
+# Run all supply chain tests
+python -m pytest problems/supply_chain/ -v
+
+# Run all continuous optimization tests
+python -m pytest problems/continuous/ -v
+
+# Run all multi-objective tests
+python -m pytest problems/multi_objective/ -v
+
+# Run ALL tests (2339 tests)
+python -m pytest problems/ -v
 ```
 
 ### Dependencies
