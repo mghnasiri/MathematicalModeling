@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), **Phase 3** (Packing & Cutting), and **Phase 4** (Location & Network), with a future phase planned for Stochastic/Robust optimization.
+Operations Research problem repository featuring mathematical formulations, algorithm implementations, and benchmarks. Educational/research-focused with academic rigor (references, complexity analysis, scheduling notation). Currently implementing **Phase 1** (Scheduling), **Phase 2** (Routing), **Phase 3** (Packing & Cutting), **Phase 4** (Location & Network), and **Phase 5** (Stochastic & Robust Optimization).
 
 **Author**: Mohammad Ghafourian Nasiri
 **License**: MIT
@@ -223,6 +223,79 @@ MathematicalModeling/
             │   └── greedy_assignment.py # Greedy min-cost assignment O(n^2)
             └── tests/
                 └── test_assignment.py   # 17 tests, 6 test classes
+    └── stochastic_robust/
+        ├── newsvendor/           # FULLY IMPLEMENTED (3 Python files, 13-test suite)
+        │   ├── instance.py              # NewsvendorInstance, critical fractile
+        │   ├── exact/
+        │   │   └── critical_fractile.py # Critical fractile + grid search
+        │   ├── heuristics/
+        │   │   └── multi_product.py     # Marginal allocation, independent+scale
+        │   └── tests/
+        │       └── test_newsvendor.py   # 13 tests, 3 test classes
+        ├── two_stage_sp/         # FULLY IMPLEMENTED (3 Python files, 10-test suite)
+        │   ├── instance.py              # TwoStageSPInstance, newsvendor/capacity planning
+        │   ├── heuristics/
+        │   │   └── deterministic_equivalent.py  # Extensive form LP, EV solution
+        │   ├── metaheuristics/
+        │   │   └── sample_average.py    # SAA with replications
+        │   └── tests/
+        │       └── test_two_stage_sp.py # 10 tests, 4 test classes
+        ├── robust_shortest_path/ # FULLY IMPLEMENTED (3 Python files, 13-test suite)
+        │   ├── instance.py              # RobustSPInstance, scenario weights
+        │   ├── exact/
+        │   │   └── minmax_cost.py       # Label-setting + enumeration
+        │   ├── heuristics/
+        │   │   └── minmax_regret.py     # Regret enumeration, midpoint
+        │   └── tests/
+        │       └── test_robust_sp.py    # 13 tests, 4 test classes
+        ├── stochastic_knapsack/  # FULLY IMPLEMENTED (3 Python files, 11-test suite)
+        │   ├── instance.py              # StochasticKnapsackInstance, random weights
+        │   ├── heuristics/
+        │   │   └── greedy_stochastic.py # Mean-weight + chance-constrained greedy
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py # Flip-bit SA with infeasibility penalty
+        │   └── tests/
+        │       └── test_stochastic_knapsack.py # 11 tests, 3 test classes
+        ├── chance_constrained_fl/ # FULLY IMPLEMENTED (3 Python files, 11-test suite)
+        │   ├── instance.py              # CCFLInstance, stochastic demands
+        │   ├── heuristics/
+        │   │   └── greedy_ccfl.py       # Greedy open, mean-demand greedy
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py # Toggle/swap with violation penalty
+        │   └── tests/
+        │       └── test_ccfl.py         # 11 tests, 3 test classes
+        ├── robust_portfolio/     # FULLY IMPLEMENTED (3 Python files, 14-test suite)
+        │   ├── instance.py              # RobustPortfolioInstance, Markowitz
+        │   ├── exact/
+        │   │   └── quadratic_solver.py  # Mean-variance QP + robust SOCP
+        │   ├── heuristics/
+        │   │   └── equal_weight.py      # Equal-weight, min-variance, max-return
+        │   └── tests/
+        │       └── test_portfolio.py    # 14 tests, 3 test classes
+        ├── stochastic_vrp/       # FULLY IMPLEMENTED (3 Python files, 13-test suite)
+        │   ├── instance.py              # StochasticVRPInstance, demand uncertainty
+        │   ├── heuristics/
+        │   │   └── chance_constrained_cw.py # CC Clarke-Wright savings
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py # Relocate/swap/2-opt with recourse
+        │   └── tests/
+        │       └── test_stochastic_vrp.py # 13 tests, 3 test classes
+        ├── robust_scheduling/    # FULLY IMPLEMENTED (3 Python files, 13-test suite)
+        │   ├── instance.py              # RobustSchedulingInstance, uncertain p_j
+        │   ├── heuristics/
+        │   │   └── minmax_regret_heuristics.py # Midpoint/scenario/worst-case WSPT
+        │   ├── metaheuristics/
+        │   │   └── simulated_annealing.py # SA for min-max regret ΣwjCj
+        │   └── tests/
+        │       └── test_robust_scheduling.py # 13 tests, 3 test classes
+        └── dro/                  # FULLY IMPLEMENTED (3 Python files, 12-test suite)
+            ├── instance.py              # DROInstance, ambiguity sets
+            ├── exact/
+            │   └── wasserstein_dro.py   # Wasserstein LP + nominal LP
+            ├── heuristics/
+            │   └── moment_dro.py        # Moment-based DRO with inner LP
+            └── tests/
+                └── test_dro.py          # 12 tests, 4 test classes
 ```
 
 ## Build & Test Commands
@@ -302,6 +375,36 @@ python -m pytest problems/location_network/min_spanning_tree/tests/ -v
 
 # Run assignment tests (17 tests)
 python -m pytest problems/location_network/assignment/tests/ -v
+
+# Run all stochastic/robust tests (110 tests)
+python -m pytest problems/stochastic_robust/ -v
+
+# Run newsvendor tests (13 tests)
+python -m pytest problems/stochastic_robust/newsvendor/tests/ -v
+
+# Run two-stage SP tests (10 tests)
+python -m pytest problems/stochastic_robust/two_stage_sp/tests/ -v
+
+# Run robust shortest path tests (13 tests)
+python -m pytest problems/stochastic_robust/robust_shortest_path/tests/ -v
+
+# Run stochastic knapsack tests (11 tests)
+python -m pytest problems/stochastic_robust/stochastic_knapsack/tests/ -v
+
+# Run chance-constrained FL tests (11 tests)
+python -m pytest problems/stochastic_robust/chance_constrained_fl/tests/ -v
+
+# Run robust portfolio tests (14 tests)
+python -m pytest problems/stochastic_robust/robust_portfolio/tests/ -v
+
+# Run stochastic VRP tests (13 tests)
+python -m pytest problems/stochastic_robust/stochastic_vrp/tests/ -v
+
+# Run robust scheduling tests (13 tests)
+python -m pytest problems/stochastic_robust/robust_scheduling/tests/ -v
+
+# Run DRO tests (12 tests)
+python -m pytest problems/stochastic_robust/dro/tests/ -v
 ```
 
 ### Dependencies
@@ -687,6 +790,134 @@ Complexity: NP-hard (generalizes CVRP).
 
 **Benchmark instances:** solomon_c101_mini (8 customers, clustered), tight_tw5 (5 customers, narrow windows)
 
+## Newsvendor Problem Family
+
+### Problem Definition (NV | stochastic demand | min E[cost])
+
+A retailer orders Q units of a perishable product before uncertain demand D.
+Overage cost c_o = c - v; underage cost c_u = p - c. Optimal order satisfies
+P(D <= Q*) = c_u / (c_u + c_o) (critical fractile).
+
+**Exact methods:**
+- Critical Fractile — O(S log S), sort scenarios, scan CDF
+- Grid Search — O(S * G), brute-force over demand range
+
+**Heuristics:**
+- Marginal Allocation — greedy for multi-product with budget constraint
+- Independent + Scale — solve independently, scale to fit budget
+
+## Two-Stage Stochastic Programming Family
+
+### Problem Definition (2SSP)
+
+First-stage decisions x before uncertainty; second-stage recourse y(s) after.
+min c^T x + E[q(s)^T y(s)] subject to constraints.
+
+**Methods:**
+- Deterministic Equivalent — expand all scenarios into one LP (HiGHS)
+- Expected Value (EV) — solve on mean scenario, lower bound
+- Sample Average Approximation (SAA) — solve on random subsets, replicate
+
+## Robust Shortest Path Problem Family
+
+### Problem Definition
+
+Find path minimizing worst-case cost or regret across S weight scenarios.
+
+**Exact methods:**
+- Label-Setting — multi-objective Dijkstra with dominance pruning (min-max cost)
+- Scenario Enumeration — Dijkstra per scenario, cross-evaluate
+
+**Heuristics:**
+- Regret Enumeration — evaluate candidate paths against per-scenario optima
+- Midpoint — shortest path on mean-weight graph
+
+## Stochastic Knapsack Problem Family
+
+### Problem Definition
+
+Select items with deterministic values but random weights to maximize value
+subject to capacity constraint holding with probability >= 1-alpha.
+
+**Heuristics:**
+- Greedy (mean weight) — value-density on expected weights
+- Greedy (chance-constrained) — add items maintaining P(feasible) >= 1-alpha
+
+**Metaheuristics:**
+- Simulated Annealing — flip-bit with infeasibility penalty
+
+## Chance-Constrained Facility Location
+
+### Problem Definition
+
+Open facilities and assign customers minimizing cost, subject to
+P(demand <= capacity) >= 1-alpha per facility under stochastic demands.
+
+**Heuristics:**
+- Greedy Open — iteratively open cost-reducing facilities with CC checks
+- Mean-Demand Greedy — deterministic proxy using expected demands
+
+**Metaheuristics:**
+- Simulated Annealing — toggle/swap with violation penalty
+
+## Robust Portfolio Optimization
+
+### Problem Definition
+
+Markowitz mean-variance with ellipsoidal uncertainty on expected returns:
+max mu^T w - delta * ||Sigma^{1/2} w||_2 - lambda * w^T Sigma w.
+
+**Exact methods:**
+- QP Solver (mean-variance) — SLSQP on Markowitz objective
+- QP Solver (robust) — SLSQP with uncertainty penalty (SOCP)
+
+**Heuristics:**
+- Equal Weight (1/n) — naive diversification
+- Min Variance — Sigma^{-1} 1 closed-form
+- Max Return — concentrate on best expected return
+
+## Stochastic VRP Problem Family
+
+### Problem Definition
+
+CVRP with stochastic customer demands. Routes designed a priori;
+overflow triggers recourse (return to depot).
+
+**Heuristics:**
+- Chance-Constrained Clarke-Wright — savings with P(overflow) <= alpha
+- Mean-Demand Savings — CW with expected demands
+
+**Metaheuristics:**
+- Simulated Annealing — relocate/swap/2-opt with recourse penalty
+
+## Robust Scheduling Problem Family
+
+### Problem Definition (1 | uncertain p_j | min max-regret ΣwjCj)
+
+Single machine scheduling with uncertain processing times.
+Minimize worst-case regret of total weighted completion time.
+
+**Heuristics:**
+- Midpoint WSPT — WSPT on mean processing times
+- Scenario Enumeration — WSPT per scenario, cross-evaluate regret
+- Worst-Case WSPT — WSPT on maximum processing times
+
+**Metaheuristics:**
+- Simulated Annealing — swap/insertion to minimize max regret
+
+## Distributionally Robust Optimization (DRO)
+
+### Problem Definition
+
+min_x max_{P in A} E_P[f(x, xi)] — optimize under worst-case distribution.
+
+**Exact methods:**
+- Wasserstein DRO — LP reformulation with L1-norm regularization
+- Nominal LP — baseline without robustness
+
+**Heuristics:**
+- Moment-Based DRO — inner LP for worst-case distribution, grid search
+
 ## Code Conventions
 
 ### Architecture Pattern
@@ -796,6 +1027,20 @@ Each problem folder should contain:
 - **VRPTW**: Vehicle Routing Problem with Time Windows — CVRP with arrival time constraints [e_i, l_i]
 - **Time window**: Interval [earliest, latest] during which service can begin at a customer
 - **Solomon benchmarks**: Standard VRPTW instances (C/R/RC classes) with 25-100 customers
+- **Newsvendor**: Single-period inventory under demand uncertainty — critical fractile Q* = F^{-1}(c_u/(c_u+c_o))
+- **Critical fractile**: Optimal service level ratio c_u/(c_u+c_o) for the newsvendor problem
+- **Overage/underage cost**: c_o = c - v (excess), c_u = p - c (shortage) — key newsvendor parameters
+- **Two-stage stochastic programming**: First-stage decisions before uncertainty, second-stage recourse after
+- **Recourse**: Corrective actions taken after uncertainty is revealed in stochastic programs
+- **Deterministic equivalent**: Extensive form LP expanding all scenarios — size grows with S
+- **Value of stochastic solution (VSS)**: Benefit of stochastic over deterministic approach
+- **Sample Average Approximation (SAA)**: Solve stochastic programs on random scenario subsets
+- **Min-max regret**: Minimize worst-case deviation from scenario-optimal solution
+- **Wasserstein DRO**: Distributionally robust optimization with Wasserstein distance ambiguity set
+- **Moment-based ambiguity**: DRO where distributions must match mean/covariance within tolerance
+- **Chance constraint**: Probabilistic constraint P(g(x,xi) <= 0) >= 1-alpha
+- **Robust portfolio**: Markowitz mean-variance with ellipsoidal uncertainty on expected returns
+- **Stochastic VRP**: Vehicle routing with random demands — recourse for route overflow
 
 ## Adding New Problems
 
