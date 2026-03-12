@@ -111,6 +111,15 @@ single_machine/
 
 ---
 
+## Variant Implementations
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Preemptive Scheduling](variants/preemptive/) | `variants/preemptive/` | Jobs can be interrupted and resumed ($1 \mid pmtn, r_j \mid \Sigma C_j$) |
+| [Batch Scheduling](variants/batch/) | `variants/batch/` | Jobs grouped into batches with setup times ($1 \mid batch, s_j \mid \Sigma w_j C_j$) |
+
+---
+
 ## Key Insight
 
 > Single machine problems are the **foundation** of scheduling theory. Every polynomial-time dispatching rule you learn here (SPT, EDD, WSPT) becomes a building block for multi-machine heuristics — they're used as subroutines in flow shop, job shop, and RCPSP algorithms.

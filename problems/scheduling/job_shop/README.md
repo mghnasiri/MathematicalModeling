@@ -112,6 +112,16 @@ job_shop/
 
 ---
 
+## Variant Implementations
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [No-Wait Job Shop](variants/no_wait/) | `variants/no_wait/` | Jobs cannot wait between consecutive operations |
+| [Weighted Tardiness JSP](variants/weighted_tardiness/) | `variants/weighted_tardiness/` | Minimize total weighted tardiness $\Sigma w_j T_j$ |
+| [Flexible Tardiness JSP](variants/flexible_tardiness/) | `variants/flexible_tardiness/` | Flexible machine assignment + minimize weighted tardiness |
+
+---
+
 ## Key Insight
 
 > The **disjunctive graph** is the central data structure for JSP. Understanding it unlocks everything: the critical path determines the makespan, critical blocks define effective neighborhoods, and the graph structure enables efficient move evaluation. Nearly all state-of-the-art methods operate directly on this graph.

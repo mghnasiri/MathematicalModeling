@@ -14,6 +14,12 @@ The **Max-Flow Min-Cut Theorem** (Ford & Fulkerson, 1956) states that the maximu
 | Push-Relabel | $O(V^2 E)$ | Preflow with relabeling |
 | Dinic's | $O(V^2 E)$ | Blocking flows in layered graph |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Minimum Cost Flow](variants/min_cost_flow/) | `variants/min_cost_flow/` | Find minimum-cost flow satisfying supply/demand constraints |
+
 ## Key References
 
 - Ford, L.R. & Fulkerson, D.R. (1956). Maximal flow through a network. *Canadian J. Math.*, 8, 399-404. https://doi.org/10.4153/CJM-1956-045-5

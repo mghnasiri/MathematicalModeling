@@ -12,6 +12,12 @@ Given an undirected, weighted, connected graph $G = (V, E)$, find the spanning t
 | Prim's | $O(E \log V)$ | Grow tree from root, binary heap |
 | Borůvka's | $O(E \log V)$ | Parallel edge contraction |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Steiner Tree](variants/steiner_tree/) | `variants/steiner_tree/` | Connect a subset of required vertices, optionally using Steiner vertices |
+
 ## Key References
 
 - Kruskal, J.B. (1956). On the shortest spanning subtree. *Proc. AMS*, 7(1), 48-50. https://doi.org/10.1090/S0002-9939-1956-0078686-7

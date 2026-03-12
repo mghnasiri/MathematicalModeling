@@ -25,6 +25,12 @@ NP-hard (reduces from Bin Packing). The LP relaxation satisfies the Integer Roun
 | Greedy (largest-first) | For each roll, greedily pack items by decreasing length |
 | FFD-based | Expand demands to individual items, apply FFD, aggregate patterns |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [2D Cutting Stock (2D-CSP)](variants/two_dimensional/) | `variants/two_dimensional/` | Cut rectangular items from 2D stock sheets |
+
 ## Key References
 
 - Gilmore, P.C. & Gomory, R.E. (1961). A linear programming approach to the cutting-stock problem. *Oper. Res.*, 9(6), 849-859. https://doi.org/10.1287/opre.9.6.849

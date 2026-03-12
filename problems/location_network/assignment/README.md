@@ -16,6 +16,14 @@ where $\sigma$ is a permutation (bijection from agents to tasks).
 | Auction | $O(n^3)$ avg | Parallel-friendly, Bertsekas (1979) |
 | Greedy | $O(n^2)$ | Not optimal, fast upper bound |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Generalized Assignment (GAP)](variants/generalized/) | `variants/generalized/` | Multiple items per agent with resource constraints |
+| [Quadratic Assignment (QAP)](variants/quadratic/) | `variants/quadratic/` | Minimize pairwise interaction costs based on facility-location assignment |
+| [Maximum Weight Matching](variants/max_weight_matching/) | `variants/max_weight_matching/` | Maximize total weight of matched pairs in a bipartite graph |
+
 ## Key References
 
 - Kuhn, H.W. (1955). The Hungarian method for the assignment problem. *Naval Res. Logist.*, 2(1-2), 83-97. https://doi.org/10.1002/nav.3800020109

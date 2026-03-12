@@ -20,6 +20,12 @@ NP-hard. Best known approximation: 1.488 (Li, 2013).
 | Greedy Drop | Heuristic | Start all open, drop least impactful |
 | Simulated Annealing | Metaheuristic | Toggle/swap moves with Boltzmann acceptance |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [Capacitated Facility Location (CFLP)](variants/capacitated/) | `variants/capacitated/` | Facilities have limited capacity for serving customers |
+
 ## Key References
 
 - Cornuéjols, G. et al. (1977). Location of bank accounts to optimize float. *Management Science*, 23(8), 789-810. https://doi.org/10.1287/mnsc.23.8.789

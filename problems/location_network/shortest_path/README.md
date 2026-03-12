@@ -20,6 +20,12 @@ Given a directed graph $G = (V, E)$ with edge weights $w(u,v)$, find the path fr
 | Dijkstra | No | — | Binary heap priority queue |
 | Bellman-Ford | Yes | Yes | V-1 edge relaxation rounds |
 
+## Variants
+
+| Variant | Directory | Description |
+|---------|-----------|-------------|
+| [All-Pairs Shortest Path (APSP)](variants/all_pairs/) | `variants/all_pairs/` | Floyd-Warshall $O(V^3)$ and repeated Dijkstra for all source-target pairs |
+
 ## Key References
 
 - Dijkstra, E.W. (1959). A note on two problems in connexion with graphs. *Numerische Mathematik*, 1(1), 269-271. https://doi.org/10.1007/BF01386390
