@@ -1,0 +1,1511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ambulance Station Placement | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive p-Median ambulance station placement demo for Quebec City using Greedy Add and Teitz-Bart Interchange algorithms.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .solver-controls label {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+        }
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 140px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .assignment-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── Algorithm Cards ── */
+        .algo-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        @media (max-width: 768px) {
+            .algo-cards { grid-template-columns: 1fr; }
+        }
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 1.8rem 2rem;
+        }
+        .algo-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ivory);
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+        }
+        .algo-card h4 .algo-badge {
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--blue);
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            border-radius: 2px;
+            padding: 2px 8px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.8;
+        }
+        .algo-card .algo-steps {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.8rem;
+        }
+        .algo-card .algo-steps li {
+            padding: 0.3rem 0 0.3rem 1.2rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.85rem;
+        }
+        .algo-card .algo-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M. G. Nasiri</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/location-network.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Ambulance Station Placement</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-ambulance"></i></div>
+        <h1>Ambulance Station <span>Placement</span></h1>
+        <p class="hero-subtitle">P-Median Problem</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            A city must position <strong>p</strong> ambulance stations among candidate sites
+            to minimize the population-weighted distance to the nearest station. Every second
+            counts in emergency response &mdash; optimal placement can mean the difference
+            between life and death. This is the <strong>p-Median Problem</strong>, a
+            cornerstone of facility location theory.
+        </p>
+    </div>
+</section>
+
+<!-- ── 2. The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Minimizing emergency response times across Quebec City</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Quebec City&rsquo;s emergency medical services must decide where to place ambulance
+                stations to serve a population spread across diverse neighborhoods &mdash; from the
+                dense historic core of <strong>Vieux-Qu&eacute;bec</strong> to the sprawling suburbs
+                of <strong>Charlesbourg</strong> and <strong>Cap-Rouge</strong>. Each neighborhood
+                has a population that generates emergency calls proportional to its size, and the
+                goal is to ensure that the <strong>total population-weighted distance</strong> from
+                every demand zone to its nearest station is minimized.
+            </p>
+            <p>
+                Given <em>m</em> candidate sites, <em>n</em> demand zones with population weights
+                <em>w<sub>j</sub></em>, and pairwise distances <em>d(j, i)</em>, the objective is to
+                select exactly <strong>p</strong> stations to open so as to
+                <strong>minimize &Sigma; w<sub>j</sub> &middot; min<sub>i &in; S</sub> d(j, i)</strong>,
+                where <em>S</em> is the set of opened stations. This is the <strong>p-Median Problem</strong>
+                &mdash; NP-hard for general <em>p</em> (Kariv &amp; Hakimi, 1979).
+            </p>
+            <p>
+                With 8 demand zones and 5 candidate sites choosing <em>p = 3</em>, there are
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">C(5,3) = 10</span>
+                possible configurations. But real cities have hundreds of zones and dozens of candidate
+                sites, making exhaustive enumeration infeasible and heuristic methods essential.
+            </p>
+
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Educational Demonstration</div>
+                Data shown is illustrative. Populations and distances are approximate.
+                Locations represent real Quebec City neighborhoods, but coordinates and
+                population figures are simplified for educational purposes.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. The Model ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Model</span></h2>
+            <p>Mathematical formulation of the p-Median Problem</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="formulation">
+                <span class="form-label">p-Median Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>j</sub> &Sigma;<sub>i</sub> w<sub>j</sub> &middot; d<sub>ji</sub> &middot; x<sub>ji</sub></span> &nbsp; <span class="comment">// total weighted distance</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ji</sub> = 1 &nbsp; &forall; j</span> &nbsp; <span class="comment">// each demand zone assigned to exactly one station</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ji</sub> &le; y<sub>i</sub> &nbsp; &forall; j, i</span> &nbsp; <span class="comment">// can only assign to open stations</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> y<sub>i</sub> = p</span> &nbsp; <span class="comment">// exactly p stations opened</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ji</sub>, y<sub>i</sub> &in; {0, 1}</span> &nbsp; <span class="comment">// binary decision variables</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">w<sub>j</sub></span>
+                is the population of demand zone <em>j</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>ji</sub></span>
+                is the distance from zone <em>j</em> to candidate site <em>i</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">y<sub>i</sub></span>
+                indicates whether station <em>i</em> is opened, and
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">x<sub>ji</sub></span>
+                assigns zone <em>j</em> to station <em>i</em>.
+            </p>
+
+            <a href="../families/location-network.html#p-median" class="theory-link">
+                <i class="fas fa-arrow-right"></i> See full p-Median theory and all algorithms
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Place ambulance stations across Quebec City</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-ambulance"></i> Station Placement Solver</h4>
+                <button class="solver-btn primary" onclick="solve()">
+                    <i class="fas fa-play"></i> &nbsp; Solve
+                </button>
+            </div>
+            <div class="solver-body">
+                <!-- Controls Row -->
+                <div class="solver-row">
+                    <div>
+                        <div class="solver-section-label">Number of Stations (p)</div>
+                        <div class="solver-controls">
+                            <label>Stations:</label>
+                            <input type="range" id="p-slider" class="solver-slider" min="2" max="5" value="3" oninput="updateP()">
+                            <span id="p-display" class="size-display">3</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select">
+                            <div class="algo-chip selected" data-algo="greedy" onclick="selectAlgo(this)">
+                                Greedy Add <span class="chip-type" style="color:var(--blue);">heuristic</span>
+                            </div>
+                            <div class="algo-chip" data-algo="teitz-bart" onclick="selectAlgo(this)">
+                                Teitz-Bart <span class="chip-type" style="color:var(--blue);">heuristic</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Canvas -->
+                <div class="solver-canvas-wrap">
+                    <canvas id="map-canvas" width="700" height="500"></canvas>
+                </div>
+
+                <!-- Results -->
+                <div id="results-container" style="margin-top:1.2rem; display:none;">
+                    <div class="solver-section-label">Results</div>
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Total Weighted Dist</th>
+                                <th>Avg Response Dist</th>
+                                <th>Stations Opened</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body"></tbody>
+                    </table>
+                    <div id="assignment-output" class="assignment-output"></div>
+                </div>
+                <div id="solver-status" class="solver-status">Select an algorithm and click Solve.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Two heuristic approaches for the p-Median Problem</p>
+        </div>
+        <div class="algo-cards fade-in">
+            <div class="algo-card">
+                <h4>Greedy Add <span class="algo-badge">Heuristic</span></h4>
+                <p>A constructive heuristic that builds the solution incrementally.</p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Start with no facilities open.</li>
+                    <li data-step="2.">Evaluate each closed candidate: compute the total weighted distance if it were added to the current set.</li>
+                    <li data-step="3.">Open the facility that reduces total weighted distance the most.</li>
+                    <li data-step="4.">Repeat until p facilities are open.</li>
+                </ol>
+                <p style="margin-top:0.8rem; font-size:0.82rem; color:var(--slate);">
+                    Complexity: O(p &middot; m &middot; n) &mdash; fast but may miss global optimum.
+                </p>
+            </div>
+            <div class="algo-card">
+                <h4>Teitz-Bart Interchange <span class="algo-badge">Heuristic</span></h4>
+                <p>An improvement heuristic that refines the greedy solution by swapping facilities.</p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Start with the greedy solution (p open facilities).</li>
+                    <li data-step="2.">For each open facility, try swapping it with each closed facility.</li>
+                    <li data-step="3.">Accept the swap if total weighted distance improves.</li>
+                    <li data-step="4.">Repeat until no improving swap exists.</li>
+                </ol>
+                <p style="margin-top:0.8rem; font-size:0.82rem; color:var(--slate);">
+                    Complexity: O(iterations &middot; p &middot; (m&minus;p) &middot; n) &mdash; converges to local optimum.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. Why It's More Complex ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Why It&rsquo;s <span>More Complex</span></h2>
+            <p>Real-world ambulance placement goes beyond the p-Median model</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-layer-group"></i> Real-World Considerations</h3>
+                <ul class="complexity-list">
+                    <li><strong>Time-varying demand</strong> &mdash; call volumes shift between day and night, weekdays and weekends, requiring dynamic repositioning strategies.</li>
+                    <li><strong>Traffic congestion</strong> &mdash; travel times vary by time of day and route; Euclidean distance is a poor proxy for actual response time in urban areas.</li>
+                    <li><strong>Coverage constraints</strong> &mdash; regulations may require that every zone has a station within a maximum response time (the Set Covering variant).</li>
+                    <li><strong>Multiple vehicle types</strong> &mdash; basic life support vs. advanced life support units have different capabilities and deployment considerations.</li>
+                    <li><strong>Relocation during calls</strong> &mdash; when an ambulance is dispatched, remaining units must be repositioned to maintain coverage across the city.</li>
+                    <li><strong>Backup coverage</strong> &mdash; ensuring that zones have access to a second-nearest station in case the primary unit is unavailable.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Hakimi, S. L.</span> (1964).
+                    <span class="ref-title">"Optimum Locations of Switching Centers and the Absolute Centers and Medians of a Graph."</span>
+                    <span class="ref-journal">Operations Research, 12(3), 450&ndash;459.</span>
+                </li>
+                <li>
+                    <span class="ref-author">ReVelle, C. S. &amp; Eiselt, H. A.</span> (2005).
+                    <span class="ref-title">"Location Analysis: A Synthesis and Survey."</span>
+                    <span class="ref-journal">European Journal of Operational Research, 165(1), 1&ndash;19.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Kariv, O. &amp; Hakimi, S. L.</span> (1979).
+                    <span class="ref-title">"An Algorithmic Approach to Network Location Problems."</span>
+                    <span class="ref-journal">SIAM Journal on Applied Mathematics, 37(3), 539&ndash;560.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Teitz, M. B. &amp; Bart, P.</span> (1968).
+                    <span class="ref-title">"Heuristic Methods for Estimating the Generalized Vertex Median of a Weighted Graph."</span>
+                    <span class="ref-journal">Operations Research, 16(5), 955&ndash;961.</span>
+                </li>
+                <li>
+                    Application context and algorithm implementations from this repository&rsquo;s
+                    <a href="../families/location-network.html#p-median" style="color:var(--gold); text-decoration:none;">p-Median module</a>.
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 8. CTA Panel ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to Optimize Facility Placement?</h3>
+            <p>
+                Every emergency services system has unique constraints &mdash; terrain, traffic
+                patterns, population density, regulatory requirements. This demo shows the
+                fundamentals, but real-world solutions require tailored modeling and implementation.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank" rel="noopener">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <p>&copy; 2024 M. G. Nasiri &middot; <a href="../index.html">Mathematical Modeling &amp; Operations Research</a></p>
+</footer>
+
+<!-- ── Back Link ── -->
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Home</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Quebec City Ambulance Station Placement — p-Median Solver
+// ═══════════════════════════════════════════════════════════════
+
+// ── Coordinate System ──
+// Lat range: 46.740 → 46.900 → y: 480 → 20 (inverted)
+// Lng range: -71.370 → -71.140 → x: 20 → 680
+const LAT_MIN = 46.740, LAT_MAX = 46.900;
+const LNG_MIN = -71.370, LNG_MAX = -71.140;
+const CW = 700, CH = 500;
+const PAD = 20;
+
+function latToY(lat) { return PAD + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (CH - 2 * PAD); }
+function lngToX(lng) { return PAD + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (CW - 2 * PAD); }
+
+// Approximate km per degree at Quebec City latitude (~46.8)
+const KM_PER_DEG_LAT = 111.0;
+const KM_PER_DEG_LNG = 111.0 * Math.cos(46.8 * Math.PI / 180);
+
+// ── Demand Zones ──
+const DEMAND_ZONES = [
+    { name: "Vieux-Qu\u00e9bec",   lat: 46.8130, lng: -71.2070, pop: 5000  },
+    { name: "Saint-Roch",          lat: 46.8170, lng: -71.2260, pop: 12000 },
+    { name: "Limoilou",            lat: 46.8260, lng: -71.2300, pop: 15000 },
+    { name: "Sainte-Foy",          lat: 46.7710, lng: -71.2820, pop: 20000 },
+    { name: "Charlesbourg",        lat: 46.8530, lng: -71.2600, pop: 18000 },
+    { name: "Beauport",            lat: 46.8620, lng: -71.2000, pop: 16000 },
+    { name: "Cap-Rouge",           lat: 46.7550, lng: -71.3500, pop: 8000  },
+    { name: "Montmorency",         lat: 46.8900, lng: -71.1500, pop: 6000  }
+];
+
+// ── Candidate Sites (subset: indices into DEMAND_ZONES) ──
+// Using 5 candidate sites: Vieux-Quebec, Limoilou, Sainte-Foy, Charlesbourg, Beauport
+const CANDIDATE_INDICES = [0, 2, 3, 4, 5];
+
+// ── State ──
+let pValue = 3;
+let selectedAlgo = 'greedy';
+let currentResult = null;
+
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+const STATION_COLORS = ['#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc'];
+
+// ── Distance (km) between two zones ──
+function distKm(a, b) {
+    const dlat = (a.lat - b.lat) * KM_PER_DEG_LAT;
+    const dlng = (a.lng - b.lng) * KM_PER_DEG_LNG;
+    return Math.sqrt(dlat * dlat + dlng * dlng);
+}
+
+// ── Build full distance matrix (demand zones x candidate sites) ──
+function buildDistMatrix() {
+    const n = DEMAND_ZONES.length;
+    const m = CANDIDATE_INDICES.length;
+    const D = [];
+    for (let j = 0; j < n; j++) {
+        D[j] = [];
+        for (let ci = 0; ci < m; ci++) {
+            D[j][ci] = distKm(DEMAND_ZONES[j], DEMAND_ZONES[CANDIDATE_INDICES[ci]]);
+        }
+    }
+    return D;
+}
+
+// ── Compute total weighted distance for a set of open candidates ──
+function totalWeightedDist(openSet, D) {
+    let total = 0;
+    const n = DEMAND_ZONES.length;
+    for (let j = 0; j < n; j++) {
+        let minDist = Infinity;
+        for (const ci of openSet) {
+            if (D[j][ci] < minDist) minDist = D[j][ci];
+        }
+        total += DEMAND_ZONES[j].pop * minDist;
+    }
+    return total;
+}
+
+// ── Assign each demand zone to its nearest open station ──
+function assignZones(openSet, D) {
+    const n = DEMAND_ZONES.length;
+    const assignments = [];
+    for (let j = 0; j < n; j++) {
+        let minDist = Infinity;
+        let bestStation = -1;
+        for (const ci of openSet) {
+            if (D[j][ci] < minDist) {
+                minDist = D[j][ci];
+                bestStation = ci;
+            }
+        }
+        assignments.push({ zone: j, station: bestStation, dist: minDist });
+    }
+    return assignments;
+}
+
+// ── Greedy Add Algorithm ──
+function greedyAdd(p, D) {
+    const m = CANDIDATE_INDICES.length;
+    const openSet = [];
+    const closed = new Set();
+    for (let i = 0; i < m; i++) closed.add(i);
+
+    for (let k = 0; k < p; k++) {
+        let bestCandidate = -1;
+        let bestCost = Infinity;
+
+        for (const ci of closed) {
+            const trial = [...openSet, ci];
+            const cost = totalWeightedDist(trial, D);
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestCandidate = ci;
+            }
+        }
+
+        openSet.push(bestCandidate);
+        closed.delete(bestCandidate);
+    }
+
+    return openSet;
+}
+
+// ── Teitz-Bart Interchange Algorithm ──
+function teitzBart(p, D) {
+    // Start from greedy solution
+    let openSet = greedyAdd(p, D);
+    let bestCost = totalWeightedDist(openSet, D);
+    const m = CANDIDATE_INDICES.length;
+
+    let improved = true;
+    let iterations = 0;
+    const maxIterations = 100;
+
+    while (improved && iterations < maxIterations) {
+        improved = false;
+        iterations++;
+
+        for (let oi = 0; oi < openSet.length; oi++) {
+            const openFacility = openSet[oi];
+
+            for (let ci = 0; ci < m; ci++) {
+                // Skip if already open
+                if (openSet.includes(ci)) continue;
+
+                // Try swapping openFacility with ci
+                const trial = [...openSet];
+                trial[oi] = ci;
+                const cost = totalWeightedDist(trial, D);
+
+                if (cost < bestCost - 1e-10) {
+                    bestCost = cost;
+                    openSet = trial;
+                    improved = true;
+                    break; // restart inner loops after improvement
+                }
+            }
+            if (improved) break; // restart outer loop
+        }
+    }
+
+    return openSet;
+}
+
+// ── Map Drawing ──
+function drawMap() {
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, CW, CH);
+
+    // St. Lawrence River
+    ctx.beginPath();
+    ctx.moveTo(0, CH);
+    ctx.lineTo(CW, CH);
+    ctx.lineTo(CW, CH * 0.45);
+    ctx.bezierCurveTo(CW * 0.85, CH * 0.50, CW * 0.65, CH * 0.62, CW * 0.50, CH * 0.70);
+    ctx.bezierCurveTo(CW * 0.35, CH * 0.78, CW * 0.20, CH * 0.85, 0, CH * 0.90);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(122, 162, 247, 0.10)';
+    ctx.fill();
+
+    // River label
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(122, 162, 247, 0.30)';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('St. Lawrence River', CW * 0.60, CH * 0.82);
+
+    // Faint road grid
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.05)';
+    ctx.lineWidth = 1;
+
+    // Autoroute Laurentienne (N-S)
+    ctx.beginPath();
+    ctx.moveTo(lngToX(-71.240), PAD);
+    ctx.lineTo(lngToX(-71.235), CH * 0.75);
+    ctx.stroke();
+
+    // Autoroute de la Capitale (E-W)
+    ctx.beginPath();
+    ctx.moveTo(PAD, latToY(46.840));
+    ctx.lineTo(CW - PAD, latToY(46.840));
+    ctx.stroke();
+
+    // Boulevard Laurier (E-W)
+    ctx.beginPath();
+    ctx.moveTo(lngToX(-71.350), latToY(46.780));
+    ctx.lineTo(lngToX(-71.200), latToY(46.780));
+    ctx.stroke();
+}
+
+function drawInitialState() {
+    drawMap();
+
+    const maxPop = Math.max(...DEMAND_ZONES.map(z => z.pop));
+
+    // Draw demand zones
+    for (let j = 0; j < DEMAND_ZONES.length; j++) {
+        const z = DEMAND_ZONES[j];
+        const x = lngToX(z.lng);
+        const y = latToY(z.lat);
+        const radius = 8 + (z.pop / maxPop) * 16;
+
+        // Zone circle
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(168, 178, 209, 0.15)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(168, 178, 209, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Small inner dot
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'var(--slate-light)';
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fill();
+
+        // Label
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = '#a8b2d1';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(z.name, x, y + radius + 4);
+
+        // Population label
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.fillStyle = 'rgba(168, 178, 209, 0.5)';
+        ctx.fillText('pop: ' + z.pop.toLocaleString(), x, y + radius + 16);
+    }
+
+    // Mark candidate sites with a subtle indicator
+    for (const ci of CANDIDATE_INDICES) {
+        const z = DEMAND_ZONES[ci];
+        const x = lngToX(z.lng);
+        const y = latToY(z.lat);
+
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
+        ctx.fill();
+    }
+
+    // Legend
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    // Demand zone legend
+    ctx.beginPath();
+    ctx.arc(CW - 150, 25, 6, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(168, 178, 209, 0.15)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(168, 178, 209, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#8892B0';
+    ctx.fillText('Demand Zone', CW - 138, 25);
+
+    // Candidate site legend
+    ctx.beginPath();
+    ctx.arc(CW - 150, 45, 3, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
+    ctx.fill();
+    ctx.fillStyle = '#8892B0';
+    ctx.fillText('Candidate Site', CW - 138, 45);
+}
+
+function drawSolution(openSet, assignments, D) {
+    drawMap();
+
+    const maxPop = Math.max(...DEMAND_ZONES.map(z => z.pop));
+
+    // Build color mapping: station candidate index -> color
+    const stationColorMap = {};
+    openSet.forEach((ci, idx) => {
+        stationColorMap[ci] = STATION_COLORS[idx % STATION_COLORS.length];
+    });
+
+    // Draw assignment lines
+    for (const a of assignments) {
+        const zone = DEMAND_ZONES[a.zone];
+        const station = DEMAND_ZONES[CANDIDATE_INDICES[a.station]];
+        const color = stationColorMap[a.station];
+
+        const zx = lngToX(zone.lng);
+        const zy = latToY(zone.lat);
+        const sx = lngToX(station.lng);
+        const sy = latToY(station.lat);
+
+        ctx.beginPath();
+        ctx.moveTo(zx, zy);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = color + '40'; // 25% opacity
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Dashed line effect
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(zx, zy);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = color + '80';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Draw demand zones (colored by assigned station)
+    for (let j = 0; j < DEMAND_ZONES.length; j++) {
+        const z = DEMAND_ZONES[j];
+        const x = lngToX(z.lng);
+        const y = latToY(z.lat);
+        const radius = 8 + (z.pop / maxPop) * 16;
+        const a = assignments.find(a => a.zone === j);
+        const color = stationColorMap[a.station];
+
+        // Zone circle with station color
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = color + '18';
+        ctx.fill();
+        ctx.strokeStyle = color + '60';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Inner dot
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        // Label
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = '#a8b2d1';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(z.name, x, y + radius + 4);
+
+        // Distance label
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.fillStyle = color + 'aa';
+        ctx.fillText(a.dist.toFixed(1) + ' km', x, y + radius + 16);
+    }
+
+    // Draw open stations as gold stars
+    for (const ci of openSet) {
+        const z = DEMAND_ZONES[CANDIDATE_INDICES[ci]];
+        const x = lngToX(z.lng);
+        const y = latToY(z.lat);
+        const color = stationColorMap[ci];
+
+        drawStar(x, y, 12, 6, 5, color);
+
+        // Station label
+        ctx.font = 'bold 8px JetBrains Mono, monospace';
+        ctx.fillStyle = color;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText('STATION', x, y - 15);
+    }
+
+    // Legend
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    drawStar(CW - 150, 25, 7, 3.5, 5, '#C5A059');
+    ctx.fillStyle = '#8892B0';
+    ctx.fillText('Open Station', CW - 138, 25);
+
+    ctx.beginPath();
+    ctx.arc(CW - 150, 45, 6, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(168, 178, 209, 0.15)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(168, 178, 209, 0.4)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.fillStyle = '#8892B0';
+    ctx.fillText('Demand Zone', CW - 138, 45);
+}
+
+function drawStar(cx, cy, outerR, innerR, points, color) {
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+        const r = i % 2 === 0 ? outerR : innerR;
+        const angle = (Math.PI / points) * i - Math.PI / 2;
+        const x = cx + r * Math.cos(angle);
+        const y = cy + r * Math.sin(angle);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    ctx.strokeStyle = '#0A192F';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+}
+
+// ── UI Controls ──
+function updateP() {
+    pValue = parseInt(document.getElementById('p-slider').value);
+    document.getElementById('p-display').textContent = pValue;
+}
+
+function selectAlgo(el) {
+    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('selected'));
+    el.classList.add('selected');
+    selectedAlgo = el.dataset.algo;
+}
+
+// ── Solver ──
+function solve() {
+    const D = buildDistMatrix();
+    const t0 = performance.now();
+
+    let openSet;
+    let algoName;
+
+    if (selectedAlgo === 'greedy') {
+        openSet = greedyAdd(pValue, D);
+        algoName = 'Greedy Add';
+    } else {
+        openSet = teitzBart(pValue, D);
+        algoName = 'Teitz-Bart Interchange';
+    }
+
+    const elapsed = performance.now() - t0;
+    const cost = totalWeightedDist(openSet, D);
+    const assignments = assignZones(openSet, D);
+
+    // Compute average response distance (weighted)
+    const totalPop = DEMAND_ZONES.reduce((s, z) => s + z.pop, 0);
+    const avgDist = cost / totalPop;
+
+    // Station names
+    const stationNames = openSet.map(ci => DEMAND_ZONES[CANDIDATE_INDICES[ci]].name);
+
+    // Draw solution
+    drawSolution(openSet, assignments, D);
+
+    // Update results table
+    const resultsContainer = document.getElementById('results-container');
+    resultsContainer.style.display = 'block';
+
+    const tbody = document.getElementById('results-body');
+    tbody.innerHTML = `
+        <tr>
+            <td class="algo-label">${algoName}</td>
+            <td class="best-val">${cost.toFixed(0)}</td>
+            <td>${avgDist.toFixed(2)} km</td>
+            <td>${stationNames.join(', ')}</td>
+            <td>${elapsed.toFixed(1)} ms</td>
+        </tr>
+    `;
+
+    // Zone assignments output
+    const output = document.getElementById('assignment-output');
+    let html = '<strong style="color:var(--gold); font-family:Inter,sans-serif; font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;">Zone Assignments</strong><br>';
+    for (const a of assignments) {
+        const zoneName = DEMAND_ZONES[a.zone].name;
+        const stationName = DEMAND_ZONES[CANDIDATE_INDICES[a.station]].name;
+        const pop = DEMAND_ZONES[a.zone].pop;
+        html += `${zoneName} (pop: ${pop.toLocaleString()}) → ${stationName} [${a.dist.toFixed(2)} km]<br>`;
+    }
+    output.innerHTML = html;
+
+    document.getElementById('solver-status').textContent =
+        `${algoName} completed in ${elapsed.toFixed(1)} ms. Total weighted distance: ${cost.toFixed(0)} (pop·km).`;
+}
+
+// ── Scroll Animation ──
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Initial Draw ──
+drawInitialState();
+</script>
+</body>
+</html>

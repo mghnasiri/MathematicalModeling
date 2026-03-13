@@ -1,0 +1,1631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technician Visit Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="VRPTW application: Technician visit scheduling with time windows on a Quebec City map. Solomon I1 Insertion and Nearest Neighbor TW algorithms.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Card ── */
+        .content-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.3s;
+        }
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+        }
+        .content-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+        }
+        .content-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+        .content-card h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+            font-size: 1.4rem;
+        }
+        .content-card p, .content-card li {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+        .content-card ul {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+        .content-card li { margin-bottom: 0.4rem; }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-panel-header .help-icon {
+            color: var(--slate);
+            font-size: 0.85rem;
+            cursor: help;
+        }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .solver-controls label {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+        }
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 120px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 24px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .solver-route-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 2px;
+            padding: 0.6rem 1rem;
+            margin-top: 0.5rem;
+            line-height: 1.6;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Schedule Table ── */
+        .schedule-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-top: 0.5rem;
+        }
+        .schedule-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .schedule-table tbody td {
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+        }
+        .schedule-table .tw-ok { color: var(--green); }
+        .schedule-table .tw-fail { color: var(--red); }
+
+        /* ── Reference list ── */
+        .ref-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .ref-list li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+        .ref-list li:last-child { border-bottom: none; }
+        .ref-list .ref-title { color: var(--ivory); font-weight: 500; }
+        .ref-list .ref-journal { font-style: italic; color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.06), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 1.5rem;
+        }
+        .cta-panel h5 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            color: var(--ivory);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        .cta-panel p {
+            font-size: 0.85rem;
+            color: var(--slate);
+            margin-bottom: 1.2rem;
+        }
+        .cta-links { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .cta-links a {
+            padding: 8px 20px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-links a:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            font-size: 0.78rem;
+            color: var(--slate);
+            font-style: italic;
+            text-align: center;
+            margin-top: 2rem;
+            padding: 1rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.05);
+        }
+
+        /* ── Back to Portfolio ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Complexity bullets ── */
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+            margin: 1rem 0;
+        }
+        .complexity-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+        .complexity-list li i {
+            color: var(--gold);
+            margin-top: 0.3rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 992px) {
+            .hero h1 { font-size: 2.8rem; }
+        }
+        @media (max-width: 768px) {
+            .formulation { padding: 1rem; font-size: 0.75rem; }
+        }
+        @media (max-width: 576px) {
+            .hero h1 { font-size: 2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 2px; }
+            .section-header h2 { font-size: 1.8rem; }
+            .content-card { padding: 1.5rem; }
+            .back-link { bottom: 1rem; right: 1rem; padding: 0.6rem 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M. G. Nasiri</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Families</a>
+                    <ul class="dropdown-menu" style="background: var(--midnight-light); border-color: rgba(197,160,89,0.2);">
+                        <li><a class="dropdown-item" href="../families/scheduling.html" style="color: var(--slate-light);">Scheduling</a></li>
+                        <li><a class="dropdown-item" href="../families/routing.html" style="color: var(--slate-light);">Routing</a></li>
+                        <li><a class="dropdown-item" href="../families/packing.html" style="color: var(--slate-light);">Packing</a></li>
+                        <li><a class="dropdown-item" href="../families/network.html" style="color: var(--slate-light);">Network</a></li>
+                        <li><a class="dropdown-item" href="../families/stochastic.html" style="color: var(--slate-light);">Stochastic</a></li>
+                    </ul>
+                </li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i></a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 60px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Technician Visit Scheduling</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── Hero Section ── -->
+<section class="hero" style="padding-top: 4rem;">
+    <div class="container">
+        <div class="hero-icon">
+            <i class="fas fa-tools"></i>
+        </div>
+        <h1>Technician Visit <span>Scheduling</span></h1>
+        <p class="hero-subtitle">Vehicle Routing with Time Windows</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Optimizing field service operations in Quebec City using the Vehicle Routing Problem
+            with Time Windows (VRPTW). Each service call has a specific time window during which
+            a technician must arrive, a required service duration, and a geographic location.
+            The goal: minimize total travel distance while respecting every constraint.
+        </p>
+    </div>
+</section>
+
+<!-- ── The Problem ── -->
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Field service scheduling as a vehicle routing challenge</p>
+        </div>
+
+        <div class="content-card fade-in">
+            <h3><i class="fas fa-question-circle"></i> VRPTW in Field Service</h3>
+            <p>
+                A field service company dispatches technicians from a central depot to perform
+                maintenance, repairs, or installations at customer sites across Quebec City.
+                Each service call specifies a <strong>time window</strong> &mdash; an interval
+                [earliest, latest] during which the technician must arrive. If a technician arrives
+                before the window opens, they must wait. Arriving after the window closes violates
+                the constraint and renders the schedule infeasible.
+            </p>
+            <p>
+                Each visit also requires a <strong>service time</strong> &mdash; the duration the
+                technician spends on site. The planning horizon runs from 8:00 to 17:00.
+                Technicians depart from and return to the depot. The objective is to minimize the
+                total distance traveled (equivalently, total travel time) across all technician routes
+                while ensuring every customer is visited exactly once within their time window.
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">VRPTW Formulation</span>
+                <span class="keyword">min</span> &sum;<sub>k</sub> &sum;<sub>i</sub> &sum;<sub>j</sub> <span class="variable">d<sub>ij</sub></span> &middot; <span class="variable">x<sub>ijk</sub></span><br>
+                <span class="keyword">s.t.</span> &sum;<sub>k</sub> &sum;<sub>j</sub> <span class="variable">x<sub>ijk</sub></span> = 1 &nbsp;&nbsp;&forall; i &isin; C <span class="comment">&nbsp;/* each customer visited once */</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">e<sub>i</sub></span> &le; <span class="variable">s<sub>i</sub></span> &le; <span class="variable">l<sub>i</sub></span> &nbsp;&nbsp;&forall; i &isin; C <span class="comment">&nbsp;/* arrival within time window */</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">s<sub>j</sub></span> &ge; <span class="variable">s<sub>i</sub></span> + <span class="variable">serv<sub>i</sub></span> + <span class="variable">t<sub>ij</sub></span> - M(1 - <span class="variable">x<sub>ijk</sub></span>) <span class="comment">&nbsp;/* time consistency */</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x<sub>ijk</sub></span> &isin; {0, 1} <span class="comment">&nbsp;/* route assignment */</span>
+            </div>
+
+            <p>
+                The VRPTW is <strong>NP-hard</strong> &mdash; it generalizes both the Traveling Salesman
+                Problem (TSP) and the Bin Packing Problem. Even finding a feasible solution that satisfies
+                all time windows can be computationally challenging. Practical instances with hundreds of
+                customers require heuristic and metaheuristic approaches.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ── Try It Yourself ── -->
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Schedule technician visits across Quebec City</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-play-circle"></i> Interactive Solver</h4>
+                <span class="help-icon" title="Select an algorithm and number of technicians, then click Solve to route service calls across Quebec City."><i class="fas fa-info-circle"></i></span>
+            </div>
+            <div class="solver-body">
+                <!-- Controls -->
+                <div class="solver-row">
+                    <div>
+                        <div class="solver-section-label">Configuration</div>
+                        <div class="solver-controls">
+                            <label>Technicians:</label>
+                            <input type="range" class="solver-slider" id="numTechnicians" min="1" max="3" value="2" oninput="document.getElementById('techDisplay').textContent=this.value">
+                            <span class="size-display" id="techDisplay">2</span>
+                        </div>
+                        <div class="solver-controls" style="margin-bottom: 0.5rem;">
+                            <label>Planning horizon:</label>
+                            <span style="font-family:'JetBrains Mono',monospace; font-size:0.82rem; color:var(--gold);">08:00 &ndash; 17:00</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="vrptw-algo-select">
+                            <div class="algo-chip selected" data-algo="solomon" onclick="toggleAlgo(this)">
+                                Solomon I1 Insertion <span class="chip-type" style="color:var(--blue);">heuristic</span>
+                            </div>
+                            <div class="algo-chip" data-algo="nn-tw" onclick="toggleAlgo(this)">
+                                Nearest Neighbor TW <span class="chip-type" style="color:var(--blue);">heuristic</span>
+                            </div>
+                        </div>
+                        <div style="display: flex; gap: 0.5rem;">
+                            <button class="solver-btn primary" onclick="solveProblem()"><i class="fas fa-play"></i>&nbsp; Solve</button>
+                            <button class="solver-btn" onclick="solveAll()">Run All</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Calls Table -->
+                <div class="solver-section-label">Service Calls</div>
+                <div class="table-responsive" style="margin-bottom: 1rem;">
+                    <table class="schedule-table" id="service-calls-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Location</th>
+                                <th>Time Window</th>
+                                <th>Service</th>
+                            </tr>
+                        </thead>
+                        <tbody id="service-calls-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Canvas -->
+                <div class="solver-section-label">Quebec City Map</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="vrptwCanvas" width="700" height="500"></canvas>
+                </div>
+
+                <!-- Results -->
+                <div style="margin-top: 1.5rem;">
+                    <div class="solver-section-label">Results</div>
+                    <table class="results-table" id="vrptw-results">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Distance</th>
+                                <th>Vehicles</th>
+                                <th>TW Satisfied</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="solver-route-output" id="vrptw-route-output">Routes will appear here after solving.</div>
+                    <p class="solver-status" id="vrptw-status">Select an algorithm and click Solve.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Algorithm Details ── -->
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Algorithm <span>Implementations</span></h2>
+            <p>Construction heuristics for time-windowed routing</p>
+        </div>
+
+        <div class="content-card fade-in">
+            <h3><i class="fas fa-layer-group"></i> Solomon I1 Insertion</h3>
+            <p>
+                The Solomon I1 insertion heuristic (1987) is the gold standard for constructing VRPTW
+                solutions. It initializes each route with a seed customer &mdash; typically the one with
+                the earliest deadline or farthest from the depot &mdash; then iteratively inserts unrouted
+                customers into their best feasible position.
+            </p>
+            <p>
+                For each unrouted customer <em>u</em> and each arc (i, j) in an existing route, the
+                insertion cost is evaluated as:
+            </p>
+            <div class="formulation">
+                <span class="form-label">Solomon I1 Insertion Criterion</span>
+                c1(i, u, j) = <span class="variable">&alpha;<sub>1</sub></span> &middot; (d<sub>iu</sub> + d<sub>uj</sub> - d<sub>ij</sub>) + <span class="variable">&alpha;<sub>2</sub></span> &middot; (b<sub>u</sub> - b<sub>j</sub><sup>old</sup>)<br>
+                <span class="comment">/* &alpha;1 = distance increase, &alpha;2 = time push-forward */</span><br>
+                <span class="comment">/* Using &alpha;1 = 1, &alpha;2 = 0 for distance-focused insertion */</span><br><br>
+                <span class="keyword">Feasibility check:</span> arrival<sub>u</sub> &le; l<sub>u</sub> <span class="keyword">AND</span> push-forward propagation feasible for all successors
+            </div>
+            <p>
+                Before inserting, the algorithm verifies time window feasibility: the technician must be
+                able to arrive at customer <em>u</em> before its window closes, and the resulting
+                push-forward in arrival times must not cause any subsequent customer in the route to
+                violate their time window. When a route can accept no more customers, a new route is opened.
+            </p>
+        </div>
+
+        <div class="content-card fade-in">
+            <h3><i class="fas fa-search-location"></i> Nearest Neighbor TW</h3>
+            <p>
+                A greedy construction heuristic adapted for time windows. For each technician, the
+                algorithm starts at the depot and repeatedly selects the nearest unvisited customer
+                that can be reached within its time window. If the technician arrives before the window
+                opens, they wait until the earliest service time. When no feasible customer remains
+                reachable before the planning horizon ends, the technician returns to the depot and
+                a new route begins.
+            </p>
+            <div class="formulation">
+                <span class="form-label">Nearest Neighbor TW Logic</span>
+                <span class="keyword">for each</span> technician k:<br>
+                &nbsp;&nbsp;current &larr; depot, time &larr; 08:00<br>
+                &nbsp;&nbsp;<span class="keyword">while</span> unvisited customers exist:<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;candidates &larr; {u : arrival(current, u) &le; l<sub>u</sub> <span class="keyword">AND</span> arrival + serv<sub>u</sub> + travel(u, depot) &le; 17:00}<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;<span class="keyword">if</span> candidates = &empty;: <span class="keyword">return</span> to depot, <span class="keyword">break</span><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;next &larr; argmin<sub>u &isin; candidates</sub> d(current, u)<br>
+                &nbsp;&nbsp;&nbsp;&nbsp;time &larr; max(arrival(current, next), e<sub>next</sub>) + serv<sub>next</sub><br>
+                &nbsp;&nbsp;&nbsp;&nbsp;current &larr; next
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Why It's More Complex ── -->
+<section id="complexity">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Beyond the basic VRPTW model</p>
+        </div>
+
+        <div class="content-card fade-in">
+            <h3><i class="fas fa-exclamation-triangle"></i> Why It's More Complex</h3>
+            <p>
+                The interactive solver above demonstrates the core VRPTW model. In practice, field
+                service scheduling involves additional dimensions of complexity that extend the
+                problem significantly:
+            </p>
+            <ul class="complexity-list">
+                <li>
+                    <i class="fas fa-user-cog"></i>
+                    <span><strong>Technician skills and certifications</strong> &mdash; not every technician can handle every job type. Electrical, plumbing, and HVAC calls each require specific qualifications, turning the problem into a heterogeneous fleet VRPTW.</span>
+                </li>
+                <li>
+                    <i class="fas fa-star"></i>
+                    <span><strong>Priority customers</strong> &mdash; some service calls are urgent (e.g., heating failure in winter) and must be scheduled with higher priority or tighter time windows, introducing weighted objectives.</span>
+                </li>
+                <li>
+                    <i class="fas fa-coffee"></i>
+                    <span><strong>Break times and labor regulations</strong> &mdash; technicians require mandatory lunch breaks and rest periods, adding intra-route time constraints that fragment the planning horizon.</span>
+                </li>
+                <li>
+                    <i class="fas fa-traffic-light"></i>
+                    <span><strong>Traffic patterns</strong> &mdash; travel times between locations vary throughout the day (rush hour congestion), requiring time-dependent travel time matrices instead of static distances.</span>
+                </li>
+                <li>
+                    <i class="fas fa-times-circle"></i>
+                    <span><strong>Cancellations and no-shows</strong> &mdash; customers may cancel or reschedule, requiring dynamic re-optimization during the day. Stochastic models account for this uncertainty.</span>
+                </li>
+                <li>
+                    <i class="fas fa-calendar-week"></i>
+                    <span><strong>Multi-day planning</strong> &mdash; recurring maintenance schedules span weeks or months, introducing periodic VRPTW with consistency constraints (same technician for the same customer).</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── References ── -->
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational literature on VRPTW algorithms</p>
+        </div>
+
+        <div class="content-card fade-in">
+            <ul class="ref-list">
+                <li>
+                    <span class="ref-title">Solomon, M. M.</span> (1987).
+                    "Algorithms for the vehicle routing and scheduling problems with time window constraints."
+                    <span class="ref-journal">Operations Research</span>, 35(2), 254&ndash;265.
+                    &mdash; Introduced the I1 insertion heuristic and the canonical Solomon benchmark instances (C/R/RC classes).
+                </li>
+                <li>
+                    <span class="ref-title">Br&auml;ysy, O., &amp; Gendreau, M.</span> (2005).
+                    "Vehicle routing problem with time windows, Part I: Route construction and local search algorithms."
+                    <span class="ref-journal">Transportation Science</span>, 39(1), 104&ndash;118.
+                    &mdash; Comprehensive survey of VRPTW construction and improvement methods, covering 60+ algorithms.
+                </li>
+            </ul>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-panel fade-in">
+            <h5>Need to optimize field service scheduling?</h5>
+            <p>Custom VRPTW solutions for workforce routing, technician dispatch, and last-mile delivery.</p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank">
+                    <i class="fab fa-linkedin"></i>&nbsp; Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            Data shown is illustrative. Locations and time windows are simplified for demonstration.
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <p>
+        <a href="../index.html"><i class="fas fa-arrow-left"></i>&nbsp; Back to Portfolio</a>
+    </p>
+    <p style="margin-top: 0.8rem;">&copy; 2024 Mohammad Ghafourian Nasiri &middot; <a href="https://github.com/mghnasiri/MathematicalModeling" target="_blank">GitHub</a></p>
+</footer>
+
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i>&nbsp; Portfolio</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Scroll Animations ──
+const fadeEls = document.querySelectorAll('.fade-in');
+const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); fadeObserver.unobserve(e.target); } });
+}, { threshold: 0.1 });
+fadeEls.forEach(el => fadeObserver.observe(el));
+
+// ══════════════════════════════════════════════════════════════════
+// VRPTW Solver
+// ══════════════════════════════════════════════════════════════════
+
+const CANVAS_W = 700, CANVAS_H = 500;
+const LAT_MIN = 46.760, LAT_MAX = 46.900;
+const LNG_MIN = -71.310, LNG_MAX = -71.140;
+
+// Speed: ~40 km/h average city driving. 1 degree lat ~ 111km, 1 degree lng ~ ~78km at 46.8N
+const KM_PER_DEG_LAT = 111.0;
+const KM_PER_DEG_LNG = 78.0;
+const SPEED_KMH = 40;
+
+// Locations: index 0 = depot
+const locations = [
+    { name: "Service Depot (Place Royale)",   lat: 46.8123, lng: -71.2033, tw_start: 480, tw_end: 1020, service: 0 },
+    { name: "Ch\u00e2teau Frontenac",         lat: 46.8122, lng: -71.2050, tw_start: 480, tw_end: 600,  service: 30 },
+    { name: "Universit\u00e9 Laval",          lat: 46.7810, lng: -71.2750, tw_start: 540, tw_end: 720,  service: 45 },
+    { name: "Place Laurier",                  lat: 46.7770, lng: -71.2830, tw_start: 600, tw_end: 840,  service: 20 },
+    { name: "Gare du Palais",                 lat: 46.8165, lng: -71.2142, tw_start: 480, tw_end: 660,  service: 25 },
+    { name: "Vieux-Port",                     lat: 46.8180, lng: -71.2000, tw_start: 780, tw_end: 960,  service: 35 },
+    { name: "Montmorency Falls",              lat: 46.8910, lng: -71.1480, tw_start: 660, tw_end: 900,  service: 40 }
+];
+
+const ROUTE_COLORS = ['#C5A059', '#7aa2f7', '#64ffda'];
+const DEPOT_IDX = 0;
+const CUSTOMERS = [1, 2, 3, 4, 5, 6];
+const PLANNING_START = 480;  // 8:00 in minutes
+const PLANNING_END = 1020;   // 17:00 in minutes
+
+function minutesToTime(m) {
+    const h = Math.floor(m / 60);
+    const min = Math.round(m % 60);
+    return (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min;
+}
+
+function distKm(i, j) {
+    const dlat = (locations[i].lat - locations[j].lat) * KM_PER_DEG_LAT;
+    const dlng = (locations[i].lng - locations[j].lng) * KM_PER_DEG_LNG;
+    return Math.sqrt(dlat * dlat + dlng * dlng);
+}
+
+function travelTime(i, j) {
+    return (distKm(i, j) / SPEED_KMH) * 60; // minutes
+}
+
+function latToY(lat) {
+    return CANVAS_H - ((lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * (CANVAS_H - 40) - 20;
+}
+function lngToX(lng) {
+    return ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * (CANVAS_W - 60) + 30;
+}
+
+// Populate service calls table
+function populateServiceCalls() {
+    const tbody = document.getElementById('service-calls-body');
+    tbody.innerHTML = '';
+    locations.forEach((loc, i) => {
+        if (i === 0) return;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="color:var(--gold);">${i}</td>
+            <td style="font-family:'Inter',sans-serif; color:var(--ivory);">${loc.name}</td>
+            <td>${minutesToTime(loc.tw_start)} &ndash; ${minutesToTime(loc.tw_end)}</td>
+            <td>${loc.service} min</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+// ── Canvas Drawing ──
+function drawMap() {
+    const canvas = document.getElementById('vrptwCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // Background
+    ctx.fillStyle = '#0d1f38';
+    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(197,160,89,0.06)';
+    ctx.lineWidth = 0.5;
+    for (let lat = 46.77; lat <= 46.90; lat += 0.01) {
+        const y = latToY(lat);
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_W, y); ctx.stroke();
+    }
+    for (let lng = -71.30; lng <= -71.15; lng += 0.01) {
+        const x = lngToX(lng);
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_H); ctx.stroke();
+    }
+
+    // St. Lawrence River approximation (simplified polygon)
+    ctx.fillStyle = 'rgba(122,162,247,0.06)';
+    ctx.strokeStyle = 'rgba(122,162,247,0.15)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(lngToX(-71.31), latToY(46.835));
+    ctx.lineTo(lngToX(-71.24), latToY(46.830));
+    ctx.lineTo(lngToX(-71.20), latToY(46.825));
+    ctx.lineTo(lngToX(-71.18), latToY(46.830));
+    ctx.lineTo(lngToX(-71.14), latToY(46.835));
+    ctx.lineTo(lngToX(-71.14), latToY(46.820));
+    ctx.lineTo(lngToX(-71.18), latToY(46.815));
+    ctx.lineTo(lngToX(-71.20), latToY(46.810));
+    ctx.lineTo(lngToX(-71.24), latToY(46.815));
+    ctx.lineTo(lngToX(-71.31), latToY(46.820));
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // River label
+    ctx.fillStyle = 'rgba(122,162,247,0.25)';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('St. Lawrence River', lngToX(-71.22), latToY(46.824));
+
+    // Quebec City label
+    ctx.fillStyle = 'rgba(197,160,89,0.2)';
+    ctx.font = '13px "Cormorant Garamond", serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('QUEBEC CITY', 15, 20);
+
+    drawLocations(ctx);
+}
+
+function drawLocations(ctx) {
+    locations.forEach((loc, i) => {
+        const x = lngToX(loc.lng);
+        const y = latToY(loc.lat);
+
+        if (i === 0) {
+            // Depot: gold square
+            ctx.fillStyle = 'var(--gold)';
+            ctx.strokeStyle = '#C5A059';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.rect(x - 8, y - 8, 16, 16);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#0A192F';
+            ctx.font = 'bold 10px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('D', x, y);
+
+            ctx.fillStyle = '#C5A059';
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            ctx.fillText('Depot', x + 12, y - 6);
+        } else {
+            // Customer: circle with TW annotation
+            ctx.fillStyle = 'rgba(122,162,247,0.2)';
+            ctx.strokeStyle = '#7aa2f7';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(x, y, 7, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+
+            // Number inside
+            ctx.fillStyle = '#7aa2f7';
+            ctx.font = 'bold 9px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(i, x, y);
+
+            // Name + TW annotation
+            ctx.fillStyle = 'var(--slate-light)';
+            ctx.font = '9px "Inter", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+            const label = loc.name.length > 18 ? loc.name.substring(0, 18) + '...' : loc.name;
+            ctx.fillText(label, x + 11, y - 10);
+
+            ctx.fillStyle = 'rgba(197,160,89,0.7)';
+            ctx.font = '8px "JetBrains Mono", monospace';
+            ctx.fillText(minutesToTime(loc.tw_start) + '-' + minutesToTime(loc.tw_end) + ' (' + loc.service + 'm)', x + 11, y + 2);
+        }
+    });
+}
+
+function drawRoutes(routes, routeDetails) {
+    const canvas = document.getElementById('vrptwCanvas');
+    const ctx = canvas.getContext('2d');
+    drawMap(); // redraw base
+
+    routes.forEach((route, ri) => {
+        if (route.length === 0) return;
+        const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+        const fullRoute = [DEPOT_IDX, ...route, DEPOT_IDX];
+
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.setLineDash([]);
+        ctx.globalAlpha = 0.8;
+        ctx.beginPath();
+        for (let i = 0; i < fullRoute.length; i++) {
+            const x = lngToX(locations[fullRoute[i]].lng);
+            const y = latToY(locations[fullRoute[i]].lat);
+            if (i === 0) ctx.moveTo(x, y);
+            else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.globalAlpha = 1.0;
+
+        // Draw arrows along route
+        for (let i = 0; i < fullRoute.length - 1; i++) {
+            const x1 = lngToX(locations[fullRoute[i]].lng);
+            const y1 = latToY(locations[fullRoute[i]].lat);
+            const x2 = lngToX(locations[fullRoute[i + 1]].lng);
+            const y2 = latToY(locations[fullRoute[i + 1]].lat);
+            const mx = (x1 + x2) / 2;
+            const my = (y1 + y2) / 2;
+            const angle = Math.atan2(y2 - y1, x2 - x1);
+            const arrowLen = 6;
+
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(mx + arrowLen * Math.cos(angle), my + arrowLen * Math.sin(angle));
+            ctx.lineTo(mx + arrowLen * Math.cos(angle + 2.5), my + arrowLen * Math.sin(angle + 2.5));
+            ctx.lineTo(mx + arrowLen * Math.cos(angle - 2.5), my + arrowLen * Math.sin(angle - 2.5));
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        // Route label
+        if (route.length > 0) {
+            const firstX = lngToX(locations[route[0]].lng);
+            const firstY = latToY(locations[route[0]].lat);
+            ctx.fillStyle = color;
+            ctx.font = 'bold 10px "Inter", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.textBaseline = 'bottom';
+            ctx.fillText('T' + (ri + 1), firstX - 12, firstY - 2);
+        }
+    });
+
+    // Redraw nodes on top
+    drawLocations(ctx);
+
+    // Draw arrival time annotations if details available
+    if (routeDetails) {
+        routeDetails.forEach((rd, ri) => {
+            const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+            rd.stops.forEach(stop => {
+                const x = lngToX(locations[stop.idx].lng);
+                const y = latToY(locations[stop.idx].lat);
+                ctx.fillStyle = stop.feasible ? 'rgba(100,255,218,0.8)' : 'rgba(255,107,107,0.8)';
+                ctx.font = '8px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(minutesToTime(stop.arrival), x, y - 10);
+            });
+        });
+    }
+}
+
+// ── Solomon I1 Insertion ──
+function solomonI1(numVehicles) {
+    const unvisited = new Set(CUSTOMERS);
+    const routes = [];
+    const routeDetails = [];
+
+    for (let v = 0; v < numVehicles && unvisited.size > 0; v++) {
+        // Seed: farthest unvisited from depot, with earliest deadline as tiebreaker
+        let seed = -1, maxDist = -1;
+        for (const c of unvisited) {
+            const d = distKm(DEPOT_IDX, c);
+            if (d > maxDist || (d === maxDist && seed >= 0 && locations[c].tw_end < locations[seed].tw_end)) {
+                maxDist = d;
+                seed = c;
+            }
+        }
+
+        const route = [seed];
+        unvisited.delete(seed);
+        // Arrival times for current route: depot departure -> seed
+        let arrivalTimes = [];
+        const depotToSeed = travelTime(DEPOT_IDX, seed);
+        const arrSeed = Math.max(PLANNING_START + depotToSeed, locations[seed].tw_start);
+        if (arrSeed > locations[seed].tw_end) {
+            // Infeasible seed, skip
+            unvisited.add(seed);
+            continue;
+        }
+        arrivalTimes.push(arrSeed);
+
+        let improved = true;
+        while (improved && unvisited.size > 0) {
+            improved = false;
+            let bestCust = -1, bestPos = -1, bestCost = Infinity;
+
+            for (const u of unvisited) {
+                // Try inserting u at each position in route
+                for (let pos = 0; pos <= route.length; pos++) {
+                    const prev = pos === 0 ? DEPOT_IDX : route[pos - 1];
+                    const next = pos === route.length ? DEPOT_IDX : route[pos];
+
+                    // Insertion distance cost: d(prev,u) + d(u,next) - d(prev,next)
+                    const cost = distKm(prev, u) + distKm(u, next) - distKm(prev, next);
+
+                    // Check TW feasibility of entire route with u inserted
+                    const testRoute = [...route];
+                    testRoute.splice(pos, 0, u);
+                    const testArrivals = computeArrivals(testRoute);
+
+                    if (testArrivals !== null && cost < bestCost) {
+                        bestCost = cost;
+                        bestCust = u;
+                        bestPos = pos;
+                    }
+                }
+            }
+
+            if (bestCust >= 0) {
+                route.splice(bestPos, 0, bestCust);
+                arrivalTimes = computeArrivals(route);
+                unvisited.delete(bestCust);
+                improved = true;
+            }
+        }
+
+        const finalArrivals = computeArrivals(route);
+        if (finalArrivals) {
+            routes.push([...route]);
+            const stops = route.map((c, i) => ({
+                idx: c,
+                arrival: finalArrivals[i],
+                feasible: finalArrivals[i] <= locations[c].tw_end
+            }));
+            routeDetails.push({ stops });
+        }
+    }
+
+    // Any remaining unvisited: try to add more routes if possible
+    if (unvisited.size > 0) {
+        const extraRoute = [];
+        const remaining = [...unvisited];
+        // Simple greedy: sort by TW start and try
+        remaining.sort((a, b) => locations[a].tw_start - locations[b].tw_start);
+        let currentTime = PLANNING_START;
+        let currentLoc = DEPOT_IDX;
+
+        for (const c of remaining) {
+            const travel = travelTime(currentLoc, c);
+            const arrival = Math.max(currentTime + travel, locations[c].tw_start);
+            const departAfterService = arrival + locations[c].service;
+            const returnTime = departAfterService + travelTime(c, DEPOT_IDX);
+
+            if (arrival <= locations[c].tw_end && returnTime <= PLANNING_END) {
+                extraRoute.push(c);
+                unvisited.delete(c);
+                currentTime = departAfterService;
+                currentLoc = c;
+            }
+        }
+
+        if (extraRoute.length > 0) {
+            const arrivals = computeArrivals(extraRoute);
+            routes.push(extraRoute);
+            const stops = extraRoute.map((c, i) => ({
+                idx: c,
+                arrival: arrivals[i],
+                feasible: arrivals[i] <= locations[c].tw_end
+            }));
+            routeDetails.push({ stops });
+        }
+    }
+
+    return { routes, routeDetails, unvisited: [...unvisited] };
+}
+
+// Compute arrival times for a route. Returns null if infeasible.
+function computeArrivals(route) {
+    const arrivals = [];
+    let currentTime = PLANNING_START;
+    let currentLoc = DEPOT_IDX;
+
+    for (let i = 0; i < route.length; i++) {
+        const c = route[i];
+        const travel = travelTime(currentLoc, c);
+        const arrival = currentTime + travel;
+        const serviceStart = Math.max(arrival, locations[c].tw_start);
+
+        // Check: can we arrive before window closes?
+        if (serviceStart > locations[c].tw_end) return null;
+
+        // Check: can we finish service and return to depot by planning end?
+        const departAfterService = serviceStart + locations[c].service;
+        // Only check return feasibility for last customer
+        if (i === route.length - 1) {
+            const returnTime = departAfterService + travelTime(c, DEPOT_IDX);
+            if (returnTime > PLANNING_END + 30) return null; // small tolerance
+        }
+
+        arrivals.push(serviceStart);
+        currentTime = departAfterService;
+        currentLoc = c;
+    }
+
+    return arrivals;
+}
+
+// ── Nearest Neighbor TW ──
+function nearestNeighborTW(numVehicles) {
+    const unvisited = new Set(CUSTOMERS);
+    const routes = [];
+    const routeDetails = [];
+
+    for (let v = 0; v < numVehicles && unvisited.size > 0; v++) {
+        const route = [];
+        const stops = [];
+        let currentTime = PLANNING_START;
+        let currentLoc = DEPOT_IDX;
+
+        while (unvisited.size > 0) {
+            let bestCust = -1, bestDist = Infinity;
+
+            for (const c of unvisited) {
+                const travel = travelTime(currentLoc, c);
+                const arrival = currentTime + travel;
+                const serviceStart = Math.max(arrival, locations[c].tw_start);
+
+                // Feasibility: arrive before window closes
+                if (serviceStart > locations[c].tw_end) continue;
+
+                // Feasibility: can return to depot after service
+                const departAfterService = serviceStart + locations[c].service;
+                const returnTime = departAfterService + travelTime(c, DEPOT_IDX);
+                if (returnTime > PLANNING_END + 30) continue;
+
+                const d = distKm(currentLoc, c);
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestCust = c;
+                }
+            }
+
+            if (bestCust < 0) break; // no feasible customer
+
+            const travel = travelTime(currentLoc, bestCust);
+            const arrival = currentTime + travel;
+            const serviceStart = Math.max(arrival, locations[bestCust].tw_start);
+            const departAfterService = serviceStart + locations[bestCust].service;
+
+            route.push(bestCust);
+            stops.push({
+                idx: bestCust,
+                arrival: serviceStart,
+                feasible: serviceStart <= locations[bestCust].tw_end
+            });
+
+            unvisited.delete(bestCust);
+            currentTime = departAfterService;
+            currentLoc = bestCust;
+        }
+
+        if (route.length > 0) {
+            routes.push(route);
+            routeDetails.push({ stops });
+        }
+    }
+
+    // If there are still unvisited, add one more route
+    if (unvisited.size > 0) {
+        const route = [];
+        const stops = [];
+        let currentTime = PLANNING_START;
+        let currentLoc = DEPOT_IDX;
+        const remaining = [...unvisited].sort((a, b) => locations[a].tw_start - locations[b].tw_start);
+
+        for (const c of remaining) {
+            const travel = travelTime(currentLoc, c);
+            const arrival = currentTime + travel;
+            const serviceStart = Math.max(arrival, locations[c].tw_start);
+            const departAfterService = serviceStart + locations[c].service;
+            const returnTime = departAfterService + travelTime(c, DEPOT_IDX);
+
+            if (serviceStart <= locations[c].tw_end && returnTime <= PLANNING_END + 30) {
+                route.push(c);
+                stops.push({ idx: c, arrival: serviceStart, feasible: true });
+                unvisited.delete(c);
+                currentTime = departAfterService;
+                currentLoc = c;
+            }
+        }
+
+        if (route.length > 0) {
+            routes.push(route);
+            routeDetails.push({ stops });
+        }
+    }
+
+    return { routes, routeDetails, unvisited: [...unvisited] };
+}
+
+function totalDistance(routes) {
+    let total = 0;
+    for (const route of routes) {
+        const full = [DEPOT_IDX, ...route, DEPOT_IDX];
+        for (let i = 0; i < full.length - 1; i++) {
+            total += distKm(full[i], full[i + 1]);
+        }
+    }
+    return total;
+}
+
+function countTWSatisfied(routeDetails) {
+    let ok = 0, total = 0;
+    for (const rd of routeDetails) {
+        for (const s of rd.stops) {
+            total++;
+            if (s.feasible) ok++;
+        }
+    }
+    return ok + '/' + total;
+}
+
+// ── UI ──
+function toggleAlgo(el) {
+    el.classList.toggle('selected');
+}
+
+function getSelectedAlgos() {
+    const algos = [];
+    document.querySelectorAll('#vrptw-algo-select .algo-chip.selected').forEach(c => {
+        algos.push(c.getAttribute('data-algo'));
+    });
+    return algos;
+}
+
+const ALGO_MAP = {
+    'solomon': { name: 'Solomon I1 Insertion', fn: solomonI1 },
+    'nn-tw': { name: 'Nearest Neighbor TW', fn: nearestNeighborTW }
+};
+
+function solveProblem() {
+    const algos = getSelectedAlgos();
+    if (algos.length === 0) {
+        document.getElementById('vrptw-status').textContent = 'Select at least one algorithm.';
+        return;
+    }
+
+    const numTech = parseInt(document.getElementById('numTechnicians').value);
+    const results = [];
+
+    for (const key of algos) {
+        const algo = ALGO_MAP[key];
+        const t0 = performance.now();
+        const result = algo.fn(numTech);
+        const elapsed = performance.now() - t0;
+        const dist = totalDistance(result.routes);
+        const twSat = countTWSatisfied(result.routeDetails);
+        results.push({
+            key, name: algo.name,
+            routes: result.routes,
+            routeDetails: result.routeDetails,
+            unvisited: result.unvisited,
+            distance: dist,
+            vehicles: result.routes.length,
+            twSatisfied: twSat,
+            time: elapsed
+        });
+    }
+
+    results.sort((a, b) => a.distance - b.distance);
+
+    // Draw best result
+    drawRoutes(results[0].routes, results[0].routeDetails);
+
+    // Update results table
+    const tbody = document.getElementById('vrptw-results').querySelector('tbody');
+    tbody.innerHTML = '';
+    results.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="algo-label">${r.name}</td>
+            <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(2)} km</td>
+            <td>${r.vehicles}</td>
+            <td>${r.twSatisfied}</td>
+            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+        `;
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', () => {
+            drawRoutes(r.routes, r.routeDetails);
+            updateRouteOutput(r);
+        });
+        tbody.appendChild(tr);
+    });
+
+    updateRouteOutput(results[0]);
+
+    const unvisitedMsg = results[0].unvisited.length > 0
+        ? ` Warning: ${results[0].unvisited.length} customer(s) could not be scheduled.`
+        : '';
+    document.getElementById('vrptw-status').textContent =
+        `Solved with ${results.length} algorithm(s). Click a row to view its routes.${unvisitedMsg}`;
+}
+
+function updateRouteOutput(result) {
+    let html = '';
+    result.routes.forEach((route, ri) => {
+        const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+        html += `<div style="margin-bottom:6px;"><strong style="color:${color};">Technician ${ri + 1}:</strong> Depot`;
+        const rd = result.routeDetails[ri];
+        route.forEach((c, ci) => {
+            const stop = rd.stops[ci];
+            const twClass = stop.feasible ? 'tw-ok' : 'tw-fail';
+            const arrStr = minutesToTime(stop.arrival);
+            const name = locations[c].name.length > 20 ? locations[c].name.substring(0, 20) + '...' : locations[c].name;
+            html += ` &rarr; <span class="${twClass}">${name} [arr: ${arrStr}]</span>`;
+        });
+        html += ' &rarr; Depot</div>';
+    });
+
+    if (result.unvisited.length > 0) {
+        html += `<div style="color:var(--red); margin-top:4px;">Unscheduled: ${result.unvisited.map(c => locations[c].name).join(', ')}</div>`;
+    }
+
+    html += `<div style="margin-top:4px; color:var(--slate);">Total distance: ${result.distance.toFixed(2)} km</div>`;
+    document.getElementById('vrptw-route-output').innerHTML = html;
+}
+
+function solveAll() {
+    document.querySelectorAll('#vrptw-algo-select .algo-chip').forEach(c => c.classList.add('selected'));
+    solveProblem();
+}
+
+// ── Initialize ──
+populateServiceCalls();
+drawMap();
+</script>
+</body>
+</html>

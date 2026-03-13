@@ -1,0 +1,1447 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emergency Vehicle Routing | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive emergency vehicle routing demo for Quebec City using Dijkstra and Bellman-Ford shortest path algorithms.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .solver-controls label {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+        }
+
+        .solver-select {
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            color: var(--ivory);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            padding: 6px 12px;
+            outline: none;
+            cursor: pointer;
+        }
+        .solver-select:focus { border-color: var(--gold); }
+        .solver-select option { background: var(--midnight); }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .route-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── Algorithm Cards ── */
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            color: var(--ivory);
+        }
+        .algo-card h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .algo-card .algo-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 2px;
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+            background: rgba(100, 255, 218, 0.1);
+            border: 1px solid rgba(100, 255, 218, 0.3);
+            color: var(--green);
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.8rem;
+        }
+        .algo-card code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--green);
+            background: rgba(100, 255, 218, 0.06);
+            padding: 1px 6px;
+            border-radius: 2px;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M. G. Nasiri</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/routing.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Emergency Vehicle Routing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-route"></i></div>
+        <h1>Emergency Vehicle <span>Routing</span></h1>
+        <div class="hero-subtitle">Shortest Path Problem</div>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            When every second counts, finding the fastest route through a city road network
+            can save lives. Shortest path algorithms determine optimal emergency vehicle
+            dispatch routes in real time, minimizing response time from station to incident.
+        </p>
+    </div>
+</section>
+
+<!-- ── 2. The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Finding the fastest route through a road network</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Find the fastest route for an emergency vehicle &mdash; ambulance, fire truck,
+                or police cruiser &mdash; through a road network. Given a <strong>weighted directed
+                graph</strong> G = (V, E) where vertices represent intersections and edges represent
+                road segments with travel times as weights, find the <strong>minimum-weight path</strong>
+                from a source node (station) to a destination node (incident location).
+            </p>
+            <p>
+                <strong>Dijkstra's algorithm</strong> solves this optimally in
+                O((V+E) log V) time using a priority queue, provided all edge weights
+                are non-negative. <strong>Bellman-Ford</strong> handles negative weights
+                and detects negative cycles in O(VE), useful for modeling incentive-reduced
+                travel times or road toll credits.
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Mathematical Formulation</span>
+                <span class="keyword">Given:</span> Directed graph G = (V, E), weight function <span class="variable">w: E &rarr; R</span><br>
+                <span class="keyword">Find:</span> Path P = (v<sub>0</sub>, v<sub>1</sub>, ..., v<sub>k</sub>) from source <span class="variable">s</span> to target <span class="variable">t</span><br>
+                <span class="keyword">Minimize:</span> <span class="variable">w(P)</span> = &sum; w(v<sub>i</sub>, v<sub>i+1</sub>) for i = 0, ..., k-1<br>
+                <span class="keyword">Subject to:</span> v<sub>0</sub> = <span class="variable">s</span>, v<sub>k</sub> = <span class="variable">t</span>, (v<sub>i</sub>, v<sub>i+1</sub>) &isin; E<br>
+                <br>
+                <span class="comment">// Optimality condition (Bellman principle):</span><br>
+                <span class="variable">dist[v]</span> = <span class="keyword">min</span>(<span class="variable">dist[u]</span> + <span class="variable">w(u,v)</span>) for all (u,v) &isin; E
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Interactive shortest path solver on a Quebec City road network</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-ambulance"></i> Emergency Dispatch Solver</h4>
+                <button class="solver-btn primary" onclick="solve()">
+                    <i class="fas fa-play"></i>&nbsp; Find Route
+                </button>
+            </div>
+            <div class="solver-body">
+                <!-- Controls Row -->
+                <div class="solver-row">
+                    <div>
+                        <div class="solver-section-label">Route Configuration</div>
+                        <div class="solver-controls">
+                            <label>Source:</label>
+                            <select id="source-select" class="solver-select">
+                                <option value="0">0 &mdash; Hopital Laval</option>
+                                <option value="1">1 &mdash; Gare du Palais</option>
+                                <option value="2">2 &mdash; Place Royale</option>
+                                <option value="3">3 &mdash; Chateau Frontenac</option>
+                                <option value="4">4 &mdash; Universite Laval</option>
+                                <option value="5">5 &mdash; Place Laurier</option>
+                                <option value="6">6 &mdash; Vieux-Port</option>
+                                <option value="7">7 &mdash; Beauport</option>
+                            </select>
+                        </div>
+                        <div class="solver-controls">
+                            <label>Destination:</label>
+                            <select id="dest-select" class="solver-select">
+                                <option value="0">0 &mdash; Hopital Laval</option>
+                                <option value="1">1 &mdash; Gare du Palais</option>
+                                <option value="2">2 &mdash; Place Royale</option>
+                                <option value="3">3 &mdash; Chateau Frontenac</option>
+                                <option value="4">4 &mdash; Universite Laval</option>
+                                <option value="5">5 &mdash; Place Laurier</option>
+                                <option value="6">6 &mdash; Vieux-Port</option>
+                                <option value="7" selected>7 &mdash; Beauport</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="algo-select">
+                            <div class="algo-chip selected" data-algo="dijkstra" onclick="toggleAlgo(this)">
+                                Dijkstra <span class="chip-type" style="color: var(--green);">exact</span>
+                            </div>
+                            <div class="algo-chip selected" data-algo="bellman-ford" onclick="toggleAlgo(this)">
+                                Bellman-Ford <span class="chip-type" style="color: var(--green);">exact</span>
+                            </div>
+                        </div>
+                        <button class="solver-btn" onclick="selectAllAlgos()">Select All</button>
+                        <button class="solver-btn" onclick="clearAllAlgos()">Clear All</button>
+                    </div>
+                </div>
+
+                <!-- Canvas -->
+                <div class="solver-canvas-wrap">
+                    <canvas id="graph-canvas" width="700" height="500"></canvas>
+                </div>
+
+                <!-- Results -->
+                <div class="solver-status" id="solver-status">Select source, destination, and algorithm, then click "Find Route".</div>
+                <div style="margin-top: 1rem;">
+                    <table class="results-table" id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Distance (min)</th>
+                                <th>Path</th>
+                                <th>Nodes Visited</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+                <div class="route-output" id="route-output">Route details will appear here after solving.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Exact methods for shortest path computation</p>
+        </div>
+        <div class="content-block">
+            <div class="algo-card fade-in">
+                <h3><i class="fas fa-project-diagram"></i> Dijkstra's Algorithm</h3>
+                <div class="algo-badge">Exact &mdash; O((V+E) log V)</div>
+                <p>
+                    Uses a <strong>priority queue (min-heap)</strong> to greedily expand the nearest
+                    unvisited vertex. Initialize <code>dist[s] = 0</code> and all other distances to
+                    infinity. At each step, extract the vertex <code>u</code> with minimum distance,
+                    then <strong>relax</strong> each neighbor <code>v</code>: if
+                    <code>dist[u] + w(u,v) &lt; dist[v]</code>, update <code>dist[v]</code> and record
+                    <code>u</code> as the predecessor of <code>v</code>.
+                </p>
+                <p>
+                    The predecessor array enables <strong>path reconstruction</strong> by tracing back
+                    from the target to the source. Requires all edge weights to be non-negative.
+                    With a binary heap, the complexity is O((V+E) log V).
+                </p>
+            </div>
+            <div class="algo-card fade-in">
+                <h3><i class="fas fa-wave-square"></i> Bellman-Ford Algorithm</h3>
+                <div class="algo-badge">Exact &mdash; O(VE)</div>
+                <p>
+                    Performs <strong>V-1 relaxation passes</strong> over all edges. In each pass,
+                    for every edge (u, v) with weight w, check if
+                    <code>dist[u] + w(u,v) &lt; dist[v]</code>
+                    and update accordingly. After V-1 passes, all shortest distances are finalized
+                    (if no negative cycle exists).
+                </p>
+                <p>
+                    A <strong>V-th pass</strong> detects negative cycles: if any distance can still
+                    be reduced, a negative-weight cycle is reachable from the source. The predecessor
+                    array tracks the shortest path tree. Handles negative edge weights, unlike Dijkstra.
+                    Complexity is O(VE).
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational papers on shortest path algorithms</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Dijkstra, E. W.</span> (1959).
+                    <span class="ref-title">"A note on two problems in connexion with graphs."</span>
+                    <span class="ref-journal">Numerische Mathematik, 1(1), 269&ndash;271.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Bellman, R.</span> (1958).
+                    <span class="ref-title">"On a routing problem."</span>
+                    <span class="ref-journal">Quarterly of Applied Mathematics, 16(1), 87&ndash;90.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. CTA ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize routing in your network?</h3>
+            <p>
+                From emergency dispatch to logistics and telecommunications,
+                shortest path methods form the backbone of network optimization.
+                Let's discuss how these techniques can be applied to your challenges.
+            </p>
+            <div class="cta-links">
+                <a class="cta-link" href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. Disclaimer ── -->
+<section>
+    <div class="container">
+        <div class="content-block fade-in">
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+                Data shown is illustrative. Travel times are approximate and do not reflect
+                real-time traffic conditions. Node positions correspond roughly to Quebec City
+                landmarks but are simplified for demonstration purposes.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <p>&copy; 2024 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Built with mathematical rigor.</p>
+</footer>
+
+<!-- ── Back Link ── -->
+<a class="back-link" href="../index.html"><i class="fas fa-arrow-left"></i>&nbsp; Back</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ── Graph Data: Quebec City Emergency Network ──
+
+const NODES = [
+    { id: 0, name: "Hopital Laval",       lat: 46.7810, lng: -71.2750 },
+    { id: 1, name: "Gare du Palais",      lat: 46.8165, lng: -71.2142 },
+    { id: 2, name: "Place Royale",        lat: 46.8123, lng: -71.2033 },
+    { id: 3, name: "Chateau Frontenac",   lat: 46.8122, lng: -71.2050 },
+    { id: 4, name: "Universite Laval",    lat: 46.7830, lng: -71.2720 },
+    { id: 5, name: "Place Laurier",       lat: 46.7770, lng: -71.2830 },
+    { id: 6, name: "Vieux-Port",          lat: 46.8180, lng: -71.2000 },
+    { id: 7, name: "Beauport",            lat: 46.8620, lng: -71.2000 }
+];
+
+const EDGES = [
+    { from: 0, to: 1, weight: 8 },
+    { from: 0, to: 4, weight: 3 },
+    { from: 0, to: 5, weight: 2 },
+    { from: 1, to: 2, weight: 4 },
+    { from: 1, to: 6, weight: 5 },
+    { from: 1, to: 7, weight: 10 },
+    { from: 2, to: 3, weight: 1 },
+    { from: 2, to: 6, weight: 3 },
+    { from: 3, to: 6, weight: 4 },
+    { from: 4, to: 1, weight: 6 },
+    { from: 4, to: 5, weight: 2 },
+    { from: 5, to: 1, weight: 7 },
+    { from: 5, to: 4, weight: 2 },
+    { from: 6, to: 7, weight: 8 },
+    { from: 7, to: 6, weight: 8 }
+];
+
+// ── Map Projection ──
+const LAT_MIN = 46.760, LAT_MAX = 46.880;
+const LNG_MIN = -71.310, LNG_MAX = -71.170;
+const CW = 700, CH = 500;
+const PAD = 40;
+
+function project(lat, lng) {
+    const x = PAD + ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * (CW - 2 * PAD);
+    const y = PAD + ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * (CH - 2 * PAD);
+    return { x, y };
+}
+
+const nodePositions = NODES.map(n => project(n.lat, n.lng));
+
+// ── Adjacency list ──
+function buildAdj() {
+    const adj = {};
+    for (const n of NODES) adj[n.id] = [];
+    for (const e of EDGES) adj[e.from].push({ to: e.to, w: e.weight });
+    return adj;
+}
+
+// ── Dijkstra (proper min-heap) ──
+class MinHeap {
+    constructor() { this.data = []; }
+    push(item) {
+        this.data.push(item);
+        this._bubbleUp(this.data.length - 1);
+    }
+    pop() {
+        const top = this.data[0];
+        const last = this.data.pop();
+        if (this.data.length > 0) {
+            this.data[0] = last;
+            this._sinkDown(0);
+        }
+        return top;
+    }
+    size() { return this.data.length; }
+    _bubbleUp(i) {
+        while (i > 0) {
+            const parent = (i - 1) >> 1;
+            if (this.data[i].dist < this.data[parent].dist) {
+                [this.data[i], this.data[parent]] = [this.data[parent], this.data[i]];
+                i = parent;
+            } else break;
+        }
+    }
+    _sinkDown(i) {
+        const n = this.data.length;
+        while (true) {
+            let smallest = i;
+            const left = 2 * i + 1, right = 2 * i + 2;
+            if (left < n && this.data[left].dist < this.data[smallest].dist) smallest = left;
+            if (right < n && this.data[right].dist < this.data[smallest].dist) smallest = right;
+            if (smallest !== i) {
+                [this.data[i], this.data[smallest]] = [this.data[smallest], this.data[i]];
+                i = smallest;
+            } else break;
+        }
+    }
+}
+
+function dijkstra(source, target) {
+    const adj = buildAdj();
+    const V = NODES.length;
+    const dist = new Array(V).fill(Infinity);
+    const pred = new Array(V).fill(-1);
+    const visited = new Array(V).fill(false);
+    const visitOrder = [];
+
+    dist[source] = 0;
+    const heap = new MinHeap();
+    heap.push({ node: source, dist: 0 });
+
+    while (heap.size() > 0) {
+        const { node: u, dist: d } = heap.pop();
+        if (visited[u]) continue;
+        visited[u] = true;
+        visitOrder.push(u);
+
+        if (u === target) break;
+
+        for (const edge of adj[u]) {
+            const v = edge.to;
+            const newDist = dist[u] + edge.w;
+            if (newDist < dist[v]) {
+                dist[v] = newDist;
+                pred[v] = u;
+                heap.push({ node: v, dist: newDist });
+            }
+        }
+    }
+
+    // Reconstruct path
+    const path = [];
+    if (dist[target] < Infinity) {
+        let cur = target;
+        while (cur !== -1) {
+            path.unshift(cur);
+            cur = pred[cur];
+        }
+    }
+
+    return {
+        distance: dist[target],
+        path: path,
+        visited: visitOrder,
+        nodesVisited: visitOrder.length
+    };
+}
+
+// ── Bellman-Ford (with negative cycle detection) ──
+function bellmanFord(source, target) {
+    const V = NODES.length;
+    const dist = new Array(V).fill(Infinity);
+    const pred = new Array(V).fill(-1);
+    const visitedSet = new Set();
+
+    dist[source] = 0;
+
+    // V-1 relaxation passes
+    for (let i = 0; i < V - 1; i++) {
+        let updated = false;
+        for (const e of EDGES) {
+            if (dist[e.from] < Infinity && dist[e.from] + e.weight < dist[e.to]) {
+                dist[e.to] = dist[e.from] + e.weight;
+                pred[e.to] = e.from;
+                updated = true;
+                visitedSet.add(e.from);
+                visitedSet.add(e.to);
+            }
+        }
+        if (!updated) break; // Early termination
+    }
+
+    // V-th pass: negative cycle detection
+    let hasNegativeCycle = false;
+    for (const e of EDGES) {
+        if (dist[e.from] < Infinity && dist[e.from] + e.weight < dist[e.to]) {
+            hasNegativeCycle = true;
+            break;
+        }
+    }
+
+    // Reconstruct path
+    const path = [];
+    if (!hasNegativeCycle && dist[target] < Infinity) {
+        let cur = target;
+        while (cur !== -1) {
+            path.unshift(cur);
+            cur = pred[cur];
+        }
+    }
+
+    const visitOrder = Array.from(visitedSet);
+
+    return {
+        distance: hasNegativeCycle ? Infinity : dist[target],
+        path: path,
+        visited: visitOrder,
+        nodesVisited: visitOrder.length,
+        negativeCycle: hasNegativeCycle
+    };
+}
+
+// ── Drawing ──
+const canvas = document.getElementById('graph-canvas');
+const ctx = canvas.getContext('2d');
+
+const NODE_RADIUS = 16;
+const COLORS = {
+    node: '#8892B0',
+    nodeStroke: 'rgba(197, 160, 89, 0.4)',
+    edge: 'rgba(136, 146, 176, 0.3)',
+    edgeWeight: '#8892B0',
+    pathEdge: '#64ffda',
+    pathNode: '#64ffda',
+    visitedNode: '#7aa2f7',
+    sourceNode: '#C5A059',
+    targetNode: '#ff6b6b',
+    label: '#a8b2d1',
+    background: '#112240'
+};
+
+function drawArrow(x1, y1, x2, y2, color, lineWidth) {
+    const dx = x2 - x1, dy = y2 - y1;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const ux = dx / len, uy = dy / len;
+
+    // Shorten line to stop at node edge
+    const sx = x1 + ux * NODE_RADIUS;
+    const sy = y1 + uy * NODE_RADIUS;
+    const ex = x2 - ux * (NODE_RADIUS + 6);
+    const ey = y2 - uy * (NODE_RADIUS + 6);
+
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(ex, ey);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.stroke();
+
+    // Arrowhead
+    const headLen = 8;
+    const angle = Math.atan2(ey - sy, ex - sx);
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - headLen * Math.cos(angle - 0.4), ey - headLen * Math.sin(angle - 0.4));
+    ctx.lineTo(ex - headLen * Math.cos(angle + 0.4), ey - headLen * Math.sin(angle + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+function drawGraph(result, highlightAlgo) {
+    ctx.clearRect(0, 0, CW, CH);
+
+    // Background
+    ctx.fillStyle = COLORS.background;
+    ctx.fillRect(0, 0, CW, CH);
+
+    // Grid lines for map feel
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.03)';
+    ctx.lineWidth = 1;
+    for (let x = PAD; x <= CW - PAD; x += 40) {
+        ctx.beginPath(); ctx.moveTo(x, PAD); ctx.lineTo(x, CH - PAD); ctx.stroke();
+    }
+    for (let y = PAD; y <= CH - PAD; y += 40) {
+        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CW - PAD, y); ctx.stroke();
+    }
+
+    // Map label
+    ctx.font = '10px Inter';
+    ctx.fillStyle = 'rgba(197, 160, 89, 0.2)';
+    ctx.textAlign = 'right';
+    ctx.fillText('QUEBEC CITY', CW - PAD, CH - PAD + 16);
+
+    const source = parseInt(document.getElementById('source-select').value);
+    const target = parseInt(document.getElementById('dest-select').value);
+
+    // Build path edge set for highlighting
+    const pathEdgeSet = new Set();
+    if (result && result.path.length > 1) {
+        for (let i = 0; i < result.path.length - 1; i++) {
+            pathEdgeSet.add(result.path[i] + '-' + result.path[i + 1]);
+        }
+    }
+
+    // Draw edges
+    for (const e of EDGES) {
+        const p1 = nodePositions[e.from];
+        const p2 = nodePositions[e.to];
+        const isPathEdge = pathEdgeSet.has(e.from + '-' + e.to);
+
+        drawArrow(p1.x, p1.y, p2.x, p2.y,
+            isPathEdge ? COLORS.pathEdge : COLORS.edge,
+            isPathEdge ? 3 : 1.2
+        );
+
+        // Weight label
+        const mx = (p1.x + p2.x) / 2;
+        const my = (p1.y + p2.y) / 2;
+        const dx = p2.x - p1.x, dy = p2.y - p1.y;
+        const len = Math.sqrt(dx * dx + dy * dy);
+        const nx = -dy / len, ny = dx / len;
+        const ox = mx + nx * 12, oy = my + ny * 12;
+
+        ctx.font = '600 11px JetBrains Mono';
+        ctx.fillStyle = isPathEdge ? COLORS.pathEdge : COLORS.edgeWeight;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(e.weight.toString(), ox, oy);
+    }
+
+    // Build visited set
+    const visitedSet = new Set(result ? result.visited : []);
+    const pathSet = new Set(result ? result.path : []);
+
+    // Draw nodes
+    for (let i = 0; i < NODES.length; i++) {
+        const pos = nodePositions[i];
+        let fillColor = COLORS.node;
+        let strokeColor = COLORS.nodeStroke;
+        let radius = NODE_RADIUS;
+
+        if (i === source) {
+            fillColor = COLORS.sourceNode;
+            strokeColor = COLORS.sourceNode;
+            radius = NODE_RADIUS + 2;
+        } else if (i === target) {
+            fillColor = COLORS.targetNode;
+            strokeColor = COLORS.targetNode;
+            radius = NODE_RADIUS + 2;
+        } else if (result && pathSet.has(i)) {
+            fillColor = COLORS.pathNode;
+            strokeColor = COLORS.pathNode;
+        } else if (result && visitedSet.has(i)) {
+            fillColor = COLORS.visitedNode;
+            strokeColor = COLORS.visitedNode;
+        }
+
+        // Glow for path nodes
+        if (result && (pathSet.has(i) || i === source || i === target)) {
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, radius + 6, 0, Math.PI * 2);
+            ctx.fillStyle = (i === source ? 'rgba(197,160,89,0.15)' :
+                            i === target ? 'rgba(255,107,107,0.15)' :
+                            'rgba(100,255,218,0.15)');
+            ctx.fill();
+        }
+
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(10,25,47,0.9)';
+        ctx.fill();
+        ctx.strokeStyle = strokeColor;
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Node ID
+        ctx.font = '600 11px JetBrains Mono';
+        ctx.fillStyle = fillColor;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(i.toString(), pos.x, pos.y);
+
+        // Node name label
+        ctx.font = '10px Inter';
+        ctx.fillStyle = COLORS.label;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillText(NODES[i].name, pos.x, pos.y + radius + 6);
+    }
+
+    // Legend
+    const legendX = PAD + 4, legendY = PAD + 4;
+    ctx.font = '9px Inter';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+
+    const legendItems = [
+        { color: COLORS.sourceNode, label: 'Source' },
+        { color: COLORS.targetNode, label: 'Destination' },
+        { color: COLORS.pathNode, label: 'Shortest Path' },
+        { color: COLORS.visitedNode, label: 'Visited' }
+    ];
+
+    legendItems.forEach((item, idx) => {
+        const y = legendY + idx * 16;
+        ctx.beginPath();
+        ctx.arc(legendX + 5, y, 4, 0, Math.PI * 2);
+        ctx.fillStyle = item.color;
+        ctx.fill();
+        ctx.fillStyle = 'rgba(168, 178, 209, 0.7)';
+        ctx.fillText(item.label, legendX + 14, y);
+    });
+}
+
+// ── Algorithm Selection ──
+function toggleAlgo(chip) {
+    chip.classList.toggle('selected');
+}
+function selectAllAlgos() {
+    document.querySelectorAll('.algo-chip').forEach(c => c.classList.add('selected'));
+}
+function clearAllAlgos() {
+    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('selected'));
+}
+
+// ── Solve ──
+let currentResults = [];
+
+function solve() {
+    const source = parseInt(document.getElementById('source-select').value);
+    const target = parseInt(document.getElementById('dest-select').value);
+
+    if (source === target) {
+        document.getElementById('solver-status').textContent = 'Source and destination must be different.';
+        return;
+    }
+
+    const selectedAlgos = [];
+    document.querySelectorAll('.algo-chip.selected').forEach(chip => {
+        selectedAlgos.push(chip.dataset.algo);
+    });
+
+    if (selectedAlgos.length === 0) {
+        document.getElementById('solver-status').textContent = 'Please select at least one algorithm.';
+        return;
+    }
+
+    currentResults = [];
+
+    for (const algo of selectedAlgos) {
+        const t0 = performance.now();
+        let result;
+        let algoName;
+
+        if (algo === 'dijkstra') {
+            result = dijkstra(source, target);
+            algoName = "Dijkstra's Algorithm";
+        } else {
+            result = bellmanFord(source, target);
+            algoName = "Bellman-Ford";
+        }
+
+        const elapsed = performance.now() - t0;
+        currentResults.push({
+            key: algo,
+            name: algoName,
+            distance: result.distance,
+            path: result.path,
+            visited: result.visited,
+            nodesVisited: result.nodesVisited,
+            negativeCycle: result.negativeCycle || false,
+            time: elapsed
+        });
+    }
+
+    // Sort by distance (best first)
+    currentResults.sort((a, b) => a.distance - b.distance);
+
+    // Draw best result
+    if (currentResults.length > 0) {
+        drawGraph(currentResults[0]);
+    }
+
+    // Update results table
+    const tbody = document.getElementById('results-table').querySelector('tbody');
+    tbody.innerHTML = '';
+    currentResults.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        const pathStr = r.path.length > 0
+            ? r.path.map(n => NODES[n].name).join(' -> ')
+            : 'No path found';
+        const distStr = r.distance < Infinity ? r.distance.toString() : 'N/A';
+        const timeStr = r.time < 1 ? r.time.toFixed(3) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
+        tr.innerHTML = `
+            <td class="algo-label">${r.name}</td>
+            <td class="${i === 0 && r.distance < Infinity ? 'best-val' : ''}">${distStr}</td>
+            <td style="font-size:0.7rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pathStr}</td>
+            <td>${r.nodesVisited}</td>
+            <td>${timeStr}</td>
+        `;
+        tr.addEventListener('click', () => showResult(r));
+        tbody.appendChild(tr);
+    });
+
+    showResult(currentResults[0]);
+
+    const statusMsg = currentResults[0].distance < Infinity
+        ? `Shortest path found: ${currentResults[0].distance} min. Click a row to view its trace.`
+        : 'No path exists between selected nodes.';
+    document.getElementById('solver-status').textContent = statusMsg;
+}
+
+function showResult(r) {
+    drawGraph(r);
+
+    const lines = [];
+    if (r.negativeCycle) {
+        lines.push('WARNING: Negative cycle detected in the graph!');
+        lines.push('Shortest path is undefined.');
+    } else if (r.path.length === 0) {
+        lines.push(`No path exists from ${NODES[parseInt(document.getElementById('source-select').value)].name} to ${NODES[parseInt(document.getElementById('dest-select').value)].name}.`);
+    } else {
+        lines.push(`Algorithm: ${r.name}`);
+        lines.push(`Path: ${r.path.map(n => n + ' (' + NODES[n].name + ')').join(' -> ')}`);
+        lines.push(`Total travel time: ${r.distance} minutes`);
+        lines.push(`Nodes visited during search: ${r.nodesVisited}`);
+        lines.push(`Computation time: ${r.time < 1 ? r.time.toFixed(3) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}`);
+        lines.push('');
+
+        // Show step-by-step path segments
+        lines.push('Route segments:');
+        for (let i = 0; i < r.path.length - 1; i++) {
+            const from = r.path[i], to = r.path[i + 1];
+            const edge = EDGES.find(e => e.from === from && e.to === to);
+            const w = edge ? edge.weight : '?';
+            lines.push(`  ${NODES[from].name} -> ${NODES[to].name}  (${w} min)`);
+        }
+    }
+
+    document.getElementById('route-output').textContent = lines.join('\n');
+}
+
+// ── Scroll Animations ──
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Initialize ──
+drawGraph(null);
+</script>
+</body>
+</html>

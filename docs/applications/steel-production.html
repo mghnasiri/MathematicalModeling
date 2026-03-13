@@ -1,0 +1,1528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steel Production Line | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="No-Wait Flow Shop Scheduling applied to steel production: optimize continuous casting with Nearest Neighbor, NEH-NW, and Gangadharan-Rajendran algorithms.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: transparent;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: rgba(10, 25, 47, 0.5);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .breadcrumb-nav a {
+            color: var(--slate);
+            text-decoration: none;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav a:hover { color: var(--gold); }
+        .breadcrumb-nav span {
+            color: var(--slate);
+            font-size: 0.82rem;
+            margin: 0 0.5rem;
+        }
+        .breadcrumb-nav .current {
+            color: var(--gold);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            min-height: 60vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 8rem 2rem 4rem;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3.5rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.8rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-child(even) { background: var(--midnight-light); }
+
+        /* ── Content Cards ── */
+        .content-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .content-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .content-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .content-card:hover::before { opacity: 1; }
+
+        .content-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+        }
+        .content-card p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.8;
+        }
+
+        /* ── Formulation Box ── */
+        .formulation-box {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.5rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 1.9;
+        }
+        .formulation-box .form-label {
+            color: var(--gold);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2.5rem;
+        }
+
+        .processing-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.88rem;
+        }
+        .processing-table thead th {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+        }
+        .processing-table thead th:first-child { text-align: left; }
+        .processing-table tbody td {
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            text-align: center;
+            vertical-align: middle;
+        }
+        .processing-table tbody td:first-child {
+            color: var(--ivory);
+            font-weight: 500;
+            text-align: left;
+            padding-left: 1rem;
+        }
+        .processing-table input {
+            width: 60px;
+            background: rgba(10, 25, 47, 0.8);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            color: var(--ivory);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            text-align: center;
+            padding: 0.4rem;
+            transition: border-color 0.3s;
+        }
+        .processing-table input:focus {
+            outline: none;
+            border-color: var(--gold);
+            box-shadow: 0 0 0 2px rgba(197, 160, 89, 0.15);
+        }
+
+        /* ── Algorithm Chips ── */
+        .algo-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1.5rem 0;
+        }
+        .algo-chip {
+            font-size: 0.78rem;
+            padding: 0.5rem 1rem;
+            border-radius: 3px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid transparent;
+        }
+        .algo-chip.heuristic {
+            background: rgba(122, 162, 247, 0.1);
+            color: var(--blue);
+            border-color: rgba(122, 162, 247, 0.3);
+        }
+        .algo-chip.heuristic.active {
+            background: rgba(122, 162, 247, 0.25);
+            border-color: var(--blue);
+            box-shadow: 0 0 12px rgba(122, 162, 247, 0.2);
+        }
+        .algo-chip:hover {
+            transform: translateY(-1px);
+        }
+
+        /* ── Solve Button ── */
+        .btn-solve {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 2.5rem;
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+            border: none;
+            border-radius: 3px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .btn-solve:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(197, 160, 89, 0.3);
+        }
+        .btn-solve:active { transform: translateY(0); }
+
+        /* ── Gantt Chart ── */
+        .gantt-container {
+            margin: 2rem 0;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 1.5rem;
+            overflow-x: auto;
+        }
+        .gantt-container canvas {
+            display: block;
+            width: 100%;
+        }
+
+        /* ── Results Grid ── */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1.2rem;
+            margin-top: 1.5rem;
+        }
+        .result-item {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+        .result-label {
+            font-size: 0.7rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.3rem;
+        }
+        .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            color: var(--gold);
+            font-weight: 500;
+        }
+        .result-value.sequence {
+            font-size: 0.9rem;
+            color: var(--ivory);
+            word-break: break-all;
+        }
+        .result-value.small {
+            font-size: 0.85rem;
+            color: var(--slate-light);
+        }
+
+        /* ── Algorithm Section ── */
+        .algo-detail {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-detail h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+        }
+        .algo-detail p, .algo-detail li {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .algo-detail ol, .algo-detail ul {
+            padding-left: 1.5rem;
+            margin: 0.8rem 0;
+        }
+        .algo-detail code {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--green);
+            background: rgba(100, 255, 218, 0.06);
+            padding: 1px 6px;
+            border-radius: 3px;
+        }
+
+        .method-badge {
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            white-space: nowrap;
+            display: inline-block;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .method-heuristic { background: rgba(122, 162, 247, 0.1); color: var(--blue); }
+
+        /* ── Complexity Items ── */
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+        }
+        .complexity-list li i {
+            color: var(--gold);
+            font-size: 0.7rem;
+            width: 16px;
+            text-align: center;
+        }
+
+        /* ── References ── */
+        .reference-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.7;
+        }
+        .reference-item:last-child { border-bottom: none; }
+        .reference-item .ref-authors {
+            color: var(--ivory);
+            font-weight: 500;
+        }
+        .reference-item .ref-title {
+            font-style: italic;
+        }
+        .reference-item .ref-journal {
+            color: var(--slate);
+        }
+
+        /* ── CTA Section ── */
+        .cta-section {
+            text-align: center;
+            padding: 5rem 0;
+        }
+        .cta-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 1rem;
+        }
+        .cta-section p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .btn-luxury {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.8rem 2rem;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            font-weight: 500;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+        .btn-luxury:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 8px 25px rgba(197, 160, 89, 0.3);
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            text-align: center;
+            padding: 2rem 0;
+            border-top: 1px solid rgba(197, 160, 89, 0.08);
+            margin-top: 2rem;
+        }
+        .disclaimer p {
+            color: var(--slate);
+            font-size: 0.78rem;
+            font-style: italic;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Footer ── */
+        footer {
+            text-align: center;
+            padding: 3rem 0;
+            border-top: 1px solid rgba(197, 160, 89, 0.08);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.4rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.9rem; letter-spacing: 2px; }
+            .section-header h2 { font-size: 2rem; }
+            .content-card { padding: 1.5rem; }
+            .solver-panel { padding: 1.5rem; }
+            .processing-table input { width: 50px; }
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ── Slab colors for Gantt ── */
+        .slab-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+            justify-content: center;
+        }
+        .slab-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .slab-legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">Families</a>
+                        <ul class="dropdown-menu" style="background: var(--midnight-light); border-color: rgba(197,160,89,0.15);">
+                            <li><a class="dropdown-item" href="../families/scheduling.html" style="color: var(--slate-light);">Scheduling</a></li>
+                            <li><a class="dropdown-item" href="../families/routing.html" style="color: var(--slate-light);">Routing</a></li>
+                            <li><a class="dropdown-item" href="../families/packing.html" style="color: var(--slate-light);">Packing &amp; Cutting</a></li>
+                            <li><a class="dropdown-item" href="../families/network.html" style="color: var(--slate-light);">Location &amp; Network</a></li>
+                            <li><a class="dropdown-item" href="../families/stochastic.html" style="color: var(--slate-light);">Stochastic &amp; Robust</a></li>
+                        </ul>
+                    </li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                    <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i></a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-nav" style="margin-top: 76px;">
+        <div class="container">
+            <a href="../index.html">Home</a>
+            <span>/</span>
+            <a href="#">Applications</a>
+            <span>/</span>
+            <span class="current">Steel Production Line</span>
+        </div>
+    </div>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-icon">
+                <i class="fas fa-fire"></i>
+            </div>
+            <h1>Steel Production <span>Line</span></h1>
+            <div class="hero-subtitle">No-Wait Flow Shop Scheduling</div>
+            <div class="gold-line"></div>
+        </div>
+    </section>
+
+    <!-- The Problem -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>The <span style="color: var(--gold);">Problem</span></h2>
+                <p>Why steel production is a no-wait scheduling challenge</p>
+            </div>
+
+            <div class="content-card">
+                <h3>Continuous Casting &amp; Hot Rolling</h3>
+                <p>
+                    In continuous casting and steel production, molten steel slabs must pass through a series
+                    of processing stages — heating in a furnace, rolling in a mill, and controlled cooling —
+                    <strong style="color: var(--gold);">without any waiting between stages</strong>. The metal
+                    cannot be allowed to cool down between steps; if a slab sits idle between the furnace and
+                    the rolling mill, it loses temperature, resulting in defective products, wasted energy for
+                    reheating, or scrapped material entirely.
+                </p>
+                <p style="margin-top: 1rem;">
+                    This operational constraint maps directly to the <strong>No-Wait Flow Shop Scheduling Problem</strong>
+                    (<span style="font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.88rem;">F<sub>m</sub> | prmu, no-wait | C<sub>max</sub></span>).
+                    The objective is to find the optimal sequence of steel slabs through all stages that minimizes
+                    the total production time (makespan), while ensuring that each slab transitions immediately
+                    from one machine to the next.
+                </p>
+
+                <div class="formulation-box">
+                    <span class="form-label">Problem Classification</span>
+                    Fm | prmu, no-wait | Cmax<br>
+                    <br>
+                    n steel slabs, m processing stages (machines)<br>
+                    Each slab j has processing time p[j][i] on stage i<br>
+                    No waiting allowed: slab must move immediately to next stage<br>
+                    <br>
+                    Complexity: <span style="color: var(--red);">NP-hard</span> for m &ge; 3 machines
+                </div>
+
+                <div style="display: flex; gap: 2rem; flex-wrap: wrap; margin-top: 1.5rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); margin-bottom: 0.5rem;">
+                            <i class="fas fa-industry" style="margin-right: 0.5rem;"></i> Stages
+                        </h4>
+                        <ul style="list-style: none; padding: 0; color: var(--slate-light); font-size: 0.9rem;">
+                            <li style="padding: 0.3rem 0;"><i class="fas fa-chevron-right" style="color: var(--gold); font-size: 0.6rem; margin-right: 0.5rem;"></i> Furnace (Reheating)</li>
+                            <li style="padding: 0.3rem 0;"><i class="fas fa-chevron-right" style="color: var(--gold); font-size: 0.6rem; margin-right: 0.5rem;"></i> Rolling Mill</li>
+                            <li style="padding: 0.3rem 0;"><i class="fas fa-chevron-right" style="color: var(--gold); font-size: 0.6rem; margin-right: 0.5rem;"></i> Cooling Line</li>
+                        </ul>
+                    </div>
+                    <div style="flex: 1; min-width: 200px;">
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); margin-bottom: 0.5rem;">
+                            <i class="fas fa-exclamation-triangle" style="margin-right: 0.5rem;"></i> No-Wait Constraint
+                        </h4>
+                        <p style="color: var(--slate-light); font-size: 0.9rem;">
+                            A slab finishing in the furnace must enter the rolling mill immediately. The start of
+                            a slab on a later machine is completely determined by its start time on the first
+                            machine, creating contiguous processing blocks.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Try It Yourself -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>Try It <span style="color: var(--gold);">Yourself</span></h2>
+                <p>Interactive no-wait flow shop solver for steel slab scheduling</p>
+            </div>
+
+            <div class="solver-panel">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+                    <div>
+                        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; margin-bottom: 0.3rem;">
+                            Steel Slab Scheduling
+                        </h3>
+                        <p style="color: var(--slate); font-size: 0.85rem;">
+                            5 steel slabs &middot; 3 stages (Furnace, Rolling Mill, Cooling)
+                        </p>
+                    </div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--slate); text-align: right;">
+                        Edit processing times below<br>
+                        <span style="color: var(--gold);">Values in minutes</span>
+                    </div>
+                </div>
+
+                <!-- Processing Times Table -->
+                <div style="overflow-x: auto;">
+                    <table class="processing-table" id="processingTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 120px;">Slab</th>
+                                <th><i class="fas fa-fire" style="margin-right: 0.3rem;"></i> Furnace</th>
+                                <th><i class="fas fa-cog" style="margin-right: 0.3rem;"></i> Rolling Mill</th>
+                                <th><i class="fas fa-snowflake" style="margin-right: 0.3rem;"></i> Cooling</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Slab A</td>
+                                <td><input type="number" min="1" max="99" value="12" data-row="0" data-col="0"></td>
+                                <td><input type="number" min="1" max="99" value="8" data-row="0" data-col="1"></td>
+                                <td><input type="number" min="1" max="99" value="6" data-row="0" data-col="2"></td>
+                            </tr>
+                            <tr>
+                                <td>Slab B</td>
+                                <td><input type="number" min="1" max="99" value="7" data-row="1" data-col="0"></td>
+                                <td><input type="number" min="1" max="99" value="10" data-row="1" data-col="1"></td>
+                                <td><input type="number" min="1" max="99" value="9" data-row="1" data-col="2"></td>
+                            </tr>
+                            <tr>
+                                <td>Slab C</td>
+                                <td><input type="number" min="1" max="99" value="10" data-row="2" data-col="0"></td>
+                                <td><input type="number" min="1" max="99" value="6" data-row="2" data-col="1"></td>
+                                <td><input type="number" min="1" max="99" value="8" data-row="2" data-col="2"></td>
+                            </tr>
+                            <tr>
+                                <td>Slab D</td>
+                                <td><input type="number" min="1" max="99" value="8" data-row="3" data-col="0"></td>
+                                <td><input type="number" min="1" max="99" value="12" data-row="3" data-col="1"></td>
+                                <td><input type="number" min="1" max="99" value="5" data-row="3" data-col="2"></td>
+                            </tr>
+                            <tr>
+                                <td>Slab E</td>
+                                <td><input type="number" min="1" max="99" value="9" data-row="4" data-col="0"></td>
+                                <td><input type="number" min="1" max="99" value="7" data-row="4" data-col="1"></td>
+                                <td><input type="number" min="1" max="99" value="11" data-row="4" data-col="2"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Algorithm Selection -->
+                <div>
+                    <p style="font-size: 0.78rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem;">
+                        Select Algorithm
+                    </p>
+                    <div class="algo-chips">
+                        <div class="algo-chip heuristic active" data-algo="nn" onclick="selectAlgo(this)">
+                            <i class="fas fa-route" style="margin-right: 0.3rem;"></i> Nearest Neighbor
+                            <span class="method-badge method-heuristic" style="margin-left: 0.4rem;">Heuristic</span>
+                        </div>
+                        <div class="algo-chip heuristic" data-algo="neh" onclick="selectAlgo(this)">
+                            <i class="fas fa-layer-group" style="margin-right: 0.3rem;"></i> NEH-NW
+                            <span class="method-badge method-heuristic" style="margin-left: 0.4rem;">Heuristic</span>
+                        </div>
+                        <div class="algo-chip heuristic" data-algo="gr" onclick="selectAlgo(this)">
+                            <i class="fas fa-sort-amount-down" style="margin-right: 0.3rem;"></i> Gangadharan-Rajendran
+                            <span class="method-badge method-heuristic" style="margin-left: 0.4rem;">Heuristic</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Solve Button -->
+                <div style="margin-top: 1.5rem;">
+                    <button class="btn-solve" onclick="solve()">
+                        <i class="fas fa-play"></i> Solve
+                    </button>
+                </div>
+
+                <!-- Gantt Chart -->
+                <div class="gantt-container" id="ganttContainer" style="display: none;">
+                    <p style="font-size: 0.78rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 1rem;">
+                        <i class="fas fa-chart-gantt" style="color: var(--gold); margin-right: 0.4rem;"></i> No-Wait Gantt Chart
+                    </p>
+                    <canvas id="ganttCanvas" height="220"></canvas>
+                    <div class="slab-legend" id="slabLegend"></div>
+                </div>
+
+                <!-- Results -->
+                <div id="resultsPanel" style="display: none;">
+                    <div class="results-grid" id="resultsGrid"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Algorithms -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>The <span style="color: var(--gold);">Algorithms</span></h2>
+                <p>How no-wait flow shop heuristics work under the hood</p>
+            </div>
+
+            <!-- Delay Matrix -->
+            <div class="algo-detail">
+                <h4>
+                    <i class="fas fa-table" style="color: var(--gold); margin-right: 0.5rem;"></i>
+                    Delay Matrix Computation
+                </h4>
+                <p>
+                    The key data structure in no-wait flow shop scheduling is the <strong style="color: var(--ivory);">delay matrix</strong>
+                    <code>D[j][k]</code>. This gives the minimum time gap between the start of job
+                    <code>j</code> and the start of job <code>k</code> (on machine 1) such that no-wait
+                    is preserved for job <code>k</code> on all machines.
+                </p>
+                <div class="formulation-box" style="margin: 1rem 0;">
+                    <span class="form-label">Delay Matrix Formula</span>
+                    D[j][k] = max over r = 1, ..., m of:<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp;( &sum;<sub>i=1</sub><sup>r</sup> p[j][i] ) - ( &sum;<sub>i=1</sub><sup>r-1</sup> p[k][i] )<br>
+                    <br>
+                    This ensures that on every machine r, job k does not start<br>
+                    before job j finishes on that machine. The no-wait constraint<br>
+                    forces job k to start at exactly D[j][k] time units after job j<br>
+                    begins on the first machine.
+                </div>
+                <p>
+                    Because D[j][k] is generally not equal to D[k][j], the delay matrix is
+                    <strong style="color: var(--ivory);">asymmetric</strong>. This makes the no-wait flow shop
+                    reducible to an Asymmetric Traveling Salesman Problem (ATSP), where the
+                    delay values serve as arc costs between jobs.
+                </p>
+            </div>
+
+            <!-- Nearest Neighbor -->
+            <div class="algo-detail">
+                <h4>
+                    <i class="fas fa-route" style="color: var(--blue); margin-right: 0.5rem;"></i>
+                    Nearest Neighbor
+                    <span class="method-badge method-heuristic">Heuristic</span>
+                </h4>
+                <p>
+                    A greedy algorithm analogous to the nearest-neighbor heuristic for TSP,
+                    adapted for the no-wait constraint using the delay matrix.
+                </p>
+                <ol>
+                    <li>Start with the first unscheduled job (or try all starting jobs in multi-start variant).</li>
+                    <li>At each step, pick the unscheduled job <code>k</code> with the smallest delay
+                        <code>D[last][k]</code> from the most recently scheduled job <code>last</code>.</li>
+                    <li>Append <code>k</code> to the sequence and repeat until all jobs are scheduled.</li>
+                </ol>
+                <div class="formulation-box">
+                    <span class="form-label">Complexity</span>
+                    O(n<sup>2</sup>) &mdash; for each of the n positions, scan n remaining jobs
+                </div>
+            </div>
+
+            <!-- NEH-NW -->
+            <div class="algo-detail">
+                <h4>
+                    <i class="fas fa-layer-group" style="color: var(--blue); margin-right: 0.5rem;"></i>
+                    NEH-NW (Nawaz-Enscore-Ham for No-Wait)
+                    <span class="method-badge method-heuristic">Heuristic</span>
+                </h4>
+                <p>
+                    The celebrated NEH constructive heuristic adapted for the no-wait variant.
+                    Widely regarded as the best constructive heuristic for PFSP, extended here
+                    using delay-matrix-based makespan evaluation.
+                </p>
+                <ol>
+                    <li>Sort all jobs in <strong>descending order of total processing time</strong>
+                        (<code>&sum;<sub>i</sub> p[j][i]</code>). Jobs with longer total processing
+                        times are considered first.</li>
+                    <li>Begin with the first job in the sorted order as the initial partial sequence.</li>
+                    <li>For each remaining job, try inserting it into every possible position in the
+                        current partial sequence.</li>
+                    <li>Evaluate the no-wait makespan at each insertion position using the delay matrix.
+                        Keep the position yielding the minimum makespan.</li>
+                    <li>Repeat until all jobs are inserted.</li>
+                </ol>
+                <div class="formulation-box">
+                    <span class="form-label">Complexity</span>
+                    O(n<sup>2</sup> &times; m) &mdash; n insertions, each testing up to n positions,<br>
+                    each position requiring O(m) for delay-based makespan
+                </div>
+            </div>
+
+            <!-- Gangadharan-Rajendran -->
+            <div class="algo-detail">
+                <h4>
+                    <i class="fas fa-sort-amount-down" style="color: var(--blue); margin-right: 0.5rem;"></i>
+                    Gangadharan-Rajendran
+                    <span class="method-badge method-heuristic">Heuristic</span>
+                </h4>
+                <p>
+                    A priority-index heuristic proposed by Gangadharan &amp; Rajendran (1993),
+                    specifically designed for no-wait flow shops. It uses position-dependent
+                    weights that emphasize earlier stages more heavily.
+                </p>
+                <ol>
+                    <li>Compute a weighted processing time index for each job:
+                        <code>W[j] = &sum;<sub>i=1</sub><sup>m</sup> (m - i + 1) &times; p[j][i]</code>,
+                        giving higher weight to earlier stages.</li>
+                    <li>Sort jobs in descending order of <code>W[j]</code> to form the initial sequence.</li>
+                    <li>Apply pairwise interchange improvement: for each pair of adjacent jobs,
+                        swap them if it reduces the makespan.</li>
+                    <li>Repeat the improvement pass until no further swaps reduce the makespan.</li>
+                </ol>
+                <div class="formulation-box">
+                    <span class="form-label">Complexity</span>
+                    O(n<sup>2</sup> &times; m) &mdash; sorting O(n log n), pairwise improvement O(n<sup>2</sup> &times; m)
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why It's More Complex -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>Real-World <span style="color: var(--gold);">Complexity</span></h2>
+                <p>Why industrial steel scheduling goes beyond the textbook model</p>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-6">
+                    <div class="content-card" style="height: 100%;">
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 0.8rem;">
+                            <i class="fas fa-temperature-high" style="color: var(--red); margin-right: 0.5rem;"></i>
+                            Temperature Constraints
+                        </h4>
+                        <p style="color: var(--slate-light); font-size: 0.9rem;">
+                            Slabs must maintain specific temperature ranges at each stage. Temperature
+                            loss during transfer is non-linear and depends on slab thickness, alloy
+                            composition, and ambient conditions.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="content-card" style="height: 100%;">
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 0.8rem;">
+                            <i class="fas fa-wrench" style="color: var(--gold); margin-right: 0.5rem;"></i>
+                            Equipment Maintenance Windows
+                        </h4>
+                        <p style="color: var(--slate-light); font-size: 0.9rem;">
+                            Rolling mills require periodic maintenance shutdowns. Scheduling must
+                            account for planned downtime, roll changes, and calibration periods
+                            that create unavailability windows on machines.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="content-card" style="height: 100%;">
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 0.8rem;">
+                            <i class="fas fa-bolt" style="color: var(--gold-light); margin-right: 0.5rem;"></i>
+                            Time-of-Day Energy Costs
+                        </h4>
+                        <p style="color: var(--slate-light); font-size: 0.9rem;">
+                            Electricity prices vary significantly throughout the day. Furnace
+                            operations are energy-intensive, creating incentives to schedule
+                            heating during off-peak hours, adding a cost-aware objective.
+                        </p>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="content-card" style="height: 100%;">
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; margin-bottom: 0.8rem;">
+                            <i class="fas fa-medal" style="color: var(--green); margin-right: 0.5rem;"></i>
+                            Quality Grades &amp; Multiple Casters
+                        </h4>
+                        <p style="color: var(--slate-light); font-size: 0.9rem;">
+                            Different steel grades (structural, automotive, stainless) require
+                            distinct processing paths and temperatures. Plants with multiple
+                            continuous casters add parallel machine routing decisions.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2><span style="color: var(--gold);">References</span></h2>
+                <p>Key literature on no-wait flow shop scheduling</p>
+            </div>
+
+            <div class="content-card">
+                <div class="reference-item">
+                    <span class="ref-authors">R&ouml;ck, H.</span> (1984).
+                    <span class="ref-title">"The three-machine no-wait flow shop is NP-complete."</span>
+                    <span class="ref-journal">Journal of the ACM, 31(2), 336&ndash;345.</span>
+                </div>
+                <div class="reference-item">
+                    <span class="ref-authors">Gangadharan, R., &amp; Rajendran, C.</span> (1993).
+                    <span class="ref-title">"Heuristic algorithms for scheduling in the no-wait flowshop."</span>
+                    <span class="ref-journal">International Journal of Production Economics, 32(3), 285&ndash;290.</span>
+                </div>
+                <div class="reference-item">
+                    <span class="ref-authors">Allahverdi, A.</span> (2016).
+                    <span class="ref-title">"A survey of scheduling problems with no-wait in process."</span>
+                    <span class="ref-journal">European Journal of Operational Research, 255(3), 665&ndash;686.</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="cta-section">
+        <div class="container">
+            <h2>Need to optimize your <span style="color: var(--gold);">production line</span>?</h2>
+            <p>Reach out to discuss how operations research can improve your manufacturing scheduling.</p>
+            <div style="display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap;">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-luxury" target="_blank">
+                    <i class="fab fa-linkedin" style="margin-right: 0.5rem;"></i> Connect on LinkedIn
+                </a>
+                <a href="../index.html" class="btn-luxury">
+                    <i class="fas fa-arrow-left" style="margin-right: 0.5rem;"></i> Back to Portfolio
+                </a>
+                <a href="https://github.com/mghnasiri/MathematicalModeling" class="btn-luxury" target="_blank">
+                    <i class="fab fa-github" style="margin-right: 0.5rem;"></i> GitHub Repository
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <div class="container">
+            <p>
+                <i class="fas fa-info-circle" style="margin-right: 0.3rem;"></i>
+                Data shown is illustrative. Processing times are simplified for demonstration.
+                Real steel production involves additional constraints not modeled here.
+            </p>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Mohammad Ghafourian Nasiri &middot; <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ── Navbar scroll effect ──
+        window.addEventListener('scroll', () => {
+            const navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ── Slab colors ──
+        const SLAB_COLORS = [
+            'rgba(197, 160, 89, 0.85)',   // Gold - Slab A
+            'rgba(122, 162, 247, 0.85)',   // Blue - Slab B
+            'rgba(100, 255, 218, 0.75)',   // Green - Slab C
+            'rgba(255, 107, 107, 0.80)',   // Red - Slab D
+            'rgba(168, 178, 209, 0.80)'    // Slate - Slab E
+        ];
+        const SLAB_BORDERS = [
+            'rgba(197, 160, 89, 1)',
+            'rgba(122, 162, 247, 1)',
+            'rgba(100, 255, 218, 1)',
+            'rgba(255, 107, 107, 1)',
+            'rgba(168, 178, 209, 1)'
+        ];
+        const SLAB_NAMES = ['A', 'B', 'C', 'D', 'E'];
+
+        let selectedAlgo = 'nn';
+
+        // ── Algorithm chip selection ──
+        function selectAlgo(el) {
+            document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            selectedAlgo = el.getAttribute('data-algo');
+        }
+
+        // ── Read processing times from table ──
+        function readProcessingTimes() {
+            const inputs = document.querySelectorAll('#processingTable input');
+            const n = 5, m = 3;
+            const p = [];
+            for (let j = 0; j < n; j++) {
+                p.push([]);
+                for (let i = 0; i < m; i++) {
+                    const input = document.querySelector(`input[data-row="${j}"][data-col="${i}"]`);
+                    p[j].push(Math.max(1, parseInt(input.value) || 1));
+                }
+            }
+            return p;
+        }
+
+        // ── Compute delay matrix ──
+        // D[j][k] = max over r=1..m of (sum_{i=1}^{r} p[j][i] - sum_{i=1}^{r-1} p[k][i])
+        function computeDelayMatrix(p) {
+            const n = p.length;
+            const m = p[0].length;
+            const D = [];
+            for (let j = 0; j < n; j++) {
+                D.push([]);
+                for (let k = 0; k < n; k++) {
+                    let maxDelay = -Infinity;
+                    let sumJ = 0;
+                    let sumK = 0;
+                    for (let r = 0; r < m; r++) {
+                        sumJ += p[j][r];
+                        // sumK = sum_{i=1}^{r-1} p[k][i] = sum of p[k][0..r-1]
+                        // At r=0: sumK = 0 (sum of zero terms)
+                        // At r=1: sumK = p[k][0]
+                        const delay = sumJ - sumK;
+                        if (delay > maxDelay) maxDelay = delay;
+                        sumK += p[k][r];
+                    }
+                    D[j][k] = maxDelay;
+                }
+            }
+            return D;
+        }
+
+        // ── Compute no-wait makespan for a given sequence ──
+        function computeMakespan(seq, p, D) {
+            if (seq.length === 0) return 0;
+            const m = p[0].length;
+            // Total processing time of last job
+            let totalTime = 0;
+            for (let i = 1; i < seq.length; i++) {
+                totalTime += D[seq[i - 1]][seq[i]];
+            }
+            // Add processing time of last job on all machines
+            let lastJobTime = 0;
+            for (let i = 0; i < m; i++) {
+                lastJobTime += p[seq[seq.length - 1]][i];
+            }
+            return totalTime + lastJobTime;
+        }
+
+        // ── Nearest Neighbor algorithm ──
+        function nearestNeighbor(p, D) {
+            const n = p.length;
+            let bestSeq = null;
+            let bestMakespan = Infinity;
+
+            // Multi-start: try each job as the starting job
+            for (let start = 0; start < n; start++) {
+                const scheduled = new Set();
+                const seq = [start];
+                scheduled.add(start);
+
+                while (seq.length < n) {
+                    const last = seq[seq.length - 1];
+                    let bestNext = -1;
+                    let bestDelay = Infinity;
+                    for (let k = 0; k < n; k++) {
+                        if (!scheduled.has(k) && D[last][k] < bestDelay) {
+                            bestDelay = D[last][k];
+                            bestNext = k;
+                        }
+                    }
+                    seq.push(bestNext);
+                    scheduled.add(bestNext);
+                }
+
+                const ms = computeMakespan(seq, p, D);
+                if (ms < bestMakespan) {
+                    bestMakespan = ms;
+                    bestSeq = [...seq];
+                }
+            }
+
+            return { sequence: bestSeq, makespan: bestMakespan };
+        }
+
+        // ── NEH-NW algorithm ──
+        function nehNW(p, D) {
+            const n = p.length;
+            const m = p[0].length;
+
+            // Step 1: Sort by descending total processing time
+            const totalPT = [];
+            for (let j = 0; j < n; j++) {
+                let total = 0;
+                for (let i = 0; i < m; i++) total += p[j][i];
+                totalPT.push({ job: j, total: total });
+            }
+            totalPT.sort((a, b) => b.total - a.total);
+
+            // Step 2: Build sequence by insertion
+            let seq = [totalPT[0].job];
+
+            for (let idx = 1; idx < n; idx++) {
+                const job = totalPT[idx].job;
+                let bestPos = 0;
+                let bestMs = Infinity;
+
+                for (let pos = 0; pos <= seq.length; pos++) {
+                    const trial = [...seq];
+                    trial.splice(pos, 0, job);
+                    const ms = computeMakespan(trial, p, D);
+                    if (ms < bestMs) {
+                        bestMs = ms;
+                        bestPos = pos;
+                    }
+                }
+
+                seq.splice(bestPos, 0, job);
+            }
+
+            return { sequence: seq, makespan: computeMakespan(seq, p, D) };
+        }
+
+        // ── Gangadharan-Rajendran algorithm ──
+        function gangadharanRajendran(p, D) {
+            const n = p.length;
+            const m = p[0].length;
+
+            // Step 1: Compute weighted index W[j] = sum (m - i) * p[j][i] (1-indexed: m - i + 1)
+            const W = [];
+            for (let j = 0; j < n; j++) {
+                let w = 0;
+                for (let i = 0; i < m; i++) {
+                    w += (m - i) * p[j][i];
+                }
+                W.push({ job: j, weight: w });
+            }
+            W.sort((a, b) => b.weight - a.weight);
+
+            let seq = W.map(w => w.job);
+
+            // Step 2: Pairwise interchange improvement
+            let improved = true;
+            while (improved) {
+                improved = false;
+                for (let i = 0; i < n - 1; i++) {
+                    // Swap adjacent pair
+                    const trial = [...seq];
+                    const tmp = trial[i];
+                    trial[i] = trial[i + 1];
+                    trial[i + 1] = tmp;
+
+                    const currentMs = computeMakespan(seq, p, D);
+                    const trialMs = computeMakespan(trial, p, D);
+
+                    if (trialMs < currentMs) {
+                        seq = trial;
+                        improved = true;
+                    }
+                }
+            }
+
+            return { sequence: seq, makespan: computeMakespan(seq, p, D) };
+        }
+
+        // ── Compute full schedule (start/end times on each machine) for Gantt ──
+        function computeSchedule(seq, p, D) {
+            const n = seq.length;
+            const m = p[0].length;
+
+            // For no-wait: each job's start on machine 1 determines all other starts
+            // Job start on machine 1: S[0] = 0, S[k] = S[k-1] + D[seq[k-1]][seq[k]]
+            const startM1 = [0];
+            for (let k = 1; k < n; k++) {
+                startM1.push(startM1[k - 1] + D[seq[k - 1]][seq[k]]);
+            }
+
+            // For each job in the sequence, compute start/end on each machine
+            // No-wait: start on machine i = start on machine 1 + sum of p[job][0..i-1]
+            const schedule = [];
+            for (let k = 0; k < n; k++) {
+                const job = seq[k];
+                const jobSchedule = { job: job, machines: [] };
+                let cumTime = 0;
+                for (let i = 0; i < m; i++) {
+                    const start = startM1[k] + cumTime;
+                    const end = start + p[job][i];
+                    jobSchedule.machines.push({ start: start, end: end });
+                    cumTime += p[job][i];
+                }
+                schedule.push(jobSchedule);
+            }
+
+            return schedule;
+        }
+
+        // ── Compute idle times per machine ──
+        function computeIdleTimes(schedule, makespan, m) {
+            const idleTimes = [];
+            for (let i = 0; i < m; i++) {
+                // Sort jobs by start time on this machine
+                const intervals = schedule.map(s => s.machines[i]).sort((a, b) => a.start - b.start);
+                let busyTime = 0;
+                for (const iv of intervals) {
+                    busyTime += iv.end - iv.start;
+                }
+                // Idle = time from first start to last end on this machine, minus busy
+                const machineStart = intervals[0].start;
+                const machineEnd = intervals[intervals.length - 1].end;
+                idleTimes.push(machineEnd - machineStart - busyTime);
+            }
+            return idleTimes;
+        }
+
+        // ── Draw Gantt chart ──
+        function drawGantt(schedule, makespan, m) {
+            const container = document.getElementById('ganttContainer');
+            container.style.display = 'block';
+
+            const canvas = document.getElementById('ganttCanvas');
+            const dpr = window.devicePixelRatio || 1;
+            const width = canvas.parentElement.clientWidth - 30;
+            const rowHeight = 45;
+            const topPad = 30;
+            const leftPad = 100;
+            const rightPad = 40;
+            const bottomPad = 30;
+            const canvasHeight = topPad + m * rowHeight + bottomPad;
+
+            canvas.width = width * dpr;
+            canvas.height = canvasHeight * dpr;
+            canvas.style.width = width + 'px';
+            canvas.style.height = canvasHeight + 'px';
+
+            const ctx = canvas.getContext('2d');
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, width, canvasHeight);
+
+            const chartWidth = width - leftPad - rightPad;
+            const timeScale = chartWidth / makespan;
+
+            // Draw machine labels and grid lines
+            const stageNames = ['Furnace', 'Rolling Mill', 'Cooling'];
+            ctx.font = '12px Inter, sans-serif';
+
+            for (let i = 0; i < m; i++) {
+                const y = topPad + i * rowHeight + rowHeight / 2;
+
+                // Machine label
+                ctx.fillStyle = '#8892B0';
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(stageNames[i] || `Stage ${i + 1}`, leftPad - 12, y);
+
+                // Horizontal grid line
+                ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(leftPad, topPad + i * rowHeight);
+                ctx.lineTo(width - rightPad, topPad + i * rowHeight);
+                ctx.stroke();
+            }
+            // Bottom grid line
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+            ctx.beginPath();
+            ctx.moveTo(leftPad, topPad + m * rowHeight);
+            ctx.lineTo(width - rightPad, topPad + m * rowHeight);
+            ctx.stroke();
+
+            // Time axis ticks
+            const tickInterval = Math.ceil(makespan / 10);
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.fillStyle = '#8892B0';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            for (let t = 0; t <= makespan; t += tickInterval) {
+                const x = leftPad + t * timeScale;
+                ctx.fillText(t.toString(), x, topPad + m * rowHeight + 5);
+
+                // Vertical grid line
+                ctx.strokeStyle = 'rgba(197, 160, 89, 0.04)';
+                ctx.beginPath();
+                ctx.moveTo(x, topPad);
+                ctx.lineTo(x, topPad + m * rowHeight);
+                ctx.stroke();
+            }
+
+            // Draw job blocks
+            const barHeight = rowHeight * 0.6;
+            const barOffset = (rowHeight - barHeight) / 2;
+
+            for (const entry of schedule) {
+                const jobIdx = entry.job;
+                const color = SLAB_COLORS[jobIdx % SLAB_COLORS.length];
+                const border = SLAB_BORDERS[jobIdx % SLAB_BORDERS.length];
+
+                for (let i = 0; i < m; i++) {
+                    const ms = entry.machines[i];
+                    const x = leftPad + ms.start * timeScale;
+                    const w = (ms.end - ms.start) * timeScale;
+                    const y = topPad + i * rowHeight + barOffset;
+
+                    // Bar
+                    ctx.fillStyle = color;
+                    ctx.strokeStyle = border;
+                    ctx.lineWidth = 1;
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, Math.max(w, 2), barHeight, 2);
+                    ctx.fill();
+                    ctx.stroke();
+
+                    // Label inside bar if wide enough
+                    if (w > 25) {
+                        ctx.fillStyle = '#0A192F';
+                        ctx.font = 'bold 10px Inter, sans-serif';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(SLAB_NAMES[jobIdx] || jobIdx.toString(), x + w / 2, y + barHeight / 2);
+                    }
+                }
+
+                // Draw vertical connecting lines between machines for same job (contiguous)
+                for (let i = 0; i < m - 1; i++) {
+                    const endY = topPad + i * rowHeight + barOffset + barHeight;
+                    const startY = topPad + (i + 1) * rowHeight + barOffset;
+                    const x = leftPad + entry.machines[i].end * timeScale;
+
+                    ctx.strokeStyle = border;
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 2]);
+                    ctx.beginPath();
+                    ctx.moveTo(x, endY);
+                    ctx.lineTo(x, startY);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+
+            // Build legend
+            const legendDiv = document.getElementById('slabLegend');
+            legendDiv.innerHTML = '';
+            for (let i = 0; i < schedule.length; i++) {
+                const jobIdx = schedule[i].job;
+                const item = document.createElement('div');
+                item.className = 'slab-legend-item';
+                item.innerHTML = `<span class="slab-legend-color" style="background: ${SLAB_COLORS[jobIdx]};"></span> Slab ${SLAB_NAMES[jobIdx]}`;
+                legendDiv.appendChild(item);
+            }
+        }
+
+        // ── Main solve function ──
+        function solve() {
+            const p = readProcessingTimes();
+            const D = computeDelayMatrix(p);
+            const m = p[0].length;
+
+            const t0 = performance.now();
+            let result;
+
+            switch (selectedAlgo) {
+                case 'nn':
+                    result = nearestNeighbor(p, D);
+                    break;
+                case 'neh':
+                    result = nehNW(p, D);
+                    break;
+                case 'gr':
+                    result = gangadharanRajendran(p, D);
+                    break;
+                default:
+                    result = nearestNeighbor(p, D);
+            }
+
+            const elapsed = performance.now() - t0;
+
+            const schedule = computeSchedule(result.sequence, p, D);
+            const idleTimes = computeIdleTimes(schedule, result.makespan, m);
+
+            // Draw Gantt chart
+            drawGantt(schedule, result.makespan, m);
+
+            // Display results
+            const resultsPanel = document.getElementById('resultsPanel');
+            resultsPanel.style.display = 'block';
+
+            const algoNames = {
+                'nn': 'Nearest Neighbor',
+                'neh': 'NEH-NW',
+                'gr': 'Gangadharan-Rajendran'
+            };
+
+            const seqStr = result.sequence.map(j => 'Slab ' + SLAB_NAMES[j]).join(' → ');
+            const stageNames = ['Furnace', 'Rolling Mill', 'Cooling'];
+            const idleStr = idleTimes.map((t, i) => `${stageNames[i]}: ${t} min`).join(', ');
+
+            document.getElementById('resultsGrid').innerHTML = `
+                <div class="result-item">
+                    <div class="result-label">Algorithm</div>
+                    <div class="result-value small">${algoNames[selectedAlgo]}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Makespan</div>
+                    <div class="result-value">${result.makespan} min</div>
+                </div>
+                <div class="result-item" style="grid-column: span 2;">
+                    <div class="result-label">Optimal Sequence</div>
+                    <div class="result-value sequence">${seqStr}</div>
+                </div>
+                <div class="result-item" style="grid-column: span 2;">
+                    <div class="result-label">Idle Times per Stage</div>
+                    <div class="result-value small">${idleStr}</div>
+                </div>
+                <div class="result-item">
+                    <div class="result-label">Computation Time</div>
+                    <div class="result-value small">${elapsed.toFixed(2)} ms</div>
+                </div>
+            `;
+
+            // Smooth scroll to results
+            document.getElementById('ganttContainer').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    </script>
+
+</body>
+</html>

@@ -1,0 +1,1541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Shop Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Print Shop Scheduling application using Sequence-Dependent Setup Times (SDST) Flow Shop. Interactive Gantt chart with NEH-SDST and GRASP-SDST algorithms.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: transparent;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: rgba(10, 25, 47, 0.5);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .breadcrumb-nav a {
+            color: var(--slate);
+            text-decoration: none;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav a:hover { color: var(--gold); }
+        .breadcrumb-nav span {
+            color: var(--slate);
+            font-size: 0.82rem;
+            margin: 0 0.5rem;
+        }
+        .breadcrumb-nav .current {
+            color: var(--gold);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 6rem 2rem 4rem;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.8rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.1rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 2rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+
+        /* ── Sections ── */
+        section { padding: 5rem 0; }
+        section:nth-child(even) { background: var(--midnight-light); }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3.5rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        /* ── Problem Card ── */
+        .problem-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .problem-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+        }
+        .problem-card:hover::before { opacity: 1; }
+        .problem-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+        .problem-notation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            margin-bottom: 1rem;
+        }
+        .problem-desc {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+            line-height: 1.8;
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            margin-top: 2rem;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+        }
+
+        .solver-section-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+        }
+
+        /* ── Data Tables ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-bottom: 1rem;
+        }
+        .data-table th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            text-align: center;
+        }
+        .data-table td {
+            padding: 0.4rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+        .data-table td.row-label {
+            text-align: left;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.75rem;
+        }
+        .data-table tr:hover td { color: var(--ivory); }
+
+        /* ── Setup Matrix Table ── */
+        .setup-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.72rem;
+            margin-bottom: 0.8rem;
+        }
+        .setup-table th {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            font-weight: 600;
+            color: var(--gold);
+            padding: 0.35rem 0.4rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            text-align: center;
+        }
+        .setup-table td {
+            padding: 0.3rem 0.4rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+        }
+        .setup-table td.diag {
+            color: var(--slate);
+            opacity: 0.4;
+        }
+        .setup-table td.row-label {
+            text-align: left;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.7rem;
+        }
+
+        /* ── Algorithm Chips ── */
+        .algo-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border-radius: 2px;
+            font-size: 0.72rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        .algo-chip.heuristic {
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            color: var(--blue);
+            background: transparent;
+        }
+        .algo-chip.heuristic.selected {
+            background: rgba(122, 162, 247, 0.15);
+            border-color: var(--blue);
+        }
+        .algo-chip.meta {
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            background: transparent;
+        }
+        .algo-chip.meta.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+        }
+        .algo-chip:hover { transform: translateY(-1px); }
+
+        .solve-btn {
+            padding: 8px 24px;
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border-radius: 2px;
+            margin-right: 0.5rem;
+        }
+        .solve-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+        .solve-btn.run-all {
+            border-color: var(--green);
+            color: var(--green);
+        }
+        .solve-btn.run-all:hover {
+            background: var(--green);
+            color: var(--midnight);
+        }
+
+        /* ── Gantt Chart ── */
+        .gantt-container {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 1.2rem;
+            margin-top: 1rem;
+            min-height: 160px;
+            position: relative;
+        }
+        .gantt-canvas {
+            width: 100%;
+            display: block;
+        }
+        .gantt-legend {
+            display: flex;
+            gap: 1.5rem;
+            margin-top: 0.8rem;
+            flex-wrap: wrap;
+        }
+        .gantt-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.7rem;
+            color: var(--slate-light);
+            letter-spacing: 0.5px;
+        }
+        .gantt-legend-swatch {
+            width: 16px;
+            height: 10px;
+            border-radius: 1px;
+        }
+        .gantt-legend-swatch.setup {
+            background: repeating-linear-gradient(
+                45deg,
+                rgba(255,107,107,0.6),
+                rgba(255,107,107,0.6) 2px,
+                rgba(255,107,107,0.3) 2px,
+                rgba(255,107,107,0.3) 4px
+            );
+            border: 1px solid rgba(255,107,107,0.5);
+        }
+
+        /* ── Results Table ── */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-top: 1rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table .algo-label {
+            font-family: 'Inter', sans-serif;
+            color: var(--ivory);
+            font-weight: 500;
+        }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+
+        .status-text {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.8rem;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Algorithm Cards ── */
+        .algo-detail-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+            transition: all 0.4s ease;
+        }
+        .algo-detail-card:hover {
+            border-color: rgba(197, 160, 89, 0.25);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .algo-detail-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+        .algo-detail-card .algo-type {
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+            display: inline-block;
+            margin-bottom: 1rem;
+        }
+        .algo-type.heuristic-badge { background: rgba(122, 162, 247, 0.1); color: var(--blue); }
+        .algo-type.meta-badge { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
+        .algo-detail-card p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+            margin-bottom: 1rem;
+        }
+        .algo-steps {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+            line-height: 2;
+        }
+        .algo-steps .step-label {
+            color: var(--gold);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+
+        /* ── Complexity Cards ── */
+        .complexity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-item {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .complexity-item h5 {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--ivory);
+            margin-bottom: 0.5rem;
+        }
+        .complexity-item p {
+            font-size: 0.85rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .complexity-item i {
+            color: var(--gold);
+            margin-right: 0.4rem;
+        }
+
+        /* ── References ── */
+        .ref-item {
+            background: rgba(10, 25, 47, 0.4);
+            border-left: 2px solid var(--gold);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1rem;
+        }
+        .ref-item .ref-authors {
+            font-size: 0.88rem;
+            color: var(--ivory);
+            font-weight: 500;
+        }
+        .ref-item .ref-title {
+            font-size: 0.85rem;
+            color: var(--slate-light);
+            font-style: italic;
+        }
+        .ref-item .ref-journal {
+            font-size: 0.8rem;
+            color: var(--slate);
+        }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.06), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 2rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .cta-panel h5 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            color: var(--ivory);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        .cta-panel p {
+            font-size: 0.85rem;
+            color: var(--slate);
+            margin-bottom: 1.2rem;
+        }
+        .cta-links { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .cta-links a {
+            padding: 8px 20px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-links a:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.75rem;
+            color: var(--slate);
+            letter-spacing: 0.5px;
+            border-top: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .disclaimer i { margin-right: 0.3rem; color: var(--gold); opacity: 0.5; }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease, transform 0.8s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.4rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 2px; }
+            .section-header h2 { font-size: 2rem; }
+            section { padding: 3rem 0; }
+            .solver-body { padding: 1rem; }
+            .setup-matrices-grid { grid-template-columns: 1fr !important; }
+        }
+
+        .setup-matrices-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+
+        .setup-matrix-box {
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 0.8rem;
+        }
+        .setup-matrix-label {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                    <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-nav" style="margin-top: 76px;">
+        <div class="container">
+            <a href="../index.html">Home</a>
+            <span>/</span>
+            <a href="#">Applications</a>
+            <span>/</span>
+            <span class="current">Print Shop Scheduling</span>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <section class="hero">
+        <div class="container">
+            <div class="hero-icon"><i class="fas fa-print"></i></div>
+            <h1>Print Shop <span>Scheduling</span></h1>
+            <div class="gold-line"></div>
+            <p class="hero-subtitle">Sequence-Dependent Setup Times</p>
+        </div>
+    </section>
+
+    <!-- The Problem -->
+    <section>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="problem-card fade-in">
+                        <h3>The Problem</h3>
+                        <div class="problem-notation">Fm | prmu, S<sub>sd</sub> | C<sub>max</sub></div>
+                        <p class="problem-desc">
+                            In commercial printing, changing from one job to another requires setup operations: cleaning rollers,
+                            changing ink cartridges, swapping printing plates, adjusting paper guides, and recalibrating color
+                            registration. The time required for these changeovers depends on <strong>both the previous and next job</strong>.
+                            For example, switching from a dark-ink job to a light-ink job requires thorough roller cleaning to
+                            prevent color contamination, taking significantly longer than switching from light to dark. Similarly,
+                            jobs using the same paper stock require minimal plate adjustments, while switching paper types demands
+                            full recalibration.
+                        </p>
+                        <p class="problem-desc">
+                            This is modeled as a <strong>Permutation Flow Shop with Sequence-Dependent Setup Times</strong>
+                            (SDST). Each print job must pass through the same sequence of machines (printing press, then
+                            finishing/binding), and the setup time on each machine depends on the pair of consecutive jobs.
+                            The goal is to find the job ordering that minimizes the total completion time (makespan). This
+                            problem is <strong>NP-hard</strong> even for two machines.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Try It Yourself -->
+    <section>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-11">
+                    <div class="section-header fade-in">
+                        <h2>Try It <span style="color: var(--gold)">Yourself</span></h2>
+                        <p>4 print jobs, 2 machines &mdash; see how setup times affect the schedule</p>
+                    </div>
+
+                    <div class="solver-panel fade-in">
+                        <div class="solver-panel-header">
+                            <h4><i class="fas fa-cogs"></i> SDST Flow Shop Solver</h4>
+                            <span class="help-icon" title="Select algorithms and click Solve to see the Gantt chart with setup and processing blocks"><i class="fas fa-question-circle"></i></span>
+                        </div>
+                        <div class="solver-body">
+
+                            <!-- Processing Times -->
+                            <div class="solver-section-title">Processing Times (minutes)</div>
+                            <table class="data-table" id="proc-times-table">
+                                <thead>
+                                    <tr>
+                                        <th style="text-align:left">Job</th>
+                                        <th>M1: Printing Press</th>
+                                        <th>M2: Finishing</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr><td class="row-label"><i class="fas fa-circle" style="color:#e74c3c;font-size:0.5rem;margin-right:4px"></i> Red</td><td>15</td><td>8</td></tr>
+                                    <tr><td class="row-label"><i class="fas fa-circle" style="color:#3498db;font-size:0.5rem;margin-right:4px"></i> Blue</td><td>10</td><td>12</td></tr>
+                                    <tr><td class="row-label"><i class="fas fa-circle" style="color:#27ae60;font-size:0.5rem;margin-right:4px"></i> Green</td><td>12</td><td>10</td></tr>
+                                    <tr><td class="row-label"><i class="fas fa-circle" style="color:#f1c40f;font-size:0.5rem;margin-right:4px"></i> Yellow</td><td>8</td><td>14</td></tr>
+                                </tbody>
+                            </table>
+
+                            <!-- Setup Time Matrices -->
+                            <div class="solver-section-title" style="margin-top:1.2rem">Setup Time Matrices (minutes)</div>
+                            <div class="setup-matrices-grid">
+                                <div class="setup-matrix-box">
+                                    <div class="setup-matrix-label">M1: Printing Press</div>
+                                    <table class="setup-table">
+                                        <thead>
+                                            <tr><th>From \ To</th><th>Red</th><th>Blue</th><th>Green</th><th>Yellow</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td class="row-label">Red</td><td class="diag">-</td><td>5</td><td>3</td><td>7</td></tr>
+                                            <tr><td class="row-label">Blue</td><td>6</td><td class="diag">-</td><td>4</td><td>6</td></tr>
+                                            <tr><td class="row-label">Green</td><td>4</td><td>5</td><td class="diag">-</td><td>2</td></tr>
+                                            <tr><td class="row-label">Yellow</td><td>8</td><td>7</td><td>3</td><td class="diag">-</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div class="setup-matrix-box">
+                                    <div class="setup-matrix-label">M2: Finishing / Binding</div>
+                                    <table class="setup-table">
+                                        <thead>
+                                            <tr><th>From \ To</th><th>Red</th><th>Blue</th><th>Green</th><th>Yellow</th></tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr><td class="row-label">Red</td><td class="diag">-</td><td>3</td><td>4</td><td>5</td></tr>
+                                            <tr><td class="row-label">Blue</td><td>4</td><td class="diag">-</td><td>2</td><td>3</td></tr>
+                                            <tr><td class="row-label">Green</td><td>5</td><td>3</td><td class="diag">-</td><td>4</td></tr>
+                                            <tr><td class="row-label">Yellow</td><td>6</td><td>4</td><td>5</td><td class="diag">-</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <!-- Algorithm Selection -->
+                            <div class="solver-section-title" style="margin-top:1.5rem">Select Algorithms</div>
+                            <div class="algo-chips" id="algo-select">
+                                <div class="algo-chip heuristic selected" data-algo="neh-sdst">NEH-SDST</div>
+                                <div class="algo-chip meta" data-algo="grasp-sdst">GRASP-SDST</div>
+                            </div>
+
+                            <div style="margin-top:1rem">
+                                <button class="solve-btn" onclick="solvePrintShop()">
+                                    <i class="fas fa-play" style="margin-right:6px"></i> Solve
+                                </button>
+                                <button class="solve-btn run-all" onclick="runAllAlgos()">
+                                    <i class="fas fa-forward" style="margin-right:6px"></i> Run All
+                                </button>
+                            </div>
+
+                            <!-- Gantt Chart -->
+                            <div class="gantt-container" id="gantt-container">
+                                <canvas id="gantt-canvas" class="gantt-canvas" height="160"></canvas>
+                            </div>
+                            <div class="gantt-legend" id="gantt-legend" style="display:none">
+                                <div class="gantt-legend-item">
+                                    <div class="gantt-legend-swatch" style="background:rgba(231,76,60,0.7)"></div>
+                                    <span>Red Job</span>
+                                </div>
+                                <div class="gantt-legend-item">
+                                    <div class="gantt-legend-swatch" style="background:rgba(52,152,219,0.7)"></div>
+                                    <span>Blue Job</span>
+                                </div>
+                                <div class="gantt-legend-item">
+                                    <div class="gantt-legend-swatch" style="background:rgba(39,174,96,0.7)"></div>
+                                    <span>Green Job</span>
+                                </div>
+                                <div class="gantt-legend-item">
+                                    <div class="gantt-legend-swatch" style="background:rgba(241,196,15,0.7)"></div>
+                                    <span>Yellow Job</span>
+                                </div>
+                                <div class="gantt-legend-item">
+                                    <div class="gantt-legend-swatch setup"></div>
+                                    <span>Setup Time</span>
+                                </div>
+                            </div>
+
+                            <!-- Results -->
+                            <table class="results-table" id="results-table" style="display:none">
+                                <thead>
+                                    <tr>
+                                        <th>Algorithm</th>
+                                        <th>Makespan</th>
+                                        <th>Sequence</th>
+                                        <th>Total Setup</th>
+                                        <th>Total Processing</th>
+                                        <th>Time (ms)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="results-body"></tbody>
+                            </table>
+                            <div class="status-text" id="status-text">Select algorithm(s) and click Solve.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Algorithms -->
+    <section>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="section-header fade-in">
+                        <h2>The <span style="color: var(--gold)">Algorithms</span></h2>
+                        <p>Constructive heuristic and metaheuristic approaches for SDST scheduling</p>
+                    </div>
+
+                    <div class="algo-detail-card fade-in">
+                        <h4>NEH-SDST</h4>
+                        <span class="algo-type heuristic-badge">Constructive Heuristic</span>
+                        <p>
+                            An adaptation of the Nawaz-Enscore-Ham (1983) heuristic for sequence-dependent setup times.
+                            Jobs are sorted by total processing time plus average setup time in descending order, prioritizing
+                            jobs with the highest combined workload and changeover impact. Each job is then inserted at the
+                            position in the partial sequence that yields the minimum makespan, where the makespan calculation
+                            includes both processing and setup times.
+                        </p>
+                        <div class="algo-steps">
+                            <span class="step-label">Procedure</span><br>
+                            1. For each job j, compute W(j) = sum(p[j][m]) + avg(setup[m][i][j]) for all m, i<br>
+                            2. Sort jobs by W(j) in descending order<br>
+                            3. Start with the first job in the sorted list<br>
+                            4. For each remaining job j in sorted order:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;Try inserting j at every position in the current sequence<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;C[m][k] = max(C[m][k-1] + setup[m][prev][curr] + p[curr][m],<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;C[m-1][k] + setup[m][prev][curr] + p[curr][m])<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;Keep the insertion with minimum makespan<br>
+                            5. Return the final sequence
+                        </div>
+                    </div>
+
+                    <div class="algo-detail-card fade-in">
+                        <h4>GRASP-SDST</h4>
+                        <span class="algo-type meta-badge">Metaheuristic</span>
+                        <p>
+                            A Greedy Randomized Adaptive Search Procedure adapted for the SDST flow shop. In each iteration,
+                            a solution is constructed using a randomized greedy procedure with a Restricted Candidate List (RCL)
+                            controlled by parameter alpha = 0.3. Candidates are evaluated by their total processing time plus
+                            setup time from the last scheduled job. After construction, a swap-based local search explores the
+                            neighborhood for improvements. The best solution across all iterations is returned.
+                        </p>
+                        <div class="algo-steps">
+                            <span class="step-label">Procedure</span><br>
+                            1. Repeat for N iterations (default: 10):<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;a. Build initial sequence using randomized greedy:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Compute cost(j) = sum(p[j][m]) + sum(setup[m][last][j]) for unscheduled j<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- RCL = {j : cost(j) &lt;= c_min + alpha * (c_max - c_min)}<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Select random job from RCL, append to sequence<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;b. Apply swap local search:<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- For each pair (i, j), swap and evaluate makespan<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Accept if improved, repeat until no improvement<br>
+                            &nbsp;&nbsp;&nbsp;&nbsp;c. Update best solution if improved<br>
+                            2. Return best solution found
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why It's More Complex -->
+    <section>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="section-header fade-in">
+                        <h2>Real-World <span style="color: var(--gold)">Complexity</span></h2>
+                        <p>Why industrial print scheduling is far harder than this example</p>
+                    </div>
+
+                    <div class="complexity-grid fade-in">
+                        <div class="complexity-item">
+                            <h5><i class="fas fa-layer-group"></i> Hundreds of Jobs</h5>
+                            <p>Commercial print shops handle 100-500+ daily jobs across catalogs, brochures, packaging, and labels. The solution space grows factorially with job count.</p>
+                        </div>
+                        <div class="complexity-item">
+                            <h5><i class="fas fa-palette"></i> Color Sequencing</h5>
+                            <p>Ink changeover optimization: scheduling light-to-dark color progressions minimizes cleaning cycles and reduces waste from color contamination.</p>
+                        </div>
+                        <div class="complexity-item">
+                            <h5><i class="fas fa-industry"></i> Multiple Presses</h5>
+                            <p>Different presses have different capabilities (sheet-fed vs. web, color count, max sheet size), creating an unrelated parallel machine environment.</p>
+                        </div>
+                        <div class="complexity-item">
+                            <h5><i class="fas fa-bolt"></i> Rush Orders</h5>
+                            <p>Priority jobs with tight deadlines arrive dynamically, requiring schedule disruption and re-optimization in real time.</p>
+                        </div>
+                        <div class="complexity-item">
+                            <h5><i class="fas fa-scroll"></i> Paper Changeovers</h5>
+                            <p>Switching paper type (weight, coating, size) requires mechanical adjustments and test runs, adding significant setup time between jobs.</p>
+                        </div>
+                        <div class="complexity-item">
+                            <h5><i class="fas fa-clock"></i> Drying Constraints</h5>
+                            <p>UV vs. conventional inks have different drying times. Jobs may block the finishing machine until ink is fully cured, creating no-wait or blocking constraints.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- References -->
+    <section>
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-10">
+                    <div class="section-header fade-in">
+                        <h2>Key <span style="color: var(--gold)">References</span></h2>
+                    </div>
+
+                    <div class="fade-in">
+                        <div class="ref-item">
+                            <div class="ref-authors">Allahverdi, A., Ng, C. T., Cheng, T. C. E., &amp; Kovalyov, M. Y. (2008)</div>
+                            <div class="ref-title">"A survey of scheduling problems with setup times or costs."</div>
+                            <div class="ref-journal">European Journal of Operational Research, 187(3), 985-1032.</div>
+                        </div>
+                        <div class="ref-item">
+                            <div class="ref-authors">Ruiz, R., &amp; St&uuml;tzle, T. (2008)</div>
+                            <div class="ref-title">"An iterated greedy heuristic for the sequence dependent setup times flowshop problem with makespan and weighted tardiness objectives."</div>
+                            <div class="ref-journal">European Journal of Operational Research, 187(3), 1143-1159.</div>
+                        </div>
+                    </div>
+
+                    <!-- CTA -->
+                    <div class="cta-panel fade-in">
+                        <h5>Need to optimize your print production?</h5>
+                        <p>Discuss scheduling optimization for your manufacturing workflow</p>
+                        <div class="cta-links">
+                            <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank"><i class="fab fa-linkedin" style="margin-right:6px"></i> Connect on LinkedIn</a>
+                            <a href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" style="margin-right:6px"></i> View on GitHub</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Disclaimer -->
+    <div class="disclaimer">
+        <i class="fas fa-info-circle"></i> Data shown is illustrative. Setup times are simplified for demonstration.
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2024 Mohammad Ghafourian Nasiri &middot; <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // ── Navbar scroll effect ──
+        window.addEventListener('scroll', function () {
+            var navbar = document.querySelector('.navbar');
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // ── Scroll fade-in animations ──
+        var observerOptions = { threshold: 0.1, rootMargin: '0px 0px -50px 0px' };
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, observerOptions);
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+
+        // ── Algorithm Chip Toggle ──
+        document.querySelectorAll('#algo-select .algo-chip').forEach(function (chip) {
+            chip.addEventListener('click', function () {
+                chip.classList.toggle('selected');
+            });
+        });
+
+        // ── Problem Data ──
+        var JOBS = ['Red', 'Blue', 'Green', 'Yellow'];
+        var JOB_COLORS = [
+            'rgba(231,76,60,0.75)',
+            'rgba(52,152,219,0.75)',
+            'rgba(39,174,96,0.75)',
+            'rgba(241,196,15,0.75)'
+        ];
+        var JOB_BORDERS = [
+            'rgba(231,76,60,1)',
+            'rgba(52,152,219,1)',
+            'rgba(39,174,96,1)',
+            'rgba(241,196,15,1)'
+        ];
+        var MACHINE_NAMES = ['Printing Press', 'Finishing'];
+
+        // Processing times: p[job][machine]
+        var P = [
+            [15, 8],   // Red
+            [10, 12],  // Blue
+            [12, 10],  // Green
+            [8, 14]    // Yellow
+        ];
+
+        // Setup times: setup[machine][from_job][to_job]
+        var SETUP = [
+            // Machine 1 (Printing Press)
+            [
+                [0, 5, 3, 7],  // from Red
+                [6, 0, 4, 6],  // from Blue
+                [4, 5, 0, 2],  // from Green
+                [8, 7, 3, 0]   // from Yellow
+            ],
+            // Machine 2 (Finishing)
+            [
+                [0, 3, 4, 5],  // from Red
+                [4, 0, 2, 3],  // from Blue
+                [5, 3, 0, 4],  // from Green
+                [6, 4, 5, 0]   // from Yellow
+            ]
+        ];
+
+        // ── Makespan Evaluation ──
+        // Returns { makespan, schedule, totalSetup, totalProc }
+        // schedule[m] = array of { job, setupStart, setupEnd, procStart, procEnd }
+        function evaluate(seq) {
+            var nJobs = seq.length;
+            var nMach = 2;
+            var schedule = [[], []];
+            // C[m] = completion time on machine m after last scheduled job
+            var C = [0, 0];
+            var totalSetup = 0;
+            var totalProc = 0;
+
+            for (var k = 0; k < nJobs; k++) {
+                var job = seq[k];
+                for (var m = 0; m < nMach; m++) {
+                    var setupTime = 0;
+                    if (k > 0) {
+                        var prevJob = seq[k - 1];
+                        setupTime = SETUP[m][prevJob][job];
+                    }
+
+                    var earliest;
+                    if (m === 0) {
+                        earliest = C[0];
+                    } else {
+                        earliest = Math.max(C[m], schedule[m - 1][k].procEnd);
+                    }
+
+                    var setupStart = earliest;
+                    var setupEnd = setupStart + setupTime;
+                    var procStart = setupEnd;
+                    var procEnd = procStart + P[job][m];
+
+                    schedule[m].push({
+                        job: job,
+                        setupStart: setupStart,
+                        setupEnd: setupEnd,
+                        procStart: procStart,
+                        procEnd: procEnd
+                    });
+
+                    C[m] = procEnd;
+                    totalSetup += setupTime;
+                    totalProc += P[job][m];
+                }
+            }
+
+            var makespan = C[nMach - 1];
+            return { makespan: makespan, schedule: schedule, totalSetup: totalSetup, totalProc: totalProc };
+        }
+
+        // ── NEH-SDST ──
+        function nehSDST() {
+            var n = JOBS.length;
+            var m = 2;
+
+            // Step 1: compute W(j) = sum(p[j][m]) + avg setup into j across all machines and predecessors
+            var W = [];
+            for (var j = 0; j < n; j++) {
+                var totalP = 0;
+                for (var mm = 0; mm < m; mm++) totalP += P[j][mm];
+                var avgSetup = 0;
+                var count = 0;
+                for (var mm = 0; mm < m; mm++) {
+                    for (var i = 0; i < n; i++) {
+                        if (i !== j) {
+                            avgSetup += SETUP[mm][i][j];
+                            count++;
+                        }
+                    }
+                }
+                avgSetup = count > 0 ? avgSetup / count : 0;
+                W.push({ job: j, weight: totalP + avgSetup });
+            }
+
+            // Step 2: sort descending by weight
+            W.sort(function (a, b) { return b.weight - a.weight; });
+
+            // Step 3-4: insertion procedure
+            var seq = [W[0].job];
+
+            for (var i = 1; i < n; i++) {
+                var job = W[i].job;
+                var bestMakespan = Infinity;
+                var bestPos = 0;
+
+                for (var pos = 0; pos <= seq.length; pos++) {
+                    var trial = seq.slice();
+                    trial.splice(pos, 0, job);
+                    var result = evaluate(trial);
+                    if (result.makespan < bestMakespan) {
+                        bestMakespan = result.makespan;
+                        bestPos = pos;
+                    }
+                }
+
+                seq.splice(bestPos, 0, job);
+            }
+
+            return seq;
+        }
+
+        // ── GRASP-SDST ──
+        function graspSDST() {
+            var n = JOBS.length;
+            var m = 2;
+            var alpha = 0.3;
+            var iterations = 10;
+            var bestSeq = null;
+            var bestMakespan = Infinity;
+
+            for (var iter = 0; iter < iterations; iter++) {
+                // Greedy randomized construction
+                var remaining = [];
+                for (var j = 0; j < n; j++) remaining.push(j);
+                var seq = [];
+
+                while (remaining.length > 0) {
+                    // Evaluate cost for each remaining job
+                    var costs = [];
+                    for (var r = 0; r < remaining.length; r++) {
+                        var j = remaining[r];
+                        var cost = 0;
+                        for (var mm = 0; mm < m; mm++) {
+                            cost += P[j][mm];
+                            if (seq.length > 0) {
+                                cost += SETUP[mm][seq[seq.length - 1]][j];
+                            }
+                        }
+                        costs.push({ job: j, cost: cost, idx: r });
+                    }
+
+                    var cMin = Infinity, cMax = -Infinity;
+                    for (var r = 0; r < costs.length; r++) {
+                        if (costs[r].cost < cMin) cMin = costs[r].cost;
+                        if (costs[r].cost > cMax) cMax = costs[r].cost;
+                    }
+
+                    var threshold = cMin + alpha * (cMax - cMin);
+                    var rcl = [];
+                    for (var r = 0; r < costs.length; r++) {
+                        if (costs[r].cost <= threshold) rcl.push(costs[r]);
+                    }
+
+                    var pick = rcl[Math.floor(Math.random() * rcl.length)];
+                    seq.push(pick.job);
+                    remaining.splice(remaining.indexOf(pick.job), 1);
+                }
+
+                // Swap local search
+                var improved = true;
+                while (improved) {
+                    improved = false;
+                    var currentMakespan = evaluate(seq).makespan;
+                    for (var i = 0; i < n - 1; i++) {
+                        for (var j = i + 1; j < n; j++) {
+                            // swap
+                            var tmp = seq[i]; seq[i] = seq[j]; seq[j] = tmp;
+                            var newMakespan = evaluate(seq).makespan;
+                            if (newMakespan < currentMakespan) {
+                                currentMakespan = newMakespan;
+                                improved = true;
+                            } else {
+                                // swap back
+                                tmp = seq[i]; seq[i] = seq[j]; seq[j] = tmp;
+                            }
+                        }
+                    }
+                }
+
+                var result = evaluate(seq);
+                if (result.makespan < bestMakespan) {
+                    bestMakespan = result.makespan;
+                    bestSeq = seq.slice();
+                }
+            }
+
+            return bestSeq;
+        }
+
+        // ── Draw Gantt Chart ──
+        function drawGantt(schedule, makespan) {
+            var canvas = document.getElementById('gantt-canvas');
+            var ctx = canvas.getContext('2d');
+            var dpr = window.devicePixelRatio || 1;
+
+            var container = document.getElementById('gantt-container');
+            var cw = container.clientWidth - 24;
+
+            var chartHeight = 180;
+            canvas.width = cw * dpr;
+            canvas.height = chartHeight * dpr;
+            canvas.style.width = cw + 'px';
+            canvas.style.height = chartHeight + 'px';
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, cw, chartHeight);
+
+            var leftMargin = 110;
+            var rightMargin = 30;
+            var topMargin = 25;
+            var barHeight = 36;
+            var barGap = 24;
+            var chartWidth = cw - leftMargin - rightMargin;
+
+            var scale = chartWidth / makespan;
+
+            // Draw time axis
+            ctx.strokeStyle = 'rgba(197,160,89,0.15)';
+            ctx.lineWidth = 1;
+            var tickInterval = makespan <= 50 ? 5 : makespan <= 100 ? 10 : 20;
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillStyle = '#8892B0';
+            ctx.textAlign = 'center';
+
+            for (var t = 0; t <= makespan; t += tickInterval) {
+                var x = leftMargin + t * scale;
+                ctx.beginPath();
+                ctx.moveTo(x, topMargin - 5);
+                ctx.lineTo(x, topMargin + 2 * (barHeight + barGap));
+                ctx.stroke();
+                ctx.fillText(t, x, topMargin - 10);
+            }
+
+            // Draw machine labels and bars
+            for (var m = 0; m < 2; m++) {
+                var y = topMargin + m * (barHeight + barGap);
+
+                // Machine label
+                ctx.fillStyle = '#a8b2d1';
+                ctx.font = '500 11px Inter';
+                ctx.textAlign = 'right';
+                ctx.fillText(MACHINE_NAMES[m], leftMargin - 12, y + barHeight / 2 + 4);
+
+                // Machine track background
+                ctx.fillStyle = 'rgba(26,47,74,0.5)';
+                ctx.fillRect(leftMargin, y, chartWidth, barHeight);
+
+                var ops = schedule[m];
+                for (var k = 0; k < ops.length; k++) {
+                    var op = ops[k];
+
+                    // Draw setup block (hatched)
+                    if (op.setupEnd > op.setupStart) {
+                        var sx = leftMargin + op.setupStart * scale;
+                        var sw = (op.setupEnd - op.setupStart) * scale;
+
+                        // Setup background
+                        ctx.fillStyle = 'rgba(255,107,107,0.2)';
+                        ctx.fillRect(sx, y + 2, sw, barHeight - 4);
+
+                        // Hatching pattern for setup
+                        ctx.save();
+                        ctx.beginPath();
+                        ctx.rect(sx, y + 2, sw, barHeight - 4);
+                        ctx.clip();
+                        ctx.strokeStyle = 'rgba(255,107,107,0.5)';
+                        ctx.lineWidth = 1;
+                        for (var hx = -barHeight; hx < sw + barHeight; hx += 5) {
+                            ctx.beginPath();
+                            ctx.moveTo(sx + hx, y + 2);
+                            ctx.lineTo(sx + hx + barHeight, y + barHeight - 2);
+                            ctx.stroke();
+                        }
+                        ctx.restore();
+
+                        // Setup border
+                        ctx.strokeStyle = 'rgba(255,107,107,0.6)';
+                        ctx.lineWidth = 1;
+                        ctx.strokeRect(sx, y + 2, sw, barHeight - 4);
+
+                        // Setup time label
+                        if (sw > 14) {
+                            ctx.fillStyle = 'rgba(255,107,107,0.9)';
+                            ctx.font = '500 8px JetBrains Mono';
+                            ctx.textAlign = 'center';
+                            ctx.fillText('S', sx + sw / 2, y + barHeight / 2 + 3);
+                        }
+                    }
+
+                    // Draw processing block
+                    var px = leftMargin + op.procStart * scale;
+                    var pw = (op.procEnd - op.procStart) * scale;
+
+                    ctx.fillStyle = JOB_COLORS[op.job];
+                    ctx.fillRect(px, y + 2, pw, barHeight - 4);
+
+                    // Processing border
+                    ctx.strokeStyle = JOB_BORDERS[op.job];
+                    ctx.lineWidth = 1.5;
+                    ctx.strokeRect(px, y + 2, pw, barHeight - 4);
+
+                    // Job label
+                    if (pw > 20) {
+                        ctx.fillStyle = '#fff';
+                        ctx.font = '600 10px Inter';
+                        ctx.textAlign = 'center';
+                        ctx.fillText(JOBS[op.job], px + pw / 2, y + barHeight / 2 + 4);
+                    }
+                }
+            }
+
+            // Makespan line
+            var mx = leftMargin + makespan * scale;
+            ctx.strokeStyle = 'var(--green)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([4, 3]);
+            ctx.beginPath();
+            ctx.moveTo(mx, topMargin - 5);
+            ctx.lineTo(mx, topMargin + 2 * (barHeight + barGap));
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#64ffda';
+            ctx.font = '600 10px JetBrains Mono';
+            ctx.textAlign = 'center';
+            ctx.fillText('C_max = ' + makespan, mx, topMargin + 2 * (barHeight + barGap) + 14);
+
+            document.getElementById('gantt-legend').style.display = 'flex';
+        }
+
+        // ── Draw empty Gantt ──
+        function drawEmptyGantt() {
+            var canvas = document.getElementById('gantt-canvas');
+            var ctx = canvas.getContext('2d');
+            var dpr = window.devicePixelRatio || 1;
+            var container = document.getElementById('gantt-container');
+            var cw = container.clientWidth - 24;
+            canvas.width = cw * dpr;
+            canvas.height = 160 * dpr;
+            canvas.style.width = cw + 'px';
+            canvas.style.height = '160px';
+            ctx.scale(dpr, dpr);
+            ctx.clearRect(0, 0, cw, 160);
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '12px Inter';
+            ctx.textAlign = 'center';
+            ctx.fillText('Select algorithm(s) and click Solve to generate schedule', cw / 2, 85);
+        }
+
+        // ── Solve ──
+        function solvePrintShop() {
+            var selected = document.querySelectorAll('#algo-select .algo-chip.selected');
+            if (selected.length === 0) {
+                document.getElementById('status-text').textContent = 'Please select at least one algorithm.';
+                return;
+            }
+
+            var algos = [];
+            selected.forEach(function (chip) { algos.push(chip.getAttribute('data-algo')); });
+
+            var results = [];
+            var bestResult = null;
+
+            for (var a = 0; a < algos.length; a++) {
+                var algoName = algos[a];
+                var t0 = performance.now();
+                var seq;
+
+                if (algoName === 'neh-sdst') {
+                    seq = nehSDST();
+                } else if (algoName === 'grasp-sdst') {
+                    seq = graspSDST();
+                }
+
+                var t1 = performance.now();
+                var result = evaluate(seq);
+                result.name = algoName === 'neh-sdst' ? 'NEH-SDST' : 'GRASP-SDST';
+                result.time = t1 - t0;
+                result.seq = seq;
+                results.push(result);
+
+                if (!bestResult || result.makespan < bestResult.makespan) {
+                    bestResult = result;
+                }
+            }
+
+            // Draw Gantt for best result
+            drawGantt(bestResult.schedule, bestResult.makespan);
+
+            // Populate results table
+            var tbody = document.getElementById('results-body');
+            var html = '';
+            for (var r = 0; r < results.length; r++) {
+                var res = results[r];
+                var isBest = res.makespan === bestResult.makespan;
+                var seqStr = res.seq.map(function (j) { return JOBS[j]; }).join(' → ');
+                html += '<tr>';
+                html += '<td class="algo-label">' + res.name + '</td>';
+                html += '<td' + (isBest ? ' class="best-val"' : '') + '>' + res.makespan + '</td>';
+                html += '<td>' + seqStr + '</td>';
+                html += '<td>' + res.totalSetup + '</td>';
+                html += '<td>' + res.totalProc + '</td>';
+                html += '<td>' + res.time.toFixed(2) + '</td>';
+                html += '</tr>';
+            }
+            tbody.innerHTML = html;
+            document.getElementById('results-table').style.display = 'table';
+            document.getElementById('status-text').textContent =
+                'Solved ' + algos.length + ' algorithm(s). Best makespan: ' + bestResult.makespan + ' minutes.';
+        }
+
+        // ── Run All ──
+        function runAllAlgos() {
+            var chips = document.querySelectorAll('#algo-select .algo-chip');
+            chips.forEach(function (c) { c.classList.add('selected'); });
+            solvePrintShop();
+        }
+
+        // ── Init ──
+        drawEmptyGantt();
+        window.addEventListener('resize', function () {
+            var legend = document.getElementById('gantt-legend');
+            if (legend.style.display === 'flex') {
+                // re-solve to redraw
+            } else {
+                drawEmptyGantt();
+            }
+        });
+    </script>
+</body>
+</html>
