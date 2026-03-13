@@ -379,6 +379,27 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.15); border-radius: 12px; padding: 2.5rem; margin-top: 2rem; }
+        .solver-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
+        .solver-panel h3 span { color: var(--gold); }
+        .solver-controls { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-end; }
+        .control-group label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); margin-bottom: 0.4rem; }
+        .control-group input, .control-group select { background: var(--midnight); border: 1px solid rgba(197,160,89,0.2); color: var(--ivory); padding: 0.5rem 0.8rem; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; width: 100%; }
+        .algo-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.5rem; }
+        .algo-chip { padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.78rem; cursor: pointer; border: 1px solid; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        .algo-chip.heuristic { border-color: var(--blue); color: var(--blue); }
+        .algo-chip.heuristic.active { background: var(--blue); color: var(--midnight); }
+        .algo-chip.exact { border-color: var(--green); color: var(--green); }
+        .algo-chip.exact.active { background: var(--green); color: var(--midnight); }
+        .solver-btn { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--midnight); border: none; padding: 0.7rem 2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; }
+        .solver-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(197,160,89,0.3); }
+        .solver-canvas { background: var(--midnight); border: 1px solid rgba(197,160,89,0.1); border-radius: 8px; width: 100%; margin: 1.5rem 0; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .results-table th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); padding: 0.8rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.15); }
+        .results-table td { padding: 0.8rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; border-bottom: 1px solid rgba(197,160,89,0.05); }
+        .best-val { color: var(--green); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -386,7 +407,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="../index.html">M. G. Nasiri</a>
+            <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -728,6 +749,48 @@
         </div>
     </section>
 
+    <!-- Try It Yourself -->
+    <section id="try-it">
+        <div class="container">
+            <div class="section-header fade-in">
+                <h2>Try It <span style="color: var(--gold)">Yourself</span></h2>
+                <div class="gold-line"></div>
+                <p>Graph Coloring &mdash; assign colors to vertices so no two adjacent vertices share the same color</p>
+            </div>
+            <div class="solver-panel fade-in">
+                <h3>Graph <span>Coloring</span></h3>
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label>Vertices</label>
+                        <input type="number" id="gc-vertices" value="8" min="3" max="20">
+                    </div>
+                    <div class="control-group">
+                        <label>Edge Density</label>
+                        <select id="gc-density">
+                            <option value="preset" selected>Preset Graph</option>
+                            <option value="sparse">Sparse (~20%)</option>
+                            <option value="medium">Medium (~40%)</option>
+                            <option value="dense">Dense (~60%)</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <button class="solver-btn" id="gc-generate" onclick="gcGenerate()">Generate</button>
+                    </div>
+                </div>
+                <div class="algo-chips">
+                    <div class="algo-chip heuristic active" data-algo="greedy" onclick="gcSelectAlgo(this)">Greedy Sequential</div>
+                    <div class="algo-chip heuristic" data-algo="dsatur" onclick="gcSelectAlgo(this)">DSatur</div>
+                    <div class="algo-chip heuristic" data-algo="random" onclick="gcSelectAlgo(this)">Greedy Random (x10)</div>
+                </div>
+                <button class="solver-btn" onclick="gcSolve()">
+                    <i class="fas fa-play"></i>&nbsp; Solve
+                </button>
+                <canvas id="gc-canvas" class="solver-canvas" width="800" height="420"></canvas>
+                <div id="gc-results"></div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer>
         <p>&copy; 2025 Mohammad Ghafourian Nasiri. All rights reserved.</p>
@@ -752,6 +815,240 @@
             });
         }, { threshold: 0.1 });
         document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+    <script>
+        // ── Graph Coloring Solver ──
+        const GC_COLORS = ['#ff6b6b', '#7aa2f7', '#64ffda', '#D4AF37', '#c792ea', '#f78c6c',
+                           '#e06c75', '#98c379', '#61afef', '#d19a66', '#c678dd', '#56b6c2'];
+        let gcGraph = { n: 8, edges: [] };
+        let gcColoring = null;
+        let gcSelectedAlgo = 'greedy';
+
+        const GC_PRESET_EDGES = [[0,1],[0,2],[0,3],[1,2],[1,4],[2,3],[2,5],[3,6],[4,5],[4,7],[5,6],[6,7]];
+
+        function gcGenerate() {
+            const n = parseInt(document.getElementById('gc-vertices').value);
+            const density = document.getElementById('gc-density').value;
+            gcGraph.n = Math.max(3, Math.min(20, n));
+            document.getElementById('gc-vertices').value = gcGraph.n;
+
+            if (density === 'preset' && gcGraph.n === 8) {
+                gcGraph.edges = GC_PRESET_EDGES.slice();
+            } else {
+                const densityMap = { preset: 0.3, sparse: 0.2, medium: 0.4, dense: 0.6 };
+                const p = densityMap[density] || 0.3;
+                gcGraph.edges = [];
+                for (let i = 0; i < gcGraph.n; i++) {
+                    for (let j = i + 1; j < gcGraph.n; j++) {
+                        if (Math.random() < p) gcGraph.edges.push([i, j]);
+                    }
+                }
+                // ensure connected: add edges for isolated vertices
+                const adj = gcBuildAdj(gcGraph.n, gcGraph.edges);
+                for (let i = 1; i < gcGraph.n; i++) {
+                    if (adj[i].size === 0) {
+                        const target = Math.floor(Math.random() * i);
+                        gcGraph.edges.push([target, i]);
+                        adj[i].add(target);
+                        adj[target].add(i);
+                    }
+                }
+            }
+            gcColoring = null;
+            gcDraw();
+            document.getElementById('gc-results').innerHTML = '';
+        }
+
+        function gcBuildAdj(n, edges) {
+            const adj = Array.from({ length: n }, () => new Set());
+            for (const [u, v] of edges) {
+                adj[u].add(v);
+                adj[v].add(u);
+            }
+            return adj;
+        }
+
+        function gcSelectAlgo(el) {
+            document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            gcSelectedAlgo = el.dataset.algo;
+        }
+
+        // Greedy Sequential: process vertices by degree descending
+        function gcGreedySequential(n, edges) {
+            const adj = gcBuildAdj(n, edges);
+            // sort vertices by degree descending
+            const order = Array.from({ length: n }, (_, i) => i);
+            order.sort((a, b) => adj[b].size - adj[a].size);
+            const color = new Array(n).fill(-1);
+            for (const v of order) {
+                const usedByNeighbors = new Set();
+                for (const u of adj[v]) {
+                    if (color[u] !== -1) usedByNeighbors.add(color[u]);
+                }
+                let c = 0;
+                while (usedByNeighbors.has(c)) c++;
+                color[v] = c;
+            }
+            return color;
+        }
+
+        // DSatur: pick uncolored vertex with highest saturation, break ties by degree
+        function gcDSatur(n, edges) {
+            const adj = gcBuildAdj(n, edges);
+            const color = new Array(n).fill(-1);
+            const saturation = new Array(n).fill(0);
+            const neighborColors = Array.from({ length: n }, () => new Set());
+
+            for (let step = 0; step < n; step++) {
+                // pick uncolored vertex with max saturation, break ties by max degree
+                let best = -1;
+                for (let v = 0; v < n; v++) {
+                    if (color[v] !== -1) continue;
+                    if (best === -1 ||
+                        saturation[v] > saturation[best] ||
+                        (saturation[v] === saturation[best] && adj[v].size > adj[best].size)) {
+                        best = v;
+                    }
+                }
+                // assign smallest available color
+                let c = 0;
+                while (neighborColors[best].has(c)) c++;
+                color[best] = c;
+                // update saturation of uncolored neighbors
+                for (const u of adj[best]) {
+                    if (color[u] === -1 && !neighborColors[u].has(c)) {
+                        neighborColors[u].add(c);
+                        saturation[u] = neighborColors[u].size;
+                    }
+                }
+            }
+            return color;
+        }
+
+        // Greedy Random: randomize vertex order, greedy color, repeat 10 times, keep best
+        function gcGreedyRandom(n, edges) {
+            const adj = gcBuildAdj(n, edges);
+            let bestColor = null;
+            let bestNumColors = Infinity;
+            for (let trial = 0; trial < 10; trial++) {
+                const order = Array.from({ length: n }, (_, i) => i);
+                // Fisher-Yates shuffle
+                for (let i = order.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [order[i], order[j]] = [order[j], order[i]];
+                }
+                const color = new Array(n).fill(-1);
+                for (const v of order) {
+                    const usedByNeighbors = new Set();
+                    for (const u of adj[v]) {
+                        if (color[u] !== -1) usedByNeighbors.add(color[u]);
+                    }
+                    let c = 0;
+                    while (usedByNeighbors.has(c)) c++;
+                    color[v] = c;
+                }
+                const numColors = Math.max(...color) + 1;
+                if (numColors < bestNumColors) {
+                    bestNumColors = numColors;
+                    bestColor = color.slice();
+                }
+            }
+            return bestColor;
+        }
+
+        function gcSolve() {
+            if (gcGraph.edges.length === 0 && gcGraph.n > 1) {
+                // no edges: 1 color suffices
+                gcColoring = new Array(gcGraph.n).fill(0);
+            } else {
+                const t0 = performance.now();
+                switch (gcSelectedAlgo) {
+                    case 'greedy': gcColoring = gcGreedySequential(gcGraph.n, gcGraph.edges); break;
+                    case 'dsatur': gcColoring = gcDSatur(gcGraph.n, gcGraph.edges); break;
+                    case 'random': gcColoring = gcGreedyRandom(gcGraph.n, gcGraph.edges); break;
+                }
+                const elapsed = (performance.now() - t0).toFixed(2);
+                const numColors = Math.max(...gcColoring) + 1;
+                const algoNames = { greedy: 'Greedy Sequential', dsatur: 'DSatur', random: 'Greedy Random (x10)' };
+                document.getElementById('gc-results').innerHTML = `
+                    <table class="results-table">
+                        <thead><tr><th>Algorithm</th><th>Colors Used</th><th>Coloring</th><th>Time</th></tr></thead>
+                        <tbody>
+                            <tr>
+                                <td>${algoNames[gcSelectedAlgo]}</td>
+                                <td class="best-val">${numColors}</td>
+                                <td>[${gcColoring.join(', ')}]</td>
+                                <td>${elapsed} ms</td>
+                            </tr>
+                        </tbody>
+                    </table>`;
+            }
+            gcDraw();
+        }
+
+        function gcDraw() {
+            const canvas = document.getElementById('gc-canvas');
+            const ctx = canvas.getContext('2d');
+            const W = canvas.width;
+            const H = canvas.height;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.style.width = W + 'px';
+            canvas.style.height = H + 'px';
+            canvas.width = W * dpr;
+            canvas.height = H * dpr;
+            ctx.scale(dpr, dpr);
+
+            ctx.clearRect(0, 0, W, H);
+            ctx.fillStyle = '#0A192F';
+            ctx.fillRect(0, 0, W, H);
+
+            const n = gcGraph.n;
+            const cx = W / 2;
+            const cy = H / 2;
+            const radius = Math.min(W, H) * 0.36;
+            const nodeRadius = n <= 10 ? 22 : (n <= 15 ? 18 : 14);
+
+            // compute positions in a circle
+            const pos = [];
+            for (let i = 0; i < n; i++) {
+                const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+                pos.push({ x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) });
+            }
+
+            // draw edges
+            ctx.strokeStyle = 'rgba(136, 146, 176, 0.3)';
+            ctx.lineWidth = 1.5;
+            for (const [u, v] of gcGraph.edges) {
+                ctx.beginPath();
+                ctx.moveTo(pos[u].x, pos[u].y);
+                ctx.lineTo(pos[v].x, pos[v].y);
+                ctx.stroke();
+            }
+
+            // draw vertices
+            for (let i = 0; i < n; i++) {
+                const fillColor = gcColoring ? (GC_COLORS[gcColoring[i] % GC_COLORS.length]) : 'rgba(136, 146, 176, 0.5)';
+                ctx.beginPath();
+                ctx.arc(pos[i].x, pos[i].y, nodeRadius, 0, 2 * Math.PI);
+                ctx.fillStyle = fillColor;
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(248, 249, 250, 0.6)';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                // label
+                ctx.fillStyle = '#0A192F';
+                ctx.font = `bold ${nodeRadius * 0.7}px 'JetBrains Mono', monospace`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(i.toString(), pos[i].x, pos[i].y);
+            }
+        }
+
+        // Initialize with preset graph
+        gcGraph.edges = GC_PRESET_EDGES.slice();
+        window.addEventListener('DOMContentLoaded', gcDraw);
     </script>
 </body>
 </html>
