@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Continuous Optimization | Mathematical Modeling</title>
@@ -400,6 +408,28 @@
             opacity: 1;
             transform: translateY(0);
         }
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.15); border-radius: 12px; padding: 2.5rem; margin-top: 2rem; }
+        .solver-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
+        .solver-panel h3 span { color: var(--gold); }
+        .solver-controls { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-end; }
+        .control-group label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); margin-bottom: 0.4rem; }
+        .control-group input, .control-group select { background: var(--midnight); border: 1px solid rgba(197,160,89,0.2); color: var(--ivory); padding: 0.5rem 0.8rem; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; width: 100%; }
+        .algo-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.5rem; }
+        .algo-chip { padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.78rem; cursor: pointer; border: 1px solid; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        .algo-chip.exact { border-color: var(--green); color: var(--green); }
+        .algo-chip.exact.active { background: var(--green); color: var(--midnight); }
+        .algo-chip.heuristic { border-color: var(--blue); color: var(--blue); }
+        .algo-chip.heuristic.active { background: var(--blue); color: var(--midnight); }
+        .solver-btn { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--midnight); border: none; padding: 0.7rem 2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; }
+        .solver-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(197,160,89,0.3); }
+        .solver-canvas { background: var(--midnight); border: 1px solid rgba(197,160,89,0.1); border-radius: 8px; width: 100%; margin: 1.5rem 0; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .results-table th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); padding: 0.8rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.15); }
+        .results-table td { padding: 0.8rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; border-bottom: 1px solid rgba(197,160,89,0.05); }
+        .best-val { color: var(--green); font-weight: 600; }
+        .constraint-list { list-style: none; padding: 0; margin: 0.5rem 0; }
+        .constraint-list li { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--slate-light); padding: 0.3rem 0; }
     </style>
 </head>
 <body>
@@ -654,6 +684,53 @@
         </div>
     </section>
 
+    <!-- Try It Yourself -->
+    <section id="try-it">
+        <div class="container">
+            <div class="section-header fade-in">
+                <h2>Try It <span style="color: var(--gold)">Yourself</span></h2>
+                <div class="gold-line"></div>
+                <p>2D Linear Programming &mdash; visualize the feasible region and find the optimal vertex</p>
+            </div>
+            <div class="solver-panel fade-in">
+                <h3>Linear <span>Programming</span></h3>
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label>Preset</label>
+                        <select id="lp-preset" onchange="lpLoadPreset()">
+                            <option value="production">Production Mix</option>
+                            <option value="diet">Diet Problem</option>
+                            <option value="transport">Resource Allocation</option>
+                            <option value="custom">Custom</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Objective: max c1&middot;x1 + c2&middot;x2</label>
+                        <div style="display:flex;gap:0.5rem;">
+                            <input type="number" id="lp-c1" value="5" step="1" style="width:70px">
+                            <input type="number" id="lp-c2" value="4" step="1" style="width:70px">
+                        </div>
+                    </div>
+                    <div class="control-group">
+                        <button class="solver-btn" onclick="lpSolve()">
+                            <i class="fas fa-play"></i>&nbsp; Solve
+                        </button>
+                    </div>
+                </div>
+                <div style="margin-bottom:1rem;">
+                    <label style="font-size:0.75rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--slate);margin-bottom:0.4rem;display:block;">Constraints (a1&middot;x1 + a2&middot;x2 &le; b)</label>
+                    <div id="lp-constraints"></div>
+                    <div style="margin-top:0.5rem;display:flex;gap:0.5rem;">
+                        <button class="solver-btn" style="padding:0.4rem 1rem;font-size:0.75rem;" onclick="lpAddConstraint()"><i class="fas fa-plus"></i> Add</button>
+                        <button class="solver-btn" style="padding:0.4rem 1rem;font-size:0.75rem;background:rgba(136,146,176,0.2);color:var(--slate);" onclick="lpRemoveConstraint()"><i class="fas fa-minus"></i> Remove</button>
+                    </div>
+                </div>
+                <canvas id="lp-canvas" class="solver-canvas" width="800" height="500"></canvas>
+                <div id="lp-results"></div>
+            </div>
+        </div>
+    </section>
+
     <!-- Footer -->
     <footer>
         <p>&copy; 2025 Mohammad Ghafourian Nasiri. All rights reserved.</p>
@@ -678,5 +755,422 @@
         }, { threshold: 0.1 });
         document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
     </script>
+<!-- LP Solver -->
+<script>
+// ── 2D Linear Programming Solver ──
+const LP_PRESETS = {
+    production: {
+        c: [5, 4],
+        constraints: [[6, 4, 24], [1, 2, 6], [1, 0, 4], [0, 1, 4]],
+        label: 'Production Mix: max 5x\u2081 + 4x\u2082'
+    },
+    diet: {
+        c: [3, 5],
+        constraints: [[1, 2, 14], [3, 1, 14], [1, 1, 8]],
+        label: 'Diet Problem: max 3x\u2081 + 5x\u2082'
+    },
+    transport: {
+        c: [2, 3],
+        constraints: [[1, 1, 10], [2, 1, 16], [1, 3, 18]],
+        label: 'Resource Allocation: max 2x\u2081 + 3x\u2082'
+    }
+};
+
+let lpConstraints = [];
+
+function lpRenderConstraints() {
+    const container = document.getElementById('lp-constraints');
+    container.innerHTML = '';
+    lpConstraints.forEach((c, i) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex;gap:0.4rem;align-items:center;margin-bottom:0.4rem;';
+        row.innerHTML = `
+            <input type="number" class="lp-a1" value="${c[0]}" step="1" style="width:60px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);color:var(--ivory);padding:0.35rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;" onchange="lpUpdateConstraint(${i})">
+            <span style="color:var(--slate);font-size:0.82rem;">x\u2081 +</span>
+            <input type="number" class="lp-a2" value="${c[1]}" step="1" style="width:60px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);color:var(--ivory);padding:0.35rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;" onchange="lpUpdateConstraint(${i})">
+            <span style="color:var(--slate);font-size:0.82rem;">x\u2082 \u2264</span>
+            <input type="number" class="lp-b" value="${c[2]}" step="1" style="width:70px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);color:var(--ivory);padding:0.35rem 0.5rem;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82rem;" onchange="lpUpdateConstraint(${i})">
+        `;
+        container.appendChild(row);
+    });
+}
+
+function lpUpdateConstraint(i) {
+    const rows = document.getElementById('lp-constraints').children;
+    const row = rows[i];
+    lpConstraints[i] = [
+        parseFloat(row.querySelector('.lp-a1').value) || 0,
+        parseFloat(row.querySelector('.lp-a2').value) || 0,
+        parseFloat(row.querySelector('.lp-b').value) || 0
+    ];
+}
+
+function lpAddConstraint() {
+    lpConstraints.push([1, 1, 10]);
+    lpRenderConstraints();
+    document.getElementById('lp-preset').value = 'custom';
+}
+
+function lpRemoveConstraint() {
+    if (lpConstraints.length > 1) {
+        lpConstraints.pop();
+        lpRenderConstraints();
+        document.getElementById('lp-preset').value = 'custom';
+    }
+}
+
+function lpLoadPreset() {
+    const key = document.getElementById('lp-preset').value;
+    if (key === 'custom') return;
+    const p = LP_PRESETS[key];
+    document.getElementById('lp-c1').value = p.c[0];
+    document.getElementById('lp-c2').value = p.c[1];
+    lpConstraints = p.constraints.map(c => c.slice());
+    lpRenderConstraints();
+    lpDraw(null);
+    document.getElementById('lp-results').innerHTML = '';
+}
+
+// Find intersection of two lines: a1*x + a2*y = b
+function lpIntersect(l1, l2) {
+    const [a1, b1, c1] = l1;
+    const [a2, b2, c2] = l2;
+    const det = a1 * b2 - a2 * b1;
+    if (Math.abs(det) < 1e-10) return null;
+    return [(c1 * b2 - c2 * b1) / det, (a1 * c2 - a2 * c1) / det];
+}
+
+// Check if point satisfies all constraints + non-negativity
+function lpFeasible(x, y, constraints) {
+    if (x < -1e-9 || y < -1e-9) return false;
+    for (const [a1, a2, b] of constraints) {
+        if (a1 * x + a2 * y > b + 1e-9) return false;
+    }
+    return true;
+}
+
+function lpSolve() {
+    // Sync constraints from UI
+    const rows = document.getElementById('lp-constraints').children;
+    for (let i = 0; i < lpConstraints.length; i++) {
+        lpConstraints[i] = [
+            parseFloat(rows[i].querySelector('.lp-a1').value) || 0,
+            parseFloat(rows[i].querySelector('.lp-a2').value) || 0,
+            parseFloat(rows[i].querySelector('.lp-b').value) || 0
+        ];
+    }
+
+    const c1 = parseFloat(document.getElementById('lp-c1').value) || 0;
+    const c2 = parseFloat(document.getElementById('lp-c2').value) || 0;
+    const t0 = performance.now();
+
+    // Build all bounding lines: constraints + x1=0 + x2=0
+    const lines = lpConstraints.map(c => [c[0], c[1], c[2]]);
+    lines.push([1, 0, 0]); // x1 >= 0 as 1*x1 + 0*x2 = 0
+    lines.push([0, 1, 0]); // x2 >= 0
+
+    // Enumerate all vertices (intersections of pairs)
+    const vertices = [];
+    for (let i = 0; i < lines.length; i++) {
+        for (let j = i + 1; j < lines.length; j++) {
+            const pt = lpIntersect(lines[i], lines[j]);
+            if (pt && lpFeasible(pt[0], pt[1], lpConstraints)) {
+                vertices.push(pt);
+            }
+        }
+    }
+
+    if (vertices.length === 0) {
+        const elapsed = (performance.now() - t0).toFixed(2);
+        document.getElementById('lp-results').innerHTML = `
+            <div style="color:var(--red);padding:1rem;font-family:'JetBrains Mono',monospace;">
+                Infeasible &mdash; no feasible region exists for these constraints.
+            </div>`;
+        lpDraw(null);
+        return;
+    }
+
+    // Find optimal vertex
+    let bestVal = -Infinity;
+    let bestPt = null;
+    for (const [x, y] of vertices) {
+        const val = c1 * x + c2 * y;
+        if (val > bestVal) {
+            bestVal = val;
+            bestPt = [x, y];
+        }
+    }
+    const elapsed = (performance.now() - t0).toFixed(2);
+
+    // Identify binding constraints
+    const binding = [];
+    lpConstraints.forEach((c, i) => {
+        const slack = c[2] - (c[0] * bestPt[0] + c[1] * bestPt[1]);
+        if (Math.abs(slack) < 1e-6) binding.push(i + 1);
+    });
+
+    document.getElementById('lp-results').innerHTML = `
+        <table class="results-table">
+            <thead><tr><th>Variable</th><th>Value</th><th>Objective</th><th>Binding Constraints</th><th>Time</th></tr></thead>
+            <tbody>
+                <tr>
+                    <td>x\u2081 = <span class="best-val">${bestPt[0].toFixed(3)}</span>, x\u2082 = <span class="best-val">${bestPt[1].toFixed(3)}</span></td>
+                    <td class="best-val">${bestVal.toFixed(3)}</td>
+                    <td>max ${c1}x\u2081 + ${c2}x\u2082</td>
+                    <td>${binding.length > 0 ? binding.join(', ') : 'None'}</td>
+                    <td>${elapsed} ms</td>
+                </tr>
+            </tbody>
+        </table>`;
+
+    lpDraw({ vertices, optimal: bestPt, optVal: bestVal, c: [c1, c2] });
+}
+
+function lpDraw(solution) {
+    const canvas = document.getElementById('lp-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = 800, H = 500;
+    const dpr = window.devicePixelRatio || 1;
+    canvas.style.width = W + 'px';
+    canvas.style.height = H + 'px';
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.scale(dpr, dpr);
+
+    ctx.clearRect(0, 0, W, H);
+    ctx.fillStyle = '#0A192F';
+    ctx.fillRect(0, 0, W, H);
+
+    // Determine axis scale
+    let maxX = 1, maxY = 1;
+    for (const [a1, a2, b] of lpConstraints) {
+        if (a1 > 0) maxX = Math.max(maxX, b / a1);
+        if (a2 > 0) maxY = Math.max(maxY, b / a2);
+        if (Math.abs(a1) < 1e-10 && a2 > 0) maxY = Math.max(maxY, b / a2);
+        if (Math.abs(a2) < 1e-10 && a1 > 0) maxX = Math.max(maxX, b / a1);
+    }
+    maxX *= 1.3; maxY *= 1.3;
+
+    const margin = { left: 60, right: 30, top: 30, bottom: 50 };
+    const plotW = W - margin.left - margin.right;
+    const plotH = H - margin.top - margin.bottom;
+
+    function toScreen(x, y) {
+        return [margin.left + (x / maxX) * plotW, margin.top + plotH - (y / maxY) * plotH];
+    }
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(136,146,176,0.1)';
+    ctx.lineWidth = 0.5;
+    for (let i = 0; i <= 5; i++) {
+        const gx = (maxX / 5) * i;
+        const gy = (maxY / 5) * i;
+        const [sx] = toScreen(gx, 0);
+        const [, sy] = toScreen(0, gy);
+        ctx.beginPath(); ctx.moveTo(sx, margin.top); ctx.lineTo(sx, margin.top + plotH); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(margin.left, sy); ctx.lineTo(margin.left + plotW, sy); ctx.stroke();
+    }
+
+    // Axes
+    ctx.strokeStyle = 'rgba(248,249,250,0.4)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(margin.left, margin.top);
+    ctx.lineTo(margin.left, margin.top + plotH);
+    ctx.lineTo(margin.left + plotW, margin.top + plotH);
+    ctx.stroke();
+
+    // Axis labels
+    ctx.fillStyle = 'var(--slate)';
+    ctx.font = '12px "JetBrains Mono", monospace';
+    ctx.textAlign = 'center';
+    for (let i = 0; i <= 5; i++) {
+        const val = (maxX / 5) * i;
+        const [sx, sy] = toScreen(val, 0);
+        ctx.fillText(val.toFixed(1), sx, sy + 18);
+    }
+    ctx.textAlign = 'right';
+    for (let i = 0; i <= 5; i++) {
+        const val = (maxY / 5) * i;
+        const [sx, sy] = toScreen(0, val);
+        ctx.fillText(val.toFixed(1), sx - 8, sy + 4);
+    }
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#a8b2d1';
+    ctx.font = '13px "Inter", sans-serif';
+    ctx.fillText('x\u2081', margin.left + plotW / 2, H - 8);
+    ctx.save();
+    ctx.translate(15, margin.top + plotH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillText('x\u2082', 0, 0);
+    ctx.restore();
+
+    // Build feasible polygon via clipping
+    // Start with a large box, clip by each constraint
+    let poly = [[0, 0], [maxX * 2, 0], [maxX * 2, maxY * 2], [0, maxY * 2]];
+    for (const [a1, a2, b] of lpConstraints) {
+        poly = lpClipPolygon(poly, a1, a2, b);
+    }
+    // Clip by non-negativity
+    poly = lpClipPolygon(poly, -1, 0, 0); // x >= 0
+    poly = lpClipPolygon(poly, 0, -1, 0); // y >= 0
+
+    // Fill feasible region
+    if (poly.length >= 3) {
+        ctx.beginPath();
+        const [sx0, sy0] = toScreen(poly[0][0], poly[0][1]);
+        ctx.moveTo(sx0, sy0);
+        for (let i = 1; i < poly.length; i++) {
+            const [sx, sy] = toScreen(poly[i][0], poly[i][1]);
+            ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(100, 255, 218, 0.12)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(100, 255, 218, 0.4)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+    }
+
+    // Draw constraint lines
+    const colors = ['#ff6b6b', '#7aa2f7', '#D4AF37', '#c792ea', '#f78c6c', '#98c379', '#61afef', '#d19a66'];
+    lpConstraints.forEach(([a1, a2, b], i) => {
+        const color = colors[i % colors.length];
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 4]);
+
+        // Find two points on the line a1*x + a2*y = b within view
+        const pts = [];
+        if (Math.abs(a2) > 1e-10) {
+            pts.push([0, b / a2]);
+            pts.push([maxX * 1.5, (b - a1 * maxX * 1.5) / a2]);
+        }
+        if (Math.abs(a1) > 1e-10) {
+            pts.push([b / a1, 0]);
+            pts.push([(b - a2 * maxY * 1.5) / a1, maxY * 1.5]);
+        }
+
+        if (pts.length >= 2) {
+            const [sx1, sy1] = toScreen(pts[0][0], pts[0][1]);
+            const [sx2, sy2] = toScreen(pts[1][0], pts[1][1]);
+            ctx.beginPath();
+            ctx.moveTo(sx1, sy1);
+            ctx.lineTo(sx2, sy2);
+            ctx.stroke();
+
+            // Label
+            const mx = (pts[0][0] + pts[1][0]) / 2;
+            const my = (pts[0][1] + pts[1][1]) / 2;
+            const clampX = Math.max(0, Math.min(maxX * 0.9, mx));
+            const clampY = Math.max(0, Math.min(maxY * 0.9, my));
+            const [lx, ly] = toScreen(clampX, clampY);
+            ctx.fillStyle = color;
+            ctx.font = '11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(`C${i + 1}`, lx + 4, ly - 6);
+        }
+        ctx.setLineDash([]);
+    });
+
+    // Draw objective gradient arrow and iso-profit line
+    if (solution) {
+        const [c1, c2] = solution.c;
+        const norm = Math.sqrt(c1 * c1 + c2 * c2);
+        if (norm > 0) {
+            // Iso-profit line through optimal
+            ctx.strokeStyle = 'rgba(212, 175, 55, 0.5)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([3, 3]);
+            const opt = solution.optimal;
+            const perpX = -c2 / norm;
+            const perpY = c1 / norm;
+            const ext = maxX + maxY;
+            const [ipx1, ipy1] = toScreen(opt[0] + perpX * ext, opt[1] + perpY * ext);
+            const [ipx2, ipy2] = toScreen(opt[0] - perpX * ext, opt[1] - perpY * ext);
+            ctx.beginPath(); ctx.moveTo(ipx1, ipy1); ctx.lineTo(ipx2, ipy2); ctx.stroke();
+            ctx.setLineDash([]);
+        }
+
+        // Vertex dots
+        for (const [vx, vy] of solution.vertices) {
+            const [sx, sy] = toScreen(vx, vy);
+            ctx.beginPath();
+            ctx.arc(sx, sy, 5, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(248,249,250,0.6)';
+            ctx.fill();
+        }
+
+        // Optimal point
+        const [ox, oy] = toScreen(solution.optimal[0], solution.optimal[1]);
+        ctx.beginPath();
+        ctx.arc(ox, oy, 9, 0, Math.PI * 2);
+        ctx.fillStyle = '#64ffda';
+        ctx.fill();
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        ctx.fillStyle = '#64ffda';
+        ctx.font = 'bold 12px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText(`(${solution.optimal[0].toFixed(2)}, ${solution.optimal[1].toFixed(2)})`, ox + 14, oy - 8);
+        ctx.fillText(`z* = ${solution.optVal.toFixed(2)}`, ox + 14, oy + 8);
+    }
+
+    // Legend
+    ctx.font = '11px "Inter", sans-serif';
+    ctx.textAlign = 'left';
+    const legendX = W - 170, legendY = 25;
+    ctx.fillStyle = 'rgba(10,25,47,0.8)';
+    ctx.fillRect(legendX - 8, legendY - 5, 160, lpConstraints.length * 18 + 30);
+    lpConstraints.forEach(([a1, a2, b], i) => {
+        ctx.fillStyle = colors[i % colors.length];
+        ctx.fillRect(legendX, legendY + i * 18, 10, 10);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText(`${a1}x\u2081+${a2}x\u2082\u2264${b}`, legendX + 16, legendY + i * 18 + 9);
+    });
+    if (solution) {
+        const yi = lpConstraints.length;
+        ctx.fillStyle = '#64ffda';
+        ctx.beginPath(); ctx.arc(legendX + 5, legendY + yi * 18 + 5, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('Optimal', legendX + 16, legendY + yi * 18 + 9);
+    }
+}
+
+// Sutherland-Hodgman polygon clipping: clip polygon to half-plane a1*x + a2*y <= b
+function lpClipPolygon(polygon, a1, a2, b) {
+    if (polygon.length === 0) return [];
+    const output = [];
+    for (let i = 0; i < polygon.length; i++) {
+        const curr = polygon[i];
+        const next = polygon[(i + 1) % polygon.length];
+        const currInside = a1 * curr[0] + a2 * curr[1] <= b + 1e-10;
+        const nextInside = a1 * next[0] + a2 * next[1] <= b + 1e-10;
+        if (currInside) {
+            output.push(curr);
+            if (!nextInside) {
+                output.push(lpLineIntersect(curr, next, a1, a2, b));
+            }
+        } else if (nextInside) {
+            output.push(lpLineIntersect(curr, next, a1, a2, b));
+        }
+    }
+    return output;
+}
+
+function lpLineIntersect(p1, p2, a1, a2, b) {
+    const d1 = a1 * p1[0] + a2 * p1[1] - b;
+    const d2 = a1 * p2[0] + a2 * p2[1] - b;
+    const t = d1 / (d1 - d2);
+    return [p1[0] + t * (p2[0] - p1[0]), p1[1] + t * (p2[1] - p1[1])];
+}
+
+// Initialize
+lpLoadPreset();
+window.addEventListener('DOMContentLoaded', () => { lpDraw(null); });
+</script>
 </body>
 </html>
