@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investment Portfolio Optimization | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Robust Portfolio Optimization demo using Markowitz mean-variance, Equal Weight, Min Variance, Max Return, and QP solver.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .solver-controls label {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+        }
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 180px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 40px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* ── Asset Input Grid ── */
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.6rem;
+            margin-top: 0.8rem;
+            margin-bottom: 1rem;
+        }
+        .asset-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.8rem;
+            background: var(--midnight-lighter);
+            border-radius: 3px;
+            border: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .asset-item label {
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+        }
+        .asset-item input {
+            width: 55px;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            text-align: center;
+            padding: 2px 4px;
+        }
+        .asset-item input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+        /* ── Covariance Matrix Display ── */
+        .cov-matrix {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            color: var(--slate-light);
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 0.8rem 1rem;
+            overflow-x: auto;
+            margin-top: 0.5rem;
+            margin-bottom: 1rem;
+            line-height: 1.8;
+        }
+        .cov-matrix .cov-header {
+            color: var(--gold);
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Weight Detail Output ── */
+        .weight-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Algorithm Cards ── */
+        .algo-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 1.8rem;
+            transition: border-color 0.3s;
+        }
+        .algo-card:hover { border-color: rgba(197, 160, 89, 0.3); }
+        .algo-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--ivory);
+            margin-bottom: 0.3rem;
+            letter-spacing: 0.5px;
+        }
+        .algo-card .algo-type-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 2px 8px;
+            border-radius: 2px;
+            margin-bottom: 0.8rem;
+        }
+        .algo-type-badge.heuristic {
+            color: var(--blue);
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            background: rgba(122, 162, 247, 0.08);
+        }
+        .algo-type-badge.exact {
+            color: var(--green);
+            border: 1px solid rgba(100, 255, 218, 0.3);
+            background: rgba(100, 255, 218, 0.08);
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.7;
+            margin-bottom: 0;
+        }
+        .algo-card .algo-formula {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--green);
+            margin-top: 0.5rem;
+            padding: 0.5rem 0.8rem;
+            background: rgba(100, 255, 218, 0.04);
+            border-radius: 3px;
+            border: 1px solid rgba(100, 255, 218, 0.08);
+        }
+
+        /* ── Fade-in animation ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Navbar ── -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. Nasiri</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../index.html#families">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="../index.html#applications">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank" rel="noopener">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li>Investment Portfolio</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── Hero ── -->
+<div class="hero">
+    <div class="hero-icon"><i class="fas fa-chart-pie"></i></div>
+    <h1>Investment <span>Portfolio</span></h1>
+    <div class="hero-subtitle">Robust Portfolio Optimization</div>
+    <div class="gold-line"></div>
+    <p class="hero-desc">
+        How should you allocate capital across assets to balance return and risk?
+        Markowitz mean-variance optimization provides the mathematical foundation,
+        while robust extensions guard against estimation uncertainty.
+    </p>
+</div>
+
+<!-- ── Section 1: The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Balancing expected return against portfolio risk</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <p>
+                Given <strong>n assets</strong> with expected returns <strong>&mu;</strong> and covariance matrix <strong>&Sigma;</strong>,
+                allocate capital weights <strong>w</strong> to maximize expected return while controlling portfolio variance.
+                The classic <strong>Markowitz mean-variance</strong> framework solves:
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Mean-Variance Formulation</span>
+                <span class="keyword">maximize</span>&ensp; <span class="variable">&mu;</span><sup>T</sup><span class="variable">w</span> &minus; <span class="variable">&lambda;</span> &middot; <span class="variable">w</span><sup>T</sup><span class="variable">&Sigma;w</span><br>
+                <span class="keyword">subject to</span>&ensp; &sum;<span class="variable">w<sub>i</sub></span> = 1 <span class="comment">&emsp;// fully invested</span><br>
+                &emsp;&emsp;&emsp;&emsp;&emsp;&ensp; <span class="variable">w<sub>i</sub></span> &ge; 0 &emsp;&emsp;&emsp;&emsp; <span class="comment">// no short selling</span>
+            </div>
+
+            <p>
+                The parameter <strong>&lambda;</strong> (risk aversion) controls the tradeoff: high &lambda; penalizes
+                variance heavily, producing conservative portfolios; low &lambda; chases higher returns.
+            </p>
+
+            <p>
+                The <strong>robust</strong> extension adds an uncertainty penalty on expected returns, acknowledging
+                that <strong>&mu;</strong> is estimated with error. With ellipsoidal uncertainty:
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Robust Formulation</span>
+                <span class="keyword">maximize</span>&ensp; <span class="variable">&mu;</span><sup>T</sup><span class="variable">w</span> &minus; <span class="variable">&delta;</span> &middot; &Vert;<span class="variable">&Sigma;</span><sup>&frac12;</sup><span class="variable">w</span>&Vert; &minus; <span class="variable">&lambda;</span> &middot; <span class="variable">w</span><sup>T</sup><span class="variable">&Sigma;w</span><br>
+                <span class="keyword">subject to</span>&ensp; &sum;<span class="variable">w<sub>i</sub></span> = 1, &ensp;<span class="variable">w<sub>i</sub></span> &ge; 0
+            </div>
+
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Educational Demonstration</div>
+                Data shown is illustrative. This is not financial advice. Real portfolio construction requires
+                professional analysis of market conditions, regulatory constraints, and individual risk tolerance.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 2: Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Adjust parameters and compare optimization methods</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-sliders-h"></i> Portfolio Optimizer</h4>
+                <button class="solver-btn primary" onclick="runAllAlgorithms()">
+                    <i class="fas fa-play"></i>&ensp;Optimize
+                </button>
+            </div>
+            <div class="solver-body">
+                <!-- Asset Returns -->
+                <div class="solver-section-label">Expected Annual Returns (%)</div>
+                <div class="asset-grid">
+                    <div class="asset-item">
+                        <label><i class="fas fa-university"></i>&ensp;Bonds</label>
+                        <input type="number" id="ret-0" value="4" step="0.5" min="0" max="50">
+                    </div>
+                    <div class="asset-item">
+                        <label><i class="fas fa-microchip"></i>&ensp;Tech Stocks</label>
+                        <input type="number" id="ret-1" value="12" step="0.5" min="0" max="50">
+                    </div>
+                    <div class="asset-item">
+                        <label><i class="fas fa-building"></i>&ensp;Real Estate</label>
+                        <input type="number" id="ret-2" value="8" step="0.5" min="0" max="50">
+                    </div>
+                    <div class="asset-item">
+                        <label><i class="fas fa-gem"></i>&ensp;Commodities</label>
+                        <input type="number" id="ret-3" value="6" step="0.5" min="0" max="50">
+                    </div>
+                </div>
+
+                <!-- Covariance Matrix Display -->
+                <div class="solver-section-label">Covariance Matrix (Annualized)</div>
+                <div class="cov-matrix">
+                    <span class="cov-header">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Bonds&emsp;&emsp;Tech&emsp;&emsp;&ensp;RE&emsp;&emsp;&emsp;Comm</span><br>
+                    Bonds&emsp;&emsp;&ensp;0.0004&emsp; -0.0002&emsp;&ensp;0.0001&emsp;&ensp;0.0001<br>
+                    Tech&emsp;&emsp;&emsp;-0.0002&emsp;&ensp;0.0400&emsp;&ensp;0.0100&emsp;&ensp;0.0050<br>
+                    Real Estate&ensp;0.0001&emsp;&ensp;0.0100&emsp;&ensp;0.0150&emsp;&ensp;0.0030<br>
+                    Commodities&ensp;0.0001&emsp;&ensp;0.0050&emsp;&ensp;0.0030&emsp;&ensp;0.0200
+                </div>
+
+                <!-- Risk Aversion Slider -->
+                <div class="solver-controls">
+                    <label>Risk Aversion (&lambda;):</label>
+                    <input type="range" class="solver-slider" id="lambda-slider" min="0.1" max="10" step="0.1" value="2">
+                    <span class="size-display" id="lambda-display">2.0</span>
+                </div>
+
+                <!-- Algorithm Selection -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algo-select">
+                    <div class="algo-chip selected" data-algo="equal_weight">
+                        Equal Weight 1/n <span class="chip-type" style="color: var(--blue);">heuristic</span>
+                    </div>
+                    <div class="algo-chip selected" data-algo="min_variance">
+                        Min Variance <span class="chip-type" style="color: var(--blue);">heuristic</span>
+                    </div>
+                    <div class="algo-chip selected" data-algo="max_return">
+                        Max Return <span class="chip-type" style="color: var(--blue);">heuristic</span>
+                    </div>
+                    <div class="algo-chip selected" data-algo="mean_variance_qp">
+                        Mean-Variance QP <span class="chip-type" style="color: var(--green);">exact</span>
+                    </div>
+                </div>
+
+                <!-- Visualization -->
+                <div class="solver-row">
+                    <div>
+                        <div class="solver-section-label">Portfolio Weights</div>
+                        <div class="solver-canvas-wrap">
+                            <canvas id="pie-canvas" width="500" height="400"></canvas>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Return vs Risk Comparison</div>
+                        <div class="solver-canvas-wrap">
+                            <canvas id="bar-canvas" width="500" height="400"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results Table -->
+                <div class="solver-section-label">Detailed Results</div>
+                <div style="overflow-x: auto;">
+                    <table class="results-table" id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Bonds</th>
+                                <th>Tech</th>
+                                <th>Real Estate</th>
+                                <th>Commodities</th>
+                                <th>E[Return]</th>
+                                <th>Std Dev</th>
+                                <th>Sharpe</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body">
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Weight Detail Output -->
+                <div class="weight-output" id="weight-output">
+                    Click "Optimize" to compute portfolio allocations.
+                </div>
+
+                <div class="solver-status" id="solver-status">Ready to optimize.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 3: Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>From naive heuristics to quadratic programming</p>
+        </div>
+
+        <div class="algo-cards fade-in">
+            <div class="algo-card">
+                <h4>Equal Weight (1/n)</h4>
+                <span class="algo-type-badge heuristic">Heuristic</span>
+                <p>
+                    Allocate equally across all assets. Despite its simplicity, the 1/n rule
+                    is often surprisingly competitive due to diversification benefits and
+                    avoidance of estimation error in returns and covariances.
+                </p>
+                <div class="algo-formula">w_i = 1/n &ensp;for all i</div>
+            </div>
+
+            <div class="algo-card">
+                <h4>Minimum Variance</h4>
+                <span class="algo-type-badge heuristic">Heuristic</span>
+                <p>
+                    Find the portfolio with lowest variance, ignoring expected returns entirely.
+                    For the unconstrained case (allowing negative weights), the closed-form is
+                    w = &Sigma;<sup>-1</sup>1 / (1<sup>T</sup>&Sigma;<sup>-1</sup>1). With non-negativity
+                    constraints, we use projected gradient descent.
+                </p>
+                <div class="algo-formula">w = &Sigma;<sup>-1</sup>1 / (1<sup>T</sup>&Sigma;<sup>-1</sup>1)</div>
+            </div>
+
+            <div class="algo-card">
+                <h4>Maximum Return</h4>
+                <span class="algo-type-badge heuristic">Heuristic</span>
+                <p>
+                    Concentrate 100% of capital in the single asset with the highest expected return.
+                    This is the most aggressive strategy with zero diversification &mdash; maximum
+                    return but also maximum concentration risk.
+                </p>
+                <div class="algo-formula">w = e_{argmax(&mu;)} &ensp;(unit vector)</div>
+            </div>
+
+            <div class="algo-card">
+                <h4>Mean-Variance QP</h4>
+                <span class="algo-type-badge exact">Exact</span>
+                <p>
+                    Solve the full Markowitz objective max &mu;<sup>T</sup>w &minus; &lambda;&middot;w<sup>T</sup>&Sigma;w
+                    using projected gradient descent. The gradient &nabla;f = &mu; &minus; 2&lambda;&Sigma;w
+                    is projected onto the probability simplex after each step. Converges to the
+                    global optimum since the objective is concave.
+                </p>
+                <div class="algo-formula">w &larr; proj_simplex(w + &alpha;(&mu; - 2&lambda;&Sigma;w))</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 4: Why It's More Complex ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why production portfolio optimization goes far beyond this demo</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-layer-group"></i> Beyond Mean-Variance</h3>
+                <ul class="complexity-list">
+                    <li><strong>Transaction costs</strong> &mdash; bid-ask spreads and commissions make frequent rebalancing expensive; turnover constraints are essential</li>
+                    <li><strong>Tax implications</strong> &mdash; capital gains taxes create path-dependent optimization; tax-loss harvesting adds integer variables</li>
+                    <li><strong>Liquidity constraints</strong> &mdash; large positions cannot be liquidated instantly; market impact models are needed</li>
+                    <li><strong>Thousands of assets</strong> &mdash; institutional portfolios span thousands of securities; covariance estimation requires factor models</li>
+                    <li><strong>Dynamic rebalancing</strong> &mdash; multi-period stochastic optimization replaces single-period Markowitz in practice</li>
+                    <li><strong>Factor models</strong> &mdash; Fama-French, APT, and statistical factor models reduce dimensionality and improve estimation</li>
+                    <li><strong>ESG constraints</strong> &mdash; environmental, social, and governance screens add exclusion and tilt constraints</li>
+                    <li><strong>Tail risk (CVaR)</strong> &mdash; variance fails to capture fat tails; Conditional Value-at-Risk provides asymmetric risk measures</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 5: References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational papers in portfolio theory</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Markowitz, H.</span> (1952).
+                    <span class="ref-title">"Portfolio selection."</span>
+                    <span class="ref-journal">The Journal of Finance, 7(1), 77&ndash;91.</span>
+                    The foundational paper establishing mean-variance optimization as the basis of modern portfolio theory.
+                </li>
+                <li>
+                    <span class="ref-author">Goldfarb, D., &amp; Iyengar, G.</span> (2003).
+                    <span class="ref-title">"Robust portfolio selection problems."</span>
+                    <span class="ref-journal">Mathematics of Operations Research, 28(1), 1&ndash;38.</span>
+                    Introduces robust formulations using ellipsoidal and polyhedral uncertainty sets for expected returns.
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 6: CTA ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need Sophisticated Portfolio Optimization?</h3>
+            <p>
+                From multi-asset allocation to risk budgeting and robust optimization,
+                real investment problems demand rigorous mathematical modeling and
+                domain expertise. Let's discuss your portfolio challenges.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank" rel="noopener">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <p>&copy; 2024 M. G. Nasiri &middot; <a href="../index.html">Mathematical Modeling &amp; Operations Research</a></p>
+</footer>
+
+<!-- ── Back Link ── -->
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Portfolio</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// PORTFOLIO OPTIMIZATION ENGINE
+// ═══════════════════════════════════════════════════════════════
+
+const ASSET_NAMES = ['Bonds', 'Tech', 'Real Estate', 'Commodities'];
+const ASSET_COLORS = ['#7aa2f7', '#ff6b6b', '#64ffda', '#C5A059'];
+const N = 4;
+
+// Default covariance matrix (annualized)
+const COV_MATRIX = [
+    [0.0004, -0.0002, 0.0001, 0.0001],
+    [-0.0002, 0.0400, 0.0100, 0.0050],
+    [0.0001, 0.0100, 0.0150, 0.0030],
+    [0.0001, 0.0050, 0.0030, 0.0200]
+];
+
+// ── Utility: read inputs ──
+function getReturns() {
+    const mu = [];
+    for (let i = 0; i < N; i++) {
+        mu.push(parseFloat(document.getElementById('ret-' + i).value) / 100);
+    }
+    return mu;
+}
+
+function getLambda() {
+    return parseFloat(document.getElementById('lambda-slider').value);
+}
+
+// ── Linear Algebra Utilities ──
+
+// Matrix-vector multiply: A (n x n) * v (n) => result (n)
+function matVecMul(A, v) {
+    const n = A.length;
+    const result = new Array(n).fill(0);
+    for (let i = 0; i < n; i++) {
+        for (let j = 0; j < n; j++) {
+            result[i] += A[i][j] * v[j];
+        }
+    }
+    return result;
+}
+
+// Dot product
+function dot(a, b) {
+    let s = 0;
+    for (let i = 0; i < a.length; i++) s += a[i] * b[i];
+    return s;
+}
+
+// Matrix inverse using Gauss-Jordan elimination for n x n
+function matInverse(M) {
+    const n = M.length;
+    // Augment with identity
+    const aug = [];
+    for (let i = 0; i < n; i++) {
+        aug[i] = [];
+        for (let j = 0; j < n; j++) aug[i][j] = M[i][j];
+        for (let j = 0; j < n; j++) aug[i][n + j] = (i === j) ? 1 : 0;
+    }
+    for (let col = 0; col < n; col++) {
+        // Partial pivot
+        let maxRow = col;
+        for (let row = col + 1; row < n; row++) {
+            if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) maxRow = row;
+        }
+        [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
+
+        const pivot = aug[col][col];
+        if (Math.abs(pivot) < 1e-15) return null; // singular
+        for (let j = 0; j < 2 * n; j++) aug[col][j] /= pivot;
+
+        for (let row = 0; row < n; row++) {
+            if (row === col) continue;
+            const factor = aug[row][col];
+            for (let j = 0; j < 2 * n; j++) aug[row][j] -= factor * aug[col][j];
+        }
+    }
+    // Extract inverse
+    const inv = [];
+    for (let i = 0; i < n; i++) {
+        inv[i] = [];
+        for (let j = 0; j < n; j++) inv[i][j] = aug[i][n + j];
+    }
+    return inv;
+}
+
+// ── Simplex Projection (Duchi et al. 2008) ──
+// Project vector v onto the probability simplex {w : sum(w)=1, w>=0}
+function projectOntoSimplex(v) {
+    const n = v.length;
+    const u = v.slice().sort((a, b) => b - a); // sort descending
+    let cumSum = 0;
+    let rho = 0;
+    for (let j = 0; j < n; j++) {
+        cumSum += u[j];
+        if (u[j] + (1 - cumSum) / (j + 1) > 0) {
+            rho = j + 1;
+        }
+    }
+    let cumSumRho = 0;
+    for (let j = 0; j < rho; j++) cumSumRho += u[j];
+    const theta = (cumSumRho - 1) / rho;
+
+    const w = new Array(n);
+    for (let i = 0; i < n; i++) {
+        w[i] = Math.max(v[i] - theta, 0);
+    }
+    return w;
+}
+
+// ── Portfolio metrics ──
+function portfolioReturn(mu, w) {
+    return dot(mu, w);
+}
+
+function portfolioVariance(cov, w) {
+    return dot(w, matVecMul(cov, w));
+}
+
+function portfolioStdDev(cov, w) {
+    return Math.sqrt(Math.max(0, portfolioVariance(cov, w)));
+}
+
+// ── Algorithm 1: Equal Weight ──
+function equalWeight() {
+    const w = new Array(N).fill(1 / N);
+    return w;
+}
+
+// ── Algorithm 2: Minimum Variance ──
+// Uses closed-form Sigma^{-1} * 1 / (1^T Sigma^{-1} 1)
+// Then projects onto simplex for non-negativity
+function minVariance() {
+    const inv = matInverse(COV_MATRIX);
+    if (!inv) return equalWeight(); // fallback
+
+    const ones = new Array(N).fill(1);
+    const invOnes = matVecMul(inv, ones);
+    const denom = dot(ones, invOnes);
+
+    const w = invOnes.map(x => x / denom);
+
+    // If any weight is negative, project onto simplex
+    if (w.some(x => x < -1e-10)) {
+        return projectOntoSimplex(w);
+    }
+    // Normalize to ensure sum = 1
+    const s = w.reduce((a, b) => a + b, 0);
+    return w.map(x => x / s);
+}
+
+// ── Algorithm 3: Max Return ──
+function maxReturn() {
+    const mu = getReturns();
+    let bestIdx = 0;
+    for (let i = 1; i < N; i++) {
+        if (mu[i] > mu[bestIdx]) bestIdx = i;
+    }
+    const w = new Array(N).fill(0);
+    w[bestIdx] = 1;
+    return w;
+}
+
+// ── Algorithm 4: Mean-Variance QP via Projected Gradient Descent ──
+// maximize mu^T w - lambda * w^T Sigma w
+// gradient = mu - 2*lambda*Sigma*w
+function meanVarianceQP() {
+    const mu = getReturns();
+    const lambda = getLambda();
+
+    // Initialize with equal weights
+    let w = new Array(N).fill(1 / N);
+
+    const maxIter = 2000;
+    const tol = 1e-10;
+    let stepSize = 0.01;
+
+    for (let iter = 0; iter < maxIter; iter++) {
+        // Compute gradient of objective: mu - 2*lambda*Sigma*w
+        const sigmaW = matVecMul(COV_MATRIX, w);
+        const grad = new Array(N);
+        for (let i = 0; i < N; i++) {
+            grad[i] = mu[i] - 2 * lambda * sigmaW[i];
+        }
+
+        // Gradient ascent step
+        const wNew = new Array(N);
+        for (let i = 0; i < N; i++) {
+            wNew[i] = w[i] + stepSize * grad[i];
+        }
+
+        // Project onto simplex
+        const wProj = projectOntoSimplex(wNew);
+
+        // Check convergence
+        let maxDiff = 0;
+        for (let i = 0; i < N; i++) {
+            maxDiff = Math.max(maxDiff, Math.abs(wProj[i] - w[i]));
+        }
+
+        w = wProj;
+
+        if (maxDiff < tol) break;
+
+        // Adaptive step size with backtracking
+        if (iter > 0 && iter % 200 === 0) {
+            stepSize *= 0.8;
+        }
+    }
+
+    return w;
+}
+
+// ── Run All Selected Algorithms ──
+const ALGORITHMS = {
+    equal_weight:     { name: 'Equal Weight (1/n)', fn: equalWeight, type: 'heuristic' },
+    min_variance:     { name: 'Min Variance',       fn: minVariance, type: 'heuristic' },
+    max_return:       { name: 'Max Return',         fn: maxReturn,   type: 'heuristic' },
+    mean_variance_qp: { name: 'Mean-Variance QP',   fn: meanVarianceQP, type: 'exact' }
+};
+
+let lastResults = [];
+
+function runAllAlgorithms() {
+    const mu = getReturns();
+    const lambda = getLambda();
+    const selected = getSelectedAlgorithms();
+
+    if (selected.length === 0) {
+        document.getElementById('solver-status').textContent = 'Please select at least one algorithm.';
+        return;
+    }
+
+    lastResults = [];
+
+    for (const key of selected) {
+        const algo = ALGORITHMS[key];
+        const t0 = performance.now();
+        const w = algo.fn();
+        const t1 = performance.now();
+
+        const expRet = portfolioReturn(mu, w);
+        const stdDev = portfolioStdDev(COV_MATRIX, w);
+        const sharpe = stdDev > 1e-10 ? expRet / stdDev : 0;
+
+        lastResults.push({
+            key: key,
+            name: algo.name,
+            type: algo.type,
+            weights: w,
+            expectedReturn: expRet,
+            stdDev: stdDev,
+            sharpe: sharpe,
+            time: t1 - t0
+        });
+    }
+
+    renderResults();
+    drawPieChart();
+    drawBarChart();
+    document.getElementById('solver-status').textContent =
+        'Optimized ' + selected.length + ' algorithm(s) with \u03BB = ' + lambda.toFixed(1) + '.';
+}
+
+function getSelectedAlgorithms() {
+    const chips = document.querySelectorAll('.algo-chip');
+    const selected = [];
+    chips.forEach(c => {
+        if (c.classList.contains('selected')) {
+            selected.push(c.getAttribute('data-algo'));
+        }
+    });
+    return selected;
+}
+
+// ── Render Results Table ──
+function renderResults() {
+    const tbody = document.getElementById('results-body');
+    tbody.innerHTML = '';
+
+    // Find best Sharpe
+    let bestSharpe = -Infinity;
+    for (const r of lastResults) {
+        if (r.sharpe > bestSharpe) bestSharpe = r.sharpe;
+    }
+
+    let outputText = '';
+
+    for (const r of lastResults) {
+        const tr = document.createElement('tr');
+        const isBest = Math.abs(r.sharpe - bestSharpe) < 1e-8 && lastResults.length > 1;
+
+        tr.innerHTML =
+            '<td class="algo-label">' + r.name + '</td>' +
+            '<td>' + (r.weights[0] * 100).toFixed(1) + '%</td>' +
+            '<td>' + (r.weights[1] * 100).toFixed(1) + '%</td>' +
+            '<td>' + (r.weights[2] * 100).toFixed(1) + '%</td>' +
+            '<td>' + (r.weights[3] * 100).toFixed(1) + '%</td>' +
+            '<td>' + (r.expectedReturn * 100).toFixed(2) + '%</td>' +
+            '<td>' + (r.stdDev * 100).toFixed(2) + '%</td>' +
+            '<td class="' + (isBest ? 'best-val' : '') + '">' + r.sharpe.toFixed(3) + '</td>' +
+            '<td>' + r.time.toFixed(2) + ' ms</td>';
+
+        tbody.appendChild(tr);
+
+        outputText += r.name + ':\n';
+        for (let i = 0; i < N; i++) {
+            outputText += '  ' + ASSET_NAMES[i] + ': ' + (r.weights[i] * 100).toFixed(2) + '%\n';
+        }
+        outputText += '  E[Return] = ' + (r.expectedReturn * 100).toFixed(2) + '%';
+        outputText += '  |  Std Dev = ' + (r.stdDev * 100).toFixed(2) + '%';
+        outputText += '  |  Sharpe = ' + r.sharpe.toFixed(4) + '\n\n';
+    }
+
+    document.getElementById('weight-output').textContent = outputText.trim();
+}
+
+// ── Pie Chart Drawing ──
+function drawPieChart() {
+    const canvas = document.getElementById('pie-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if (lastResults.length === 0) return;
+
+    // Draw pie chart for the last algorithm (typically QP or the best)
+    // Use the one with highest Sharpe ratio
+    let best = lastResults[0];
+    for (const r of lastResults) {
+        if (r.sharpe > best.sharpe) best = r;
+    }
+
+    const cx = W / 2;
+    const cy = H / 2 - 10;
+    const radius = Math.min(W, H) * 0.32;
+
+    // Title
+    ctx.fillStyle = '#a8b2d1';
+    ctx.font = '12px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText(best.name, cx, 25);
+
+    // Draw slices
+    let startAngle = -Math.PI / 2;
+    for (let i = 0; i < N; i++) {
+        const sliceAngle = best.weights[i] * 2 * Math.PI;
+        if (sliceAngle < 0.001) continue;
+
+        ctx.beginPath();
+        ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
+        ctx.closePath();
+        ctx.fillStyle = ASSET_COLORS[i];
+        ctx.fill();
+
+        // Outline
+        ctx.strokeStyle = '#0A192F';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+
+        // Label
+        if (best.weights[i] > 0.03) {
+            const midAngle = startAngle + sliceAngle / 2;
+            const labelR = radius * 0.65;
+            const lx = cx + Math.cos(midAngle) * labelR;
+            const ly = cy + Math.sin(midAngle) * labelR;
+
+            ctx.fillStyle = '#0A192F';
+            ctx.font = 'bold 11px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText((best.weights[i] * 100).toFixed(0) + '%', lx, ly);
+        }
+
+        startAngle += sliceAngle;
+    }
+
+    // Legend
+    const legendY = H - 50;
+    const legendStartX = (W - N * 110) / 2;
+    for (let i = 0; i < N; i++) {
+        const lx = legendStartX + i * 120;
+        ctx.fillStyle = ASSET_COLORS[i];
+        ctx.fillRect(lx, legendY, 12, 12);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(ASSET_NAMES[i], lx + 18, legendY + 6);
+    }
+}
+
+// ── Bar Chart Drawing ──
+function drawBarChart() {
+    const canvas = document.getElementById('bar-canvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width;
+    const H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+
+    if (lastResults.length === 0) return;
+
+    const nAlgos = lastResults.length;
+    const margin = { top: 40, right: 30, bottom: 70, left: 60 };
+    const chartW = W - margin.left - margin.right;
+    const chartH = H - margin.top - margin.bottom;
+
+    // Find max values for scaling
+    let maxRet = 0;
+    let maxStd = 0;
+    for (const r of lastResults) {
+        maxRet = Math.max(maxRet, r.expectedReturn * 100);
+        maxStd = Math.max(maxStd, r.stdDev * 100);
+    }
+    const maxVal = Math.max(maxRet, maxStd) * 1.2;
+
+    // Y-axis
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
+    ctx.lineWidth = 1;
+    const nTicks = 5;
+    for (let i = 0; i <= nTicks; i++) {
+        const y = margin.top + chartH - (i / nTicks) * chartH;
+        ctx.beginPath();
+        ctx.moveTo(margin.left, y);
+        ctx.lineTo(W - margin.right, y);
+        ctx.stroke();
+
+        const val = (i / nTicks) * maxVal;
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(val.toFixed(1) + '%', margin.left - 8, y);
+    }
+
+    // Bars
+    const groupWidth = chartW / nAlgos;
+    const barWidth = Math.min(groupWidth * 0.3, 30);
+    const gap = barWidth * 0.4;
+
+    const algoColors = {
+        equal_weight: '#7aa2f7',
+        min_variance: '#a78bfa',
+        max_return: '#ff6b6b',
+        mean_variance_qp: '#64ffda'
+    };
+
+    for (let a = 0; a < nAlgos; a++) {
+        const r = lastResults[a];
+        const groupX = margin.left + a * groupWidth + groupWidth / 2;
+
+        // Return bar
+        const retH = (r.expectedReturn * 100 / maxVal) * chartH;
+        const retX = groupX - barWidth - gap / 2;
+        const retY = margin.top + chartH - retH;
+        ctx.fillStyle = algoColors[r.key] || '#C5A059';
+        ctx.globalAlpha = 0.9;
+        ctx.fillRect(retX, retY, barWidth, retH);
+        ctx.globalAlpha = 1;
+
+        // Return value label
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText((r.expectedReturn * 100).toFixed(1) + '%', retX + barWidth / 2, retY - 5);
+
+        // Std dev bar
+        const stdH = (r.stdDev * 100 / maxVal) * chartH;
+        const stdX = groupX + gap / 2;
+        const stdY = margin.top + chartH - stdH;
+        ctx.fillStyle = algoColors[r.key] || '#C5A059';
+        ctx.globalAlpha = 0.4;
+        ctx.fillRect(stdX, stdY, barWidth, stdH);
+        ctx.globalAlpha = 1;
+
+        // Std dev border
+        ctx.strokeStyle = algoColors[r.key] || '#C5A059';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(stdX, stdY, barWidth, stdH);
+
+        // Std dev value label
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText((r.stdDev * 100).toFixed(1) + '%', stdX + barWidth / 2, stdY - 5);
+
+        // Algorithm name
+        ctx.save();
+        ctx.translate(groupX, margin.top + chartH + 12);
+        ctx.rotate(Math.PI / 6);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'top';
+        const shortName = r.name.length > 16 ? r.name.substring(0, 15) + '...' : r.name;
+        ctx.fillText(shortName, 0, 0);
+        ctx.restore();
+    }
+
+    // Legend
+    ctx.globalAlpha = 0.9;
+    ctx.fillStyle = '#C5A059';
+    ctx.fillRect(W - margin.right - 130, margin.top, 12, 12);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = '#a8b2d1';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('E[Return]', W - margin.right - 112, margin.top + 10);
+
+    ctx.globalAlpha = 0.4;
+    ctx.fillStyle = '#C5A059';
+    ctx.fillRect(W - margin.right - 130, margin.top + 20, 12, 12);
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = '#C5A059';
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(W - margin.right - 130, margin.top + 20, 12, 12);
+    ctx.fillStyle = '#a8b2d1';
+    ctx.fillText('Std Dev', W - margin.right - 112, margin.top + 30);
+}
+
+// ── Event Listeners ──
+
+// Lambda slider
+document.getElementById('lambda-slider').addEventListener('input', function() {
+    document.getElementById('lambda-display').textContent = parseFloat(this.value).toFixed(1);
+});
+
+// Algorithm chip toggle
+document.querySelectorAll('.algo-chip').forEach(chip => {
+    chip.addEventListener('click', function() {
+        this.classList.toggle('selected');
+    });
+});
+
+// ── Fade-in animation ──
+const fadeObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+        }
+    });
+}, { threshold: 0.1 });
+
+document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
+
+// ── Run on load ──
+window.addEventListener('DOMContentLoaded', () => {
+    runAllAlgorithms();
+});
+</script>
+
+</body>
+</html>
