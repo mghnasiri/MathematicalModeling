@@ -1,0 +1,1388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operating Room Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Operating Room Scheduling modeled as a Job Shop Scheduling problem. Interactive Giffler-Thompson simulation with SPT, LPT, and MWR dispatching rules.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: transparent;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0 0;
+            margin-top: 70px;
+        }
+        .breadcrumb-nav ol {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a {
+            color: var(--slate);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 4rem 2rem 4rem;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 0.95rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+
+        /* ── Sections ── */
+        section { padding: 5rem 0; }
+        section:nth-child(even) { background: var(--midnight-light); }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        /* ── Content Cards ── */
+        .content-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .content-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .content-card p, .content-card li {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .content-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .content-card ul li {
+            padding: 0.3rem 0;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+        .content-card ul li::before {
+            content: '\f105';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.75rem;
+        }
+
+        /* ── Mapping Table ── */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        .mapping-table th, .mapping-table td {
+            padding: 0.8rem 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.75rem;
+        }
+        .mapping-table td {
+            color: var(--slate-light);
+        }
+        .mapping-table tbody tr:hover {
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .mapping-table .icon-col {
+            color: var(--gold);
+            font-size: 1rem;
+            width: 40px;
+            text-align: center;
+        }
+
+        /* ── Interactive Panel ── */
+        .interactive-panel {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-header h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        .panel-body {
+            padding: 2rem;
+        }
+
+        /* ── Patient Table ── */
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+        }
+        .patient-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.72rem;
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+        }
+        .patient-table td {
+            padding: 0.6rem 0.8rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+        .patient-table .patient-name {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .patient-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* ── Algorithm Chips ── */
+        .algorithm-chips {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .algo-chip {
+            padding: 0.5rem 1.2rem;
+            border: 1px solid var(--blue);
+            border-radius: 3px;
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--blue);
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+        .algo-chip:hover {
+            background: rgba(122, 162, 247, 0.15);
+        }
+        .algo-chip.active {
+            background: var(--blue);
+            color: var(--midnight);
+        }
+        .algo-chip .chip-tag {
+            font-size: 0.62rem;
+            opacity: 0.7;
+            margin-left: 0.4rem;
+        }
+
+        /* ── Gantt Chart ── */
+        .gantt-container {
+            background: rgba(10, 25, 47, 0.5);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+        .gantt-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+        }
+        .gantt-chart {
+            position: relative;
+            min-height: 180px;
+        }
+        .gantt-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 0.6rem;
+            height: 38px;
+        }
+        .gantt-label {
+            width: 120px;
+            min-width: 120px;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+            font-family: 'Inter', sans-serif;
+            text-align: right;
+            padding-right: 1rem;
+        }
+        .gantt-track {
+            flex: 1;
+            position: relative;
+            height: 100%;
+            background: rgba(197, 160, 89, 0.03);
+            border-radius: 2px;
+        }
+        .gantt-block {
+            position: absolute;
+            height: 30px;
+            top: 4px;
+            border-radius: 3px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            color: var(--midnight);
+            transition: all 0.4s ease;
+            cursor: default;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        .gantt-block:hover {
+            filter: brightness(1.15);
+            transform: scaleY(1.1);
+            z-index: 10;
+        }
+        .gantt-block .block-tooltip {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--midnight);
+            color: var(--ivory);
+            padding: 0.4rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.7rem;
+            white-space: nowrap;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            z-index: 100;
+            margin-bottom: 4px;
+        }
+        .gantt-block:hover .block-tooltip { display: block; }
+
+        .gantt-timescale {
+            display: flex;
+            margin-left: 120px;
+            margin-top: 0.3rem;
+            position: relative;
+            height: 20px;
+        }
+        .gantt-tick {
+            position: absolute;
+            font-size: 0.65rem;
+            color: var(--slate);
+            font-family: 'JetBrains Mono', monospace;
+            transform: translateX(-50%);
+        }
+
+        /* Patient colors */
+        .color-a { background: #7aa2f7; }
+        .color-b { background: #64ffda; }
+        .color-c { background: #ff9e64; }
+        .color-d { background: #bb9af7; }
+
+        .legend {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+        }
+
+        /* ── Results Panel ── */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .result-card {
+            background: rgba(10, 25, 47, 0.5);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .result-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .result-label {
+            font-size: 0.7rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0.3rem;
+        }
+
+        /* ── Schedule Detail ── */
+        .schedule-detail {
+            background: rgba(10, 25, 47, 0.5);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.2rem;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--slate-light);
+            line-height: 1.9;
+        }
+        .schedule-detail .room-name {
+            color: var(--gold);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Algorithm Detail ── */
+        .algo-step {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            align-items: flex-start;
+        }
+        .step-number {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            background: var(--gold-dim);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--gold);
+            margin-top: 0.2rem;
+        }
+        .step-content h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--ivory);
+            margin-bottom: 0.3rem;
+        }
+        .step-content p {
+            color: var(--slate-light);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── Complexity Cards ── */
+        .complexity-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .complexity-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+            transform: translateY(-2px);
+        }
+        .complexity-card .card-icon {
+            font-size: 1.3rem;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+        }
+        .complexity-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        .complexity-card p {
+            color: var(--slate-light);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* ── References ── */
+        .reference-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.06);
+        }
+        .reference-item:last-child { border-bottom: none; }
+        .reference-authors {
+            color: var(--ivory);
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+        .reference-title {
+            color: var(--gold);
+            font-size: 0.88rem;
+            font-style: italic;
+        }
+        .reference-journal {
+            color: var(--slate);
+            font-size: 0.82rem;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            text-align: center;
+            padding: 4rem 0;
+        }
+        .cta-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+        .btn-cta {
+            display: inline-block;
+            padding: 0.9rem 2.5rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-cta:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.78rem;
+            color: var(--slate);
+            border-top: 1px solid rgba(197, 160, 89, 0.08);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 2.5rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 0.5px;
+        }
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            color: var(--gold);
+            padding: 0.6rem 1.2rem;
+            border-radius: 3px;
+            font-size: 0.78rem;
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Formula ── */
+        .formula-block {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.2rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .section-header h2 { font-size: 1.8rem; }
+            .gantt-label { width: 80px; min-width: 80px; font-size: 0.7rem; }
+            .gantt-timescale { margin-left: 80px; }
+            .content-card { padding: 1.5rem; }
+            .panel-body { padding: 1.2rem; }
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        /* ── Fade In ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. Nasiri</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li class="active">Operating Room Scheduling</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-hospital"></i></div>
+        <h1>Operating Room <span>Scheduling</span></h1>
+        <p class="hero-subtitle">Job Shop Scheduling</p>
+        <div class="gold-line"></div>
+    </div>
+</section>
+
+<!-- The Problem -->
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The Problem</h2>
+            <p>From hospital corridors to optimization theory</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="content-card fade-in">
+                    <p>
+                        In a modern hospital, each patient requires a specific sequence of procedures across
+                        different rooms and resources: pre-operative preparation, the operating room itself,
+                        and post-operative recovery. Critically, <strong>different patients may require these
+                        resources in different orders</strong>. An emergency trauma patient might go directly
+                        to the OR before any pre-op, while a routine surgical patient follows the standard
+                        pre-op, OR, recovery pathway.
+                    </p>
+                    <p style="margin-top: 1rem;">
+                        This is precisely the structure of a <strong>Job Shop Scheduling</strong> problem.
+                        Each patient is a <em>job</em>, each room or resource is a <em>machine</em>, and each
+                        procedure is an <em>operation</em> with a specific processing time on a specific machine.
+                        The goal is to minimize the <strong>makespan</strong> &mdash; the total time from the
+                        start of the first procedure to the completion of the last, effectively minimizing
+                        the length of the surgical day.
+                    </p>
+
+                    <table class="mapping-table" style="margin-top: 1.5rem;">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th>Hospital Domain</th>
+                                <th>Job Shop Model</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-user-injured"></i></td>
+                                <td>Patient</td>
+                                <td>Job</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-door-open"></i></td>
+                                <td>Room / Resource</td>
+                                <td>Machine</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-procedures"></i></td>
+                                <td>Procedure</td>
+                                <td>Operation</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-clock"></i></td>
+                                <td>Procedure duration</td>
+                                <td>Processing time</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-route"></i></td>
+                                <td>Patient pathway</td>
+                                <td>Job routing (machine order)</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-flag-checkered"></i></td>
+                                <td>End of surgical day</td>
+                                <td>Makespan (C<sub>max</sub>)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="formula-block">
+                        Jm | | C<sub>max</sub> &nbsp;&mdash;&nbsp; NP-hard even for m = 2 machines
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Try It Yourself -->
+<section id="interactive">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It Yourself</h2>
+            <p>Schedule 4 patients across 3 hospital rooms using dispatching rules</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-11">
+                <div class="interactive-panel fade-in">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-sliders-h" style="color: var(--gold); margin-right: 0.7rem;"></i>Configuration</h3>
+                        <span style="font-size: 0.75rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase;">4 Patients &middot; 3 Rooms</span>
+                    </div>
+                    <div class="panel-body">
+
+                        <!-- Patient Data -->
+                        <table class="patient-table">
+                            <thead>
+                                <tr>
+                                    <th>Patient</th>
+                                    <th>Step 1</th>
+                                    <th>Step 2</th>
+                                    <th>Step 3</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Patient A</td>
+                                    <td>Pre-Op (20 min)</td>
+                                    <td>OR (60 min)</td>
+                                    <td>Recovery (30 min)</td>
+                                </tr>
+                                <tr>
+                                    <td class="patient-name"><span class="patient-dot" style="background: #64ffda;"></span>Patient B</td>
+                                    <td>Pre-Op (15 min)</td>
+                                    <td>OR (45 min)</td>
+                                    <td>Recovery (40 min)</td>
+                                </tr>
+                                <tr>
+                                    <td class="patient-name"><span class="patient-dot" style="background: #ff9e64;"></span>Patient C</td>
+                                    <td>OR (50 min)</td>
+                                    <td>Recovery (25 min)</td>
+                                    <td>Pre-Op (10 min)</td>
+                                </tr>
+                                <tr>
+                                    <td class="patient-name"><span class="patient-dot" style="background: #bb9af7;"></span>Patient D</td>
+                                    <td>Pre-Op (25 min)</td>
+                                    <td>Recovery (20 min)</td>
+                                    <td>OR (55 min)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <!-- Algorithm Selection -->
+                        <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px;">Select Algorithm</div>
+                        <div class="algorithm-chips">
+                            <button class="algo-chip active" data-algo="spt" onclick="selectAlgorithm('spt')">
+                                SPT Dispatching <span class="chip-tag">heuristic</span>
+                            </button>
+                            <button class="algo-chip" data-algo="lpt" onclick="selectAlgorithm('lpt')">
+                                LPT Dispatching <span class="chip-tag">heuristic</span>
+                            </button>
+                            <button class="algo-chip" data-algo="mwr" onclick="selectAlgorithm('mwr')">
+                                MWR Dispatching <span class="chip-tag">heuristic</span>
+                            </button>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="legend">
+                            <div class="legend-item"><div class="legend-color" style="background: #7aa2f7;"></div>Patient A</div>
+                            <div class="legend-item"><div class="legend-color" style="background: #64ffda;"></div>Patient B</div>
+                            <div class="legend-item"><div class="legend-color" style="background: #ff9e64;"></div>Patient C</div>
+                            <div class="legend-item"><div class="legend-color" style="background: #bb9af7;"></div>Patient D</div>
+                        </div>
+
+                        <!-- Gantt Chart -->
+                        <div class="gantt-container">
+                            <div class="gantt-title">Schedule &mdash; Gantt Chart</div>
+                            <div class="gantt-chart" id="ganttChart"></div>
+                        </div>
+
+                        <!-- Results -->
+                        <div class="results-grid" id="resultsGrid"></div>
+
+                        <!-- Schedule Detail -->
+                        <div class="schedule-detail" id="scheduleDetail"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Algorithm Explanation -->
+<section id="algorithm">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The Algorithm</h2>
+            <p>Giffler-Thompson active schedule generation</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="content-card fade-in">
+                    <h3>Giffler-Thompson Procedure</h3>
+                    <p style="margin-bottom: 1.5rem;">
+                        The Giffler-Thompson algorithm (1960) generates <strong>active schedules</strong> &mdash;
+                        schedules where no operation can be started earlier without delaying another. All optimal
+                        schedules are active, so this search space contains the optimum. The algorithm uses a
+                        priority rule to break ties and select among competing operations.
+                    </p>
+
+                    <div class="algo-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Identify Schedulable Operations</h4>
+                            <p>Build the set of all operations whose predecessors within the same job have already
+                               been scheduled. Initially, this is the first operation of every patient.</p>
+                        </div>
+                    </div>
+
+                    <div class="algo-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Find Earliest Completion</h4>
+                            <p>For each schedulable operation, compute its earliest possible completion time (EFT)
+                               based on when the machine becomes free and when the job's previous operation finishes.
+                               Let EFT* be the minimum across all schedulable operations, and let m* be the machine
+                               where this minimum occurs.</p>
+                        </div>
+                    </div>
+
+                    <div class="algo-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Build Conflict Set</h4>
+                            <p>Among all schedulable operations assigned to machine m*, select those that could
+                               <strong>start before EFT*</strong>. These operations conflict with the earliest-finishing
+                               operation &mdash; if we don't schedule them now, they might be delayed.</p>
+                        </div>
+                    </div>
+
+                    <div class="algo-step">
+                        <div class="step-number">4</div>
+                        <div class="step-content">
+                            <h4>Apply Priority Rule</h4>
+                            <p>From the conflict set, select one operation using the dispatching rule:</p>
+                            <ul style="margin-top: 0.5rem;">
+                                <li><strong>SPT</strong> (Shortest Processing Time): choose the operation with the
+                                    smallest processing time, favoring quick procedures</li>
+                                <li><strong>LPT</strong> (Longest Processing Time): choose the operation with the
+                                    largest processing time, prioritizing lengthy surgeries</li>
+                                <li><strong>MWR</strong> (Most Work Remaining): choose the operation belonging to the
+                                    patient with the most total processing time still remaining</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="algo-step">
+                        <div class="step-number">5</div>
+                        <div class="step-content">
+                            <h4>Schedule and Repeat</h4>
+                            <p>Schedule the selected operation at its earliest feasible start time on machine m*.
+                               Remove it from the schedulable set, update machine and job availability times,
+                               and return to Step 1. Repeat until all operations are scheduled.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Why It's More Complex -->
+<section id="complexity">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World Complexity</h2>
+            <p>Why hospital scheduling goes beyond the basic model</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="complexity-cards fade-in">
+                    <div class="complexity-card">
+                        <div class="card-icon"><i class="fas fa-user-md"></i></div>
+                        <h4>Surgeon Availability</h4>
+                        <p>Surgeons have limited hours, specialty constraints, and may operate across multiple hospitals. This adds resource calendars and eligibility constraints.</p>
+                    </div>
+                    <div class="complexity-card">
+                        <div class="card-icon"><i class="fas fa-broom"></i></div>
+                        <h4>Equipment Sterilization</h4>
+                        <p>Sequence-dependent setup times between surgeries for cleaning, sterilization, and room preparation. Extends the model to SDST Job Shop.</p>
+                    </div>
+                    <div class="complexity-card">
+                        <div class="card-icon"><i class="fas fa-ambulance"></i></div>
+                        <h4>Emergency Surgeries</h4>
+                        <p>Unplanned arrivals disrupt the schedule, requiring robust or stochastic models with reserved capacity for urgent cases.</p>
+                    </div>
+                    <div class="complexity-card">
+                        <div class="card-icon"><i class="fas fa-sort-amount-up"></i></div>
+                        <h4>Patient Priority</h4>
+                        <p>Medical urgency, waiting list position, and case severity introduce weighted objectives beyond simple makespan.</p>
+                    </div>
+                    <div class="complexity-card">
+                        <div class="card-icon"><i class="fas fa-users"></i></div>
+                        <h4>Staff Shifts</h4>
+                        <p>Nurses, anesthesiologists, and support staff work in shifts, creating time-window constraints on when operations can be performed.</p>
+                    </div>
+                    <div class="complexity-card">
+                        <div class="card-icon"><i class="fas fa-bed"></i></div>
+                        <h4>Recovery Room Capacity</h4>
+                        <p>Unlike the basic model, recovery rooms can often serve multiple patients simultaneously, introducing parallel machine constraints on select resources.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- References -->
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>References</h2>
+            <p>Key literature on job shop scheduling and OR applications</p>
+        </div>
+
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="content-card fade-in">
+                    <div class="reference-item">
+                        <div class="reference-authors">Giffler, B., &amp; Thompson, G. L. (1960).</div>
+                        <div class="reference-title">"Algorithms for solving production-scheduling problems."</div>
+                        <div class="reference-journal">Operations Research, 8(4), 487&ndash;503.</div>
+                    </div>
+                    <div class="reference-item">
+                        <div class="reference-authors">Cardoen, B., Demeulemeester, E., &amp; Beli&euml;n, J. (2010).</div>
+                        <div class="reference-title">"Operating room planning and scheduling: A literature review."</div>
+                        <div class="reference-journal">European Journal of Operational Research, 201(3), 921&ndash;932.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Need to optimize healthcare<br>resource scheduling?</h2>
+        <div class="gold-line"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank">
+            <i class="fab fa-linkedin" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+    Data shown is illustrative. This is a simplified model for educational purposes.
+</div>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>
+            <a href="https://mghnasiri.github.io">&larr; Back to Portfolio</a>
+            &ensp;&middot;&ensp;
+            &copy; 2024 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<!-- Back Link -->
+<a href="../index.html" class="back-link">
+    <i class="fas fa-arrow-left"></i>&ensp;Home
+</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ─────────────────────────────────────────────────────────────
+// Operating Room Scheduling — Giffler-Thompson Implementation
+// ─────────────────────────────────────────────────────────────
+
+// Problem data: 4 patients, 3 rooms
+// Rooms: 0 = Pre-Op, 1 = Operating Room, 2 = Recovery
+const ROOMS = ['Pre-Op', 'Operating Room', 'Recovery'];
+const ROOM_SHORT = ['Pre-Op', 'OR', 'Recovery'];
+
+const PATIENTS = [
+    { name: 'Patient A', color: '#7aa2f7', cssClass: 'color-a',
+      ops: [{machine: 0, time: 20}, {machine: 1, time: 60}, {machine: 2, time: 30}] },
+    { name: 'Patient B', color: '#64ffda', cssClass: 'color-b',
+      ops: [{machine: 0, time: 15}, {machine: 1, time: 45}, {machine: 2, time: 40}] },
+    { name: 'Patient C', color: '#ff9e64', cssClass: 'color-c',
+      ops: [{machine: 1, time: 50}, {machine: 2, time: 25}, {machine: 0, time: 10}] },
+    { name: 'Patient D', color: '#bb9af7', cssClass: 'color-d',
+      ops: [{machine: 0, time: 25}, {machine: 2, time: 20}, {machine: 1, time: 55}] },
+];
+
+/**
+ * Giffler-Thompson active schedule generation.
+ *
+ * @param {string} rule - 'spt', 'lpt', or 'mwr'
+ * @returns {object} schedule result
+ */
+function gifflerThompson(rule) {
+    const t0 = performance.now();
+    const nJobs = PATIENTS.length;
+    const nMachines = ROOMS.length;
+
+    // Track next operation index for each job
+    const nextOp = new Array(nJobs).fill(0);
+    // Track when each job is available (after previous op completes)
+    const jobAvail = new Array(nJobs).fill(0);
+    // Track when each machine is available
+    const machineAvail = new Array(nMachines).fill(0);
+    // Scheduled operations: {job, opIdx, machine, start, end}
+    const scheduled = [];
+
+    const totalOps = PATIENTS.reduce((s, p) => s + p.ops.length, 0);
+
+    while (scheduled.length < totalOps) {
+        // Step 1: Identify schedulable operations (whose predecessors are done)
+        const schedulable = [];
+        for (let j = 0; j < nJobs; j++) {
+            if (nextOp[j] < PATIENTS[j].ops.length) {
+                const op = PATIENTS[j].ops[nextOp[j]];
+                const est = Math.max(jobAvail[j], machineAvail[op.machine]);
+                const eft = est + op.time;
+                schedulable.push({
+                    job: j,
+                    opIdx: nextOp[j],
+                    machine: op.machine,
+                    time: op.time,
+                    est: est,
+                    eft: eft
+                });
+            }
+        }
+
+        // Step 2: Find the operation with earliest completion time (EFT*)
+        let minEft = Infinity;
+        let starMachine = -1;
+        for (const s of schedulable) {
+            if (s.eft < minEft) {
+                minEft = s.eft;
+                starMachine = s.machine;
+            }
+        }
+
+        // Step 3: Build conflict set — operations on m* that can START before EFT*
+        const conflictSet = schedulable.filter(
+            s => s.machine === starMachine && s.est < minEft
+        );
+
+        // Step 4: Apply priority rule to select from conflict set
+        let selected;
+        if (rule === 'spt') {
+            // Shortest processing time
+            selected = conflictSet.reduce((best, s) =>
+                s.time < best.time ? s : best, conflictSet[0]);
+        } else if (rule === 'lpt') {
+            // Longest processing time
+            selected = conflictSet.reduce((best, s) =>
+                s.time > best.time ? s : best, conflictSet[0]);
+        } else {
+            // MWR: Most Work Remaining for the job
+            const workRemaining = (jobIdx) => {
+                let wr = 0;
+                for (let i = nextOp[jobIdx]; i < PATIENTS[jobIdx].ops.length; i++) {
+                    wr += PATIENTS[jobIdx].ops[i].time;
+                }
+                return wr;
+            };
+            selected = conflictSet.reduce((best, s) => {
+                const wrS = workRemaining(s.job);
+                const wrB = workRemaining(best.job);
+                return wrS > wrB ? s : best;
+            }, conflictSet[0]);
+        }
+
+        // Step 5: Schedule the selected operation at its earliest feasible start
+        const startTime = Math.max(jobAvail[selected.job], machineAvail[selected.machine]);
+        const endTime = startTime + selected.time;
+
+        scheduled.push({
+            job: selected.job,
+            opIdx: selected.opIdx,
+            machine: selected.machine,
+            start: startTime,
+            end: endTime,
+            time: selected.time
+        });
+
+        // Update state
+        nextOp[selected.job]++;
+        jobAvail[selected.job] = endTime;
+        machineAvail[selected.machine] = endTime;
+    }
+
+    const makespan = Math.max(...scheduled.map(s => s.end));
+    const elapsed = performance.now() - t0;
+
+    // Compute per-patient completion times
+    const patientCompletion = new Array(nJobs).fill(0);
+    for (const s of scheduled) {
+        patientCompletion[s.job] = Math.max(patientCompletion[s.job], s.end);
+    }
+
+    return { scheduled, makespan, elapsed, patientCompletion };
+}
+
+/**
+ * Render the Gantt chart and results for the given algorithm.
+ */
+function renderSchedule(result) {
+    const { scheduled, makespan, elapsed, patientCompletion } = result;
+    const ganttEl = document.getElementById('ganttChart');
+    const resultsEl = document.getElementById('resultsGrid');
+    const detailEl = document.getElementById('scheduleDetail');
+
+    // ── Gantt Chart ──
+    const pxPerMin = Math.min(5, (ganttEl.parentElement.clientWidth - 160) / makespan);
+    const trackWidth = makespan * pxPerMin;
+
+    let ganttHTML = '';
+    for (let m = 0; m < ROOMS.length; m++) {
+        const ops = scheduled.filter(s => s.machine === m).sort((a, b) => a.start - b.start);
+        let blocksHTML = '';
+        for (const op of ops) {
+            const left = op.start * pxPerMin;
+            const width = Math.max(op.time * pxPerMin, 2);
+            const label = op.time >= 15 ? PATIENTS[op.job].name.split(' ')[1] : '';
+            blocksHTML += `<div class="gantt-block ${PATIENTS[op.job].cssClass}"
+                style="left:${left}px; width:${width}px;"
+                title="${PATIENTS[op.job].name}: ${op.start}-${op.end} min">
+                ${label}
+                <span class="block-tooltip">${PATIENTS[op.job].name}<br>${ROOM_SHORT[m]}: ${op.start}&ndash;${op.end} min</span>
+            </div>`;
+        }
+        ganttHTML += `<div class="gantt-row">
+            <div class="gantt-label">${ROOMS[m]}</div>
+            <div class="gantt-track" style="width:${trackWidth}px;">${blocksHTML}</div>
+        </div>`;
+    }
+
+    // Timescale
+    const tickInterval = makespan <= 100 ? 10 : makespan <= 200 ? 20 : 30;
+    let ticksHTML = '';
+    for (let t = 0; t <= makespan; t += tickInterval) {
+        ticksHTML += `<span class="gantt-tick" style="left:${t * pxPerMin}px;">${t}</span>`;
+    }
+    // Always show makespan tick if not already shown
+    if (makespan % tickInterval !== 0) {
+        ticksHTML += `<span class="gantt-tick" style="left:${makespan * pxPerMin}px; color: var(--gold);">${makespan}</span>`;
+    }
+    ganttHTML += `<div class="gantt-timescale" style="width:${trackWidth}px;">${ticksHTML}</div>`;
+
+    ganttEl.innerHTML = ganttHTML;
+
+    // ── Results Grid ──
+    const avgCompletion = (patientCompletion.reduce((a, b) => a + b, 0) / patientCompletion.length).toFixed(0);
+    resultsEl.innerHTML = `
+        <div class="result-card">
+            <div class="result-value">${makespan}</div>
+            <div class="result-label">Makespan (min)</div>
+        </div>
+        <div class="result-card">
+            <div class="result-value">${avgCompletion}</div>
+            <div class="result-label">Avg Completion</div>
+        </div>
+        <div class="result-card">
+            <div class="result-value">${patientCompletion.length}</div>
+            <div class="result-label">Patients Scheduled</div>
+        </div>
+        <div class="result-card">
+            <div class="result-value">${elapsed.toFixed(2)}</div>
+            <div class="result-label">Time (ms)</div>
+        </div>
+    `;
+
+    // ── Schedule Detail ──
+    let detailHTML = '';
+    for (let m = 0; m < ROOMS.length; m++) {
+        const ops = scheduled.filter(s => s.machine === m).sort((a, b) => a.start - b.start);
+        const seq = ops.map(op =>
+            `${PATIENTS[op.job].name.split(' ')[1]}[${op.start}&ndash;${op.end}]`
+        ).join(' &rarr; ');
+        detailHTML += `<span class="room-name">${ROOMS[m]}:</span> ${seq}<br>`;
+    }
+    detailHTML += '<br>';
+    for (let j = 0; j < PATIENTS.length; j++) {
+        detailHTML += `<span class="room-name">${PATIENTS[j].name}:</span> completes at t=${patientCompletion[j]} min<br>`;
+    }
+    detailEl.innerHTML = detailHTML;
+}
+
+/**
+ * Handle algorithm chip selection.
+ */
+function selectAlgorithm(algo) {
+    // Update chip UI
+    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
+    document.querySelector(`.algo-chip[data-algo="${algo}"]`).classList.add('active');
+
+    // Run Giffler-Thompson with selected rule
+    const result = gifflerThompson(algo);
+    renderSchedule(result);
+}
+
+// ── Navbar scroll effect ──
+window.addEventListener('scroll', () => {
+    const nav = document.querySelector('.navbar');
+    nav.classList.toggle('scrolled', window.scrollY > 50);
+});
+
+// ── Smooth scroll ──
+document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+        const href = a.getAttribute('href');
+        if (href === '#') return;
+        e.preventDefault();
+        const target = document.querySelector(href);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+});
+
+// ── Fade-in observer ──
+const observer = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+        if (entry.isIntersecting) entry.target.classList.add('visible');
+    });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Initial render ──
+document.addEventListener('DOMContentLoaded', () => {
+    selectAlgorithm('spt');
+});
+</script>
+</body>
+</html>
