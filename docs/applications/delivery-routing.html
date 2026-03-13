@@ -1,0 +1,1442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Route Planning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive CVRP delivery route planning demo for Quebec City using Clarke-Wright, Sweep, and Nearest Neighbor algorithms.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .solver-controls label {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+        }
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 140px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .route-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Demand Editor ── */
+        .demand-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.6rem;
+            margin-top: 1rem;
+            max-height: 250px;
+            overflow-y: auto;
+            padding-right: 0.5rem;
+        }
+        .demand-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.4rem 0.8rem;
+            background: var(--midnight-lighter);
+            border-radius: 3px;
+            border: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .demand-item label {
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 130px;
+        }
+        .demand-item input {
+            width: 50px;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            text-align: center;
+            padding: 2px 4px;
+        }
+        .demand-item input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M. G. Nasiri</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Portfolio</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/routing.html">Routing</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Application</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Portfolio</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Delivery Routing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-truck"></i></div>
+        <h1>Delivery <span>Route Planning</span></h1>
+        <p class="hero-subtitle">Capacitated Vehicle Routing Problem (CVRP)</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            A delivery company operating from a depot must serve customers across Quebec City.
+            Each van has limited capacity, each stop has a package demand, and the goal is to
+            find the shortest set of routes that delivers everything. This is the
+            <strong>Capacitated Vehicle Routing Problem</strong> &mdash; one of the most studied
+            and practically important problems in Operations Research.
+        </p>
+    </div>
+</section>
+
+<!-- ── 2. The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Why route optimization matters for last-mile delivery</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Consider a courier company based in Sainte-Foy, Quebec City. Every morning, a fleet of
+                delivery vans departs from a central distribution center, each loaded with packages for
+                customers scattered across the city &mdash; from the historic streets of Vieux-Qu&eacute;bec to
+                the commercial centers of Beauport and L&eacute;vis. Each van can carry at most <strong>Q kilograms</strong>,
+                and each delivery stop requires a known quantity of packages. Every van must start and end
+                at the depot, and every customer must be served exactly once.
+            </p>
+            <p>
+                The objective is to <strong>minimize total travel distance</strong> across all routes, which
+                directly translates to reduced fuel costs, fewer driver hours, and faster deliveries. In practice,
+                even a 5&ndash;10% reduction in total route distance can yield significant annual savings for
+                a fleet of 20&ndash;50 vehicles making hundreds of daily stops.
+            </p>
+            <p>
+                This problem is <strong>NP-hard</strong>: with <em>n</em> delivery stops, the number of possible
+                route configurations grows super-exponentially. For just 15 stops, there are over one trillion
+                possible orderings &mdash; and that is before considering how to split stops across multiple vans.
+                No known algorithm can guarantee an optimal solution in polynomial time. The CVRP was introduced
+                by <strong>Dantzig &amp; Ramser (1959)</strong> as a generalization of the Traveling Salesman Problem,
+                and remains one of the most active areas of research in combinatorial optimization.
+            </p>
+
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Educational Demonstration</div>
+                Locations represent real Quebec City landmarks. Distances are Euclidean (straight-line)
+                approximations, not actual road distances. Demand values and vehicle capacities are
+                illustrative scenarios for educational purposes.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. The Model ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Model</span></h2>
+            <p>Mathematical formulation of the CVRP</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="formulation">
+                <span class="form-label">CVRP Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>k</sub> &Sigma;<sub>i</sub> &Sigma;<sub>j</sub> d<sub>ij</sub> &middot; x<sub>ijk</sub></span> &nbsp; <span class="comment">// total travel distance</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>k</sub> &Sigma;<sub>j</sub> x<sub>ijk</sub> = 1</span> &nbsp; <span class="comment">// each customer visited exactly once</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i&in;S<sub>k</sub></sub> q<sub>i</sub> &le; Q</span> &nbsp; <span class="comment">// route load &le; van capacity</span><br>
+                &nbsp;&nbsp;<span class="comment">// each route starts and ends at depot (node 0)</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ijk</sub> &in; {0, 1}</span> &nbsp; <span class="comment">// binary assignment of edge (i,j) to vehicle k</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>ij</sub></span>
+                is the distance between stops <em>i</em> and <em>j</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">q<sub>i</sub></span>
+                is the demand at stop <em>i</em>, and
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">Q</span>
+                is the van capacity.
+            </p>
+
+            <a href="../families/routing.html#cvrp" class="theory-link">
+                <i class="fas fa-arrow-right"></i> See full CVRP theory and all algorithms
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Plan delivery routes across Quebec City</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-route"></i> Quebec City Route Planner</h4>
+                <span class="help-icon" title="Select a preset, configure capacity, choose algorithms, and click Optimize Routes."><i class="fas fa-question-circle"></i></span>
+            </div>
+            <div class="solver-body">
+                <!-- Controls Row -->
+                <div class="solver-row">
+                    <div>
+                        <div class="solver-section-label">Delivery Scenario</div>
+                        <div class="solver-controls">
+                            <button class="solver-btn active" onclick="loadPreset('8')" id="btn-preset-8">Quebec City 8 Stops</button>
+                            <button class="solver-btn" onclick="loadPreset('12')" id="btn-preset-12">Quebec City 12 Stops</button>
+                        </div>
+                        <div class="solver-controls">
+                            <label>Van Capacity (kg):</label>
+                            <input type="range" class="solver-slider" id="capacity-slider" min="30" max="100" value="60" oninput="updateCapacity(this.value)">
+                            <span class="size-display" id="capacity-display">60</span>
+                        </div>
+                        <div class="solver-controls" style="margin-top:0.5rem;">
+                            <button class="solver-btn" onclick="toggleDemandEditor()"><i class="fas fa-edit"></i> Edit Demands</button>
+                        </div>
+                        <div id="demand-editor" style="display:none;">
+                            <div class="demand-grid" id="demand-grid"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Algorithms</div>
+                        <div class="algo-select" id="algo-select">
+                            <span class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">Clarke-Wright <span class="chip-type">(H)</span></span>
+                            <span class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">Sweep <span class="chip-type">(H)</span></span>
+                            <span class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">Nearest Neighbor <span class="chip-type">(H)</span></span>
+                        </div>
+                        <div class="solver-controls">
+                            <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-play"></i> Optimize Routes</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Canvas -->
+                <div class="solver-canvas-wrap">
+                    <canvas id="map-canvas" width="600" height="500"></canvas>
+                </div>
+
+                <!-- Results -->
+                <div style="margin-top:1.5rem;">
+                    <div class="solver-section-label">Results Comparison</div>
+                    <table class="results-table" id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Total Distance (km)</th>
+                                <th>Vans Used</th>
+                                <th>Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select a scenario and click Optimize Routes</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="route-output" id="route-output">Routes will appear here after optimization.</div>
+                <p class="solver-status" id="solver-status">Ready. Choose a scenario and click Optimize Routes.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. Real-World Complexity ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>What this demo does not capture</p>
+        </div>
+        <div class="fade-in" style="max-width:800px; margin:0 auto;">
+            <div class="complexity-box">
+                <h3><i class="fas fa-exclamation-triangle"></i> Production-Grade Challenges</h3>
+                <ul class="complexity-list">
+                    <li><strong>Real road distances</strong> vs. straight-line distances &mdash; actual routes follow streets, highways, and bridges, with one-way roads and turn restrictions</li>
+                    <li><strong>Traffic patterns</strong> varying by time of day &mdash; a 5 km route through downtown at 8 AM takes far longer than at 2 PM</li>
+                    <li><strong>Driver break regulations</strong> and shift limits &mdash; Quebec labor standards require rest periods after consecutive driving hours</li>
+                    <li><strong>Multiple vehicle types</strong> with different capacities &mdash; small vans for narrow Old Quebec streets, larger trucks for commercial zones</li>
+                    <li><strong>Priority customers</strong> and delivery time windows &mdash; "deliver between 9 AM and 11 AM" constraints dramatically increase complexity</li>
+                    <li><strong>Dynamic orders</strong> arriving during the day &mdash; real-time re-optimization as new pickup requests come in</li>
+                    <li><strong>Scale</strong>: real instances involve <strong>500+ delivery stops per day</strong>, requiring specialized solvers and decomposition techniques</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2><span>References</span></h2>
+        </div>
+        <div class="fade-in" style="max-width:800px; margin:0 auto;">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Dantzig, G.B. &amp; Ramser, J.H.</span> (1959).
+                    <span class="ref-title">"The Truck Dispatching Problem."</span>
+                    <span class="ref-journal">Management Science, 6(1), 80&ndash;91.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Clarke, G. &amp; Wright, J.W.</span> (1964).
+                    <span class="ref-title">"Scheduling of Vehicles from a Central Depot to a Number of Delivery Points."</span>
+                    <span class="ref-journal">Operations Research, 12(4), 568&ndash;581.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Gillett, B.E. &amp; Miller, L.R.</span> (1974).
+                    <span class="ref-title">"A Heuristic Algorithm for the Vehicle-Dispatch Problem."</span>
+                    <span class="ref-journal">Operations Research, 22(2), 340&ndash;349.</span>
+                </li>
+                <li>
+                    Application context and algorithm implementations from this repository's
+                    <a href="../families/routing.html#cvrp" style="color:var(--gold); text-decoration:none;">CVRP module</a>.
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. CTA Panel ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Facing a Similar Challenge?</h3>
+            <p>
+                Every delivery operation has unique constraints &mdash; vehicle types, time windows,
+                driver regulations, real-time demand. This demo shows the fundamentals, but real-world
+                solutions require tailored modeling and implementation.
+            </p>
+            <div class="cta-links">
+                <a href="https://mghnasiri.github.io/contact.html" class="cta-link">
+                    <i class="fas fa-envelope"></i> Contact
+                </a>
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank" rel="noopener">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <p>&copy; 2024 M. G. Nasiri &middot; <a href="../index.html">Mathematical Modeling &amp; Operations Research</a></p>
+</footer>
+
+<!-- ── Back Link ── -->
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Portfolio</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Quebec City Delivery Route Planner — CVRP Solver
+// ═══════════════════════════════════════════════════════════════
+
+// ── Coordinate System ──
+// Lat range: 46.760 → 46.860 → y: 480 → 20 (inverted)
+// Lng range: -71.310 → -71.170 → x: 20 → 580
+
+const LAT_MIN = 46.760, LAT_MAX = 46.860;
+const LNG_MIN = -71.310, LNG_MAX = -71.170;
+const CW = 600, CH = 500;
+const PAD = 20;
+
+function latToY(lat) { return PAD + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (CH - 2 * PAD); }
+function lngToX(lng) { return PAD + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (CW - 2 * PAD); }
+
+// Scale factor: approximate km per pixel (rough Euclidean based on lat/lng range)
+// Lat span ~0.1 deg ≈ 11.1 km; Lng span ~0.14 deg ≈ 10.0 km at this latitude
+// Canvas span: 560 px for ~10 km → ~0.018 km/px average
+const KM_PER_PX = 0.019;
+
+// ── Landmark Data ──
+// { name, lat, lng, demand8, demand12 }
+const LANDMARKS = [
+    { name: "Depot: Sainte-Foy DC",    lat: 46.764, lng: -71.282, demand: 0 },
+    { name: "Place Laurier",            lat: 46.781, lng: -71.277, demand: 15 },
+    { name: "Universite Laval",         lat: 46.781, lng: -71.275, demand: 10 },
+    { name: "Chateau Frontenac",        lat: 46.812, lng: -71.205, demand: 20 },
+    { name: "Vieux-Quebec",             lat: 46.814, lng: -71.208, demand: 25 },
+    { name: "Gare du Palais",           lat: 46.817, lng: -71.216, demand: 12 },
+    { name: "Place de la Cite",         lat: 46.774, lng: -71.306, demand: 8 },
+    { name: "Galeries de la Capitale",  lat: 46.830, lng: -71.270, demand: 18 },
+    { name: "Beauport",                 lat: 46.857, lng: -71.190, demand: 22 },
+    { name: "Limoilou",                 lat: 46.830, lng: -71.230, demand: 14 },
+    { name: "Levis (waterfront)",       lat: 46.812, lng: -71.178, demand: 16 },
+    { name: "Montcalm",                 lat: 46.806, lng: -71.228, demand: 10 },
+    { name: "Saint-Roch",               lat: 46.816, lng: -71.225, demand: 15 },
+    { name: "Sillery",                  lat: 46.775, lng: -71.245, demand: 12 }
+];
+
+// Preset indices (0 = depot always included)
+const PRESET_8  = [0, 1, 3, 4, 6, 7, 9, 11, 13];        // depot + 8 stops
+const PRESET_12 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13]; // depot + 12 stops
+
+// ── State ──
+let activeStops = [];   // array of {name, x, y, demand, idx}
+let capacity = 60;
+let dist = [];          // distance matrix (pixels)
+let demands = [];       // demand array aligned to activeStops
+let currentResults = [];
+
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+const ROUTE_COLORS = [
+    '#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc',
+    '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c'
+];
+
+// ── Projection ──
+function project(landmark) {
+    return { x: lngToX(landmark.lng), y: latToY(landmark.lat) };
+}
+
+// ── Distance Helpers ──
+function euclidean(a, b) {
+    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
+}
+
+function buildDistMatrix() {
+    const n = activeStops.length;
+    dist = Array.from({ length: n }, () => new Float64Array(n));
+    for (let i = 0; i < n; i++)
+        for (let j = i + 1; j < n; j++) {
+            const d = euclidean(activeStops[i], activeStops[j]);
+            dist[i][j] = d;
+            dist[j][i] = d;
+        }
+    demands = activeStops.map(s => s.demand);
+}
+
+// ── Map Drawing ──
+function drawMap() {
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, CW, CH);
+
+    // St. Lawrence River — a band along bottom-right
+    ctx.beginPath();
+    ctx.moveTo(0, CH);
+    ctx.lineTo(CW, CH);
+    ctx.lineTo(CW, CH * 0.55);
+    ctx.bezierCurveTo(CW * 0.85, CH * 0.60, CW * 0.70, CH * 0.72, CW * 0.55, CH * 0.78);
+    ctx.bezierCurveTo(CW * 0.40, CH * 0.84, CW * 0.25, CH * 0.88, 0, CH * 0.92);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(122, 162, 247, 0.12)';
+    ctx.fill();
+
+    // River label
+    ctx.font = '11px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(122, 162, 247, 0.35)';
+    ctx.fillText('St. Lawrence River', CW * 0.55, CH * 0.88);
+
+    // Faint road lines
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+    ctx.lineWidth = 1;
+
+    // Autoroute Laurentienne (N-S)
+    ctx.beginPath();
+    ctx.moveTo(lngToX(-71.240), PAD);
+    ctx.lineTo(lngToX(-71.230), CH * 0.75);
+    ctx.stroke();
+
+    // Autoroute de la Capitale (E-W)
+    ctx.beginPath();
+    ctx.moveTo(PAD, latToY(46.830));
+    ctx.lineTo(CW - PAD, latToY(46.830));
+    ctx.stroke();
+
+    // Boulevard Laurier (E-W lower)
+    ctx.beginPath();
+    ctx.moveTo(PAD, latToY(46.780));
+    ctx.lineTo(lngToX(-71.200), latToY(46.780));
+    ctx.stroke();
+
+    // Chemin Sainte-Foy
+    ctx.beginPath();
+    ctx.moveTo(lngToX(-71.300), latToY(46.785));
+    ctx.lineTo(lngToX(-71.200), latToY(46.810));
+    ctx.stroke();
+}
+
+function drawStops() {
+    drawMap();
+
+    for (let i = 0; i < activeStops.length; i++) {
+        const s = activeStops[i];
+        if (i === 0) {
+            // Depot: red square
+            ctx.fillStyle = '#ff6b6b';
+            ctx.fillRect(s.x - 7, s.y - 7, 14, 14);
+            ctx.fillStyle = '#0A192F';
+            ctx.font = 'bold 10px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('D', s.x, s.y + 1);
+
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Depot', s.x + 12, s.y + 4);
+        } else {
+            // Customer: gold circle
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#C5A059';
+            ctx.fill();
+
+            // Label
+            ctx.fillStyle = 'rgba(248,249,250,0.8)';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            const label = s.name + ' (' + s.demand + ' kg)';
+            // Alternate label side to reduce overlap
+            const labelX = (s.x > CW * 0.6) ? s.x - ctx.measureText(label).width - 10 : s.x + 10;
+            ctx.fillText(label, labelX, s.y);
+        }
+    }
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+}
+
+function drawRoutes(routes) {
+    drawStops();
+    const depot = activeStops[0];
+    routes.forEach((route, ri) => {
+        const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+        ctx.beginPath();
+        ctx.moveTo(depot.x, depot.y);
+        for (const c of route) {
+            ctx.lineTo(activeStops[c].x, activeStops[c].y);
+        }
+        ctx.lineTo(depot.x, depot.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = 0.8;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // Draw route nodes on top with route color ring
+        for (const c of route) {
+            ctx.beginPath();
+            ctx.arc(activeStops[c].x, activeStops[c].y, 8, 0, Math.PI * 2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    });
+}
+
+// ── Preset Loading ──
+function loadPreset(size) {
+    const indices = size === '8' ? PRESET_8 : PRESET_12;
+    activeStops = indices.map(i => {
+        const lm = LANDMARKS[i];
+        const p = project(lm);
+        return { name: lm.name, x: p.x, y: p.y, demand: lm.demand, idx: i };
+    });
+
+    // Button states
+    document.getElementById('btn-preset-8').classList.toggle('active', size === '8');
+    document.getElementById('btn-preset-12').classList.toggle('active', size === '12');
+
+    buildDistMatrix();
+    drawStops();
+    buildDemandEditor();
+    clearResults();
+}
+
+function updateCapacity(val) {
+    capacity = parseInt(val);
+    document.getElementById('capacity-display').textContent = val;
+}
+
+function toggleDemandEditor() {
+    const el = document.getElementById('demand-editor');
+    el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function buildDemandEditor() {
+    const grid = document.getElementById('demand-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i < activeStops.length; i++) {
+        const s = activeStops[i];
+        const div = document.createElement('div');
+        div.className = 'demand-item';
+        div.innerHTML = `<label>${s.name}</label><input type="number" min="1" max="99" value="${s.demand}" data-idx="${i}" onchange="updateDemand(${i}, this.value)"> kg`;
+        grid.appendChild(div);
+    }
+}
+
+function updateDemand(idx, val) {
+    activeStops[idx].demand = Math.max(1, parseInt(val) || 1);
+    demands[idx] = activeStops[idx].demand;
+    drawStops();
+}
+
+function clearResults() {
+    currentResults = [];
+    const tbody = document.getElementById('results-table').querySelector('tbody');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:\'Inter\',sans-serif;">Select a scenario and click Optimize Routes</td></tr>';
+    document.getElementById('route-output').textContent = 'Routes will appear here after optimization.';
+    document.getElementById('solver-status').textContent = 'Ready.';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// CVRP Algorithms
+// ═══════════════════════════════════════════════════════════════
+
+function routeDist(route) {
+    if (route.length === 0) return 0;
+    let d = dist[0][route[0]];
+    for (let i = 0; i < route.length - 1; i++) d += dist[route[i]][route[i + 1]];
+    d += dist[route[route.length - 1]][0];
+    return d;
+}
+
+function totalDist(routes) {
+    return routes.reduce((s, r) => s + routeDist(r), 0);
+}
+
+function routeLoad(route) {
+    return route.reduce((s, c) => s + demands[c], 0);
+}
+
+// ── Clarke-Wright Savings ──
+function clarkeWright() {
+    const n = activeStops.length - 1;
+    if (n === 0) return [];
+
+    // Compute savings
+    const savings = [];
+    for (let i = 1; i <= n; i++)
+        for (let j = i + 1; j <= n; j++)
+            savings.push({ s: dist[0][i] + dist[0][j] - dist[i][j], i, j });
+    savings.sort((a, b) => b.s - a.s);
+
+    // Start with individual routes
+    const routeOf = new Int32Array(n + 1);
+    let routes = [];
+    const loads = [];
+    for (let i = 1; i <= n; i++) {
+        routeOf[i] = routes.length;
+        routes.push([i]);
+        loads.push(demands[i]);
+    }
+
+    for (const { s, i, j } of savings) {
+        const ri = routeOf[i], rj = routeOf[j];
+        if (ri === rj) continue;
+        if (!routes[ri] || !routes[rj]) continue;
+
+        const rI = routes[ri], rJ = routes[rj];
+        const iEnd = rI[0] === i || rI[rI.length - 1] === i;
+        const jEnd = rJ[0] === j || rJ[rJ.length - 1] === j;
+        if (!iEnd || !jEnd) continue;
+
+        if (loads[ri] + loads[rj] > capacity) continue;
+
+        // Merge
+        let merged;
+        if (rI[rI.length - 1] === i && rJ[0] === j) merged = [...rI, ...rJ];
+        else if (rJ[rJ.length - 1] === j && rI[0] === i) merged = [...rJ, ...rI];
+        else if (rI[0] === i && rJ[0] === j) merged = [...rI.reverse(), ...rJ];
+        else merged = [...rI, ...rJ.reverse()];
+
+        routes[ri] = merged;
+        loads[ri] += loads[rj];
+        routes[rj] = null;
+        for (const c of merged) routeOf[c] = ri;
+    }
+
+    return routes.filter(r => r !== null);
+}
+
+// ── Sweep Algorithm ──
+function sweep() {
+    const n = activeStops.length - 1;
+    if (n === 0) return [];
+
+    const dep = activeStops[0];
+    const angles = [];
+    for (let i = 1; i <= n; i++) {
+        const a = Math.atan2(activeStops[i].y - dep.y, activeStops[i].x - dep.x);
+        angles.push({ a, i });
+    }
+    angles.sort((a, b) => a.a - b.a);
+
+    const routes = [];
+    let curRoute = [], curLoad = 0;
+    for (const { i } of angles) {
+        if (curLoad + demands[i] > capacity && curRoute.length > 0) {
+            routes.push(curRoute);
+            curRoute = [];
+            curLoad = 0;
+        }
+        curRoute.push(i);
+        curLoad += demands[i];
+    }
+    if (curRoute.length > 0) routes.push(curRoute);
+    return routes;
+}
+
+// ── Nearest Neighbor ──
+function nearestNeighbor() {
+    const n = activeStops.length - 1;
+    if (n === 0) return [];
+
+    const visited = new Uint8Array(n + 1);
+    const routes = [];
+    let remaining = n;
+
+    while (remaining > 0) {
+        let cur = 0, route = [], load = 0;
+        while (true) {
+            let nearest = -1, nearDist = Infinity;
+            for (let j = 1; j <= n; j++) {
+                if (!visited[j] && demands[j] + load <= capacity && dist[cur][j] < nearDist) {
+                    nearDist = dist[cur][j];
+                    nearest = j;
+                }
+            }
+            if (nearest === -1) break;
+            route.push(nearest);
+            visited[nearest] = 1;
+            load += demands[nearest];
+            cur = nearest;
+            remaining--;
+        }
+        if (route.length > 0) {
+            routes.push(route);
+        } else {
+            // Force-add one unvisited customer
+            for (let j = 1; j <= n; j++) {
+                if (!visited[j]) {
+                    routes.push([j]);
+                    visited[j] = 1;
+                    remaining--;
+                    break;
+                }
+            }
+        }
+    }
+    return routes;
+}
+
+// ── Algorithm Toggle ──
+function toggleAlgo(el) { el.classList.toggle('selected'); }
+
+// ── Solve ──
+const ALGO_MAP = {
+    cw:    { name: 'Clarke-Wright', fn: clarkeWright },
+    sweep: { name: 'Sweep',         fn: sweep },
+    nn:    { name: 'Nearest Neighbor', fn: nearestNeighbor }
+};
+
+function solveAll() {
+    if (activeStops.length < 2) {
+        document.getElementById('solver-status').textContent = 'Load a scenario first.';
+        return;
+    }
+    buildDistMatrix();
+
+    const algos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected')).map(c => c.dataset.algo);
+    if (algos.length === 0) {
+        document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
+        return;
+    }
+
+    currentResults = [];
+    for (const key of algos) {
+        const algo = ALGO_MAP[key];
+        const t0 = performance.now();
+        const routes = algo.fn();
+        const elapsed = performance.now() - t0;
+        const d = totalDist(routes);
+        currentResults.push({
+            key, name: algo.name, routes, distance: d,
+            vehicles: routes.length, time: elapsed
+        });
+    }
+    currentResults.sort((a, b) => a.distance - b.distance);
+
+    // Draw best solution
+    drawRoutes(currentResults[0].routes);
+
+    // Update results table
+    const tbody = document.getElementById('results-table').querySelector('tbody');
+    tbody.innerHTML = '';
+    currentResults.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        const distKm = (r.distance * KM_PER_PX).toFixed(1);
+        tr.innerHTML = `
+            <td class="algo-label">${r.name}</td>
+            <td class="${i === 0 ? 'best-val' : ''}">${distKm}</td>
+            <td>${r.vehicles}</td>
+            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+        `;
+        tr.addEventListener('click', () => showResult(r));
+        tbody.appendChild(tr);
+    });
+
+    showResult(currentResults[0]);
+    document.getElementById('solver-status').textContent =
+        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its routes.`;
+}
+
+function showResult(r) {
+    drawRoutes(r.routes);
+
+    const lines = [];
+    let totalLoad = 0;
+    r.routes.forEach((route, ri) => {
+        const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+        const load = routeLoad(route);
+        totalLoad += load;
+        const d = (routeDist(route) * KM_PER_PX).toFixed(1);
+        const stops = route.map(c => activeStops[c].name).join(' → ');
+        lines.push(`Route ${ri + 1}: Depot → ${stops} → Depot  (${d} km, ${load} kg)`);
+    });
+
+    const totalKm = (r.distance * KM_PER_PX).toFixed(1);
+    const avgLoad = (totalLoad / r.routes.length).toFixed(0);
+    lines.push('');
+    lines.push(`Total: ${totalKm} km  |  ${r.vehicles} van${r.vehicles > 1 ? 's' : ''}  |  Avg load: ${avgLoad} kg`);
+
+    document.getElementById('route-output').textContent = lines.join('\n');
+}
+
+// ── Scroll Animations ──
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Initialize ──
+loadPreset('8');
+</script>
+</body>
+</html>
