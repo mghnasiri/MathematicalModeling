@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Objective Optimization | Mathematical Modeling</title>
+    <meta name="description" content="Multi-Objective Optimization problem family: Bi-Objective Knapsack (epsilon-constraint), Multi-Objective TSP (weighted sum NN). 35 tests.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: transparent;
+        }
+        .breadcrumb-nav a {
+            color: var(--slate);
+            text-decoration: none;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav a:hover { color: var(--gold); }
+        .breadcrumb-nav span {
+            color: var(--slate);
+            font-size: 0.82rem;
+            margin: 0 0.5rem;
+        }
+        .breadcrumb-nav .current {
+            color: var(--gold);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .stat-item { text-align: center; }
+        .stat-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0.3rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 4rem 0; }
+        section:nth-child(even) { background: var(--midnight-light); }
+
+        .problem-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .problem-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .problem-card:hover::before { opacity: 1; }
+        .problem-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+        .problem-meta {
+            font-size: 0.78rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+        }
+        .problem-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+        .problem-card .formulation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--slate-light);
+            background: rgba(10, 25, 47, 0.5);
+            padding: 1rem 1.2rem;
+            border-radius: 4px;
+            border: 1px solid rgba(197, 160, 89, 0.05);
+            margin-bottom: 1.2rem;
+            overflow-x: auto;
+        }
+
+        .algo-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .algo-table thead th {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .algo-table tbody td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            vertical-align: top;
+        }
+        .algo-table tbody tr:hover td { color: var(--ivory); }
+        .algo-table .algo-name {
+            color: var(--ivory);
+            font-weight: 500;
+        }
+        .complexity-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 2px;
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--gold);
+        }
+        .method-badge {
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        .method-exact { background: rgba(100, 255, 218, 0.1); color: var(--green); }
+        .method-heuristic { background: rgba(122, 162, 247, 0.1); color: var(--blue); }
+        .method-meta { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
+
+        .btn-luxury {
+            display: inline-block;
+            padding: 0.7rem 1.5rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.78rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-luxury:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* Concept cards */
+        .concept-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .concept-card {
+            padding: 1.5rem;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            transition: border-color 0.3s;
+        }
+        .concept-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+        }
+        .concept-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.2rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 0.5rem;
+            letter-spacing: 1px;
+        }
+        .concept-card p {
+            font-size: 0.85rem;
+            color: var(--slate-light);
+            line-height: 1.6;
+        }
+
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        @media (max-width: 992px) {
+            .hero h1 { font-size: 2.4rem; }
+            .stats-bar { gap: 2rem; }
+        }
+        @media (max-width: 576px) {
+            .hero h1 { font-size: 1.8rem; letter-spacing: 2px; }
+            .hero { padding: 4rem 1rem 3rem; }
+            .section-header h2 { font-size: 1.6rem; }
+            .problem-card { padding: 1.5rem; }
+            .back-link { bottom: 1rem; right: 1rem; padding: 0.6rem 1rem; }
+            .algo-table { font-size: 0.8rem; }
+            .algo-table thead th, .algo-table tbody td { padding: 0.5rem 0.6rem; }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../index.html">M. G. Nasiri</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-nav" style="padding-top: 5rem;">
+        <div class="container">
+            <a href="../index.html">Portfolio</a>
+            <span>/</span>
+            <a href="../index.html#families">Problem Families</a>
+            <span>/</span>
+            <span class="current">Multi-Objective</span>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="container">
+            <h1>Multi-Objective <span>Optimization</span></h1>
+            <div class="hero-subtitle">Pareto Frontiers &amp; Trade-off Analysis</div>
+            <div class="gold-line"></div>
+            <p class="hero-desc">
+                Optimization problems with multiple conflicting objectives where no single solution
+                is optimal for all criteria simultaneously. These methods compute Pareto-optimal
+                solution sets, enabling decision-makers to visualize and navigate trade-offs
+                between competing objectives.
+            </p>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Problems</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">35</div>
+                    <div class="stat-label">Tests</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Methods</div>
+                </div>
+            </div>
+            <a href="https://github.com/mghnasiri/MathematicalModeling/tree/main/problems/multi_objective/" class="btn-luxury" target="_blank">
+                <i class="fab fa-github"></i>&nbsp; View on GitHub
+            </a>
+        </div>
+    </div>
+
+    <!-- Problems Section -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>Problem <span style="color: var(--gold)">Collection</span></h2>
+                <p>Two multi-objective formulations of classic OR problems</p>
+            </div>
+
+            <!-- Bi-Objective Knapsack -->
+            <div class="problem-card fade-in">
+                <h3>Bi-Objective Knapsack</h3>
+                <div class="problem-meta">Epsilon-Constraint Method &mdash; 12 Tests</div>
+                <p>
+                    The 0-1 knapsack problem extended with two value functions to optimize simultaneously.
+                    Each item has a weight and two distinct values. The goal is to find the complete
+                    Pareto frontier of non-dominated solutions, revealing the trade-off between the
+                    two objectives under the capacity constraint.
+                </p>
+                <div class="formulation">
+                    max  (v1^T x, v2^T x)<br>
+                    s.t. w^T x &le; W<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; x &in; {0, 1}^n<br>
+                    Find all Pareto-optimal solutions
+                </div>
+                <table class="algo-table">
+                    <thead>
+                        <tr><th>Algorithm</th><th>Type</th><th>Details</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="algo-name">Epsilon-Constraint</td>
+                            <td><span class="method-badge method-heuristic">Heuristic</span></td>
+                            <td>
+                                Optimize one objective while constraining the other to epsilon thresholds.
+                                Systematically varies epsilon to trace the Pareto frontier. Each sub-problem
+                                is a standard single-objective knapsack solved via DP.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Multi-Objective TSP -->
+            <div class="problem-card fade-in">
+                <h3>Multi-Objective TSP</h3>
+                <div class="problem-meta">Weighted Sum Nearest Neighbor &mdash; 11 Tests</div>
+                <p>
+                    The Traveling Salesman Problem with multiple distance/cost matrices representing
+                    different objectives (e.g., travel time, fuel cost, road quality). Generates
+                    approximate Pareto frontiers by solving weighted combinations of objectives
+                    using the nearest neighbor heuristic across varied weight vectors.
+                </p>
+                <div class="formulation">
+                    min  (&sum; d1_{pi(i),pi(i+1)}, &sum; d2_{pi(i),pi(i+1)}, ...)<br>
+                    s.t. pi is a Hamiltonian cycle<br>
+                    Scalarize: min &sum;_k w_k * f_k(pi) for varying w
+                </div>
+                <table class="algo-table">
+                    <thead>
+                        <tr><th>Algorithm</th><th>Type</th><th>Details</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="algo-name">Weighted Sum NN</td>
+                            <td><span class="method-badge method-heuristic">Heuristic</span></td>
+                            <td>
+                                Nearest neighbor heuristic applied to weighted-sum distance matrices.
+                                Varies weight vectors across the objective space to generate diverse
+                                non-dominated solutions approximating the Pareto front.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Concepts Section -->
+    <section style="background: var(--midnight-light);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Key <span style="color: var(--gold)">Concepts</span></h2>
+                <p>Foundational ideas in multi-objective optimization</p>
+            </div>
+            <div class="concept-grid">
+                <div class="concept-card fade-in">
+                    <h4>Pareto Optimality</h4>
+                    <p>
+                        A solution is Pareto-optimal if no objective can be improved without
+                        worsening another. The set of all such solutions forms the Pareto frontier,
+                        representing the fundamental trade-off surface.
+                    </p>
+                </div>
+                <div class="concept-card fade-in">
+                    <h4>Dominance</h4>
+                    <p>
+                        Solution A dominates B if A is at least as good in all objectives and
+                        strictly better in at least one. Non-dominated solutions constitute
+                        the Pareto set.
+                    </p>
+                </div>
+                <div class="concept-card fade-in">
+                    <h4>Epsilon-Constraint</h4>
+                    <p>
+                        Converts a multi-objective problem to a series of single-objective problems
+                        by optimizing one objective while constraining others. Guaranteed to find
+                        supported and unsupported Pareto points.
+                    </p>
+                </div>
+                <div class="concept-card fade-in">
+                    <h4>Weighted Sum</h4>
+                    <p>
+                        Scalarizes multiple objectives into one via convex combination. Simple and
+                        efficient but can only find solutions on the convex hull of the Pareto
+                        frontier (supported solutions).
+                    </p>
+                </div>
+                <div class="concept-card fade-in">
+                    <h4>Trade-off Analysis</h4>
+                    <p>
+                        The Pareto frontier reveals the marginal rate of substitution between
+                        objectives, enabling informed decision-making about acceptable compromises
+                        in real-world applications.
+                    </p>
+                </div>
+                <div class="concept-card fade-in">
+                    <h4>Solution Quality</h4>
+                    <p>
+                        Measured by hypervolume indicator, spacing, and coverage metrics.
+                        A good approximation set should be close to the true front,
+                        well-spread, and cover the full extent of trade-offs.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>Method <span style="color: var(--gold)">Comparison</span></h2>
+                <p>Scalarization approaches at a glance</p>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <table class="algo-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>Epsilon-Constraint</th>
+                                <th>Weighted Sum</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="algo-name">Approach</td>
+                                <td>Constrain secondary objectives</td>
+                                <td>Linear combination of objectives</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Pareto Coverage</td>
+                                <td>Supported + unsupported points</td>
+                                <td>Supported points only (convex hull)</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Sub-problem Type</td>
+                                <td>Constrained single-objective</td>
+                                <td>Unconstrained single-objective</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Applied To</td>
+                                <td>Bi-Objective Knapsack</td>
+                                <td>Multi-Objective TSP</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Tests</td>
+                                <td>12 tests</td>
+                                <td>11 tests</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Mohammad Ghafourian Nasiri. All rights reserved.</p>
+        <p style="margin-top: 0.5rem;">
+            <a href="../index.html">Back to Portfolio</a>
+        </p>
+    </footer>
+
+    <!-- Back to Portfolio Link -->
+    <a href="../index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i>&nbsp; Portfolio
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>

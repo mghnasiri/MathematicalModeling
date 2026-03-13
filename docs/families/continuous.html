@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Continuous Optimization | Mathematical Modeling</title>
+    <meta name="description" content="Continuous Optimization problem family: Linear Programming with sensitivity analysis, Quadratic Programming via scipy minimize. 48 tests.">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: transparent;
+        }
+        .breadcrumb-nav a {
+            color: var(--slate);
+            text-decoration: none;
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav a:hover { color: var(--gold); }
+        .breadcrumb-nav span {
+            color: var(--slate);
+            font-size: 0.82rem;
+            margin: 0 0.5rem;
+        }
+        .breadcrumb-nav .current {
+            color: var(--gold);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: center;
+            gap: 3rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .stat-item { text-align: center; }
+        .stat-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.75rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-top: 0.3rem;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 4rem 0; }
+        section:nth-child(even) { background: var(--midnight-light); }
+
+        .problem-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            transition: all 0.4s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .problem-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            opacity: 0;
+            transition: opacity 0.4s ease;
+        }
+        .problem-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        .problem-card:hover::before { opacity: 1; }
+        .problem-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+        .problem-meta {
+            font-size: 0.78rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+        }
+        .problem-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            line-height: 1.7;
+        }
+        .problem-card .formulation {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--slate-light);
+            background: rgba(10, 25, 47, 0.5);
+            padding: 1rem 1.2rem;
+            border-radius: 4px;
+            border: 1px solid rgba(197, 160, 89, 0.05);
+            margin-bottom: 1.2rem;
+            overflow-x: auto;
+        }
+
+        .algo-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.88rem;
+        }
+        .algo-table thead th {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.8rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .algo-table tbody td {
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            vertical-align: top;
+        }
+        .algo-table tbody tr:hover td { color: var(--ivory); }
+        .algo-table .algo-name {
+            color: var(--ivory);
+            font-weight: 500;
+        }
+        .complexity-badge {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            padding: 2px 8px;
+            border-radius: 2px;
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--gold);
+        }
+        .method-badge {
+            font-size: 0.68rem;
+            padding: 2px 8px;
+            border-radius: 2px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 500;
+        }
+        .method-exact { background: rgba(100, 255, 218, 0.1); color: var(--green); }
+        .method-heuristic { background: rgba(122, 162, 247, 0.1); color: var(--blue); }
+        .method-meta { background: rgba(197, 160, 89, 0.1); color: var(--gold); }
+
+        .btn-luxury {
+            display: inline-block;
+            padding: 0.7rem 1.5rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.78rem;
+            text-decoration: none;
+            text-align: center;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-luxury:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* Feature highlights */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .feature-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.2rem 1.5rem;
+            background: rgba(10, 25, 47, 0.5);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+        }
+        .feature-item i {
+            color: var(--gold);
+            font-size: 1.2rem;
+            margin-top: 0.2rem;
+            min-width: 20px;
+        }
+        .feature-item .feature-name {
+            font-weight: 500;
+            font-size: 0.9rem;
+            color: var(--ivory);
+            margin-bottom: 0.2rem;
+        }
+        .feature-item .feature-desc {
+            font-size: 0.8rem;
+            color: var(--slate);
+            line-height: 1.5;
+        }
+
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        @media (max-width: 992px) {
+            .hero h1 { font-size: 2.4rem; }
+            .stats-bar { gap: 2rem; }
+        }
+        @media (max-width: 576px) {
+            .hero h1 { font-size: 1.8rem; letter-spacing: 2px; }
+            .hero { padding: 4rem 1rem 3rem; }
+            .section-header h2 { font-size: 1.6rem; }
+            .problem-card { padding: 1.5rem; }
+            .back-link { bottom: 1rem; right: 1rem; padding: 0.6rem 1rem; }
+            .algo-table { font-size: 0.8rem; }
+            .algo-table thead th, .algo-table tbody td { padding: 0.5rem 0.6rem; }
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../index.html">M. G. Nasiri</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                <ul class="navbar-nav">
+                    <li class="nav-item"><a class="nav-link" href="../index.html">Portfolio</a></li>
+                    <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank">GitHub</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Breadcrumb -->
+    <div class="breadcrumb-nav" style="padding-top: 5rem;">
+        <div class="container">
+            <a href="../index.html">Portfolio</a>
+            <span>/</span>
+            <a href="../index.html#families">Problem Families</a>
+            <span>/</span>
+            <span class="current">Continuous Optimization</span>
+        </div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+        <div class="container">
+            <h1>Continuous <span>Optimization</span></h1>
+            <div class="hero-subtitle">Linear &amp; Quadratic Programming</div>
+            <div class="gold-line"></div>
+            <p class="hero-desc">
+                Foundational continuous optimization methods forming the computational backbone of
+                operations research. Linear programming with full sensitivity analysis and quadratic
+                programming via modern interior-point and sequential methods. These solvers underpin
+                nearly every other problem family in the repository.
+            </p>
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Problems</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">48</div>
+                    <div class="stat-label">Tests</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number">2</div>
+                    <div class="stat-label">Solvers</div>
+                </div>
+            </div>
+            <a href="https://github.com/mghnasiri/MathematicalModeling/tree/main/problems/continuous/" class="btn-luxury" target="_blank">
+                <i class="fab fa-github"></i>&nbsp; View on GitHub
+            </a>
+        </div>
+    </div>
+
+    <!-- Problems Section -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>Problem <span style="color: var(--gold)">Collection</span></h2>
+                <p>Two fundamental continuous optimization paradigms</p>
+            </div>
+
+            <!-- Linear Programming -->
+            <div class="problem-card fade-in">
+                <h3>Linear Programming</h3>
+                <div class="problem-meta">LP with Sensitivity Analysis &mdash; 11 Tests</div>
+                <p>
+                    Optimize a linear objective function subject to linear equality and inequality
+                    constraints. The workhorse of operations research, solvable in polynomial time.
+                    Implementation includes full sensitivity analysis: shadow prices, reduced costs,
+                    and allowable ranges for objective coefficients and constraint RHS values.
+                </p>
+                <div class="formulation">
+                    min  c^T x<br>
+                    s.t. A_ub x &le; b_ub<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; A_eq x = b_eq<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; l &le; x &le; u
+                </div>
+                <table class="algo-table">
+                    <thead>
+                        <tr><th>Algorithm</th><th>Type</th><th>Complexity</th><th>Details</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="algo-name">SciPy HiGHS Solver</td>
+                            <td><span class="method-badge method-exact">Exact</span></td>
+                            <td><span class="complexity-badge">Polynomial</span></td>
+                            <td>Interior-point and simplex via HiGHS; dual values, sensitivity ranges</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <i class="fas fa-chart-line"></i>
+                        <div>
+                            <div class="feature-name">Shadow Prices</div>
+                            <div class="feature-desc">Dual values showing marginal value of each constraint</div>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-exchange-alt"></i>
+                        <div>
+                            <div class="feature-name">Reduced Costs</div>
+                            <div class="feature-desc">How much objective improves per unit of non-basic variable</div>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-sliders-h"></i>
+                        <div>
+                            <div class="feature-name">Allowable Ranges</div>
+                            <div class="feature-desc">Coefficient ranges preserving optimal basis</div>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-check-double"></i>
+                        <div>
+                            <div class="feature-name">Infeasibility Detection</div>
+                            <div class="feature-desc">Identifies infeasible and unbounded problems</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quadratic Programming -->
+            <div class="problem-card fade-in">
+                <h3>Quadratic Programming</h3>
+                <div class="problem-meta">QP via SciPy Minimize &mdash; 11 Tests</div>
+                <p>
+                    Optimize a quadratic objective function subject to linear constraints. Extends
+                    linear programming with a positive semidefinite quadratic term. Core method
+                    for portfolio optimization, support vector machines, and control systems.
+                    Solved via Sequential Least Squares Programming (SLSQP).
+                </p>
+                <div class="formulation">
+                    min  (1/2) x^T Q x + c^T x<br>
+                    s.t. A_ub x &le; b_ub<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; A_eq x = b_eq<br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; l &le; x &le; u<br>
+                    where Q is positive semidefinite
+                </div>
+                <table class="algo-table">
+                    <thead>
+                        <tr><th>Algorithm</th><th>Type</th><th>Complexity</th><th>Details</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="algo-name">SLSQP Solver</td>
+                            <td><span class="method-badge method-exact">Exact</span></td>
+                            <td><span class="complexity-badge">Polynomial</span></td>
+                            <td>Sequential Least Squares Programming via scipy.optimize.minimize</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <i class="fas fa-cubes"></i>
+                        <div>
+                            <div class="feature-name">Convex QP</div>
+                            <div class="feature-desc">Guaranteed global optimum for convex objectives (PSD Q)</div>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-lock"></i>
+                        <div>
+                            <div class="feature-name">Bound Constraints</div>
+                            <div class="feature-desc">Variable bounds and linear equality/inequality constraints</div>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-project-diagram"></i>
+                        <div>
+                            <div class="feature-name">Portfolio Applications</div>
+                            <div class="feature-desc">Markowitz mean-variance optimization as canonical use case</div>
+                        </div>
+                    </div>
+                    <div class="feature-item">
+                        <i class="fas fa-cogs"></i>
+                        <div>
+                            <div class="feature-name">KKT Conditions</div>
+                            <div class="feature-desc">Optimality verified via Karush-Kuhn-Tucker conditions</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <!-- Comparison Section -->
+    <section style="background: var(--midnight-light);">
+        <div class="container">
+            <div class="section-header">
+                <h2>Method <span style="color: var(--gold)">Comparison</span></h2>
+                <p>Linear vs. Quadratic Programming at a glance</p>
+            </div>
+            <div class="row justify-content-center">
+                <div class="col-md-10">
+                    <table class="algo-table">
+                        <thead>
+                            <tr>
+                                <th>Aspect</th>
+                                <th>Linear Programming</th>
+                                <th>Quadratic Programming</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="algo-name">Objective</td>
+                                <td>Linear: c^T x</td>
+                                <td>Quadratic: (1/2) x^T Q x + c^T x</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Constraints</td>
+                                <td>Linear equalities &amp; inequalities</td>
+                                <td>Linear equalities &amp; inequalities</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Solver</td>
+                                <td>SciPy HiGHS (simplex + IPM)</td>
+                                <td>SciPy SLSQP</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Complexity</td>
+                                <td><span class="complexity-badge">Polynomial (IPM)</span></td>
+                                <td><span class="complexity-badge">Polynomial (convex)</span></td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Sensitivity</td>
+                                <td>Full (shadow prices, ranges)</td>
+                                <td>Via KKT multipliers</td>
+                            </tr>
+                            <tr>
+                                <td class="algo-name">Tests</td>
+                                <td>11 tests</td>
+                                <td>11 tests</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <p>&copy; 2025 Mohammad Ghafourian Nasiri. All rights reserved.</p>
+        <p style="margin-top: 0.5rem;">
+            <a href="../index.html">Back to Portfolio</a>
+        </p>
+    </footer>
+
+    <!-- Back to Portfolio Link -->
+    <a href="../index.html" class="back-link">
+        <i class="fas fa-arrow-left"></i>&nbsp; Portfolio
+    </a>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
