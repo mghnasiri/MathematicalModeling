@@ -763,5 +763,376 @@
         }, { threshold: 0.1 });
         document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
     </script>
+    <script>
+        /* ── EOQ Solver ── */
+        let selectedAlgo = 'classic';
+
+        function selectAlgo(chip) {
+            document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
+            chip.classList.add('active');
+            selectedAlgo = chip.dataset.algo;
+            const shortageInput = document.getElementById('eoq-shortage');
+            shortageInput.disabled = (selectedAlgo !== 'backorder');
+        }
+
+        function solveEOQ() {
+            const D = parseFloat(document.getElementById('eoq-demand').value);
+            const K = parseFloat(document.getElementById('eoq-ordering').value);
+            const h = parseFloat(document.getElementById('eoq-holding').value);
+            const c = parseFloat(document.getElementById('eoq-unit-cost').value);
+            const b = parseFloat(document.getElementById('eoq-shortage').value);
+
+            if (D <= 0 || K <= 0 || h <= 0 || c <= 0) return;
+
+            let Qstar, TC, holdingCost, orderingCost, maxBackorder = 0;
+            let label = '';
+
+            if (selectedAlgo === 'classic') {
+                Qstar = Math.sqrt(2 * D * K / h);
+                orderingCost = (D / Qstar) * K;
+                holdingCost = (Qstar / 2) * h;
+                TC = D * c + orderingCost + holdingCost;
+                label = 'Classic EOQ';
+            } else if (selectedAlgo === 'backorder') {
+                if (b <= 0) return;
+                Qstar = Math.sqrt(2 * D * K / h) * Math.sqrt((h + b) / b);
+                maxBackorder = Qstar * (h / (h + b));
+                const avgInventory = Math.pow(Qstar - maxBackorder, 2) / (2 * Qstar);
+                const avgBackorder = Math.pow(maxBackorder, 2) / (2 * Qstar);
+                holdingCost = h * avgInventory;
+                orderingCost = (D / Qstar) * K;
+                const shortageCost = b * avgBackorder;
+                TC = D * c + orderingCost + holdingCost + shortageCost;
+                label = 'EOQ with Backorders';
+            } else {
+                /* Silver-Meal: use EOQ as proxy for constant demand */
+                Qstar = Math.sqrt(2 * D * K / h);
+                orderingCost = (D / Qstar) * K;
+                holdingCost = (Qstar / 2) * h;
+                TC = D * c + orderingCost + holdingCost;
+                label = 'Silver-Meal (constant demand \u2192 EOQ)';
+            }
+
+            const ordersPerYear = D / Qstar;
+            const reorderDays = (Qstar / D) * 365;
+
+            drawCostCurves(D, K, h, c, Qstar, selectedAlgo, b);
+            drawSawtooth(D, Qstar, maxBackorder);
+            showResults(label, Qstar, ordersPerYear, reorderDays, TC, holdingCost, orderingCost,
+                        selectedAlgo === 'backorder' ? maxBackorder : null,
+                        selectedAlgo === 'backorder' ? b : null,
+                        Qstar, D, c);
+        }
+
+        function drawCostCurves(D, K, h, c, Qstar, algo, b) {
+            const canvas = document.getElementById('eoq-cost-canvas');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.clientWidth * dpr;
+            canvas.height = 340 * dpr;
+            ctx.scale(dpr, dpr);
+            const W = canvas.clientWidth;
+            const H = 340;
+
+            ctx.clearRect(0, 0, W, H);
+
+            const pad = { top: 30, right: 30, bottom: 50, left: 70 };
+            const pw = W - pad.left - pad.right;
+            const ph = H - pad.top - pad.bottom;
+
+            const Qmax = Qstar * 3;
+            const steps = 200;
+
+            /* Compute cost arrays */
+            function totalCostAt(Q) {
+                if (algo === 'backorder' && b > 0) {
+                    const mb = Q * (h / (h + b));
+                    const avgInv = Math.pow(Q - mb, 2) / (2 * Q);
+                    const avgBack = Math.pow(mb, 2) / (2 * Q);
+                    return (D / Q) * K + h * avgInv + b * avgBack;
+                }
+                return (D / Q) * K + (Q / 2) * h;
+            }
+
+            let maxCost = 0;
+            for (let i = 1; i <= steps; i++) {
+                const Q = (i / steps) * Qmax;
+                const tc = totalCostAt(Q);
+                const hc = (Q / 2) * h;
+                const oc = (D / Q) * K;
+                maxCost = Math.max(maxCost, tc, hc, oc);
+            }
+            maxCost *= 1.15;
+
+            function xPos(Q) { return pad.left + (Q / Qmax) * pw; }
+            function yPos(cost) { return pad.top + ph - (cost / maxCost) * ph; }
+
+            /* Grid lines */
+            ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 5; i++) {
+                const y = pad.top + (i / 5) * ph;
+                ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+            }
+
+            /* Ordering cost curve (red) */
+            ctx.strokeStyle = '#ff6b6b';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 1; i <= steps; i++) {
+                const Q = (i / steps) * Qmax;
+                const cost = (D / Q) * K;
+                const x = xPos(Q), y = yPos(cost);
+                i === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            /* Holding cost curve (blue) */
+            ctx.strokeStyle = '#7aa2f7';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let i = 1; i <= steps; i++) {
+                const Q = (i / steps) * Qmax;
+                const cost = (Q / 2) * h;
+                const x = xPos(Q), y = yPos(cost);
+                i === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            /* Total cost curve (green) */
+            ctx.strokeStyle = '#64ffda';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            for (let i = 1; i <= steps; i++) {
+                const Q = (i / steps) * Qmax;
+                const cost = totalCostAt(Q);
+                const x = xPos(Q), y = yPos(cost);
+                i === 1 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+
+            /* Optimal Q* vertical line */
+            ctx.strokeStyle = 'rgba(197,160,89,0.8)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(xPos(Qstar), pad.top);
+            ctx.lineTo(xPos(Qstar), pad.top + ph);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            /* Q* dot */
+            const optCost = totalCostAt(Qstar);
+            ctx.fillStyle = '#C5A059';
+            ctx.beginPath();
+            ctx.arc(xPos(Qstar), yPos(optCost), 5, 0, Math.PI * 2);
+            ctx.fill();
+
+            /* Labels */
+            ctx.fillStyle = '#C5A059';
+            ctx.font = '12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('Q* = ' + Math.round(Qstar), xPos(Qstar), pad.top - 10);
+
+            /* Axis labels */
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '11px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Order Quantity (Q)', W / 2, H - 8);
+
+            ctx.save();
+            ctx.translate(15, H / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Annual Cost ($)', 0, 0);
+            ctx.restore();
+
+            /* Axis tick labels */
+            ctx.font = '10px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= 5; i++) {
+                const Q = (i / 5) * Qmax;
+                ctx.fillText(Math.round(Q).toLocaleString(), xPos(Q), pad.top + ph + 18);
+            }
+            ctx.textAlign = 'right';
+            for (let i = 0; i <= 5; i++) {
+                const cost = (i / 5) * maxCost;
+                ctx.fillText('$' + Math.round(cost).toLocaleString(), pad.left - 8, yPos(cost) + 4);
+            }
+
+            /* Legend */
+            const legendX = W - pad.right - 160;
+            const legendY = pad.top + 15;
+            const legends = [
+                { color: '#64ffda', label: 'Total Cost' },
+                { color: '#ff6b6b', label: 'Ordering Cost' },
+                { color: '#7aa2f7', label: 'Holding Cost' },
+                { color: '#C5A059', label: 'Optimal Q*' }
+            ];
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.textAlign = 'left';
+            legends.forEach((leg, i) => {
+                const ly = legendY + i * 18;
+                ctx.fillStyle = leg.color;
+                ctx.fillRect(legendX, ly - 4, 14, 3);
+                ctx.fillText(leg.label, legendX + 20, ly);
+            });
+        }
+
+        function drawSawtooth(D, Q, maxBack) {
+            const canvas = document.getElementById('eoq-inventory-canvas');
+            const ctx = canvas.getContext('2d');
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.clientWidth * dpr;
+            canvas.height = 220 * dpr;
+            ctx.scale(dpr, dpr);
+            const W = canvas.clientWidth;
+            const H = 220;
+
+            ctx.clearRect(0, 0, W, H);
+
+            const pad = { top: 25, right: 30, bottom: 45, left: 70 };
+            const pw = W - pad.left - pad.right;
+            const ph = H - pad.top - pad.bottom;
+
+            const cycleTime = Q / D;       /* years per cycle */
+            const numCycles = Math.min(Math.floor(1 / cycleTime), 8);
+            const totalTime = numCycles * cycleTime;
+            const peakInv = Q - maxBack;
+
+            const invMax = Q * 1.1;
+            const invMin = maxBack > 0 ? -maxBack * 1.3 : -invMax * 0.05;
+            const invRange = invMax - invMin;
+
+            function xPos(t) { return pad.left + (t / totalTime) * pw; }
+            function yPos(inv) { return pad.top + ph - ((inv - invMin) / invRange) * ph; }
+
+            /* Grid */
+            ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i <= 4; i++) {
+                const y = pad.top + (i / 4) * ph;
+                ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+            }
+
+            /* Zero line */
+            ctx.strokeStyle = 'rgba(197,160,89,0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(pad.left, yPos(0));
+            ctx.lineTo(W - pad.right, yPos(0));
+            ctx.stroke();
+
+            /* Sawtooth */
+            ctx.strokeStyle = '#64ffda';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (let cyc = 0; cyc < numCycles; cyc++) {
+                const tStart = cyc * cycleTime;
+                if (maxBack > 0) {
+                    /* With backorders: start at peakInv, go to -maxBack */
+                    ctx.moveTo(xPos(tStart), yPos(peakInv));
+                    ctx.lineTo(xPos(tStart + cycleTime), yPos(-maxBack));
+                    /* Replenish */
+                    ctx.moveTo(xPos(tStart + cycleTime), yPos(-maxBack));
+                    ctx.lineTo(xPos(tStart + cycleTime), yPos(peakInv));
+                } else {
+                    /* Classic: start at Q, deplete to 0, reorder */
+                    ctx.moveTo(xPos(tStart), yPos(Q));
+                    ctx.lineTo(xPos(tStart + cycleTime), yPos(0));
+                    if (cyc < numCycles - 1) {
+                        ctx.moveTo(xPos(tStart + cycleTime), yPos(0));
+                        ctx.lineTo(xPos(tStart + cycleTime), yPos(Q));
+                    }
+                }
+            }
+            ctx.stroke();
+
+            /* Fill area above zero */
+            ctx.fillStyle = 'rgba(100,255,218,0.06)';
+            for (let cyc = 0; cyc < numCycles; cyc++) {
+                const tStart = cyc * cycleTime;
+                const tEnd = tStart + cycleTime;
+                ctx.beginPath();
+                if (maxBack > 0) {
+                    const tZero = tStart + peakInv / (D * cycleTime / Q) * cycleTime / D * D;
+                    const tZeroX = tStart + (peakInv / Q) * cycleTime;
+                    ctx.moveTo(xPos(tStart), yPos(peakInv));
+                    ctx.lineTo(xPos(tZeroX), yPos(0));
+                    ctx.lineTo(xPos(tStart), yPos(0));
+                } else {
+                    ctx.moveTo(xPos(tStart), yPos(Q));
+                    ctx.lineTo(xPos(tEnd), yPos(0));
+                    ctx.lineTo(xPos(tStart), yPos(0));
+                }
+                ctx.closePath();
+                ctx.fill();
+            }
+
+            /* Labels */
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '11px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Time (days)', W / 2, H - 5);
+
+            ctx.save();
+            ctx.translate(15, H / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText('Inventory Level', 0, 0);
+            ctx.restore();
+
+            /* Tick labels */
+            ctx.font = '10px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            for (let i = 0; i <= numCycles; i++) {
+                const t = i * cycleTime;
+                const days = Math.round(t * 365);
+                ctx.fillText(days + 'd', xPos(t), yPos(invMin) + 15);
+            }
+            ctx.textAlign = 'right';
+            const invTicks = maxBack > 0
+                ? [-maxBack, 0, peakInv / 2, peakInv, Q]
+                : [0, Q / 4, Q / 2, (3 * Q) / 4, Q];
+            invTicks.forEach(v => {
+                ctx.fillText(Math.round(v).toLocaleString(), pad.left - 8, yPos(v) + 4);
+            });
+
+            /* Title */
+            ctx.fillStyle = '#C5A059';
+            ctx.font = '11px "Inter", sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Inventory Level Over Time (Sawtooth Diagram)', pad.left, pad.top - 8);
+        }
+
+        function showResults(label, Q, ordersPerYear, reorderDays, TC, holdCost, orderCost, maxBack, bCost, Qstar, D, c) {
+            const table = document.getElementById('eoq-results');
+            const body = document.getElementById('eoq-results-body');
+            table.style.display = 'table';
+
+            let rows = [
+                ['Algorithm', label],
+                ['Optimal Order Quantity Q*', '<span class="best-val">' + Math.round(Q).toLocaleString() + ' units</span>'],
+                ['Orders per Year', ordersPerYear.toFixed(2)],
+                ['Reorder Interval', Math.round(reorderDays) + ' days'],
+                ['Ordering Cost (D/Q &times; K)', '$' + Math.round(orderCost).toLocaleString()],
+                ['Holding Cost (Q/2 &times; h)', '$' + Math.round(holdCost).toLocaleString()],
+            ];
+
+            if (maxBack !== null) {
+                const shortCost = bCost * Math.pow(maxBack, 2) / (2 * Q);
+                rows.push(['Max Backorder Level', Math.round(maxBack) + ' units']);
+                rows.push(['Shortage Cost', '$' + Math.round(shortCost).toLocaleString()]);
+            }
+
+            rows.push(['Purchase Cost (D &times; c)', '$' + Math.round(D * c).toLocaleString()]);
+            rows.push(['Total Annual Cost', '<span class="best-val">$' + Math.round(TC).toLocaleString() + '</span>']);
+
+            body.innerHTML = rows.map(r => '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>').join('');
+        }
+
+        /* Run solver on page load with defaults */
+        document.addEventListener('DOMContentLoaded', function() {
+            solveEOQ();
+        });
+    </script>
 </body>
 </html>
