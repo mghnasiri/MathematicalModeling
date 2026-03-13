@@ -354,6 +354,27 @@
             opacity: 1;
             transform: translateY(0);
         }
+
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.15); border-radius: 12px; padding: 2.5rem; margin-top: 2rem; }
+        .solver-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; margin-bottom: 1.5rem; }
+        .solver-panel h3 span { color: var(--gold); }
+        .solver-controls { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem; align-items: flex-end; }
+        .control-group label { display: block; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); margin-bottom: 0.4rem; }
+        .control-group input, .control-group select { background: var(--midnight); border: 1px solid rgba(197,160,89,0.2); color: var(--ivory); padding: 0.5rem 0.8rem; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; width: 100%; }
+        .algo-chips { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1.5rem; }
+        .algo-chip { padding: 0.4rem 1rem; border-radius: 20px; font-size: 0.78rem; cursor: pointer; border: 1px solid; transition: all 0.3s; font-family: 'Inter', sans-serif; }
+        .algo-chip.exact { border-color: var(--green); color: var(--green); }
+        .algo-chip.exact.active { background: var(--green); color: var(--midnight); }
+        .algo-chip.heuristic { border-color: var(--blue); color: var(--blue); }
+        .algo-chip.heuristic.active { background: var(--blue); color: var(--midnight); }
+        .solver-btn { background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--midnight); border: none; padding: 0.7rem 2rem; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 1px; transition: all 0.3s; }
+        .solver-btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(197,160,89,0.3); }
+        .solver-canvas { background: var(--midnight); border: 1px solid rgba(197,160,89,0.1); border-radius: 8px; width: 100%; margin: 1.5rem 0; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 1rem; }
+        .results-table th { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); padding: 0.8rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.15); }
+        .results-table td { padding: 0.8rem; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; border-bottom: 1px solid rgba(197,160,89,0.05); }
+        .best-val { color: var(--green); font-weight: 600; }
     </style>
 </head>
 <body>
@@ -361,7 +382,7 @@
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg fixed-top">
         <div class="container">
-            <a class="navbar-brand" href="../index.html">M. G. Nasiri</a>
+            <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -650,6 +671,70 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Solver Panel -->
+    <section>
+        <div class="container">
+            <div class="section-header">
+                <h2>Try It <span style="color: var(--gold)">Yourself</span></h2>
+                <p>Interactive EOQ solver with cost curve visualization</p>
+            </div>
+
+            <div class="solver-panel fade-in">
+                <h3><span>EOQ</span> Solver</h3>
+
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label>Annual Demand D (units/yr)</label>
+                        <input type="number" id="eoq-demand" value="10000" min="1" step="100">
+                    </div>
+                    <div class="control-group">
+                        <label>Ordering Cost K ($/order)</label>
+                        <input type="number" id="eoq-ordering" value="100" min="0.01" step="10">
+                    </div>
+                    <div class="control-group">
+                        <label>Holding Cost h ($/unit/yr)</label>
+                        <input type="number" id="eoq-holding" value="2.50" min="0.01" step="0.10">
+                    </div>
+                    <div class="control-group">
+                        <label>Unit Cost c ($/unit)</label>
+                        <input type="number" id="eoq-unit-cost" value="10.00" min="0.01" step="1">
+                    </div>
+                    <div class="control-group">
+                        <label>Shortage Cost b ($/unit/yr)</label>
+                        <input type="number" id="eoq-shortage" value="5.00" min="0.01" step="0.50" disabled>
+                    </div>
+                </div>
+
+                <div class="algo-chips">
+                    <div class="algo-chip exact active" data-algo="classic" onclick="selectAlgo(this)">Classic EOQ</div>
+                    <div class="algo-chip exact" data-algo="backorder" onclick="selectAlgo(this)">EOQ with Backorders</div>
+                    <div class="algo-chip heuristic" data-algo="silvermeal" onclick="selectAlgo(this)">Silver-Meal Heuristic</div>
+                </div>
+
+                <button class="solver-btn" onclick="solveEOQ()">
+                    <i class="fas fa-calculator"></i>&nbsp; Solve
+                </button>
+
+                <!-- Cost Curves Canvas -->
+                <canvas id="eoq-cost-canvas" class="solver-canvas" height="340"></canvas>
+
+                <!-- Inventory Sawtooth Canvas -->
+                <canvas id="eoq-inventory-canvas" class="solver-canvas" height="220"></canvas>
+
+                <!-- Results Table -->
+                <table class="results-table" id="eoq-results" style="display: none;">
+                    <thead>
+                        <tr>
+                            <th>Metric</th>
+                            <th>Value</th>
+                        </tr>
+                    </thead>
+                    <tbody id="eoq-results-body"></tbody>
+                </table>
             </div>
         </div>
     </section>
