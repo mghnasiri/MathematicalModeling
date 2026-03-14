@@ -3016,6 +3016,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
                 bpSizes.push(Math.floor(Math.random() * (hi - lo + 1)) + lo);
             }
             bpResults = [];
+            window.bpSizes = bpSizes; window.bpCapacity = bpCapacity; window.bpResults = bpResults;
             clearResults();
             drawEmpty();
             statusEl.textContent = 'Instance generated: ' + n + ' items, capacity ' + bpCapacity + '. Sizes: [' + bpSizes.join(', ') + ']';
@@ -3028,6 +3029,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
             sizeSlider.value = 8;  sizeVal.textContent = '8';
             capSlider.value = 60;  capVal.textContent = '60';
             bpResults = [];
+            window.bpSizes = bpSizes; window.bpCapacity = bpCapacity; window.bpResults = bpResults;
             clearResults();
             drawEmpty();
             statusEl.textContent = 'Preset loaded: 8 items, capacity 60. Sizes: [42, 35, 28, 22, 18, 15, 12, 8]';
@@ -3086,7 +3088,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
             }
             renderResults();
             // Draw the first result
-            if (bpResults.length > 0) drawBins(bpResults[0]);
+            if (bpResults.length > 0) (window.drawBins||drawBins)(bpResults[0]);
         }
 
         /* ── Run All ── */
@@ -3105,7 +3107,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
             renderResults();
             // Draw best result
             const best = bpResults.reduce((a, b) => a.numBins <= b.numBins ? a : b);
-            drawBins(best);
+            (window.drawBins||drawBins)(best);
         }
 
         /* ── Render results table ── */
@@ -3122,7 +3124,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
                     '<td>' + lb + '</td>' +
                     '<td>' + r.time.toFixed(3) + ' ms</td>';
                 tr.style.cursor = 'pointer';
-                tr.addEventListener('click', () => drawBins(r));
+                tr.addEventListener('click', () => (window.drawBins||drawBins)(r));
                 resultsBody.appendChild(tr);
             }
             statusEl.textContent = 'Solved ' + bpSizes.length + ' items into bins. L1 lower bound = ' + lb + '. Click a row to visualize.';
@@ -3258,6 +3260,12 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
         /* ── Initial draw ── */
         loadPreset();
 
+        // Expose to window for enhancement hooks
+        window.drawBins = drawBins;
+        window.bpSizes = bpSizes;
+        window.bpCapacity = bpCapacity;
+        window.bpResults = bpResults;
+
     })();
     </script>
 
@@ -3314,7 +3322,8 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
             if (!anyFit) {
                 ksItems[0].w = Math.floor(ksCapacity * 0.3) + 1;
             }
-            drawInstance(null, null);
+            window.ksItems = ksItems; window.ksCapacity = ksCapacity;
+            (window.drawInstance||drawInstance)(null, null);
             clearResults();
             statusEl.textContent = 'Instance generated: ' + n + ' items, capacity ' + ksCapacity + '. Click Solve.';
         }
@@ -3330,7 +3339,8 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
             }
             sizeSlider.value = 8; sizeVal.textContent = '8';
             capSlider.value = 60; capVal.textContent = '60';
-            drawInstance(null, null);
+            window.ksItems = ksItems; window.ksCapacity = ksCapacity;
+            (window.drawInstance||drawInstance)(null, null);
             clearResults();
             statusEl.textContent = 'Loaded 8-Item Example (capacity 60). Click Solve.';
         }
@@ -3683,7 +3693,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
                 tr.style.cursor = 'pointer';
                 (function(r) {
                     tr.addEventListener('click', function() {
-                        drawInstance(r.items, r.algo);
+                        (window.drawInstance||drawInstance)(r.items, r.algo);
                         statusEl.textContent = r.algo + ': value=' + r.value + ', weight=' + r.weight + '/' + ksCapacity;
                     });
                 })(res);
@@ -3691,7 +3701,7 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
             }
 
             if (firstBest) {
-                drawInstance(firstBest.items, firstBest.algo);
+                (window.drawInstance||drawInstance)(firstBest.items, firstBest.algo);
                 statusEl.textContent = 'Best: ' + firstBest.algo + ' \u2014 value=' + firstBest.value + ', weight=' + firstBest.weight + '/' + ksCapacity + '. Click rows to visualize.';
             }
         }
@@ -3707,8 +3717,13 @@ python -m pytest problems/packing/cutting_stock/tests/ -v
 
         // Resize handler
         window.addEventListener('resize', function() {
-            if (ksItems.length > 0) drawInstance(null, null);
+            if (ksItems.length > 0) (window.drawInstance||drawInstance)(null, null);
         });
+
+        // Expose to window for enhancement hooks
+        window.drawInstance = drawInstance;
+        window.ksItems = ksItems;
+        window.ksCapacity = ksCapacity;
     })();
     </script>
 
