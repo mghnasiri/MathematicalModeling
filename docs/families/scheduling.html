@@ -3548,7 +3548,7 @@
                 SM.results = SM.results.filter(function(r) { return r.name !== algo.name; });
                 SM.results.push({ name: algo.name, value: objVal, sequence: seq.map(function(j){return j.id;}), time: elapsed });
                 smRenderResults();
-                smDrawSchedule(seq);
+                (window.smDrawSchedule||smDrawSchedule)(seq);
                 statusSpan.textContent = algo.name + ' completed in ' + elapsed + ' ms';
             });
 
@@ -3568,7 +3568,7 @@
                     if (objVal < bestVal) { bestVal = objVal; bestSeq = seq; }
                 }
                 smRenderResults();
-                if (bestSeq) smDrawSchedule(bestSeq);
+                if (bestSeq) (window.smDrawSchedule||smDrawSchedule)(bestSeq);
                 statusSpan.textContent = 'All algorithms completed. Best objective: ' + bestVal;
             });
 
@@ -3700,11 +3700,15 @@
                     var seq = last.sequence.map(function(id) {
                         return SM.jobs.find(function(j) { return j.id === id; });
                     });
-                    smDrawSchedule(seq);
+                    (window.smDrawSchedule||smDrawSchedule)(seq);
                 } else {
                     smDrawEmpty();
                 }
             });
+
+            // Expose to window for enhancement hooks
+            window.smDrawSchedule = smDrawSchedule;
+            window.SM = SM;
         })();
 
         // ════════════════════════════════════════════════════════════════
@@ -3737,6 +3741,7 @@
                     }
                 }
                 fsP = p;
+                window.fsP = fsP;
             }
 
             function computeMakespan(perm, p, n, m) {
@@ -3921,6 +3926,7 @@
                 fsBuildTable();
                 fsUpdateJohnsonChip();
                 fsClearResults();
+                window.fsP = fsP; window.fsN = fsN; window.fsM = fsM;
                 document.getElementById('fs-status').textContent = 'Instance generated: ' + fsN + ' jobs, ' + fsM + ' machines.';
             }
             window.fsGenerate = fsGenerate;
@@ -3935,6 +3941,7 @@
                 fsBuildTable();
                 fsUpdateJohnsonChip();
                 fsClearResults();
+                window.fsP = fsP; window.fsN = fsN; window.fsM = fsM;
                 document.getElementById('fs-status').textContent = "Johnson's example loaded: 5 jobs, 2 machines.";
             }
             window.fsPresetJohnson = fsPresetJohnson;
@@ -4022,7 +4029,7 @@
                     return;
                 }
                 fsRenderResults();
-                fsDrawGantt(fsBestPerm);
+                (window.fsDrawGantt||fsDrawGantt)(fsBestPerm);
                 document.getElementById('fs-sequence-output').textContent =
                     'Best: [' + fsBestPerm.map(function(j) { return 'J' + j; }).join(', ') + ']  Cmax = ' + fsBestMakespan;
                 document.getElementById('fs-status').textContent = 'Solved ' + fsResults.length + ' algorithm(s).';
@@ -4161,8 +4168,14 @@
 
             // Resize handler
             window.addEventListener('resize', function() {
-                if (fsBestPerm) fsDrawGantt(fsBestPerm);
+                if (fsBestPerm) (window.fsDrawGantt||fsDrawGantt)(fsBestPerm);
             });
+
+            // Expose to window for enhancement hooks
+            window.fsDrawGantt = fsDrawGantt;
+            window.fsP = fsP;
+            window.fsN = fsN;
+            window.fsM = fsM;
 
             /* ── Init ── */
             fsPresetJohnson();
@@ -4234,6 +4247,7 @@
                 jspRenderTable();
                 jspClearResults();
                 jspDrawEmpty();
+                window.jspJobs = jspJobs; window.jspN = jspN; window.jspM = jspM;
                 document.getElementById('jsp-status').textContent = 'Instance generated. Select algorithms and press Solve.';
                 document.getElementById('jsp-schedule-output').textContent = 'Instance ready. Press Solve to schedule.';
             };
@@ -4253,6 +4267,7 @@
                 jspRenderTable();
                 jspClearResults();
                 jspDrawEmpty();
+                window.jspJobs = jspJobs; window.jspN = jspN; window.jspM = jspM;
                 document.getElementById('jsp-status').textContent = 'ft06-mini loaded (3 jobs, 3 machines). Press Solve.';
                 document.getElementById('jsp-schedule-output').textContent = 'ft06-mini preset loaded. Press Solve to schedule.';
             };
@@ -4543,7 +4558,7 @@
                 var bestMakespan = results[0].makespan;
 
                 // draw best Gantt
-                jspDrawGantt(results[0].schedule, results[0].makespan, jspM);
+                (window.jspDrawGantt||jspDrawGantt)(results[0].schedule, results[0].makespan, jspM);
 
                 // update schedule output
                 var ops = results[0].schedule.slice().sort(function (a, b) {
@@ -4580,6 +4595,12 @@
                 for (var i = 0; i < chips.length; i++) chips[i].classList.add('selected');
                 jspSolve();
             };
+
+            // Expose to window for enhancement hooks
+            window.jspDrawGantt = jspDrawGantt;
+            window.jspJobs = jspJobs;
+            window.jspN = jspN;
+            window.jspM = jspM;
 
             /* ── Init ── */
             jspDrawEmpty();
