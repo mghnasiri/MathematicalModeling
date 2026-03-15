@@ -22,14 +22,14 @@ def _load_mod(name, filepath):
     return mod
 
 
-_inst = _load_mod("pm_instance_test_ts", os.path.join(_parent_dir, "instance.py"))
+_inst = _load_mod("pmedian_instance_test_ts", os.path.join(_parent_dir, "instance.py"))
 PMedianInstance = _inst.PMedianInstance
 PMedianSolution = _inst.PMedianSolution
 validate_solution = _inst.validate_solution
 small_pmedian_6_2 = _inst.small_pmedian_6_2
 
 _ts = _load_mod(
-    "pm_ts_test",
+    "pmedian_ts_test",
     os.path.join(_parent_dir, "metaheuristics", "tabu_search.py"),
 )
 tabu_search = _ts.tabu_search

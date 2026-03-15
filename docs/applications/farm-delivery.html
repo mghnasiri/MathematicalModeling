@@ -1607,4 +1607,688 @@
 <!-- ── Back Link ── -->
 <a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Portfolio</a>
 
+<script>
+// ══════════════════════════════════════════════════════════════
+//  Farm-to-Market Delivery Routing — CVRP Solver
+//  15 delivery points across Quebec City farm-to-market network
+// ══════════════════════════════════════════════════════════════
+
+const canvas = document.getElementById('map-canvas');
+const ctx = canvas.getContext('2d');
+
+// Canvas dimensions
+const CW = 700, CH = 550, PAD = 45;
+
+// Geographic bounds (Quebec City region)
+const LAT_MIN = 46.750, LAT_MAX = 46.870;
+const LNG_MIN = -71.320, LNG_MAX = -71.160;
+
+function latToY(lat) { return PAD + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (CH - 2 * PAD); }
+function lngToX(lng) { return PAD + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (CW - 2 * PAD); }
+
+// Haversine distance (km) between two lat/lng points
+function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+const ROUTE_COLORS = [
+    '#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc',
+    '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c'
+];
+
+// ── Quebec City Farm-to-Market Delivery Points ──
+const DEFAULT_STOPS = [
+    { name: "Cooperative Depot",          lat: 46.780, lng: -71.290, demand: 0 },
+    { name: "Marche du Vieux-Port",       lat: 46.813, lng: -71.203, demand: 320 },
+    { name: "Marche Jean-Talon QC",       lat: 46.830, lng: -71.230, demand: 280 },
+    { name: "Restaurant Panache",         lat: 46.812, lng: -71.200, demand: 150 },
+    { name: "Restaurant Legende",         lat: 46.816, lng: -71.208, demand: 130 },
+    { name: "IGA Sainte-Foy",            lat: 46.775, lng: -71.270, demand: 250 },
+    { name: "Metro Limoilou",            lat: 46.835, lng: -71.225, demand: 200 },
+    { name: "Moisson Quebec",            lat: 46.822, lng: -71.260, demand: 180 },
+    { name: "Epicerie Beauport",          lat: 46.855, lng: -71.195, demand: 160 },
+    { name: "Cafe Saint-Roch",           lat: 46.817, lng: -71.223, demand: 90 },
+    { name: "Provigo Sillery",           lat: 46.775, lng: -71.245, demand: 220 },
+    { name: "Hotel Frontenac Kitchen",   lat: 46.812, lng: -71.205, demand: 170 },
+    { name: "Marche Montcalm",           lat: 46.804, lng: -71.228, demand: 140 },
+    { name: "Universite Laval Cafeteria",lat: 46.781, lng: -71.275, demand: 200 },
+    { name: "Centre de Foires",          lat: 46.830, lng: -71.268, demand: 110 },
+    { name: "Banque Alimentaire Levis",  lat: 46.800, lng: -71.180, demand: 190 }
+];
+
+// ── State ──
+let activeStops = [];
+let capacity = 2000;
+let dist = [];
+let demands = [];
+let currentResults = [];
+
+// ── Initialize stops with screen coords ──
+function initStops() {
+    activeStops = DEFAULT_STOPS.map((s, i) => ({
+        name: s.name,
+        lat: s.lat,
+        lng: s.lng,
+        x: lngToX(s.lng),
+        y: latToY(s.lat),
+        demand: s.demand,
+        idx: i
+    }));
+    demands = activeStops.map(s => s.demand);
+}
+
+// ── Build Haversine distance matrix (km) ──
+function buildDistMatrix() {
+    const n = activeStops.length;
+    dist = Array.from({ length: n }, () => new Float64Array(n));
+    for (let i = 0; i < n; i++)
+        for (let j = i + 1; j < n; j++) {
+            const d = haversine(activeStops[i].lat, activeStops[i].lng,
+                                activeStops[j].lat, activeStops[j].lng);
+            dist[i][j] = d;
+            dist[j][i] = d;
+        }
+}
+
+function routeDist(route) {
+    if (route.length === 0) return 0;
+    let d = dist[0][route[0]];
+    for (let i = 0; i < route.length - 1; i++) d += dist[route[i]][route[i + 1]];
+    d += dist[route[route.length - 1]][0];
+    return d;
+}
+
+function totalDist(routes) {
+    return routes.reduce((s, r) => s + routeDist(r), 0);
+}
+
+function routeLoad(route) {
+    return route.reduce((s, c) => s + demands[c], 0);
+}
+
+// ══════════════════════════════════════════════════════════════
+// Drawing
+// ══════════════════════════════════════════════════════════════
+
+function resizeCanvas() {
+    const wrap = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const w = Math.min(wrap.clientWidth - 16, 700);
+    const h = Math.round(w * CH / CW);
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    // Update projection scale
+    const sx = w / CW, sy = h / CH;
+    activeStops.forEach(s => {
+        s.x = lngToX(s.lng) * sx;
+        s.y = latToY(s.lat) * sy;
+    });
+    return { w, h, sx, sy };
+}
+
+function drawMap(w, h) {
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, w, h);
+
+    // St. Lawrence River
+    ctx.beginPath();
+    ctx.moveTo(0, h);
+    ctx.lineTo(w, h);
+    ctx.lineTo(w, h * 0.55);
+    ctx.bezierCurveTo(w * 0.85, h * 0.60, w * 0.70, h * 0.72, w * 0.55, h * 0.78);
+    ctx.bezierCurveTo(w * 0.40, h * 0.84, w * 0.25, h * 0.88, 0, h * 0.92);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(122, 162, 247, 0.10)';
+    ctx.fill();
+    ctx.font = '10px Inter, sans-serif';
+    ctx.fillStyle = 'rgba(122, 162, 247, 0.30)';
+    ctx.fillText('St. Lawrence River', w * 0.55, h * 0.88);
+
+    // Faint road grid
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.05)';
+    ctx.lineWidth = 1;
+    for (let x = 50; x < w; x += 60) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 50; y < h; y += 60) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
+}
+
+function drawStops() {
+    const { w, h } = resizeCanvas();
+    drawMap(w, h);
+
+    for (let i = 0; i < activeStops.length; i++) {
+        const s = activeStops[i];
+        if (i === 0) {
+            // Depot: red square
+            ctx.fillStyle = '#ff6b6b';
+            ctx.fillRect(s.x - 7, s.y - 7, 14, 14);
+            ctx.fillStyle = '#0A192F';
+            ctx.font = 'bold 10px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('D', s.x, s.y + 1);
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.fillText('Depot', s.x + 12, s.y + 4);
+        } else {
+            const r = Math.max(4, Math.min(8, s.demand / 40));
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = '#C5A059';
+            ctx.fill();
+
+            ctx.fillStyle = 'rgba(248,249,250,0.75)';
+            ctx.font = '8px Inter, sans-serif';
+            ctx.textAlign = (s.x > w * 0.6) ? 'right' : 'left';
+            ctx.textBaseline = 'middle';
+            const label = s.name + ' (' + s.demand + ' kg)';
+            const lx = (s.x > w * 0.6) ? s.x - r - 4 : s.x + r + 4;
+            ctx.fillText(label, lx, s.y);
+        }
+    }
+    ctx.textAlign = 'start';
+    ctx.textBaseline = 'alphabetic';
+}
+
+function drawRoutes(routes) {
+    drawStops();
+    const depot = activeStops[0];
+    routes.forEach((route, ri) => {
+        const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+        ctx.beginPath();
+        ctx.moveTo(depot.x, depot.y);
+        for (const c of route) ctx.lineTo(activeStops[c].x, activeStops[c].y);
+        ctx.lineTo(depot.x, depot.y);
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.5;
+        ctx.globalAlpha = 0.8;
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        for (const c of route) {
+            ctx.beginPath();
+            ctx.arc(activeStops[c].x, activeStops[c].y, 8, 0, Math.PI * 2);
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+        }
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// CVRP Algorithms
+// ══════════════════════════════════════════════════════════════
+
+function solveClarkeWright(cap) {
+    const n = activeStops.length - 1;
+    if (n === 0) return [];
+
+    const savings = [];
+    for (let i = 1; i <= n; i++)
+        for (let j = i + 1; j <= n; j++)
+            savings.push({ s: dist[0][i] + dist[0][j] - dist[i][j], i, j });
+    savings.sort((a, b) => b.s - a.s);
+
+    const routeOf = new Int32Array(n + 1);
+    let routes = [];
+    const loads = [];
+    for (let i = 1; i <= n; i++) {
+        routeOf[i] = routes.length;
+        routes.push([i]);
+        loads.push(demands[i]);
+    }
+
+    for (const { s, i, j } of savings) {
+        const ri = routeOf[i], rj = routeOf[j];
+        if (ri === rj) continue;
+        if (!routes[ri] || !routes[rj]) continue;
+
+        const rI = routes[ri], rJ = routes[rj];
+        const iEnd = rI[0] === i || rI[rI.length - 1] === i;
+        const jEnd = rJ[0] === j || rJ[rJ.length - 1] === j;
+        if (!iEnd || !jEnd) continue;
+        if (loads[ri] + loads[rj] > cap) continue;
+
+        let merged;
+        if (rI[rI.length - 1] === i && rJ[0] === j) merged = [...rI, ...rJ];
+        else if (rJ[rJ.length - 1] === j && rI[0] === i) merged = [...rJ, ...rI];
+        else if (rI[0] === i && rJ[0] === j) merged = [...rI.reverse(), ...rJ];
+        else merged = [...rI, ...rJ.reverse()];
+
+        routes[ri] = merged;
+        loads[ri] += loads[rj];
+        routes[rj] = null;
+        for (const c of merged) routeOf[c] = ri;
+    }
+    return routes.filter(r => r !== null);
+}
+
+function solveSweep(cap) {
+    const n = activeStops.length - 1;
+    if (n === 0) return [];
+
+    const dep = activeStops[0];
+    const angles = [];
+    for (let i = 1; i <= n; i++) {
+        const a = Math.atan2(activeStops[i].y - dep.y, activeStops[i].x - dep.x);
+        angles.push({ a, i });
+    }
+    angles.sort((a, b) => a.a - b.a);
+
+    const routes = [];
+    let curRoute = [], curLoad = 0;
+    for (const { i } of angles) {
+        if (curLoad + demands[i] > cap && curRoute.length > 0) {
+            routes.push(curRoute);
+            curRoute = [];
+            curLoad = 0;
+        }
+        curRoute.push(i);
+        curLoad += demands[i];
+    }
+    if (curRoute.length > 0) routes.push(curRoute);
+    return routes;
+}
+
+function solveNearestNeighbor(cap) {
+    const n = activeStops.length - 1;
+    if (n === 0) return [];
+
+    const visited = new Uint8Array(n + 1);
+    const routes = [];
+    let remaining = n;
+
+    while (remaining > 0) {
+        let cur = 0, route = [], load = 0;
+        while (true) {
+            let nearest = -1, nearDist = Infinity;
+            for (let j = 1; j <= n; j++) {
+                if (!visited[j] && demands[j] + load <= cap && dist[cur][j] < nearDist) {
+                    nearDist = dist[cur][j];
+                    nearest = j;
+                }
+            }
+            if (nearest === -1) break;
+            route.push(nearest);
+            visited[nearest] = 1;
+            load += demands[nearest];
+            cur = nearest;
+            remaining--;
+        }
+        if (route.length > 0) {
+            routes.push(route);
+        } else {
+            for (let j = 1; j <= n; j++) {
+                if (!visited[j]) {
+                    routes.push([j]);
+                    visited[j] = 1;
+                    remaining--;
+                    break;
+                }
+            }
+        }
+    }
+    return routes;
+}
+
+// ══════════════════════════════════════════════════════════════
+// UI Functions
+// ══════════════════════════════════════════════════════════════
+
+function updateCapacity(val) {
+    capacity = parseInt(val);
+    document.getElementById('capacity-display').textContent = val;
+}
+
+function toggleAlgo(el) {
+    el.classList.toggle('selected');
+}
+
+function toggleDemandEditor() {
+    const editor = document.getElementById('demand-editor');
+    const visible = editor.style.display !== 'none';
+    editor.style.display = visible ? 'none' : 'block';
+    if (!visible) buildDemandGrid();
+}
+
+function buildDemandGrid() {
+    const grid = document.getElementById('demand-grid');
+    grid.innerHTML = '';
+    for (let i = 1; i < activeStops.length; i++) {
+        const s = activeStops[i];
+        const row = document.createElement('div');
+        row.style.cssText = 'display:flex; align-items:center; gap:0.5rem; margin-bottom:0.3rem;';
+        row.innerHTML = `
+            <span style="font-size:0.72rem; color:var(--slate-light); min-width:180px; font-family:'Inter',sans-serif;">${s.name}</span>
+            <input type="number" min="10" max="500" value="${s.demand}" data-idx="${i}"
+                   style="width:70px; background:var(--midnight); border:1px solid rgba(197,160,89,0.2);
+                          border-radius:3px; color:var(--gold); font-family:'JetBrains Mono',monospace;
+                          font-size:0.8rem; text-align:center; padding:3px 6px;"
+                   onchange="updateDemand(this)">
+            <span style="font-size:0.68rem; color:var(--slate);">kg</span>
+        `;
+        grid.appendChild(row);
+    }
+}
+
+function updateDemand(el) {
+    const idx = parseInt(el.dataset.idx);
+    const val = parseInt(el.value);
+    if (!isNaN(val) && val > 0) {
+        activeStops[idx].demand = val;
+        demands[idx] = val;
+    }
+}
+
+function resetDemands() {
+    initStops();
+    buildDistMatrix();
+    capacity = 2000;
+    document.getElementById('capacity-slider').value = 2000;
+    document.getElementById('capacity-display').textContent = '2000';
+    document.getElementById('demand-editor').style.display = 'none';
+    drawStops();
+    document.getElementById('results-table').querySelector('tbody').innerHTML =
+        '<tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:Inter,sans-serif;">Configure settings and click Optimize Routes</td></tr>';
+    document.getElementById('route-output').textContent = 'Routes will appear here after optimization.';
+    document.getElementById('solver-status').textContent = 'Ready. Choose algorithms and click Optimize Routes.';
+    document.getElementById('route-caps').style.display = 'none';
+}
+
+// ── Capacity bars ──
+function showCapBars(routes) {
+    const panel = document.getElementById('route-caps');
+    const bars = document.getElementById('cap-bars');
+    panel.style.display = 'block';
+    bars.innerHTML = '';
+
+    routes.forEach((route, ri) => {
+        const load = routeLoad(route);
+        const pct = Math.min(100, (load / capacity) * 100);
+        const cls = pct > 95 ? 'full' : pct > 75 ? 'warn' : 'safe';
+        const row = document.createElement('div');
+        row.className = 'route-cap-row';
+        row.innerHTML = `
+            <span class="route-cap-label">R${ri + 1}</span>
+            <div class="route-cap-track">
+                <div class="route-cap-fill ${cls}" style="width:${pct}%">
+                    <span>${load} kg</span>
+                </div>
+            </div>
+            <span class="util-bar-pct">${pct.toFixed(0)}%</span>
+        `;
+        bars.appendChild(row);
+    });
+}
+
+// ── Algorithm map ──
+const ALGO_MAP = {
+    cw:    { name: 'Clarke-Wright Savings', fn: solveClarkeWright },
+    sweep: { name: 'Sweep',                fn: solveSweep },
+    nn:    { name: 'Nearest Neighbor',      fn: solveNearestNeighbor }
+};
+
+function solveAll() {
+    const selectedAlgos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected'))
+        .map(c => c.dataset.algo);
+    if (selectedAlgos.length === 0) {
+        document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
+        return;
+    }
+
+    currentResults = [];
+    for (const key of selectedAlgos) {
+        const algo = ALGO_MAP[key];
+        const t0 = performance.now();
+        const routes = algo.fn(capacity);
+        const elapsed = performance.now() - t0;
+        const d = totalDist(routes);
+        const maxLoad = routes.reduce((m, r) => Math.max(m, routeLoad(r)), 0);
+        currentResults.push({
+            key, name: algo.name, routes, distance: d,
+            vehicles: routes.length, maxLoad, time: elapsed
+        });
+    }
+    currentResults.sort((a, b) => a.distance - b.distance);
+
+    // Draw best
+    drawRoutes(currentResults[0].routes);
+    showCapBars(currentResults[0].routes);
+
+    // Populate results table
+    const tbody = document.getElementById('results-table').querySelector('tbody');
+    tbody.innerHTML = '';
+    currentResults.forEach((r, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="algo-label">${r.name}</td>
+            <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(1)}</td>
+            <td>${r.vehicles}</td>
+            <td>${r.routes.map((rt, ri) => 'R' + (ri + 1) + ':' + routeLoad(rt) + 'kg').join(', ')}</td>
+        `;
+        tr.addEventListener('click', () => showResult(r));
+        tbody.appendChild(tr);
+    });
+
+    showResult(currentResults[0]);
+    document.getElementById('solver-status').textContent =
+        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''} in ${currentResults.reduce((s, r) => s + r.time, 0).toFixed(1)} ms. Click a row to view its routes.`;
+}
+
+function showResult(r) {
+    drawRoutes(r.routes);
+    showCapBars(r.routes);
+
+    // Highlight selected row
+    document.querySelectorAll('#results-table tbody tr').forEach(tr => tr.classList.remove('row-selected'));
+    const rows = document.querySelectorAll('#results-table tbody tr');
+    rows.forEach(tr => {
+        if (tr.querySelector('.algo-label')?.textContent === r.name) tr.classList.add('row-selected');
+    });
+
+    const lines = [];
+    lines.push(`Algorithm: ${r.name}  |  Capacity: ${capacity} kg`);
+    lines.push('');
+    r.routes.forEach((route, ri) => {
+        const load = routeLoad(route);
+        const d = routeDist(route).toFixed(1);
+        const stops = route.map(c => activeStops[c].name).join(' \u2192 ');
+        lines.push(`Route ${ri + 1}: Depot \u2192 ${stops} \u2192 Depot`);
+        lines.push(`  Distance: ${d} km  |  Load: ${load}/${capacity} kg (${(load / capacity * 100).toFixed(0)}%)`);
+    });
+    lines.push('');
+    lines.push(`Total: ${r.distance.toFixed(1)} km  |  ${r.vehicles} truck${r.vehicles > 1 ? 's' : ''}  |  Max load: ${r.maxLoad} kg`);
+
+    document.getElementById('route-output').textContent = lines.join('\n');
+}
+
+// ── Scroll Animations ──
+const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+
+// ── Initialize ──
+initStops();
+buildDistMatrix();
+drawStops();
+
+window.addEventListener('resize', () => {
+    drawStops();
+    if (currentResults.length > 0) drawRoutes(currentResults[0].routes);
+});
+</script>
+
+<!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── Theme Toggle ──
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', () => {
+            const isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            const newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    const initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ── Command Palette ──
+    const SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: '6 problems', icon: 'fa-industry', url: 'families/scheduling.html', group: 'Families', badge: 'Family', badgeColor: 'method-meta' },
+        { title: 'Routing', subtitle: '3 problems', icon: 'fa-route', url: 'families/routing.html', group: 'Families', badge: 'Family', badgeColor: 'method-meta' },
+        { title: 'Packing & Cutting', subtitle: '3 problems', icon: 'fa-box', url: 'families/packing.html', group: 'Families', badge: 'Family', badgeColor: 'method-meta' },
+        { title: 'Location & Network', subtitle: '6 problems', icon: 'fa-project-diagram', url: 'families/network.html', group: 'Families', badge: 'Family', badgeColor: 'method-meta' },
+        { title: 'Stochastic & Robust', subtitle: '9 problems', icon: 'fa-chart-area', url: 'families/stochastic.html', group: 'Families', badge: 'Family', badgeColor: 'method-meta' },
+        { title: 'Farm-to-Market Delivery', subtitle: 'CVRP', icon: 'fa-truck', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Crop Harvest', subtitle: 'Newsvendor', icon: 'fa-apple-alt', url: 'applications/crop-harvest.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Delivery Routing', subtitle: 'CVRP', icon: 'fa-truck', url: 'applications/delivery-routing.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+    ];
+
+    const path = window.location.pathname;
+    const depth = (path.match(/families\/|applications\//)) ? '../' : '';
+
+    const overlay = document.getElementById('cmdPalette');
+    const input = document.getElementById('cmdInput');
+    const resultsDiv = document.getElementById('cmdResults');
+    let activeIdx = -1;
+
+    function openPalette() { overlay.classList.add('open'); input.value = ''; input.focus(); renderResults(''); activeIdx = -1; }
+    function closePalette() { overlay.classList.remove('open'); activeIdx = -1; }
+
+    function renderResults(query) {
+        const q = query.toLowerCase();
+        const filtered = SEARCH_DATA.filter(item =>
+            item.title.toLowerCase().includes(q) || item.subtitle.toLowerCase().includes(q) || item.group.toLowerCase().includes(q)
+        );
+        if (filtered.length === 0) { resultsDiv.innerHTML = '<div class="cmd-empty">No results found</div>'; return; }
+        const groups = {};
+        filtered.forEach(item => { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+        let html = '', idx = 0;
+        ['Families', 'Applications'].forEach(g => {
+            if (!groups[g]) return;
+            html += `<div class="cmd-group-label">${g}</div>`;
+            groups[g].forEach(item => {
+                html += `<a href="${depth}${item.url}" class="cmd-result" data-idx="${idx}">
+                    <div class="cmd-icon"><i class="fas ${item.icon}"></i></div>
+                    <div class="cmd-info"><div class="cmd-title">${item.title}</div><div class="cmd-subtitle">${item.subtitle}</div></div>
+                    <span class="cmd-badge method-badge ${item.badgeColor}">${item.badge}</span></a>`;
+                idx++;
+            });
+        });
+        resultsDiv.innerHTML = html;
+    }
+
+    if (input) input.addEventListener('input', () => { renderResults(input.value); activeIdx = -1; });
+
+    document.addEventListener('keydown', (e) => {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); overlay.classList.contains('open') ? closePalette() : openPalette(); return; }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+        const results = resultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, results.length - 1); results.forEach((r, i) => r.classList.toggle('active', i === activeIdx)); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); results.forEach((r, i) => r.classList.toggle('active', i === activeIdx)); }
+        else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) { e.preventDefault(); results[activeIdx].click(); }
+    });
+
+    if (overlay) overlay.addEventListener('click', (e) => { if (e.target === overlay) closePalette(); });
+    const searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) searchTrigger.addEventListener('click', openPalette);
+
+    // ── Particle Network ──
+    const heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        const pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        const pCtx = pCanvas.getContext('2d');
+        let particles = [];
+        const PC = 40, CD = 120;
+
+        function resizePCanvas() { pCanvas.width = heroEl.offsetWidth; pCanvas.height = heroEl.offsetHeight; }
+        resizePCanvas();
+        window.addEventListener('resize', resizePCanvas);
+
+        class Particle {
+            constructor() { this.x = Math.random() * pCanvas.width; this.y = Math.random() * pCanvas.height; this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4; this.r = Math.random() * 2 + 1; }
+            update() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1; if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1; }
+            draw() { pCtx.beginPath(); pCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2); pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)'; pCtx.fill(); }
+        }
+        for (let i = 0; i < PC; i++) particles.push(new Particle());
+        function animate() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            for (let i = 0; i < particles.length; i++)
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+                    const d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < CD) { pCtx.beginPath(); pCtx.moveTo(particles[i].x, particles[i].y); pCtx.lineTo(particles[j].x, particles[j].y); pCtx.strokeStyle = `rgba(197, 160, 89, ${0.12 * (1 - d / CD)})`; pCtx.lineWidth = 0.6; pCtx.stroke(); }
+                }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+    // ── Scroll Progress + Scroll-to-Top ──
+    const progressBar = document.getElementById('scrollProgress');
+    const scrollTopBtn = document.getElementById('scrollTopBtn');
+    function onScroll() {
+        const scrollTop = window.scrollY;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (progressBar) progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('visible', scrollTop > 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    if (scrollTopBtn) scrollTopBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+})();
+</script>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -22,16 +22,16 @@ def _load_mod(name, filepath):
     return mod
 
 
-_inst = _load_mod("vrpb_inst_test", os.path.join(_variant_dir, "instance.py"))
+_inst = _load_mod("vrpb_backhaul_inst_test", os.path.join(_variant_dir, "instance.py"))
 VRPBInstance = _inst.VRPBInstance
 VRPBSolution = _inst.VRPBSolution
 validate_solution = _inst.validate_solution
 small_vrpb_5 = _inst.small_vrpb_5
 
-_heur = _load_mod("vrpb_heur_test", os.path.join(_variant_dir, "heuristics.py"))
+_heur = _load_mod("vrpb_backhaul_heur_test", os.path.join(_variant_dir, "heuristics.py"))
 nearest_neighbor_vrpb = _heur.nearest_neighbor_vrpb
 
-_meta = _load_mod("vrpb_meta_test", os.path.join(_variant_dir, "metaheuristics.py"))
+_meta = _load_mod("vrpb_backhaul_meta_test", os.path.join(_variant_dir, "metaheuristics.py"))
 simulated_annealing = _meta.simulated_annealing
 
 
