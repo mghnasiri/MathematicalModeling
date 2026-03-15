@@ -2418,137 +2418,189 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
-//  Grocery Perishable Ordering — Newsvendor Solver
+//  Feed & Fertilizer Procurement — Lot Sizing Solver
 // ══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// Default parameters
-const DEFAULTS = {
-    cost: 2.50,
-    price: 5.00,
-    salvage: 0.50,
-    demands: '80, 90, 100, 110, 95, 85, 105, 115, 92, 88, 98, 108, 102, 96, 112'
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ── Input data for 3 agricultural inputs ──
+const INPUTS = {
+    cattle_feed: {
+        name: 'Cattle Feed (grain mix)',
+        orderingCost: 150, holdingCost: 2.0,
+        demands: [75, 72, 65, 55, 45, 40, 42, 45, 50, 58, 70, 80]
+    },
+    fertilizer: {
+        name: 'Fertilizer (NPK 15-15-15)',
+        orderingCost: 200, holdingCost: 5.0,
+        demands: [0, 0, 15, 45, 60, 40, 25, 10, 0, 0, 0, 0]
+    },
+    seeds: {
+        name: 'Seeds (hay/silage mix)',
+        orderingCost: 100, holdingCost: 3.0,
+        demands: [0, 0, 8, 15, 12, 0, 0, 0, 0, 0, 0, 0]
+    }
 };
 
-// ── Helpers ──
+// ── Load selected input into form ──
+function loadInput() {
+    const key = document.getElementById('input-selector').value;
+    const data = INPUTS[key];
+    document.getElementById('input-ordering-cost').value = data.orderingCost;
+    document.getElementById('input-holding-cost').value = data.holdingCost;
+    for (let i = 0; i < 12; i++) {
+        document.getElementById('dem-' + i).value = data.demands[i];
+    }
+}
+
+// ── Parse form inputs ──
 function parseInputs() {
-    const cost = parseFloat(document.getElementById('input-cost').value);
-    const price = parseFloat(document.getElementById('input-price').value);
-    const salvage = parseFloat(document.getElementById('input-salvage').value);
-    const demandStr = document.getElementById('input-demands').value;
-    const demands = demandStr.split(',').map(s => parseFloat(s.trim())).filter(d => !isNaN(d) && d >= 0);
-    return { cost, price, salvage, demands };
+    const orderingCost = parseFloat(document.getElementById('input-ordering-cost').value);
+    const holdingCost = parseFloat(document.getElementById('input-holding-cost').value);
+    const demands = [];
+    for (let i = 0; i < 12; i++) {
+        demands.push(parseFloat(document.getElementById('dem-' + i).value) || 0);
+    }
+    return { orderingCost, holdingCost, demands };
 }
 
 function validateInputs(p) {
-    if (isNaN(p.cost) || p.cost <= 0) return 'Cost must be positive.';
-    if (isNaN(p.price) || p.price <= 0) return 'Price must be positive.';
-    if (isNaN(p.salvage) || p.salvage < 0) return 'Salvage must be non-negative.';
-    if (p.price <= p.cost) return 'Price must exceed cost for a profitable product.';
-    if (p.salvage >= p.cost) return 'Salvage must be less than cost (otherwise no overage risk).';
-    if (p.demands.length < 2) return 'Enter at least 2 demand scenarios.';
+    if (isNaN(p.orderingCost) || p.orderingCost <= 0) return 'Ordering cost must be positive.';
+    if (isNaN(p.holdingCost) || p.holdingCost <= 0) return 'Holding cost must be positive.';
+    const totalDemand = p.demands.reduce((a, b) => a + b, 0);
+    if (totalDemand <= 0) return 'Total demand must be positive.';
     return null;
 }
 
-function expectedProfit(Q, demands, cost, price, salvage) {
-    let totalProfit = 0;
-    for (const d of demands) {
-        const sold = Math.min(Q, d);
-        const leftover = Math.max(0, Q - d);
-        totalProfit += price * sold + salvage * leftover - cost * Q;
-    }
-    return totalProfit / demands.length;
-}
+// ── EOQ Solver ──
+function solveEOQ(demands, orderCost, holdCost) {
+    const nonzero = demands.filter(d => d > 0);
+    if (nonzero.length === 0) return { name: 'EOQ', totalCost: 0, numOrders: 0, orderMonths: [], avgLot: 0, orders: [] };
+    const avgMonthly = nonzero.reduce((a, b) => a + b, 0) / nonzero.length;
+    const annualDemand = avgMonthly * 12;
+    const annualHold = holdCost * 12;
+    const Q = Math.sqrt(2 * annualDemand * orderCost / annualHold);
 
-function expectedWaste(Q, demands) {
-    let total = 0;
-    for (const d of demands) {
-        total += Math.max(0, Q - d);
-    }
-    return total / demands.length;
-}
-
-function expectedShortage(Q, demands) {
-    let total = 0;
-    for (const d of demands) {
-        total += Math.max(0, d - Q);
-    }
-    return total / demands.length;
-}
-
-function serviceLevel(Q, demands) {
-    let met = 0;
-    for (const d of demands) {
-        if (Q >= d) met++;
-    }
-    return met / demands.length;
-}
-
-// ── Critical Fractile Algorithm ──
-function solveCriticalFractile(params) {
-    const { cost, price, salvage, demands } = params;
-    const cu = price - cost;
-    const co = cost - salvage;
-    const criticalRatio = cu / (cu + co);
-
-    const sorted = [...demands].sort((a, b) => a - b);
-    const S = sorted.length;
-
-    // Find Q*: smallest demand value where CDF >= critical ratio
-    let qStar = sorted[S - 1]; // default to max
-    for (let i = 0; i < S; i++) {
-        const cdf = (i + 1) / S;
-        if (cdf >= criticalRatio) {
-            qStar = sorted[i];
-            break;
+    // Simulate monthly ordering with EOQ quantity
+    let inventory = 0, totalCost = 0, orders = [];
+    const orderMonths = [];
+    for (let t = 0; t < 12; t++) {
+        if (demands[t] > 0 && inventory < demands[t]) {
+            const qty = Math.max(Q, demands[t] - inventory);
+            orders.push({ period: t, quantity: qty });
+            orderMonths.push(t);
+            inventory += qty;
+            totalCost += orderCost;
         }
+        inventory -= demands[t];
+        if (inventory < 0) inventory = 0;
+        totalCost += holdCost * inventory;
     }
-
+    const totalOrdered = orders.reduce((a, o) => a + o.quantity, 0);
     return {
-        name: 'Critical Fractile',
-        qStar,
-        criticalRatio,
-        profit: expectedProfit(qStar, demands, cost, price, salvage),
-        waste: expectedWaste(qStar, demands),
-        shortage: expectedShortage(qStar, demands),
-        service: serviceLevel(qStar, demands)
+        name: 'EOQ',
+        totalCost: totalCost,
+        numOrders: orders.length,
+        orderMonths: orderMonths,
+        avgLot: orders.length > 0 ? totalOrdered / orders.length : 0,
+        orders: orders
     };
 }
 
-// ── Grid Search Algorithm ──
-function solveGridSearch(params) {
-    const { cost, price, salvage, demands } = params;
-    const cu = price - cost;
-    const co = cost - salvage;
-    const criticalRatio = cu / (cu + co);
+// ── Silver-Meal Solver ──
+function solveSilverMeal(demands, orderCost, holdCost) {
+    const T = demands.length;
+    let orders = [];
+    let t = 0;
+    while (t < T) {
+        if (demands[t] === 0) { t++; continue; }
+        let bestAvg = Infinity;
+        let bestEnd = t;
+        for (let j = t; j < T; j++) {
+            let hc = 0;
+            for (let k = t + 1; k <= j; k++) hc += holdCost * demands[k] * (k - t);
+            let avgCost = (orderCost + hc) / (j - t + 1);
+            if (avgCost <= bestAvg) { bestAvg = avgCost; bestEnd = j; }
+            else break;
+        }
+        let qty = 0;
+        for (let k = t; k <= bestEnd; k++) qty += demands[k];
+        orders.push({ period: t, quantity: qty, coverTo: bestEnd });
+        t = bestEnd + 1;
+    }
 
-    const minD = Math.min(...demands);
-    const maxD = Math.max(...demands);
+    // Compute total cost
+    let totalCost = 0;
+    for (const order of orders) {
+        totalCost += orderCost;
+        for (let k = order.period + 1; k <= order.coverTo; k++) {
+            totalCost += holdCost * demands[k] * (k - order.period);
+        }
+    }
+    const totalOrdered = orders.reduce((a, o) => a + o.quantity, 0);
+    return {
+        name: 'Silver-Meal',
+        totalCost: totalCost,
+        numOrders: orders.length,
+        orderMonths: orders.map(o => o.period),
+        avgLot: orders.length > 0 ? totalOrdered / orders.length : 0,
+        orders: orders
+    };
+}
 
-    let bestQ = minD;
-    let bestProfit = -Infinity;
-    const profitCurve = [];
-
-    for (let Q = minD; Q <= maxD; Q++) {
-        const p = expectedProfit(Q, demands, cost, price, salvage);
-        profitCurve.push({ Q, profit: p });
-        if (p > bestProfit) {
-            bestProfit = p;
-            bestQ = Q;
+// ── Wagner-Whitin Solver ──
+function solveWagnerWhitin(demands, orderCost, holdCost) {
+    const T = demands.length;
+    const cost = new Array(T + 1).fill(Infinity);
+    const last = new Array(T + 1).fill(-1);
+    cost[0] = 0;
+    for (let t = 1; t <= T; t++) {
+        for (let j = 1; j <= t; j++) {
+            let hc = 0;
+            for (let k = j; k <= t; k++) {
+                hc += holdCost * demands[k - 1] * (k - j);
+            }
+            // Only add ordering cost if there is demand in the period range
+            let hasDemand = false;
+            for (let k = j; k <= t; k++) { if (demands[k - 1] > 0) { hasDemand = true; break; } }
+            if (!hasDemand && j > 1) continue;
+            let c = cost[j - 1] + (hasDemand ? orderCost : 0) + hc;
+            if (c < cost[t]) { cost[t] = c; last[t] = j; }
         }
     }
 
+    // Backtrack
+    let orders = [];
+    let t = T;
+    while (t > 0) {
+        let j = last[t];
+        if (j < 0) break;
+        let qty = 0;
+        for (let k = j - 1; k < t; k++) qty += demands[k];
+        if (qty > 0) orders.push({ period: j - 1, quantity: qty, coverTo: t - 1 });
+        t = j - 1;
+    }
+    orders.reverse();
+
+    // Compute total cost
+    let totalCost = 0;
+    for (const order of orders) {
+        totalCost += orderCost;
+        for (let k = order.period + 1; k <= order.coverTo; k++) {
+            totalCost += holdCost * demands[k] * (k - order.period);
+        }
+    }
+    const totalOrdered = orders.reduce((a, o) => a + o.quantity, 0);
     return {
-        name: 'Grid Search',
-        qStar: bestQ,
-        criticalRatio,
-        profit: bestProfit,
-        waste: expectedWaste(bestQ, demands),
-        shortage: expectedShortage(bestQ, demands),
-        service: serviceLevel(bestQ, demands),
-        profitCurve
+        name: 'Wagner-Whitin',
+        totalCost: totalCost,
+        numOrders: orders.length,
+        orderMonths: orders.map(o => o.period),
+        avgLot: orders.length > 0 ? totalOrdered / orders.length : 0,
+        orders: orders
     };
 }
 
@@ -2556,8 +2608,8 @@ function solveGridSearch(params) {
 function resizeCanvas() {
     const wrap = canvas.parentElement;
     const dpr = window.devicePixelRatio || 1;
-    const w = wrap.clientWidth - 16; // padding
-    const h = 420;
+    const w = wrap.clientWidth - 16;
+    const h = 480;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     canvas.style.width = w + 'px';
@@ -2573,7 +2625,7 @@ function drawInitial() {
     ctx.fillStyle = '#8892B0';
     ctx.font = '14px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Click "Solve" to visualize the demand distribution and optimal order quantity.', w / 2, h / 2);
+    ctx.fillText('Click "Solve" to compare lot sizing strategies for the selected input.', w / 2, h / 2);
     ctx.textAlign = 'start';
 }
 
@@ -2581,62 +2633,30 @@ function drawResults(params, results) {
     const { w, h } = resizeCanvas();
     const { demands } = params;
 
-    // Layout: top half = histogram, bottom half = profit curve
-    const pad = { left: 70, right: 30, top: 30, bottom: 25, mid: 50 };
+    const pad = { left: 70, right: 30, top: 30, bottom: 25, mid: 55 };
     const chartH = (h - pad.top - pad.bottom - pad.mid) / 2;
     const chartW = w - pad.left - pad.right;
 
     ctx.fillStyle = '#112240';
     ctx.fillRect(0, 0, w, h);
 
-    // Find Q* (use first result)
-    const qStar = results[0].qStar;
+    // ── Top chart: Monthly demand bars with order markers ──
+    const maxDem = Math.max(...demands, 1);
+    const barW = chartW / 12 - 4;
+    const demY0 = pad.top;
+    const demY1 = pad.top + chartH;
 
-    // ── Histogram ──
-    const minD = Math.min(...demands);
-    const maxD = Math.max(...demands);
-    const range = maxD - minD;
-
-    // Sensible bin width: use Sturges' rule as a starting point
-    const numBins = Math.max(5, Math.min(15, Math.ceil(1 + 3.322 * Math.log10(demands.length))));
-    const binWidth = Math.max(1, Math.ceil(range / numBins));
-    const binStart = Math.floor(minD / binWidth) * binWidth;
-    const binEnd = Math.ceil((maxD + 1) / binWidth) * binWidth;
-    const bins = [];
-    for (let b = binStart; b < binEnd; b += binWidth) {
-        bins.push({ lo: b, hi: b + binWidth, count: 0 });
-    }
-    for (const d of demands) {
-        for (const bin of bins) {
-            if (d >= bin.lo && d < bin.hi) { bin.count++; break; }
-        }
-        // Edge case: max value falls exactly on last bin boundary
-        if (d === binEnd) { bins[bins.length - 1].count++; }
-    }
-
-    const maxCount = Math.max(...bins.map(b => b.count));
-    const histY0 = pad.top;
-    const histY1 = pad.top + chartH;
-
-    // Histogram title
+    // Title
     ctx.fillStyle = '#F8F9FA';
     ctx.font = '500 12px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Demand Distribution', pad.left, histY0 - 10);
+    ctx.fillText('Monthly Demand & Order Points', pad.left, demY0 - 10);
 
-    // Y axis
+    // Axes
     ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, histY0);
-    ctx.lineTo(pad.left, histY1);
-    ctx.stroke();
-
-    // X axis
-    ctx.beginPath();
-    ctx.moveTo(pad.left, histY1);
-    ctx.lineTo(pad.left + chartW, histY1);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.left, demY0); ctx.lineTo(pad.left, demY1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.left, demY1); ctx.lineTo(pad.left + chartW, demY1); ctx.stroke();
 
     // Y axis labels
     const yTicks = 4;
@@ -2644,217 +2664,137 @@ function drawResults(params, results) {
     ctx.font = '10px JetBrains Mono, monospace';
     ctx.textAlign = 'right';
     for (let i = 0; i <= yTicks; i++) {
-        const val = Math.round((maxCount / yTicks) * i);
-        const y = histY1 - (i / yTicks) * chartH;
+        const val = Math.round((maxDem / yTicks) * i);
+        const y = demY1 - (i / yTicks) * chartH;
         ctx.fillText(val.toString(), pad.left - 8, y + 3);
         if (i > 0) {
             ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
-            ctx.beginPath();
-            ctx.moveTo(pad.left, y);
-            ctx.lineTo(pad.left + chartW, y);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke();
         }
     }
 
     // Y axis title
     ctx.save();
-    ctx.translate(15, histY0 + chartH / 2);
+    ctx.translate(15, demY0 + chartH / 2);
     ctx.rotate(-Math.PI / 2);
     ctx.fillStyle = '#8892B0';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Frequency', 0, 0);
+    ctx.fillText('Demand (tons)', 0, 0);
     ctx.restore();
 
-    // Draw bars
-    const totalBinRange = binEnd - binStart;
-    const barGap = 2;
-
-    for (const bin of bins) {
-        const x = pad.left + ((bin.lo - binStart) / totalBinRange) * chartW;
-        const barW = (binWidth / totalBinRange) * chartW - barGap;
-        const barH = (bin.count / maxCount) * chartH;
-        const y = histY1 - barH;
-
-        // Check if Q* falls in this bin
-        const isOptimalBin = qStar >= bin.lo && qStar < bin.hi;
-
-        ctx.fillStyle = isOptimalBin ? 'rgba(100, 255, 218, 0.3)' : 'rgba(197, 160, 89, 0.25)';
+    // Draw demand bars
+    for (let i = 0; i < 12; i++) {
+        const x = pad.left + (i / 12) * chartW + 2;
+        const barH = (demands[i] / maxDem) * chartH;
+        const y = demY1 - barH;
+        ctx.fillStyle = 'rgba(197, 160, 89, 0.3)';
         ctx.fillRect(x, y, barW, barH);
-
-        ctx.strokeStyle = isOptimalBin ? 'rgba(100, 255, 218, 0.6)' : 'rgba(197, 160, 89, 0.5)';
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.5)';
         ctx.lineWidth = 1;
         ctx.strokeRect(x, y, barW, barH);
 
-        // Bin label
-        if (bins.length <= 15) {
-            ctx.fillStyle = '#8892B0';
-            ctx.font = '9px JetBrains Mono, monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(bin.lo.toString(), x + barW / 2, histY1 + 14);
+        // Month label
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(MONTHS[i], x + barW / 2, demY1 + 13);
+
+        // Demand value on top
+        if (demands[i] > 0) {
+            ctx.fillStyle = '#a8b2d1';
+            ctx.font = '8px JetBrains Mono, monospace';
+            ctx.fillText(demands[i].toFixed(0), x + barW / 2, y - 4);
         }
     }
 
-    // X axis label for histogram
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Daily Demand (units)', pad.left + chartW / 2, histY1 + 24);
+    // Draw order markers for each algorithm
+    const colors = ['#64ffda', '#7aa2f7', '#ff6b6b'];
+    const markerOffsets = [-6, 0, 6];
+    results.forEach((r, ri) => {
+        r.orderMonths.forEach(m => {
+            const x = pad.left + (m / 12) * chartW + 2 + barW / 2 + markerOffsets[ri];
+            ctx.beginPath();
+            // Triangle marker above bar
+            const markerY = demY1 - (demands[m] / maxDem) * chartH - 14;
+            ctx.moveTo(x, markerY + 8);
+            ctx.lineTo(x - 4, markerY);
+            ctx.lineTo(x + 4, markerY);
+            ctx.closePath();
+            ctx.fillStyle = colors[ri];
+            ctx.fill();
+        });
+    });
 
-    // Q* vertical line on histogram
-    const qStarX = pad.left + ((qStar - binStart) / totalBinRange) * chartW;
-    ctx.strokeStyle = '#64ffda';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(qStarX, histY0);
-    ctx.lineTo(qStarX, histY1);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Q* label
-    ctx.fillStyle = '#64ffda';
-    ctx.font = '600 11px JetBrains Mono, monospace';
+    // Legend
     ctx.textAlign = 'left';
-    ctx.fillText('Q* = ' + qStar, qStarX + 6, histY0 + 14);
+    let legendX = pad.left + chartW - 250;
+    results.forEach((r, ri) => {
+        ctx.fillStyle = colors[ri];
+        ctx.fillRect(legendX, demY0 - 6, 10, 10);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillText(r.name, legendX + 14, demY0 + 3);
+        legendX += ctx.measureText(r.name).width + 30;
+    });
 
-    // ── Profit Curve ──
-    const profitY0 = histY1 + pad.mid;
-    const profitY1 = profitY0 + chartH;
+    // ── Bottom chart: Cost comparison bar chart ──
+    const costY0 = demY1 + pad.mid;
+    const costY1 = costY0 + chartH;
 
-    // Find or compute profit curve
-    let profitCurve = null;
-    for (const r of results) {
-        if (r.profitCurve) { profitCurve = r.profitCurve; break; }
-    }
-    if (!profitCurve) {
-        // Compute it from scratch
-        profitCurve = [];
-        for (let Q = minD; Q <= maxD; Q++) {
-            profitCurve.push({ Q, profit: expectedProfit(Q, demands, params.cost, params.price, params.salvage) });
-        }
-    }
-
-    const profits = profitCurve.map(p => p.profit);
-    const minProfit = Math.min(...profits);
-    const maxProfit = Math.max(...profits);
-    const profitRange = maxProfit - minProfit || 1;
-
-    // Profit curve title
     ctx.fillStyle = '#F8F9FA';
     ctx.font = '500 12px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Expected Profit vs. Order Quantity', pad.left, profitY0 - 10);
+    ctx.fillText('Total Cost Comparison ($)', pad.left, costY0 - 10);
 
     // Axes
     ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
     ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, profitY0);
-    ctx.lineTo(pad.left, profitY1);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(pad.left, profitY1);
-    ctx.lineTo(pad.left + chartW, profitY1);
-    ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.left, costY0); ctx.lineTo(pad.left, costY1); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(pad.left, costY1); ctx.lineTo(pad.left + chartW, costY1); ctx.stroke();
 
-    // Y axis labels (profit)
+    const maxCost = Math.max(...results.map(r => r.totalCost), 1);
+    const minCost = Math.min(...results.map(r => r.totalCost));
+    const costBarW = Math.min(80, chartW / results.length - 20);
+    const totalGroupW = results.length * costBarW + (results.length - 1) * 10;
+    const startX = pad.left + (chartW - totalGroupW) / 2;
+
+    // Y axis labels for cost
     ctx.fillStyle = '#8892B0';
     ctx.font = '10px JetBrains Mono, monospace';
     ctx.textAlign = 'right';
     for (let i = 0; i <= yTicks; i++) {
-        const val = minProfit + (profitRange / yTicks) * i;
-        const y = profitY1 - (i / yTicks) * chartH;
-        ctx.fillText('$' + val.toFixed(0), pad.left - 8, y + 3);
+        const val = Math.round((maxCost * 1.1 / yTicks) * i);
+        const y = costY1 - (i / yTicks) * chartH;
+        ctx.fillText('$' + val.toLocaleString(), pad.left - 8, y + 3);
         if (i > 0) {
             ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
-            ctx.beginPath();
-            ctx.moveTo(pad.left, y);
-            ctx.lineTo(pad.left + chartW, y);
-            ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + chartW, y); ctx.stroke();
         }
     }
 
-    // Y axis title
-    ctx.save();
-    ctx.translate(15, profitY0 + chartH / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('E[Profit] ($)', 0, 0);
-    ctx.restore();
+    results.forEach((r, ri) => {
+        const x = startX + ri * (costBarW + 10);
+        const barH = (r.totalCost / (maxCost * 1.1)) * chartH;
+        const y = costY1 - barH;
 
-    // X axis labels (profit)
-    const xTicks = 5;
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '9px JetBrains Mono, monospace';
-    ctx.textAlign = 'center';
-    for (let i = 0; i <= xTicks; i++) {
-        const val = Math.round(minD + (range / xTicks) * i);
-        const x = pad.left + (i / xTicks) * chartW;
-        ctx.fillText(val.toString(), x, profitY1 + 14);
-    }
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillText('Order Quantity (Q)', pad.left + chartW / 2, profitY1 + 24);
+        ctx.fillStyle = r.totalCost === minCost ? 'rgba(100, 255, 218, 0.4)' : colors[ri] + '40';
+        ctx.fillRect(x, y, costBarW, barH);
+        ctx.strokeStyle = r.totalCost === minCost ? 'rgba(100, 255, 218, 0.7)' : colors[ri];
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(x, y, costBarW, barH);
 
-    // Draw profit curve line
-    ctx.beginPath();
-    ctx.strokeStyle = '#C5A059';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < profitCurve.length; i++) {
-        const pc = profitCurve[i];
-        const x = pad.left + ((pc.Q - minD) / range) * chartW;
-        const y = profitY1 - ((pc.profit - minProfit) / profitRange) * chartH;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-    }
-    ctx.stroke();
+        // Cost label on bar
+        ctx.fillStyle = r.totalCost === minCost ? '#64ffda' : '#a8b2d1';
+        ctx.font = '600 11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('$' + r.totalCost.toFixed(0), x + costBarW / 2, y - 6);
 
-    // Fill area under curve
-    const lastPC = profitCurve[profitCurve.length - 1];
-    const firstPC = profitCurve[0];
-    ctx.lineTo(pad.left + ((lastPC.Q - minD) / range) * chartW, profitY1);
-    ctx.lineTo(pad.left + ((firstPC.Q - minD) / range) * chartW, profitY1);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(197, 160, 89, 0.08)';
-    ctx.fill();
-
-    // Q* marker on profit curve
-    const qStarProfitX = pad.left + ((qStar - minD) / range) * chartW;
-    const qStarProfit = expectedProfit(qStar, demands, params.cost, params.price, params.salvage);
-    const qStarProfitY = profitY1 - ((qStarProfit - minProfit) / profitRange) * chartH;
-
-    // Vertical dashed line
-    ctx.strokeStyle = '#64ffda';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(qStarProfitX, profitY0);
-    ctx.lineTo(qStarProfitX, profitY1);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Q* dot
-    ctx.beginPath();
-    ctx.arc(qStarProfitX, qStarProfitY, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#64ffda';
-    ctx.fill();
-
-    // Q* label on profit curve
-    ctx.fillStyle = '#64ffda';
-    ctx.font = '600 11px JetBrains Mono, monospace';
-    ctx.textAlign = 'left';
-    const labelText = 'Q* = ' + qStar + '  ($' + qStarProfit.toFixed(2) + ')';
-    const labelX = qStarProfitX + 8;
-    // If label would go off right edge, place on left
-    if (labelX + ctx.measureText(labelText).width + 10 > w) {
-        ctx.textAlign = 'right';
-        ctx.fillText(labelText, qStarProfitX - 8, qStarProfitY - 10);
-    } else {
-        ctx.fillText(labelText, labelX, qStarProfitY - 10);
-    }
+        // Algorithm name below
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.fillText(r.name, x + costBarW / 2, costY1 + 14);
+    });
 
     ctx.textAlign = 'start';
 }
@@ -2864,17 +2804,18 @@ function toggleAlgo(el) { el.classList.toggle('selected'); }
 
 // ── Reset ──
 function resetDefaults() {
-    document.getElementById('input-cost').value = DEFAULTS.cost;
-    document.getElementById('input-price').value = DEFAULTS.price;
-    document.getElementById('input-salvage').value = DEFAULTS.salvage;
-    document.getElementById('input-demands').value = DEFAULTS.demands;
+    document.getElementById('input-selector').value = 'cattle_feed';
+    loadInput();
     drawInitial();
     document.getElementById('results-table').querySelector('tbody').innerHTML = '';
-    document.getElementById('detail-output').textContent = 'Select algorithms and click Solve to optimize the order quantity.';
+    document.getElementById('detail-output').textContent = 'Select an agricultural input, choose algorithms, and click Solve to compare procurement strategies.';
     document.getElementById('solver-status').textContent = '';
 }
 
 // ── Solve ──
+let lastResults = null;
+let lastParams = null;
+
 function solveAll() {
     const params = parseInputs();
     const err = validateInputs(params);
@@ -2892,62 +2833,84 @@ function solveAll() {
 
     const results = [];
     for (const key of selectedAlgos) {
-        const t0 = performance.now();
         let result;
-        if (key === 'fractile') {
-            result = solveCriticalFractile(params);
-        } else if (key === 'grid') {
-            result = solveGridSearch(params);
+        if (key === 'eoq') {
+            result = solveEOQ(params.demands, params.orderingCost, params.holdingCost);
+        } else if (key === 'silver-meal') {
+            result = solveSilverMeal(params.demands, params.orderingCost, params.holdingCost);
+        } else if (key === 'wagner-whitin') {
+            result = solveWagnerWhitin(params.demands, params.orderingCost, params.holdingCost);
         }
-        result.time = performance.now() - t0;
-        results.push(result);
+        if (result) results.push(result);
     }
+
+    lastResults = results;
+    lastParams = params;
 
     // Populate results table
     const tbody = document.getElementById('results-table').querySelector('tbody');
     tbody.innerHTML = '';
+    const minCost = Math.min(...results.map(r => r.totalCost));
     for (const r of results) {
         const tr = document.createElement('tr');
+        const isBest = r.totalCost === minCost && results.length > 1;
         tr.innerHTML = `
             <td class="algo-label">${r.name}</td>
-            <td class="best-val">${r.qStar}</td>
-            <td>${r.criticalRatio.toFixed(4)}</td>
-            <td>$${r.profit.toFixed(2)}</td>
-            <td>${r.waste.toFixed(1)}</td>
-            <td>${r.shortage.toFixed(1)}</td>
-            <td>${(r.service * 100).toFixed(1)}%</td>
+            <td class="${isBest ? 'best-val' : ''}">$${r.totalCost.toFixed(2)}</td>
+            <td>${r.numOrders}</td>
+            <td>${r.orderMonths.map(m => MONTHS[m]).join(', ')}</td>
+            <td>${r.avgLot.toFixed(1)}</td>
         `;
         tbody.appendChild(tr);
     }
 
     // Detail output
     const lines = [];
-    const { cost, price, salvage, demands } = params;
-    const cu = price - cost;
-    const co = cost - salvage;
-    lines.push(`Cost Parameters: cost=$${cost.toFixed(2)}, price=$${price.toFixed(2)}, salvage=$${salvage.toFixed(2)}`);
-    lines.push(`Underage cost (c_u) = $${price.toFixed(2)} - $${cost.toFixed(2)} = $${cu.toFixed(2)}`);
-    lines.push(`Overage cost (c_o) = $${cost.toFixed(2)} - $${salvage.toFixed(2)} = $${co.toFixed(2)}`);
-    lines.push(`Critical ratio = ${cu.toFixed(2)} / (${cu.toFixed(2)} + ${co.toFixed(2)}) = ${(cu / (cu + co)).toFixed(4)}`);
-    lines.push(`Scenarios: ${demands.length} historical demand observations`);
-    lines.push(`Demand range: [${Math.min(...demands)}, ${Math.max(...demands)}]`);
+    const inputName = INPUTS[document.getElementById('input-selector').value]?.name || 'Custom';
+    const totalDemand = params.demands.reduce((a, b) => a + b, 0);
+    lines.push(`Input: ${inputName}`);
+    lines.push(`Ordering cost: $${params.orderingCost.toFixed(0)}/order`);
+    lines.push(`Holding cost: $${params.holdingCost.toFixed(2)}/ton/month`);
+    lines.push(`Total annual demand: ${totalDemand.toFixed(0)} tons`);
+    lines.push(`Monthly demand: ${params.demands.map((d, i) => MONTHS[i] + '=' + d.toFixed(0)).join(', ')}`);
     lines.push('');
     for (const r of results) {
         lines.push(`${r.name}:`);
-        lines.push(`  Optimal Q* = ${r.qStar} units`);
-        lines.push(`  E[Profit]  = $${r.profit.toFixed(2)} per day`);
-        lines.push(`  E[Waste]   = ${r.waste.toFixed(1)} units/day  (unsold inventory)`);
-        lines.push(`  E[Shortage]= ${r.shortage.toFixed(1)} units/day  (unmet demand)`);
-        lines.push(`  Service level = ${(r.service * 100).toFixed(1)}%  (P(demand fully met))`);
+        lines.push(`  Total cost:   $${r.totalCost.toFixed(2)}`);
+        lines.push(`  Num orders:   ${r.numOrders}`);
+        lines.push(`  Order months: ${r.orderMonths.map(m => MONTHS[m]).join(', ')}`);
+        lines.push(`  Avg lot size: ${r.avgLot.toFixed(1)} tons`);
+        if (r.orders.length > 0) {
+            lines.push(`  Order schedule:`);
+            r.orders.forEach(o => {
+                const coverStr = o.coverTo !== undefined ? ` (covers ${MONTHS[o.period]}-${MONTHS[o.coverTo]})` : '';
+                lines.push(`    ${MONTHS[o.period]}: ${o.quantity.toFixed(1)} tons${coverStr}`);
+            });
+        }
         lines.push('');
     }
+
+    // Cost comparison
+    if (results.length > 1) {
+        const eoqResult = results.find(r => r.name === 'EOQ');
+        if (eoqResult && eoqResult.totalCost > 0) {
+            lines.push('Cost savings vs EOQ:');
+            for (const r of results) {
+                if (r.name === 'EOQ') continue;
+                const saving = ((eoqResult.totalCost - r.totalCost) / eoqResult.totalCost * 100);
+                lines.push(`  ${r.name}: ${saving >= 0 ? '-' : '+'}${Math.abs(saving).toFixed(1)}%`);
+            }
+        }
+    }
+
     document.getElementById('detail-output').textContent = lines.join('\n');
 
     // Draw visualization
     drawResults(params, results);
 
+    const bestAlgo = results.reduce((a, b) => a.totalCost <= b.totalCost ? a : b);
     document.getElementById('solver-status').textContent =
-        `Solved with ${results.length} algorithm${results.length > 1 ? 's' : ''}. Both methods yield the same optimal order quantity.`;
+        `Solved with ${results.length} algorithm${results.length > 1 ? 's' : ''}. ${bestAlgo.name} achieves the lowest total cost of $${bestAlgo.totalCost.toFixed(2)}.`;
 }
 
 // ── Scroll Animations ──
@@ -2957,21 +2920,10 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
+loadInput();
 window.addEventListener('resize', () => {
-    if (document.getElementById('results-table').querySelector('tbody').innerHTML) {
-        // Re-render if results exist
-        const params = parseInputs();
-        const err = validateInputs(params);
-        if (!err) {
-            const results = [];
-            const selectedAlgos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected'))
-                .map(c => c.dataset.algo);
-            for (const key of selectedAlgos) {
-                if (key === 'fractile') results.push(solveCriticalFractile(params));
-                else if (key === 'grid') results.push(solveGridSearch(params));
-            }
-            if (results.length > 0) drawResults(params, results);
-        }
+    if (lastResults && lastParams) {
+        drawResults(lastParams, lastResults);
     } else {
         drawInitial();
     }
@@ -3086,6 +3038,12 @@ drawInitial();
         { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'applications/construction-project.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Manufacturing Balancing', subtitle: 'Parallel Machine', icon: 'fa-cogs', url: 'applications/manufacturing-balancing.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Cutting Stock', subtitle: 'Fabric & Metal Rolls', icon: 'fa-cut', url: 'applications/cutting-stock.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Crop Harvest Planning', subtitle: 'Newsvendor \u00b7 Agriculture', icon: 'fa-seedling', url: 'applications/crop-harvest.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Feed Procurement', subtitle: 'EOQ \u00b7 Silver-Meal \u00b7 Wagner-Whitin', icon: 'fa-wheat-awn', url: 'applications/feed-procurement.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Farm Delivery Routing', subtitle: 'CVRP \u00b7 Agriculture', icon: 'fa-tractor', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Irrigation Network', subtitle: 'MST \u00b7 Max Flow \u00b7 Shortest Path', icon: 'fa-water', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Crop Rotation Planning', subtitle: 'LP \u00b7 Multi-Objective', icon: 'fa-leaf', url: 'applications/crop-rotation.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Cold Storage Packing', subtitle: 'Bin Packing \u00b7 Cutting Stock', icon: 'fa-snowflake', url: 'applications/cold-storage.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
     ];
 
     // Determine base path from current page location
