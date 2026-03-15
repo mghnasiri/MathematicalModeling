@@ -2169,36 +2169,52 @@
             </div>
             <div class="solver-body">
                 <!-- Controls Row -->
-                <div class="solver-row">
+                <div class="solver-section-label">Instance Parameters</div>
+                <div class="solver-row" style="grid-template-columns: 1fr 1fr 1fr;">
                     <div>
-                        <div class="solver-section-label">Delivery Network</div>
                         <div class="solver-controls">
-                            <button class="solver-btn" onclick="loadPreset('8')" id="btn-preset-8">8 Customers</button>
-                            <button class="solver-btn" onclick="loadPreset('12')" id="btn-preset-12">12 Customers</button>
-                            <button class="solver-btn active" onclick="loadPreset('15')" id="btn-preset-15">15 Customers</button>
-                        </div>
-                        <div class="solver-controls">
-                            <label>Truck Capacity (kg):</label>
-                            <input type="range" class="solver-slider" id="capacity-slider" min="200" max="800" value="500" step="50" oninput="updateCapacity(this.value)">
-                            <span class="size-display" id="capacity-display">500</span>
+                            <label>Number of customers</label>
+                            <input type="number" id="input-customers" class="solver-input" value="12" min="5" max="20" step="1">
                         </div>
                     </div>
                     <div>
-                        <div class="solver-section-label">Algorithms</div>
-                        <div class="algo-select" id="algo-select">
-                            <span class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">Clarke-Wright Savings <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">Sweep <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">Nearest Neighbor <span class="chip-type">(H)</span></span>
-                        </div>
                         <div class="solver-controls">
-                            <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-play"></i> Optimize Routes</button>
+                            <label>Vehicle capacity (kg)</label>
+                            <input type="number" id="input-capacity" class="solver-input" value="500" min="100" max="2000" step="50">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-controls">
+                            <label>Random seed</label>
+                            <input type="number" id="input-seed" class="solver-input" value="42" min="1" max="9999" step="1">
                         </div>
                     </div>
                 </div>
 
+                <!-- Algorithm Selection -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algo-select">
+                    <div class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">
+                        Clarke-Wright Savings <span class="chip-type" style="color:var(--green);">heuristic</span>
+                    </div>
+                    <div class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">
+                        Sweep <span class="chip-type" style="color:var(--green);">heuristic</span>
+                    </div>
+                    <div class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">
+                        Nearest Neighbor <span class="chip-type" style="color:var(--green);">heuristic</span>
+                    </div>
+                </div>
+
+                <!-- Solve Button -->
+                <div style="text-align: center; margin-bottom: 1.5rem;">
+                    <button class="solver-btn primary" onclick="solveAll()">
+                        <i class="fas fa-play"></i> &nbsp; Solve
+                    </button>
+                </div>
+
                 <!-- Map Canvas -->
                 <div class="solver-canvas-wrap">
-                    <canvas id="map-canvas" width="600" height="500"></canvas>
+                    <canvas id="map-canvas" height="420"></canvas>
                 </div>
 
                 <!-- Results -->
@@ -2208,19 +2224,19 @@
                         <thead>
                             <tr>
                                 <th>Algorithm</th>
-                                <th>Total Distance</th>
-                                <th># Vehicles</th>
+                                <th>Total Distance (km)</th>
+                                <th>Num Vehicles</th>
+                                <th>Avg Route Length</th>
                                 <th>Max Route Load</th>
-                                <th>Solve Time</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="5" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select a scenario and click Optimize Routes</td></tr>
+                            <tr><td colspan="5" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select algorithms and click Solve to optimize delivery routes.</td></tr>
                         </tbody>
                     </table>
                 </div>
-                <div class="detail-output" id="route-output">Routes will appear here after optimization.</div>
-                <p class="solver-status" id="solver-status">Ready. Choose a scenario and click Optimize Routes.</p>
+                <div class="detail-output" id="detail-output">Select algorithms and click Solve to optimize delivery routes.</div>
+                <div class="solver-status" id="solver-status"></div>
             </div>
         </div>
     </div>
@@ -2239,12 +2255,11 @@
                 <h3>Clarke-Wright Savings</h3>
                 <span class="algo-badge">Heuristic &mdash; O(n&sup2; log n)</span>
                 <p>
-                    The industry-standard heuristic for vehicle routing. Starts with individual routes
-                    (depot &rarr; customer &rarr; depot) and iteratively merges route pairs based on
-                    a <em>savings</em> measure: <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">s(i,j) = d(0,i) + d(0,j) &minus; d(i,j)</span>.
-                    Routes are merged in order of decreasing savings, provided the combined load does not
-                    exceed vehicle capacity. The savings value captures how much distance is saved by
-                    visiting customers <em>i</em> and <em>j</em> on the same route instead of separate routes.
+                    The classic route-merging heuristic. Starts with individual shuttle routes
+                    (depot &rarr; customer &rarr; depot) and computes savings
+                    <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">s(i,j) = d(0,i) + d(0,j) &minus; d(i,j)</span>
+                    for each customer pair. Sorts savings in descending order and greedily merges
+                    route pairs by largest savings, respecting vehicle capacity.
                 </p>
                 <div class="algo-formula">
                     s(i,j) = d(0,i) + d(0,j) &minus; d(i,j)<br>
@@ -2257,11 +2272,10 @@
                 <h3>Sweep Algorithm</h3>
                 <span class="algo-badge">Heuristic &mdash; O(n log n)</span>
                 <p>
-                    A geometric approach that sorts customers by their polar angle from the depot and
-                    sweeps a ray around, filling each route until the truck capacity is reached. When
-                    adding the next customer would exceed capacity, a new route is started. Very fast
-                    and effective when customers are geographically clustered, which is common in
-                    agricultural delivery networks.
+                    Angular sweep partitioning. Sorts customers by polar angle from the depot and
+                    sweeps a ray around, adding customers to the current route until the truck
+                    capacity is reached. When adding the next customer would exceed capacity,
+                    a new route is started.
                 </p>
                 <div class="algo-formula">
                     Sort customers by atan2(y &minus; y<sub>0</sub>, x &minus; x<sub>0</sub>)<br>
@@ -2274,11 +2288,9 @@
                 <h3>Nearest Neighbor</h3>
                 <span class="algo-badge">Heuristic &mdash; O(n&sup2;)</span>
                 <p>
-                    A greedy construction heuristic that builds routes by always visiting the nearest
-                    unvisited customer that fits within the remaining truck capacity. When no feasible
-                    customer can be added, the truck returns to the depot and a new route begins. Simple
-                    and intuitive, but can produce suboptimal routes due to myopic decisions &mdash;
-                    particularly at the end when only distant customers remain unserved.
+                    Greedy nearest unvisited. Builds routes by always visiting the closest unvisited
+                    customer that fits within the remaining truck capacity. When no feasible customer
+                    can be added, the truck returns to the depot and a new route begins.
                 </p>
                 <div class="algo-formula">
                     Start at depot<br>
@@ -2294,19 +2306,19 @@
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Beyond <span>Basic CVRP</span></h2>
-            <p>Real-world agricultural logistics challenges</p>
+            <h2>Why It's <span>More Complex</span></h2>
+            <p>Real-world extensions beyond the basic model</p>
         </div>
         <div class="content-block fade-in">
             <div class="complexity-box">
-                <h3><i class="fas fa-layer-group"></i> Production-Grade Challenges</h3>
+                <h3><i class="fas fa-layer-group"></i> Real-World Extensions</h3>
                 <ul class="complexity-list">
-                    <li><strong>Time windows</strong> &mdash; restaurants need morning delivery before lunch service; markets require pre-opening restocking, creating arrival time constraints</li>
-                    <li><strong>Heterogeneous fleet</strong> &mdash; small refrigerated vans for urban restaurants, larger trucks for wholesale markets, each with different capacities and operating costs</li>
-                    <li><strong>Stochastic demands</strong> &mdash; daily produce orders fluctuate with weather, season, and market conditions; routes must be robust to demand uncertainty</li>
-                    <li><strong>Backhauls</strong> &mdash; trucks returning to the depot may collect empty crates, compost, or supplies from delivery points, adding pickup constraints</li>
-                    <li><strong>Multiple depots</strong> &mdash; larger cooperatives operate from several distribution centers (cold storage, processing plants), requiring multi-depot routing</li>
-                    <li><strong>Road network constraints</strong> &mdash; seasonal road conditions, bridge weight limits, and urban delivery zones restrict vehicle access in rural Quebec</li>
+                    <li><strong>Time windows for restaurant deliveries</strong> &mdash; restaurants need morning delivery before lunch service; markets require pre-opening restocking, creating arrival time constraints (VRPTW)</li>
+                    <li><strong>Mixed fleet (different truck sizes)</strong> &mdash; small refrigerated vans for urban restaurants, larger trucks for wholesale markets, each with different capacities and operating costs</li>
+                    <li><strong>Multiple depots</strong> &mdash; larger farms operate from several distribution centers (cold storage, processing plants), requiring multi-depot routing</li>
+                    <li><strong>Perishable goods temperature constraints</strong> &mdash; different produce types require different temperature ranges; route duration limits ensure cold-chain integrity</li>
+                    <li><strong>Road network constraints (not Euclidean)</strong> &mdash; actual road distances, seasonal road conditions, bridge weight limits, and urban delivery zones restrict vehicle access</li>
+                    <li><strong>Backhaul pickups (returning empty containers)</strong> &mdash; trucks returning to the depot may collect empty crates, compost, or supplies from delivery points, adding pickup constraints</li>
                 </ul>
             </div>
         </div>
@@ -2329,9 +2341,9 @@
                     &mdash; The foundational savings-based heuristic for vehicle routing, still widely used in practice.
                 </li>
                 <li>
-                    <span class="ref-author">Toth, P. &amp; Vigo, D.</span> (2014).
-                    <span class="ref-title">"Vehicle Routing: Problems, Methods, and Applications."</span>
-                    <span class="ref-journal">MOS-SIAM Series on Optimization, 2nd Edition.</span>
+                    <span class="ref-author">Toth, P. &amp; Vigo, D.</span> (2002).
+                    <span class="ref-title">"The Vehicle Routing Problem."</span>
+                    <span class="ref-journal">SIAM Monographs.</span>
                     &mdash; Comprehensive reference covering CVRP formulations, exact methods, heuristics, and real-world applications.
                 </li>
             </ul>
@@ -2345,9 +2357,10 @@
         <div class="cta-panel fade-in">
             <h3>Need to optimize delivery routes?</h3>
             <p>
-                From farm-to-table logistics to large-scale distribution networks,
+                From farm delivery logistics to large-scale distribution networks,
                 operations research provides the mathematical framework for efficient
-                vehicle routing under real-world constraints.
+                vehicle routing that minimizes costs while respecting capacity, time,
+                and perishability constraints.
             </p>
             <div class="cta-links">
                 <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank">
@@ -2363,9 +2376,10 @@
     <div class="container">
         <div class="disclaimer-box" style="max-width: 800px; margin: 0 auto;">
             <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
-            Data shown is illustrative. Delivery points, demands, and distances are
+            Data shown is illustrative. Customer locations, demands, and distances are
             simplified examples intended for educational purposes. Real agricultural
-            logistics involve additional operational constraints not captured in this demonstration.
+            delivery operations involve road networks, time windows, perishability
+            constraints, and fleet management considerations not captured in this demonstration.
         </div>
     </div>
 </section>
@@ -2386,53 +2400,95 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// Farm Delivery Route Planner — CVRP Solver
-// ═══════════════════════════════════════════════════════════════
-
-const CW = 600, CH = 500;
-
-// ── Delivery Point Data ──
-const DELIVERY_POINTS = [
-    { name: "Depot", x: 300, y: 250, demand: 0, type: "depot" },
-    { name: "Restaurant Le Terroir", x: 180, y: 120, demand: 45 },
-    { name: "March\u00e9 du Vieux-Port", x: 420, y: 100, demand: 80 },
-    { name: "IGA Charlesbourg", x: 150, y: 300, demand: 60 },
-    { name: "Metro Beauport", x: 450, y: 200, demand: 55 },
-    { name: "Bistro Saint-Jean", x: 100, y: 180, demand: 35 },
-    { name: "Coop Limoilou", x: 350, y: 150, demand: 70 },
-    { name: "Fromagerie \u00cele d'Orl\u00e9ans", x: 500, y: 300, demand: 40 },
-    { name: "Restaurant Batifol", x: 220, y: 380, demand: 50 },
-    { name: "March\u00e9 Sainte-Foy", x: 80, y: 350, demand: 65 },
-    { name: "\u00c9picerie Fine", x: 380, y: 380, demand: 30 },
-    { name: "Hotel Ch\u00e2teau", x: 270, y: 80, demand: 75 },
-    { name: "Caf\u00e9 Temporel", x: 480, y: 400, demand: 25 },
-    { name: "Cantine Mobile", x: 150, y: 450, demand: 40 },
-    { name: "Maison de la Ferme", x: 400, y: 450, demand: 55 },
-    { name: "Boucherie B\u00e9gin", x: 50, y: 250, demand: 50 }
-];
-
-const VEHICLE_CAPACITY_DEFAULT = 500;
-
-// Preset indices (0 = depot always included)
-const PRESET_8  = [0, 1, 2, 4, 6, 8, 9, 11, 15];
-const PRESET_12 = [0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 14, 15];
-const PRESET_15 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15];
-
-// ── State ──
-let activeStops = [];
-let capacity = VEHICLE_CAPACITY_DEFAULT;
-let dist = [];
-let demands = [];
-let currentResults = [];
+// ══════════════════════════════════════════════════════════════
+//  Farm-to-Market Delivery Routing — CVRP Solver
+// ══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('map-canvas');
 const ctx = canvas.getContext('2d');
+
+// Default parameters
+const DEFAULTS = {
+    customers: 12,
+    capacity: 500,
+    seed: 42
+};
 
 const ROUTE_COLORS = [
     '#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc',
     '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c'
 ];
+
+// ── Seeded PRNG (mulberry32) ──
+function mulberry32(seed) {
+    return function() {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = t + Math.imul(t ^ (t >>> 7), 61 | t) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+// ── State ──
+let activeStops = [];
+let capacity = DEFAULTS.capacity;
+let dist = [];
+let demands = [];
+let currentResults = [];
+
+// ── Random customer generation ──
+function generateCustomers(numCustomers, seed) {
+    const rng = mulberry32(seed);
+    const pad = 40;
+    const { w, h } = getCanvasSize();
+
+    // Depot at center
+    const depot = { name: 'Farm Depot', x: w / 2, y: h / 2, demand: 0 };
+    const stops = [depot];
+
+    for (let i = 0; i < numCustomers; i++) {
+        stops.push({
+            name: 'C' + (i + 1),
+            x: pad + rng() * (w - 2 * pad),
+            y: pad + rng() * (h - 2 * pad),
+            demand: Math.round(20 + rng() * 100) // 20-120 kg
+        });
+    }
+    return stops;
+}
+
+// ── Helpers ──
+function parseInputs() {
+    const customers = parseInt(document.getElementById('input-customers').value);
+    const cap = parseInt(document.getElementById('input-capacity').value);
+    const seed = parseInt(document.getElementById('input-seed').value);
+    return { customers, capacity: cap, seed };
+}
+
+function validateInputs(p) {
+    if (isNaN(p.customers) || p.customers < 5 || p.customers > 20) return 'Number of customers must be between 5 and 20.';
+    if (isNaN(p.capacity) || p.capacity < 100) return 'Vehicle capacity must be at least 100 kg.';
+    if (isNaN(p.seed) || p.seed < 1) return 'Seed must be a positive integer.';
+    return null;
+}
+
+function getCanvasSize() {
+    const wrap = canvas.parentElement;
+    const dpr = window.devicePixelRatio || 1;
+    const w = wrap.clientWidth - 16;
+    const h = 420;
+    return { w, h, dpr };
+}
+
+function resizeCanvas() {
+    const { w, h, dpr } = getCanvasSize();
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w, h };
+}
 
 // ── Distance Helpers ──
 function euclidean(a, b) {
@@ -2451,49 +2507,58 @@ function buildDistMatrix() {
     demands = activeStops.map(s => s.demand);
 }
 
-// ── Map Drawing ──
-function drawMap() {
+function routeDist(route) {
+    if (route.length === 0) return 0;
+    let d = dist[0][route[0]];
+    for (let i = 0; i < route.length - 1; i++) d += dist[route[i]][route[i + 1]];
+    d += dist[route[route.length - 1]][0];
+    return d;
+}
+
+function totalDist(routes) {
+    return routes.reduce((s, r) => s + routeDist(r), 0);
+}
+
+function routeLoad(route) {
+    return route.reduce((s, c) => s + demands[c], 0);
+}
+
+// ── Drawing ──
+function drawInitial() {
+    const { w, h } = resizeCanvas();
     ctx.fillStyle = '#112240';
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Background grid
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.04)';
-    ctx.lineWidth = 1;
-    for (let x = 50; x < CW; x += 50) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CH); ctx.stroke();
-    }
-    for (let y = 50; y < CH; y += 50) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CW, y); ctx.stroke();
-    }
-
-    // Rural landscape hints
-    ctx.fillStyle = 'rgba(100, 255, 218, 0.03)';
-    ctx.beginPath();
-    ctx.ellipse(300, 250, 260, 220, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Label
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(197, 160, 89, 0.2)';
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#8892B0';
+    ctx.font = '14px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Quebec City Region', CW / 2, CH - 15);
+    ctx.fillText('Click "Solve" to generate customers and optimize delivery routes.', w / 2, h / 2);
     ctx.textAlign = 'start';
 }
 
 function drawStops() {
-    drawMap();
+    const { w, h } = resizeCanvas();
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, w, h);
+
+    // Background grid
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 50; x < w; x += 50) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
+    }
+    for (let y = 50; y < h; y += 50) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
+    }
 
     for (let i = 0; i < activeStops.length; i++) {
         const s = activeStops[i];
         if (i === 0) {
-            // Depot: gold square
+            // Depot: gold star
+            ctx.save();
+            ctx.translate(s.x, s.y);
             ctx.fillStyle = '#C5A059';
-            ctx.fillRect(s.x - 8, s.y - 8, 16, 16);
-            ctx.fillStyle = '#0A192F';
-            ctx.font = 'bold 10px JetBrains Mono, monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('D', s.x, s.y + 1);
+            drawStar(ctx, 0, 0, 5, 10, 5);
+            ctx.restore();
 
             ctx.fillStyle = '#C5A059';
             ctx.font = '10px Inter, sans-serif';
@@ -2501,54 +2566,37 @@ function drawStops() {
             ctx.fillText('Farm Depot', s.x + 14, s.y + 4);
         } else {
             // Customer: circle sized by demand
-            const radius = Math.max(4, Math.min(8, s.demand / 10));
-            // Color by demand level
-            let color;
-            if (s.demand <= 35) color = '#64ffda';
-            else if (s.demand <= 55) color = '#7aa2f7';
-            else if (s.demand <= 70) color = '#C5A059';
-            else color = '#ff6b6b';
-
+            const radius = Math.max(4, Math.min(10, s.demand / 12));
             ctx.beginPath();
             ctx.arc(s.x, s.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = color;
+            ctx.fillStyle = '#7aa2f7';
             ctx.fill();
 
             // Label
-            ctx.fillStyle = 'rgba(248,249,250,0.75)';
+            ctx.fillStyle = 'rgba(248,249,250,0.7)';
             ctx.font = '9px Inter, sans-serif';
             ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
             const label = s.name + ' (' + s.demand + ' kg)';
-            const labelX = (s.x > CW * 0.6) ? s.x - ctx.measureText(label).width - 10 : s.x + 10;
-            ctx.fillText(label, labelX, s.y);
+            ctx.fillText(label, s.x + radius + 4, s.y + 3);
         }
     }
     ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
+}
 
-    // Legend
-    const legendX = 15, legendY = 15;
-    ctx.font = '9px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(248,249,250,0.5)';
-    ctx.fillText('Demand:', legendX, legendY);
-
-    const legendItems = [
-        { color: '#64ffda', label: '\u226435 kg' },
-        { color: '#7aa2f7', label: '36-55 kg' },
-        { color: '#C5A059', label: '56-70 kg' },
-        { color: '#ff6b6b', label: '>70 kg' }
-    ];
-    let lx = legendX + 50;
-    legendItems.forEach(item => {
-        ctx.beginPath();
-        ctx.arc(lx, legendY - 3, 4, 0, Math.PI * 2);
-        ctx.fillStyle = item.color;
-        ctx.fill();
-        ctx.fillStyle = 'rgba(248,249,250,0.5)';
-        ctx.fillText(item.label, lx + 7, legendY);
-        lx += ctx.measureText(item.label).width + 22;
-    });
+function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+    let rot = Math.PI / 2 * 3;
+    const step = Math.PI / spikes;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerR);
+    for (let i = 0; i < spikes; i++) {
+        ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+        rot += step;
+        ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+        rot += step;
+    }
+    ctx.lineTo(cx, cy - outerR);
+    ctx.closePath();
+    ctx.fill();
 }
 
 function drawRoutes(routes) {
@@ -2579,67 +2627,25 @@ function drawRoutes(routes) {
     });
 }
 
-// ── Preset Loading ──
-function loadPreset(size) {
-    const indices = size === '8' ? PRESET_8 : (size === '12' ? PRESET_12 : PRESET_15);
-    activeStops = indices.map(i => {
-        const dp = DELIVERY_POINTS[i];
-        return { name: dp.name, x: dp.x, y: dp.y, demand: dp.demand, idx: i };
-    });
-
-    document.getElementById('btn-preset-8').classList.toggle('active', size === '8');
-    document.getElementById('btn-preset-12').classList.toggle('active', size === '12');
-    document.getElementById('btn-preset-15').classList.toggle('active', size === '15');
-
-    buildDistMatrix();
-    drawStops();
-    clearResults();
-}
-
-function updateCapacity(val) {
-    capacity = parseInt(val);
-    document.getElementById('capacity-display').textContent = val;
-}
-
-function clearResults() {
-    currentResults = [];
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select a scenario and click Optimize Routes</td></tr>';
-    document.getElementById('route-output').textContent = 'Routes will appear here after optimization.';
-    document.getElementById('solver-status').textContent = 'Ready.';
-}
-
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // CVRP Algorithms
-// ═══════════════════════════════════════════════════════════════
-
-function routeDist(route) {
-    if (route.length === 0) return 0;
-    let d = dist[0][route[0]];
-    for (let i = 0; i < route.length - 1; i++) d += dist[route[i]][route[i + 1]];
-    d += dist[route[route.length - 1]][0];
-    return d;
-}
-
-function totalDist(routes) {
-    return routes.reduce((s, r) => s + routeDist(r), 0);
-}
-
-function routeLoad(route) {
-    return route.reduce((s, c) => s + demands[c], 0);
-}
+// ══════════════════════════════════════════════════════════════
 
 // ── Clarke-Wright Savings ──
-function clarkeWright() {
+function solveClarkeWright(depot, customers, cap) {
     const n = activeStops.length - 1;
     if (n === 0) return [];
 
+    // Compute savings s(i,j) = d(0,i) + d(0,j) - d(i,j)
     const savings = [];
     for (let i = 1; i <= n; i++)
         for (let j = i + 1; j <= n; j++)
             savings.push({ s: dist[0][i] + dist[0][j] - dist[i][j], i, j });
+
+    // Sort savings descending
     savings.sort((a, b) => b.s - a.s);
 
+    // Merge routes greedily respecting capacity
     const routeOf = new Int32Array(n + 1);
     let routes = [];
     const loads = [];
@@ -2659,7 +2665,7 @@ function clarkeWright() {
         const jEnd = rJ[0] === j || rJ[rJ.length - 1] === j;
         if (!iEnd || !jEnd) continue;
 
-        if (loads[ri] + loads[rj] > capacity) continue;
+        if (loads[ri] + loads[rj] > cap) continue;
 
         let merged;
         if (rI[rI.length - 1] === i && rJ[0] === j) merged = [...rI, ...rJ];
@@ -2677,7 +2683,7 @@ function clarkeWright() {
 }
 
 // ── Sweep Algorithm ──
-function sweep() {
+function solveSweep(depot, customers, cap) {
     const n = activeStops.length - 1;
     if (n === 0) return [];
 
@@ -2692,7 +2698,7 @@ function sweep() {
     const routes = [];
     let curRoute = [], curLoad = 0;
     for (const { i } of angles) {
-        if (curLoad + demands[i] > capacity && curRoute.length > 0) {
+        if (curLoad + demands[i] > cap && curRoute.length > 0) {
             routes.push(curRoute);
             curRoute = [];
             curLoad = 0;
@@ -2705,7 +2711,7 @@ function sweep() {
 }
 
 // ── Nearest Neighbor ──
-function nearestNeighbor() {
+function solveNearestNeighbor(depot, customers, cap) {
     const n = activeStops.length - 1;
     if (n === 0) return [];
 
@@ -2718,7 +2724,7 @@ function nearestNeighbor() {
         while (true) {
             let nearest = -1, nearDist = Infinity;
             for (let j = 1; j <= n; j++) {
-                if (!visited[j] && demands[j] + load <= capacity && dist[cur][j] < nearDist) {
+                if (!visited[j] && demands[j] + load <= cap && dist[cur][j] < nearDist) {
                     nearDist = dist[cur][j];
                     nearest = j;
                 }
@@ -2749,37 +2755,57 @@ function nearestNeighbor() {
 // ── Algorithm Toggle ──
 function toggleAlgo(el) { el.classList.toggle('selected'); }
 
+// ── Reset ──
+function resetDefaults() {
+    document.getElementById('input-customers').value = DEFAULTS.customers;
+    document.getElementById('input-capacity').value = DEFAULTS.capacity;
+    document.getElementById('input-seed').value = DEFAULTS.seed;
+    drawInitial();
+    document.getElementById('results-table').querySelector('tbody').innerHTML =
+        '<tr><td colspan="5" style="text-align:center; color:var(--slate); font-family:Inter,sans-serif;">Select algorithms and click Solve to optimize delivery routes.</td></tr>';
+    document.getElementById('detail-output').textContent = 'Select algorithms and click Solve to optimize delivery routes.';
+    document.getElementById('solver-status').textContent = '';
+}
+
 // ── Solve ──
 const ALGO_MAP = {
-    cw:    { name: 'Clarke-Wright', fn: clarkeWright },
-    sweep: { name: 'Sweep',         fn: sweep },
-    nn:    { name: 'Nearest Neighbor', fn: nearestNeighbor }
+    cw:    { name: 'Clarke-Wright Savings', fn: solveClarkeWright },
+    sweep: { name: 'Sweep',                fn: solveSweep },
+    nn:    { name: 'Nearest Neighbor',      fn: solveNearestNeighbor }
 };
 
 function solveAll() {
-    if (activeStops.length < 2) {
-        document.getElementById('solver-status').textContent = 'Load a scenario first.';
+    const params = parseInputs();
+    const err = validateInputs(params);
+    if (err) {
+        document.getElementById('solver-status').textContent = err;
         return;
     }
-    buildDistMatrix();
 
-    const algos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected')).map(c => c.dataset.algo);
-    if (algos.length === 0) {
+    const selectedAlgos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected'))
+        .map(c => c.dataset.algo);
+    if (selectedAlgos.length === 0) {
         document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
         return;
     }
 
+    // Generate customers
+    capacity = params.capacity;
+    activeStops = generateCustomers(params.customers, params.seed);
+    buildDistMatrix();
+
     currentResults = [];
-    for (const key of algos) {
+    for (const key of selectedAlgos) {
         const algo = ALGO_MAP[key];
         const t0 = performance.now();
-        const routes = algo.fn();
+        const routes = algo.fn(activeStops[0], activeStops.slice(1), capacity);
         const elapsed = performance.now() - t0;
         const d = totalDist(routes);
         const maxLoad = routes.reduce((m, r) => Math.max(m, routeLoad(r)), 0);
+        const avgRouteLen = routes.length > 0 ? (d / routes.length) : 0;
         currentResults.push({
             key, name: algo.name, routes, distance: d,
-            vehicles: routes.length, maxLoad, time: elapsed
+            vehicles: routes.length, maxLoad, avgRouteLen, time: elapsed
         });
     }
     currentResults.sort((a, b) => a.distance - b.distance);
@@ -2787,7 +2813,7 @@ function solveAll() {
     // Draw best solution
     drawRoutes(currentResults[0].routes);
 
-    // Update results table
+    // Populate results table
     const tbody = document.getElementById('results-table').querySelector('tbody');
     tbody.innerHTML = '';
     currentResults.forEach((r, i) => {
@@ -2796,8 +2822,8 @@ function solveAll() {
             <td class="algo-label">${r.name}</td>
             <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(1)}</td>
             <td>${r.vehicles}</td>
+            <td>${r.avgRouteLen.toFixed(1)}</td>
             <td>${r.maxLoad} kg</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
         `;
         tr.addEventListener('click', () => showResult(r));
         tbody.appendChild(tr);
@@ -2812,20 +2838,21 @@ function showResult(r) {
     drawRoutes(r.routes);
 
     const lines = [];
+    lines.push(`Instance: ${activeStops.length - 1} customers, capacity=${capacity} kg, seed=${document.getElementById('input-seed').value}`);
+    lines.push(`Algorithm: ${r.name}`);
+    lines.push('');
     let totalLoad = 0;
     r.routes.forEach((route, ri) => {
         const load = routeLoad(route);
         totalLoad += load;
         const d = routeDist(route).toFixed(1);
         const stops = route.map(c => activeStops[c].name).join(' \u2192 ');
-        lines.push(`Route ${ri + 1}: Depot \u2192 ${stops} \u2192 Depot  (dist: ${d}, load: ${load} kg)`);
+        lines.push(`Route ${ri + 1}: Depot \u2192 ${stops} \u2192 Depot  (dist: ${d} km, load: ${load} kg)`);
     });
-
-    const avgLoad = (totalLoad / r.routes.length).toFixed(0);
     lines.push('');
-    lines.push(`Total distance: ${r.distance.toFixed(1)}  |  ${r.vehicles} truck${r.vehicles > 1 ? 's' : ''}  |  Avg load: ${avgLoad} kg  |  Max load: ${r.maxLoad} kg`);
+    lines.push(`Total distance: ${r.distance.toFixed(1)} km  |  ${r.vehicles} vehicle${r.vehicles > 1 ? 's' : ''}  |  Avg route: ${r.avgRouteLen.toFixed(1)} km  |  Max load: ${r.maxLoad} kg`);
 
-    document.getElementById('route-output').textContent = lines.join('\n');
+    document.getElementById('detail-output').textContent = lines.join('\n');
 }
 
 // ── Scroll Animations ──
@@ -2835,7 +2862,8 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
-loadPreset('15');
+window.addEventListener('resize', drawInitial);
+drawInitial();
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
@@ -2945,7 +2973,13 @@ loadPreset('15');
         { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'applications/construction-project.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Manufacturing Balancing', subtitle: 'Parallel Machine', icon: 'fa-cogs', url: 'applications/manufacturing-balancing.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Cutting Stock', subtitle: 'Fabric & Metal Rolls', icon: 'fa-cut', url: 'applications/cutting-stock.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
-        { title: 'Farm Delivery Routes', subtitle: 'CVRP \u00b7 Agriculture', icon: 'fa-truck-field', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Farm-to-Market Delivery', subtitle: 'CVRP \u00b7 Agriculture', icon: 'fa-tractor', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Crop Harvest Scheduling', subtitle: 'Scheduling \u00b7 Agriculture', icon: 'fa-seedling', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Agriculture', badgeColor: 'method-heuristic' },
+        { title: 'Irrigation Network Design', subtitle: 'Network Flow \u00b7 Agriculture', icon: 'fa-water', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Agriculture', badgeColor: 'method-heuristic' },
+        { title: 'Grain Silo Allocation', subtitle: 'Bin Packing \u00b7 Agriculture', icon: 'fa-wheat-awn', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Agriculture', badgeColor: 'method-heuristic' },
+        { title: 'Livestock Feed Optimization', subtitle: 'Linear Programming \u00b7 Agriculture', icon: 'fa-cow', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Agriculture', badgeColor: 'method-heuristic' },
+        { title: 'Produce Cold Chain Logistics', subtitle: 'VRPTW \u00b7 Agriculture', icon: 'fa-temperature-low', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Agriculture', badgeColor: 'method-heuristic' },
+        { title: 'Farm Equipment Routing', subtitle: 'TSP \u00b7 Agriculture', icon: 'fa-tractor', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Agriculture', badgeColor: 'method-heuristic' },
     ];
 
     // Determine base path from current page location

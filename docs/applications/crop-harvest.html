@@ -2249,7 +2249,7 @@
                 </table>
 
                 <!-- Detail Output -->
-                <div class="detail-output" id="detail-output">Select algorithms and click Solve to optimize the order quantity.</div>
+                <div class="detail-output" id="detail-output">Select algorithms and click Solve to optimize the harvest quantity.</div>
                 <div class="solver-status" id="solver-status"></div>
             </div>
         </div>
@@ -2316,14 +2316,14 @@
         </div>
         <div class="content-block fade-in">
             <div class="complexity-box">
-                <h3><i class="fas fa-layer-group"></i> Beyond the Single-Product Newsvendor</h3>
+                <h3><i class="fas fa-layer-group"></i> Beyond the Single-Crop Newsvendor</h3>
                 <ul class="complexity-list">
-                    <li><strong>Multiple products sharing shelf space</strong> &mdash; bakery, dairy, and produce compete for limited refrigerated display area, coupling their ordering decisions</li>
-                    <li><strong>Supplier quantity discounts</strong> &mdash; volume-based pricing tiers create non-convex cost structures that break the simple critical fractile solution</li>
-                    <li><strong>Multi-period ordering</strong> &mdash; products with 2&ndash;3 day shelf life carry leftover inventory into the next period, linking daily decisions</li>
-                    <li><strong>Demand correlation between products</strong> &mdash; bread and butter sales are correlated; a joint ordering model captures substitution and complementarity effects</li>
-                    <li><strong>Substitution effects</strong> &mdash; when whole wheat bread is out of stock, some customers switch to white bread, creating demand spillover</li>
-                    <li><strong>Seasonal trends and promotions</strong> &mdash; holiday demand spikes, weekly patterns (weekend vs. weekday), and promotional events make historical demand non-stationary</li>
+                    <li><strong>Multiple crops sharing labor resources</strong> &mdash; harvest crew capacity couples crop decisions; picking tomatoes and strawberries competes for the same field workers</li>
+                    <li><strong>Weather-dependent demand</strong> &mdash; rain reduces farmers market attendance, affecting all crop sales simultaneously and creating correlated demand shocks</li>
+                    <li><strong>Shelf life variation</strong> &mdash; berries last 1 day vs. root vegetables lasting a week; different perishability rates require crop-specific salvage strategies</li>
+                    <li><strong>Seasonal demand patterns</strong> &mdash; weekend farmers markets vs. weekday restaurant orders create weekly cycles that make historical demand non-stationary</li>
+                    <li><strong>Substitution between crops</strong> &mdash; when tomatoes sell out, some customers switch to peppers, creating demand spillover across related produce</li>
+                    <li><strong>Post-harvest cold chain</strong> &mdash; refrigeration capacity constraints affect how much can be harvested; cold storage coupling links harvest decisions across all crops</li>
                 </ul>
             </div>
         </div>
@@ -2340,16 +2340,16 @@
         <div class="content-block fade-in">
             <ul class="reference-list">
                 <li>
-                    <span class="ref-author">Arrow, K. J., Harris, T., &amp; Marschak, J.</span> (1951).
-                    <span class="ref-title">"Optimal inventory policy."</span>
-                    <span class="ref-journal">Econometrica, 19(3), 250&ndash;272.</span>
-                    &mdash; Foundational paper establishing the critical fractile solution for single-period inventory under uncertainty.
+                    <span class="ref-author">Minner, S. &amp; Transchel, S.</span> (2010).
+                    <span class="ref-title">"Periodic review inventory-control for perishable products under service-level constraints."</span>
+                    <span class="ref-journal">OR Spectrum, 32(4), 979&ndash;996.</span>
+                    &mdash; Inventory control framework for perishable products with service-level targets, applicable to fresh produce harvest planning.
                 </li>
                 <li>
-                    <span class="ref-author">Qin, Y., Wang, R., Vakharia, A. J., Chen, Y., &amp; Seref, M. M. H.</span> (2011).
-                    <span class="ref-title">"The newsvendor problem: Review and directions for future research."</span>
-                    <span class="ref-journal">European Journal of Operational Research, 213(2), 361&ndash;374.</span>
-                    &mdash; Comprehensive survey covering extensions, behavioral aspects, and computational approaches.
+                    <span class="ref-author">Ketzenberg, M. &amp; Ferguson, M. E.</span> (2008).
+                    <span class="ref-title">"Managing slow-moving perishables in the grocery industry."</span>
+                    <span class="ref-journal">Production and Operations Management, 17(5), 513&ndash;521.</span>
+                    &mdash; Analysis of perishable product management strategies with implications for farm-to-market supply chains.
                 </li>
             </ul>
         </div>
@@ -2360,10 +2360,10 @@
 <section>
     <div class="container">
         <div class="cta-panel fade-in">
-            <h3>Need to optimize inventory decisions?</h3>
+            <h3>Need to optimize harvest decisions?</h3>
             <p>
-                From single-product newsvendor models to multi-echelon supply chain optimization,
-                operations research provides the mathematical framework for data-driven inventory management.
+                From single-crop newsvendor models to multi-product harvest planning with budget constraints,
+                operations research provides the framework for reducing waste while maximizing farm revenue.
             </p>
             <div class="cta-links">
                 <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank">
@@ -2380,8 +2380,8 @@
         <div class="disclaimer-box" style="max-width: 800px; margin: 0 auto;">
             <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
             Data shown is illustrative. Cost parameters, demand scenarios, and results are
-            simplified examples intended for educational purposes. Real-world grocery ordering
-            involves additional operational constraints not captured in this demonstration.
+            simplified examples intended for educational purposes. Real-world crop harvest planning
+            involves additional operational constraints such as weather, labor, and cold chain capacity not captured in this demonstration.
         </div>
     </div>
 </section>
@@ -2403,19 +2403,43 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
-//  Grocery Perishable Ordering — Newsvendor Solver
+//  Perishable Crop Harvest Planning — Newsvendor Solver
 // ══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('canvas');
 const ctx = canvas.getContext('2d');
 
-// Default parameters
-const DEFAULTS = {
-    cost: 2.50,
-    price: 5.00,
-    salvage: 0.50,
-    demands: '80, 90, 100, 110, 95, 85, 105, 115, 92, 88, 98, 108, 102, 96, 112'
+// Crop data from the Quebec vegetable farm (8 perishable crops)
+const CROP_DATA = {
+    Tomatoes:     { cost: 1.50, price: 4.00,  salvage: 0.50, demands: '480, 520, 510, 490, 530, 470, 550, 460, 500, 515, 485, 540, 495, 505, 525' },
+    Strawberries: { cost: 3.00, price: 8.00,  salvage: 1.00, demands: '180, 220, 200, 190, 240, 160, 210, 230, 195, 205, 185, 215, 170, 250, 200' },
+    Lettuce:      { cost: 0.80, price: 2.50,  salvage: 0.20, demands: '280, 320, 300, 310, 340, 260, 290, 330, 305, 295, 270, 350, 285, 315, 300' },
+    Cucumbers:    { cost: 0.60, price: 2.00,  salvage: 0.15, demands: '330, 370, 350, 340, 380, 310, 360, 390, 345, 355, 325, 385, 335, 365, 350' },
+    Peppers:      { cost: 1.80, price: 5.00,  salvage: 0.60, demands: '230, 270, 250, 240, 280, 210, 260, 290, 245, 255, 225, 275, 235, 265, 250' },
+    Blueberries:  { cost: 4.00, price: 10.00, salvage: 1.50, demands: '130, 170, 150, 140, 180, 120, 160, 190, 145, 155, 125, 175, 135, 165, 150' },
+    Zucchini:     { cost: 0.50, price: 1.80,  salvage: 0.10, demands: '380, 420, 400, 390, 440, 360, 410, 450, 395, 405, 370, 435, 385, 415, 400' },
+    Herbs:        { cost: 2.50, price: 12.00, salvage: 0.80, demands: '65, 95, 80, 75, 100, 55, 85, 105, 78, 82, 60, 90, 70, 88, 80' }
 };
+
+// Default parameters (Tomatoes)
+const DEFAULTS = {
+    cost: 1.50,
+    price: 4.00,
+    salvage: 0.50,
+    demands: '480, 520, 510, 490, 530, 470, 550, 460, 500, 515, 485, 540, 495, 505, 525'
+};
+
+// Crop selector change handler
+function onCropChange() {
+    const cropName = document.getElementById('crop-select').value;
+    const crop = CROP_DATA[cropName];
+    if (crop) {
+        document.getElementById('input-cost').value = crop.cost;
+        document.getElementById('input-price').value = crop.price;
+        document.getElementById('input-salvage').value = crop.salvage;
+        document.getElementById('input-demands').value = crop.demands;
+    }
+}
 
 // ── Helpers ──
 function parseInputs() {
@@ -2558,7 +2582,7 @@ function drawInitial() {
     ctx.fillStyle = '#8892B0';
     ctx.font = '14px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Click "Solve" to visualize the demand distribution and optimal order quantity.', w / 2, h / 2);
+    ctx.fillText('Click "Solve" to visualize crop demand distribution and optimal harvest quantity.', w / 2, h / 2);
     ctx.textAlign = 'start';
 }
 
@@ -2607,7 +2631,7 @@ function drawResults(params, results) {
     ctx.fillStyle = '#F8F9FA';
     ctx.font = '500 12px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Demand Distribution', pad.left, histY0 - 10);
+    ctx.fillText('Crop Demand Distribution (kg/day)', pad.left, histY0 - 10);
 
     // Y axis
     ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
@@ -2684,7 +2708,7 @@ function drawResults(params, results) {
     ctx.fillStyle = '#8892B0';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Daily Demand (units)', pad.left + chartW / 2, histY1 + 24);
+    ctx.fillText('Daily Demand (kg)', pad.left + chartW / 2, histY1 + 24);
 
     // Q* vertical line on histogram
     const qStarX = pad.left + ((qStar - binStart) / totalBinRange) * chartW;
@@ -2729,7 +2753,7 @@ function drawResults(params, results) {
     ctx.fillStyle = '#F8F9FA';
     ctx.font = '500 12px Inter, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('Expected Profit vs. Order Quantity', pad.left, profitY0 - 10);
+    ctx.fillText('Expected Profit vs. Harvest Quantity', pad.left, profitY0 - 10);
 
     // Axes
     ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
@@ -2767,7 +2791,7 @@ function drawResults(params, results) {
     ctx.fillStyle = '#8892B0';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('E[Profit] ($)', 0, 0);
+    ctx.fillText('E[Profit] ($/day)', 0, 0);
     ctx.restore();
 
     // X axis labels (profit)
@@ -2782,7 +2806,7 @@ function drawResults(params, results) {
     }
     ctx.fillStyle = '#8892B0';
     ctx.font = '10px Inter, sans-serif';
-    ctx.fillText('Order Quantity (Q)', pad.left + chartW / 2, profitY1 + 24);
+    ctx.fillText('Harvest Quantity Q (kg)', pad.left + chartW / 2, profitY1 + 24);
 
     // Draw profit curve line
     ctx.beginPath();
@@ -2849,13 +2873,14 @@ function toggleAlgo(el) { el.classList.toggle('selected'); }
 
 // ── Reset ──
 function resetDefaults() {
+    document.getElementById('crop-select').value = 'Tomatoes';
     document.getElementById('input-cost').value = DEFAULTS.cost;
     document.getElementById('input-price').value = DEFAULTS.price;
     document.getElementById('input-salvage').value = DEFAULTS.salvage;
     document.getElementById('input-demands').value = DEFAULTS.demands;
     drawInitial();
     document.getElementById('results-table').querySelector('tbody').innerHTML = '';
-    document.getElementById('detail-output').textContent = 'Select algorithms and click Solve to optimize the order quantity.';
+    document.getElementById('detail-output').textContent = 'Select algorithms and click Solve to optimize the harvest quantity.';
     document.getElementById('solver-status').textContent = '';
 }
 
@@ -2932,7 +2957,7 @@ function solveAll() {
     drawResults(params, results);
 
     document.getElementById('solver-status').textContent =
-        `Solved with ${results.length} algorithm${results.length > 1 ? 's' : ''}. Both methods yield the same optimal order quantity.`;
+        `Solved with ${results.length} algorithm${results.length > 1 ? 's' : ''}. Both methods yield the same optimal harvest quantity.`;
 }
 
 // ── Scroll Animations ──
@@ -3071,6 +3096,12 @@ drawInitial();
         { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'applications/construction-project.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Manufacturing Balancing', subtitle: 'Parallel Machine', icon: 'fa-cogs', url: 'applications/manufacturing-balancing.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Cutting Stock', subtitle: 'Fabric & Metal Rolls', icon: 'fa-cut', url: 'applications/cutting-stock.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Crop Harvest Planning', subtitle: 'Newsvendor \u00b7 Agriculture', icon: 'fa-seedling', url: 'applications/crop-harvest.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Feed Procurement', subtitle: 'EOQ \u00b7 Silver-Meal \u00b7 Wagner-Whitin', icon: 'fa-wheat-awn', url: 'applications/feed-procurement.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Farm Delivery Routing', subtitle: 'CVRP \u00b7 Agriculture', icon: 'fa-tractor', url: 'applications/farm-delivery.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Irrigation Network', subtitle: 'MST \u00b7 Max Flow \u00b7 Shortest Path', icon: 'fa-water', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Crop Rotation Planning', subtitle: 'LP \u00b7 Multi-Objective', icon: 'fa-leaf', url: 'applications/crop-rotation.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Cold Storage Packing', subtitle: 'Bin Packing \u00b7 Cutting Stock', icon: 'fa-snowflake', url: 'applications/cold-storage.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
     ];
 
     // Determine base path from current page location

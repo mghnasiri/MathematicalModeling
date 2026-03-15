@@ -2446,7 +2446,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════════════════
-//  Grocery Perishable Ordering — Newsvendor Solver
+//  Irrigation Network Optimization — MST, Max Flow, Shortest Path
 // ══════════════════════════════════════════════════════════════
 
 const canvas = document.getElementById('canvas');
@@ -2454,138 +2454,250 @@ const ctx = canvas.getContext('2d');
 
 // Default parameters
 const DEFAULTS = {
-    cost: 2.50,
-    price: 5.00,
-    salvage: 0.50,
-    demands: '80, 90, 100, 110, 95, 85, 105, 115, 92, 88, 98, 108, 102, 96, 112'
+    nodes: 10,
+    density: 'medium',
+    seed: 42
 };
+
+// ── Seeded RNG ──
+function mulberry32(a) {
+    return function() {
+        a |= 0; a = a + 0x6D2B79F5 | 0;
+        var t = Math.imul(a ^ a >>> 15, 1 | a);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+    };
+}
+
+// ── Graph State ──
+let graphNodes = [];
+let graphEdges = [];
+let solverResults = [];
 
 // ── Helpers ──
 function parseInputs() {
-    const cost = parseFloat(document.getElementById('input-cost').value);
-    const price = parseFloat(document.getElementById('input-price').value);
-    const salvage = parseFloat(document.getElementById('input-salvage').value);
-    const demandStr = document.getElementById('input-demands').value;
-    const demands = demandStr.split(',').map(s => parseFloat(s.trim())).filter(d => !isNaN(d) && d >= 0);
-    return { cost, price, salvage, demands };
+    const nodes = parseInt(document.getElementById('input-nodes').value);
+    const density = document.getElementById('input-density').value;
+    const seed = parseInt(document.getElementById('input-seed').value);
+    return { nodes, density, seed };
 }
 
 function validateInputs(p) {
-    if (isNaN(p.cost) || p.cost <= 0) return 'Cost must be positive.';
-    if (isNaN(p.price) || p.price <= 0) return 'Price must be positive.';
-    if (isNaN(p.salvage) || p.salvage < 0) return 'Salvage must be non-negative.';
-    if (p.price <= p.cost) return 'Price must exceed cost for a profitable product.';
-    if (p.salvage >= p.cost) return 'Salvage must be less than cost (otherwise no overage risk).';
-    if (p.demands.length < 2) return 'Enter at least 2 demand scenarios.';
+    if (isNaN(p.nodes) || p.nodes < 6 || p.nodes > 15) return 'Number of nodes must be between 6 and 15.';
+    if (!['sparse', 'medium', 'dense'].includes(p.density)) return 'Invalid density selection.';
+    if (isNaN(p.seed) || p.seed < 1) return 'Seed must be a positive integer.';
     return null;
 }
 
-function expectedProfit(Q, demands, cost, price, salvage) {
-    let totalProfit = 0;
-    for (const d of demands) {
-        const sold = Math.min(Q, d);
-        const leftover = Math.max(0, Q - d);
-        totalProfit += price * sold + salvage * leftover - cost * Q;
+function generateGraph(params) {
+    const { nodes: n, density, seed } = params;
+    const rng = mulberry32(seed);
+    const pad = 60;
+
+    // Generate node positions
+    const ns = [];
+    ns.push({ x: pad + rng() * 0.15 * (600 - 2*pad), y: pad + rng() * (400 - 2*pad), label: 'Source' });
+    for (let i = 1; i < n; i++) {
+        ns.push({
+            x: pad + rng() * (600 - 2*pad),
+            y: pad + rng() * (400 - 2*pad),
+            label: 'F' + i
+        });
     }
-    return totalProfit / demands.length;
-}
 
-function expectedWaste(Q, demands) {
-    let total = 0;
-    for (const d of demands) {
-        total += Math.max(0, Q - d);
+    // Generate edges based on density
+    const densityFactor = density === 'sparse' ? 0.3 : density === 'medium' ? 0.5 : 0.7;
+    const es = [];
+    const edgeSet = new Set();
+    // Ensure connectivity: create a random spanning tree first
+    const perm = Array.from({length: n - 1}, (_, i) => i + 1);
+    for (let i = perm.length - 1; i > 0; i--) {
+        const j = Math.floor(rng() * (i + 1));
+        [perm[i], perm[j]] = [perm[j], perm[i]];
     }
-    return total / demands.length;
-}
-
-function expectedShortage(Q, demands) {
-    let total = 0;
-    for (const d of demands) {
-        total += Math.max(0, d - Q);
+    const connected = [0];
+    for (const v of perm) {
+        const u = connected[Math.floor(rng() * connected.length)];
+        const dx = ns[u].x - ns[v].x;
+        const dy = ns[u].y - ns[v].y;
+        const dist = Math.round(Math.sqrt(dx*dx + dy*dy));
+        const cap = Math.floor(rng() * 15) + 5;
+        const key = Math.min(u,v) + ',' + Math.max(u,v);
+        edgeSet.add(key);
+        es.push({ from: u, to: v, weight: dist, capacity: cap });
+        connected.push(v);
     }
-    return total / demands.length;
-}
-
-function serviceLevel(Q, demands) {
-    let met = 0;
-    for (const d of demands) {
-        if (Q >= d) met++;
-    }
-    return met / demands.length;
-}
-
-// ── Critical Fractile Algorithm ──
-function solveCriticalFractile(params) {
-    const { cost, price, salvage, demands } = params;
-    const cu = price - cost;
-    const co = cost - salvage;
-    const criticalRatio = cu / (cu + co);
-
-    const sorted = [...demands].sort((a, b) => a - b);
-    const S = sorted.length;
-
-    // Find Q*: smallest demand value where CDF >= critical ratio
-    let qStar = sorted[S - 1]; // default to max
-    for (let i = 0; i < S; i++) {
-        const cdf = (i + 1) / S;
-        if (cdf >= criticalRatio) {
-            qStar = sorted[i];
-            break;
+    // Add extra edges
+    for (let i = 0; i < n; i++) {
+        for (let j = i + 1; j < n; j++) {
+            const key = i + ',' + j;
+            if (edgeSet.has(key)) continue;
+            if (rng() < densityFactor) {
+                const dx = ns[i].x - ns[j].x;
+                const dy = ns[i].y - ns[j].y;
+                const dist = Math.round(Math.sqrt(dx*dx + dy*dy));
+                const cap = Math.floor(rng() * 15) + 5;
+                edgeSet.add(key);
+                es.push({ from: i, to: j, weight: dist, capacity: cap });
+            }
         }
     }
-
-    return {
-        name: 'Critical Fractile',
-        qStar,
-        criticalRatio,
-        profit: expectedProfit(qStar, demands, cost, price, salvage),
-        waste: expectedWaste(qStar, demands),
-        shortage: expectedShortage(qStar, demands),
-        service: serviceLevel(qStar, demands)
-    };
+    return { nodes: ns, edges: es };
 }
 
-// ── Grid Search Algorithm ──
-function solveGridSearch(params) {
-    const { cost, price, salvage, demands } = params;
-    const cu = price - cost;
-    const co = cost - salvage;
-    const criticalRatio = cu / (cu + co);
-
-    const minD = Math.min(...demands);
-    const maxD = Math.max(...demands);
-
-    let bestQ = minD;
-    let bestProfit = -Infinity;
-    const profitCurve = [];
-
-    for (let Q = minD; Q <= maxD; Q++) {
-        const p = expectedProfit(Q, demands, cost, price, salvage);
-        profitCurve.push({ Q, profit: p });
-        if (p > bestProfit) {
-            bestProfit = p;
-            bestQ = Q;
+// ── Kruskal's Algorithm ──
+function kruskal(nodes, edges) {
+    const sorted = [...edges].sort((a, b) => a.weight - b.weight);
+    const parent = nodes.map((_, i) => i);
+    const rank = new Array(nodes.length).fill(0);
+    function find(x) { return parent[x] === x ? x : (parent[x] = find(parent[x])); }
+    function union(a, b) {
+        a = find(a); b = find(b);
+        if (a === b) return false;
+        if (rank[a] < rank[b]) [a, b] = [b, a];
+        parent[b] = a;
+        if (rank[a] === rank[b]) rank[a]++;
+        return true;
+    }
+    const mst = [];
+    let totalWeight = 0;
+    for (const e of sorted) {
+        if (union(e.from, e.to)) {
+            mst.push(e);
+            totalWeight += e.weight;
         }
     }
-
-    return {
-        name: 'Grid Search',
-        qStar: bestQ,
-        criticalRatio,
-        profit: bestProfit,
-        waste: expectedWaste(bestQ, demands),
-        shortage: expectedShortage(bestQ, demands),
-        service: serviceLevel(bestQ, demands),
-        profitCurve
-    };
+    return { name: "Kruskal's MST", objective: 'Total Pipe Length', value: totalWeight, edges: mst, edgeDesc: mst.length + ' edges' };
 }
+
+// ── Prim's Algorithm ──
+function prim(nodes, edges) {
+    const n = nodes.length;
+    const adj = Array.from({length: n}, () => []);
+    for (const e of edges) {
+        adj[e.from].push({ to: e.to, weight: e.weight, edge: e });
+        adj[e.to].push({ to: e.from, weight: e.weight, edge: e });
+    }
+    const inTree = new Array(n).fill(false);
+    const mst = [];
+    let totalWeight = 0;
+    // Simple array-based min-heap
+    inTree[0] = true;
+    let candidates = adj[0].map(e => ({ ...e }));
+    while (mst.length < n - 1 && candidates.length > 0) {
+        // Find minimum weight candidate
+        let minIdx = 0;
+        for (let i = 1; i < candidates.length; i++) {
+            if (candidates[i].weight < candidates[minIdx].weight) minIdx = i;
+        }
+        const best = candidates[minIdx];
+        candidates.splice(minIdx, 1);
+        if (inTree[best.to]) continue;
+        inTree[best.to] = true;
+        mst.push(best.edge);
+        totalWeight += best.weight;
+        for (const nb of adj[best.to]) {
+            if (!inTree[nb.to]) candidates.push({ ...nb });
+        }
+    }
+    return { name: "Prim's MST", objective: 'Total Pipe Length', value: totalWeight, edges: mst, edgeDesc: mst.length + ' edges' };
+}
+
+// ── Edmonds-Karp Max Flow ──
+function edmondsKarp(nodes, edges) {
+    const n = nodes.length;
+    const source = 0;
+    const sink = n - 1;
+    const capacity = Array.from({length: n}, () => new Array(n).fill(0));
+    for (const e of edges) {
+        capacity[e.from][e.to] += e.capacity;
+        capacity[e.to][e.from] += e.capacity;
+    }
+    const flow = Array.from({length: n}, () => new Array(n).fill(0));
+    let totalFlow = 0;
+    const flowPaths = [];
+    while (true) {
+        const parent = new Array(n).fill(-1);
+        parent[source] = source;
+        const queue = [source];
+        let qi = 0;
+        while (qi < queue.length && parent[sink] === -1) {
+            const u = queue[qi++];
+            for (let v = 0; v < n; v++) {
+                if (parent[v] === -1 && capacity[u][v] - flow[u][v] > 0) {
+                    parent[v] = u;
+                    queue.push(v);
+                }
+            }
+        }
+        if (parent[sink] === -1) break;
+        let pathFlow = Infinity;
+        for (let v = sink; v !== source; v = parent[v])
+            pathFlow = Math.min(pathFlow, capacity[parent[v]][v] - flow[parent[v]][v]);
+        const path = [];
+        for (let v = sink; v !== source; v = parent[v]) {
+            flow[parent[v]][v] += pathFlow;
+            flow[v][parent[v]] -= pathFlow;
+            path.unshift(parent[v]);
+        }
+        path.push(sink);
+        flowPaths.push({ path, flow: pathFlow });
+        totalFlow += pathFlow;
+    }
+    return { name: 'Edmonds-Karp Max Flow', objective: 'Max Water Flow', value: totalFlow, flow, flowPaths,
+             edgeDesc: 'Source\u21920 \u2192 Sink\u2192' + (n-1) + ', ' + flowPaths.length + ' paths' };
+}
+
+// ── Dijkstra Shortest Path ──
+function dijkstra(nodes, edges) {
+    const n = nodes.length;
+    const source = 0;
+    const adj = Array.from({length: n}, () => []);
+    for (const e of edges) {
+        adj[e.from].push({ to: e.to, weight: e.weight });
+        adj[e.to].push({ to: e.from, weight: e.weight });
+    }
+    const dist = new Array(n).fill(Infinity);
+    const prev = new Array(n).fill(-1);
+    const visited = new Array(n).fill(false);
+    dist[source] = 0;
+    for (let i = 0; i < n; i++) {
+        let u = -1;
+        for (let v = 0; v < n; v++)
+            if (!visited[v] && (u === -1 || dist[v] < dist[u])) u = v;
+        if (dist[u] === Infinity) break;
+        visited[u] = true;
+        for (const {to, weight} of adj[u]) {
+            if (dist[u] + weight < dist[to]) {
+                dist[to] = dist[u] + weight;
+                prev[to] = u;
+            }
+        }
+    }
+    // Find farthest reachable node as the target
+    let target = n - 1;
+    // Reconstruct path to target
+    const path = [];
+    let cur = target;
+    while (cur !== -1) { path.unshift(cur); cur = prev[cur]; }
+    const pathEdges = [];
+    for (let i = 0; i < path.length - 1; i++) {
+        const u = path[i], v = path[i+1];
+        const e = edges.find(e => (e.from === u && e.to === v) || (e.from === v && e.to === u));
+        if (e) pathEdges.push(e);
+    }
+    return { name: 'Dijkstra Shortest Path', objective: 'Shortest Distance', value: dist[target],
+             path, pathEdges, edgeDesc: path.map(i => nodes[i].label).join(' \u2192') };
+}
+
+// (algorithm functions defined above)
 
 // ── Drawing ──
 function resizeCanvas() {
     const wrap = canvas.parentElement;
     const dpr = window.devicePixelRatio || 1;
-    const w = wrap.clientWidth - 16; // padding
-    const h = 420;
+    const w = wrap.clientWidth - 16;
+    const h = 500;
     canvas.width = w * dpr;
     canvas.height = h * dpr;
     canvas.style.width = w + 'px';
@@ -2601,289 +2713,173 @@ function drawInitial() {
     ctx.fillStyle = '#8892B0';
     ctx.font = '14px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Click "Solve" to visualize the demand distribution and optimal order quantity.', w / 2, h / 2);
+    ctx.fillText('Click "Solve" to generate and analyze the irrigation network.', w / 2, h / 2);
     ctx.textAlign = 'start';
 }
 
-function drawResults(params, results) {
+function drawResults(nodes, edges, results) {
     const { w, h } = resizeCanvas();
-    const { demands } = params;
-
-    // Layout: top half = histogram, bottom half = profit curve
-    const pad = { left: 70, right: 30, top: 30, bottom: 25, mid: 50 };
-    const chartH = (h - pad.top - pad.bottom - pad.mid) / 2;
-    const chartW = w - pad.left - pad.right;
-
     ctx.fillStyle = '#112240';
     ctx.fillRect(0, 0, w, h);
 
-    // Find Q* (use first result)
-    const qStar = results[0].qStar;
-
-    // ── Histogram ──
-    const minD = Math.min(...demands);
-    const maxD = Math.max(...demands);
-    const range = maxD - minD;
-
-    // Sensible bin width: use Sturges' rule as a starting point
-    const numBins = Math.max(5, Math.min(15, Math.ceil(1 + 3.322 * Math.log10(demands.length))));
-    const binWidth = Math.max(1, Math.ceil(range / numBins));
-    const binStart = Math.floor(minD / binWidth) * binWidth;
-    const binEnd = Math.ceil((maxD + 1) / binWidth) * binWidth;
-    const bins = [];
-    for (let b = binStart; b < binEnd; b += binWidth) {
-        bins.push({ lo: b, hi: b + binWidth, count: 0 });
+    // Scale node positions to canvas
+    const pad = 40;
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+        minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+        minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
     }
-    for (const d of demands) {
-        for (const bin of bins) {
-            if (d >= bin.lo && d < bin.hi) { bin.count++; break; }
-        }
-        // Edge case: max value falls exactly on last bin boundary
-        if (d === binEnd) { bins[bins.length - 1].count++; }
-    }
+    const rangeX = maxX - minX || 1;
+    const rangeY = maxY - minY || 1;
+    function sx(x) { return pad + ((x - minX) / rangeX) * (w - 2*pad); }
+    function sy(y) { return pad + ((y - minY) / rangeY) * (h - 2*pad); }
 
-    const maxCount = Math.max(...bins.map(b => b.count));
-    const histY0 = pad.top;
-    const histY1 = pad.top + chartH;
-
-    // Histogram title
-    ctx.fillStyle = '#F8F9FA';
-    ctx.font = '500 12px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('Demand Distribution', pad.left, histY0 - 10);
-
-    // Y axis
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, histY0);
-    ctx.lineTo(pad.left, histY1);
-    ctx.stroke();
-
-    // X axis
-    ctx.beginPath();
-    ctx.moveTo(pad.left, histY1);
-    ctx.lineTo(pad.left + chartW, histY1);
-    ctx.stroke();
-
-    // Y axis labels
-    const yTicks = 4;
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px JetBrains Mono, monospace';
-    ctx.textAlign = 'right';
-    for (let i = 0; i <= yTicks; i++) {
-        const val = Math.round((maxCount / yTicks) * i);
-        const y = histY1 - (i / yTicks) * chartH;
-        ctx.fillText(val.toString(), pad.left - 8, y + 3);
-        if (i > 0) {
-            ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
-            ctx.beginPath();
-            ctx.moveTo(pad.left, y);
-            ctx.lineTo(pad.left + chartW, y);
-            ctx.stroke();
-        }
-    }
-
-    // Y axis title
-    ctx.save();
-    ctx.translate(15, histY0 + chartH / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Frequency', 0, 0);
-    ctx.restore();
-
-    // Draw bars
-    const totalBinRange = binEnd - binStart;
-    const barGap = 2;
-
-    for (const bin of bins) {
-        const x = pad.left + ((bin.lo - binStart) / totalBinRange) * chartW;
-        const barW = (binWidth / totalBinRange) * chartW - barGap;
-        const barH = (bin.count / maxCount) * chartH;
-        const y = histY1 - barH;
-
-        // Check if Q* falls in this bin
-        const isOptimalBin = qStar >= bin.lo && qStar < bin.hi;
-
-        ctx.fillStyle = isOptimalBin ? 'rgba(100, 255, 218, 0.3)' : 'rgba(197, 160, 89, 0.25)';
-        ctx.fillRect(x, y, barW, barH);
-
-        ctx.strokeStyle = isOptimalBin ? 'rgba(100, 255, 218, 0.6)' : 'rgba(197, 160, 89, 0.5)';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(x, y, barW, barH);
-
-        // Bin label
-        if (bins.length <= 15) {
-            ctx.fillStyle = '#8892B0';
-            ctx.font = '9px JetBrains Mono, monospace';
-            ctx.textAlign = 'center';
-            ctx.fillText(bin.lo.toString(), x + barW / 2, histY1 + 14);
-        }
-    }
-
-    // X axis label for histogram
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Daily Demand (units)', pad.left + chartW / 2, histY1 + 24);
-
-    // Q* vertical line on histogram
-    const qStarX = pad.left + ((qStar - binStart) / totalBinRange) * chartW;
-    ctx.strokeStyle = '#64ffda';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(qStarX, histY0);
-    ctx.lineTo(qStarX, histY1);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Q* label
-    ctx.fillStyle = '#64ffda';
-    ctx.font = '600 11px JetBrains Mono, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText('Q* = ' + qStar, qStarX + 6, histY0 + 14);
-
-    // ── Profit Curve ──
-    const profitY0 = histY1 + pad.mid;
-    const profitY1 = profitY0 + chartH;
-
-    // Find or compute profit curve
-    let profitCurve = null;
+    // Collect highlighted edges from results
+    const mstEdgeSet = new Set();
+    const flowEdges = {};
+    let spPath = null;
+    let spEdgeSet = new Set();
     for (const r of results) {
-        if (r.profitCurve) { profitCurve = r.profitCurve; break; }
-    }
-    if (!profitCurve) {
-        // Compute it from scratch
-        profitCurve = [];
-        for (let Q = minD; Q <= maxD; Q++) {
-            profitCurve.push({ Q, profit: expectedProfit(Q, demands, params.cost, params.price, params.salvage) });
+        if (r.edges && r.name.includes('MST')) {
+            for (const e of r.edges) {
+                mstEdgeSet.add(Math.min(e.from, e.to) + ',' + Math.max(e.from, e.to));
+            }
+        }
+        if (r.flow) {
+            for (let i = 0; i < nodes.length; i++)
+                for (let j = 0; j < nodes.length; j++)
+                    if (r.flow[i][j] > 0) flowEdges[i + ',' + j] = r.flow[i][j];
+        }
+        if (r.pathEdges) {
+            spPath = r.path;
+            for (const e of r.pathEdges) {
+                spEdgeSet.add(Math.min(e.from, e.to) + ',' + Math.max(e.from, e.to));
+            }
         }
     }
 
-    const profits = profitCurve.map(p => p.profit);
-    const minProfit = Math.min(...profits);
-    const maxProfit = Math.max(...profits);
-    const profitRange = maxProfit - minProfit || 1;
+    // Draw all edges (base layer)
+    for (const e of edges) {
+        const x1 = sx(nodes[e.from].x), y1 = sy(nodes[e.from].y);
+        const x2 = sx(nodes[e.to].x), y2 = sy(nodes[e.to].y);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.strokeStyle = 'rgba(136, 146, 176, 0.2)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Edge weight label
+        const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+        ctx.fillStyle = 'rgba(136, 146, 176, 0.5)';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(e.weight.toString(), mx, my - 4);
+    }
 
-    // Profit curve title
-    ctx.fillStyle = '#F8F9FA';
-    ctx.font = '500 12px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('Expected Profit vs. Order Quantity', pad.left, profitY0 - 10);
-
-    // Axes
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(pad.left, profitY0);
-    ctx.lineTo(pad.left, profitY1);
-    ctx.stroke();
-    ctx.beginPath();
-    ctx.moveTo(pad.left, profitY1);
-    ctx.lineTo(pad.left + chartW, profitY1);
-    ctx.stroke();
-
-    // Y axis labels (profit)
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px JetBrains Mono, monospace';
-    ctx.textAlign = 'right';
-    for (let i = 0; i <= yTicks; i++) {
-        const val = minProfit + (profitRange / yTicks) * i;
-        const y = profitY1 - (i / yTicks) * chartH;
-        ctx.fillText('$' + val.toFixed(0), pad.left - 8, y + 3);
-        if (i > 0) {
-            ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+    // Draw MST edges (gold)
+    if (mstEdgeSet.size > 0) {
+        for (const e of edges) {
+            const key = Math.min(e.from, e.to) + ',' + Math.max(e.from, e.to);
+            if (!mstEdgeSet.has(key)) continue;
+            const x1 = sx(nodes[e.from].x), y1 = sy(nodes[e.from].y);
+            const x2 = sx(nodes[e.to].x), y2 = sy(nodes[e.to].y);
             ctx.beginPath();
-            ctx.moveTo(pad.left, y);
-            ctx.lineTo(pad.left + chartW, y);
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.8)';
+            ctx.lineWidth = 3;
             ctx.stroke();
         }
     }
 
-    // Y axis title
-    ctx.save();
-    ctx.translate(15, profitY0 + chartH / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('E[Profit] ($)', 0, 0);
-    ctx.restore();
-
-    // X axis labels (profit)
-    const xTicks = 5;
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '9px JetBrains Mono, monospace';
-    ctx.textAlign = 'center';
-    for (let i = 0; i <= xTicks; i++) {
-        const val = Math.round(minD + (range / xTicks) * i);
-        const x = pad.left + (i / xTicks) * chartW;
-        ctx.fillText(val.toString(), x, profitY1 + 14);
+    // Draw flow edges (blue)
+    for (const key in flowEdges) {
+        const [i, j] = key.split(',').map(Number);
+        const x1 = sx(nodes[i].x), y1 = sy(nodes[i].y);
+        const x2 = sx(nodes[j].x), y2 = sy(nodes[j].y);
+        const offset = 3;
+        const dx = x2 - x1, dy = y2 - y1;
+        const len = Math.sqrt(dx*dx + dy*dy) || 1;
+        const nx = -dy / len * offset, ny = dx / len * offset;
+        ctx.beginPath();
+        ctx.moveTo(x1 + nx, y1 + ny);
+        ctx.lineTo(x2 + nx, y2 + ny);
+        ctx.strokeStyle = 'rgba(122, 162, 247, 0.7)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        // Flow label
+        const mx = (x1 + x2) / 2 + nx * 2, my = (y1 + y2) / 2 + ny * 2;
+        ctx.fillStyle = '#7aa2f7';
+        ctx.font = '8px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(flowEdges[key].toString(), mx, my + 10);
     }
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillText('Order Quantity (Q)', pad.left + chartW / 2, profitY1 + 24);
 
-    // Draw profit curve line
-    ctx.beginPath();
-    ctx.strokeStyle = '#C5A059';
-    ctx.lineWidth = 2;
-    for (let i = 0; i < profitCurve.length; i++) {
-        const pc = profitCurve[i];
-        const x = pad.left + ((pc.Q - minD) / range) * chartW;
-        const y = profitY1 - ((pc.profit - minProfit) / profitRange) * chartH;
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
+    // Draw shortest path edges (green)
+    if (spEdgeSet.size > 0) {
+        for (const e of edges) {
+            const key = Math.min(e.from, e.to) + ',' + Math.max(e.from, e.to);
+            if (!spEdgeSet.has(key)) continue;
+            const x1 = sx(nodes[e.from].x), y1 = sy(nodes[e.from].y);
+            const x2 = sx(nodes[e.to].x), y2 = sy(nodes[e.to].y);
+            ctx.beginPath();
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+            ctx.strokeStyle = 'rgba(100, 255, 218, 0.9)';
+            ctx.lineWidth = 3.5;
+            ctx.setLineDash([8, 4]);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        }
     }
-    ctx.stroke();
 
-    // Fill area under curve
-    const lastPC = profitCurve[profitCurve.length - 1];
-    const firstPC = profitCurve[0];
-    ctx.lineTo(pad.left + ((lastPC.Q - minD) / range) * chartW, profitY1);
-    ctx.lineTo(pad.left + ((firstPC.Q - minD) / range) * chartW, profitY1);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(197, 160, 89, 0.08)';
-    ctx.fill();
+    // Draw nodes
+    for (let i = 0; i < nodes.length; i++) {
+        const x = sx(nodes[i].x), y = sy(nodes[i].y);
+        const isSource = i === 0;
+        const isSink = i === nodes.length - 1;
+        const radius = isSource ? 16 : isSink ? 14 : 11;
 
-    // Q* marker on profit curve
-    const qStarProfitX = pad.left + ((qStar - minD) / range) * chartW;
-    const qStarProfit = expectedProfit(qStar, demands, params.cost, params.price, params.salvage);
-    const qStarProfitY = profitY1 - ((qStarProfit - minProfit) / profitRange) * chartH;
+        // Node circle
+        ctx.beginPath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
+        ctx.fillStyle = isSource ? '#C5A059' : isSink ? '#7aa2f7' : '#1a2f4a';
+        ctx.fill();
+        ctx.strokeStyle = isSource ? '#D4AF37' : isSink ? '#7aa2f7' : 'rgba(197, 160, 89, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.stroke();
 
-    // Vertical dashed line
-    ctx.strokeStyle = '#64ffda';
-    ctx.lineWidth = 2;
-    ctx.setLineDash([6, 4]);
-    ctx.beginPath();
-    ctx.moveTo(qStarProfitX, profitY0);
-    ctx.lineTo(qStarProfitX, profitY1);
-    ctx.stroke();
-    ctx.setLineDash([]);
+        // Node label
+        ctx.fillStyle = isSource || isSink ? '#0A192F' : '#F8F9FA';
+        ctx.font = (isSource ? '600 10px' : '500 9px') + ' Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(nodes[i].label, x, y);
+        ctx.textBaseline = 'alphabetic';
+    }
 
-    // Q* dot
-    ctx.beginPath();
-    ctx.arc(qStarProfitX, qStarProfitY, 5, 0, Math.PI * 2);
-    ctx.fillStyle = '#64ffda';
-    ctx.fill();
-
-    // Q* label on profit curve
-    ctx.fillStyle = '#64ffda';
-    ctx.font = '600 11px JetBrains Mono, monospace';
+    // Legend
+    const legendY = h - 20;
+    ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'left';
-    const labelText = 'Q* = ' + qStar + '  ($' + qStarProfit.toFixed(2) + ')';
-    const labelX = qStarProfitX + 8;
-    // If label would go off right edge, place on left
-    if (labelX + ctx.measureText(labelText).width + 10 > w) {
-        ctx.textAlign = 'right';
-        ctx.fillText(labelText, qStarProfitX - 8, qStarProfitY - 10);
-    } else {
-        ctx.fillText(labelText, labelX, qStarProfitY - 10);
+    let lx = pad;
+    if (mstEdgeSet.size > 0) {
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.8)'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(lx, legendY); ctx.lineTo(lx + 20, legendY); ctx.stroke();
+        ctx.fillStyle = '#C5A059'; ctx.fillText('MST', lx + 25, legendY + 4); lx += 70;
     }
-
+    if (Object.keys(flowEdges).length > 0) {
+        ctx.strokeStyle = 'rgba(122, 162, 247, 0.7)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(lx, legendY); ctx.lineTo(lx + 20, legendY); ctx.stroke();
+        ctx.fillStyle = '#7aa2f7'; ctx.fillText('Flow', lx + 25, legendY + 4); lx += 70;
+    }
+    if (spEdgeSet.size > 0) {
+        ctx.strokeStyle = 'rgba(100, 255, 218, 0.9)'; ctx.lineWidth = 3;
+        ctx.setLineDash([6, 3]);
+        ctx.beginPath(); ctx.moveTo(lx, legendY); ctx.lineTo(lx + 20, legendY); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#64ffda'; ctx.fillText('Shortest Path', lx + 25, legendY + 4);
+    }
     ctx.textAlign = 'start';
 }
 
@@ -2892,13 +2888,15 @@ function toggleAlgo(el) { el.classList.toggle('selected'); }
 
 // ── Reset ──
 function resetDefaults() {
-    document.getElementById('input-cost').value = DEFAULTS.cost;
-    document.getElementById('input-price').value = DEFAULTS.price;
-    document.getElementById('input-salvage').value = DEFAULTS.salvage;
-    document.getElementById('input-demands').value = DEFAULTS.demands;
+    document.getElementById('input-nodes').value = DEFAULTS.nodes;
+    document.getElementById('input-density').value = DEFAULTS.density;
+    document.getElementById('input-seed').value = DEFAULTS.seed;
+    graphNodes = [];
+    graphEdges = [];
+    solverResults = [];
     drawInitial();
     document.getElementById('results-table').querySelector('tbody').innerHTML = '';
-    document.getElementById('detail-output').textContent = 'Select algorithms and click Solve to optimize the order quantity.';
+    document.getElementById('detail-output').textContent = 'Configure network parameters and click Solve to run all selected algorithms.';
     document.getElementById('solver-status').textContent = '';
 }
 
@@ -2918,64 +2916,61 @@ function solveAll() {
         return;
     }
 
+    // Generate graph
+    const graph = generateGraph(params);
+    graphNodes = graph.nodes;
+    graphEdges = graph.edges;
+
     const results = [];
     for (const key of selectedAlgos) {
         const t0 = performance.now();
         let result;
-        if (key === 'fractile') {
-            result = solveCriticalFractile(params);
-        } else if (key === 'grid') {
-            result = solveGridSearch(params);
+        if (key === 'kruskal') result = kruskal(graphNodes, graphEdges);
+        else if (key === 'prim') result = prim(graphNodes, graphEdges);
+        else if (key === 'maxflow') result = edmondsKarp(graphNodes, graphEdges);
+        else if (key === 'dijkstra') result = dijkstra(graphNodes, graphEdges);
+        if (result) {
+            result.time = performance.now() - t0;
+            results.push(result);
         }
-        result.time = performance.now() - t0;
-        results.push(result);
     }
+    solverResults = results;
 
     // Populate results table
     const tbody = document.getElementById('results-table').querySelector('tbody');
     tbody.innerHTML = '';
     for (const r of results) {
         const tr = document.createElement('tr');
+        const valStr = r.value === Infinity ? '\u221E' : r.value;
         tr.innerHTML = `
             <td class="algo-label">${r.name}</td>
-            <td class="best-val">${r.qStar}</td>
-            <td>${r.criticalRatio.toFixed(4)}</td>
-            <td>$${r.profit.toFixed(2)}</td>
-            <td>${r.waste.toFixed(1)}</td>
-            <td>${r.shortage.toFixed(1)}</td>
-            <td>${(r.service * 100).toFixed(1)}%</td>
+            <td>${r.objective}</td>
+            <td class="best-val">${valStr}</td>
+            <td>${r.edgeDesc}</td>
         `;
         tbody.appendChild(tr);
     }
 
     // Detail output
     const lines = [];
-    const { cost, price, salvage, demands } = params;
-    const cu = price - cost;
-    const co = cost - salvage;
-    lines.push(`Cost Parameters: cost=$${cost.toFixed(2)}, price=$${price.toFixed(2)}, salvage=$${salvage.toFixed(2)}`);
-    lines.push(`Underage cost (c_u) = $${price.toFixed(2)} - $${cost.toFixed(2)} = $${cu.toFixed(2)}`);
-    lines.push(`Overage cost (c_o) = $${cost.toFixed(2)} - $${salvage.toFixed(2)} = $${co.toFixed(2)}`);
-    lines.push(`Critical ratio = ${cu.toFixed(2)} / (${cu.toFixed(2)} + ${co.toFixed(2)}) = ${(cu / (cu + co)).toFixed(4)}`);
-    lines.push(`Scenarios: ${demands.length} historical demand observations`);
-    lines.push(`Demand range: [${Math.min(...demands)}, ${Math.max(...demands)}]`);
+    lines.push(`Network: ${graphNodes.length} nodes, ${graphEdges.length} edges`);
+    lines.push(`Density: ${params.density}, Seed: ${params.seed}`);
+    lines.push(`Source: node 0 (${graphNodes[0].label}), Sink: node ${graphNodes.length-1} (${graphNodes[graphNodes.length-1].label})`);
     lines.push('');
     for (const r of results) {
         lines.push(`${r.name}:`);
-        lines.push(`  Optimal Q* = ${r.qStar} units`);
-        lines.push(`  E[Profit]  = $${r.profit.toFixed(2)} per day`);
-        lines.push(`  E[Waste]   = ${r.waste.toFixed(1)} units/day  (unsold inventory)`);
-        lines.push(`  E[Shortage]= ${r.shortage.toFixed(1)} units/day  (unmet demand)`);
-        lines.push(`  Service level = ${(r.service * 100).toFixed(1)}%  (P(demand fully met))`);
+        lines.push(`  ${r.objective} = ${r.value === Infinity ? 'unreachable' : r.value}`);
+        lines.push(`  ${r.edgeDesc}`);
+        lines.push(`  Time: ${r.time.toFixed(2)} ms`);
         lines.push('');
     }
     document.getElementById('detail-output').textContent = lines.join('\n');
 
     // Draw visualization
-    drawResults(params, results);
+    drawResults(graphNodes, graphEdges, results);
 
     document.getElementById('solver-status').textContent =
-        `Solved with ${results.length} algorithm${results.length > 1 ? 's' : ''}. Both methods yield the same optimal order quantity.`;
+        `Solved ${results.length} algorithm${results.length > 1 ? 's' : ''} on a ${graphNodes.length}-node network with ${graphEdges.length} edges.`;
 }
 
 // ── Scroll Animations ──
@@ -2986,20 +2981,8 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
 window.addEventListener('resize', () => {
-    if (document.getElementById('results-table').querySelector('tbody').innerHTML) {
-        // Re-render if results exist
-        const params = parseInputs();
-        const err = validateInputs(params);
-        if (!err) {
-            const results = [];
-            const selectedAlgos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected'))
-                .map(c => c.dataset.algo);
-            for (const key of selectedAlgos) {
-                if (key === 'fractile') results.push(solveCriticalFractile(params));
-                else if (key === 'grid') results.push(solveGridSearch(params));
-            }
-            if (results.length > 0) drawResults(params, results);
-        }
+    if (graphNodes.length > 0 && solverResults.length > 0) {
+        drawResults(graphNodes, graphEdges, solverResults);
     } else {
         drawInitial();
     }
@@ -3108,6 +3091,12 @@ drawInitial();
         { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'applications/warehouse-packing.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Cargo Container Loading', subtitle: '0-1 Knapsack', icon: 'fa-ship', url: 'applications/cargo-loading.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Grocery Ordering', subtitle: 'Newsvendor', icon: 'fa-shopping-cart', url: 'applications/grocery-ordering.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Irrigation Network', subtitle: 'MST \u00b7 Max Flow \u00b7 Shortest Path', icon: 'fa-water', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
+        { title: 'Irrigation Pipe Layout', subtitle: 'Kruskal MST for pipe installation', icon: 'fa-seedling', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-exact' },
+        { title: 'Water Flow Optimization', subtitle: 'Edmonds-Karp max flow', icon: 'fa-faucet', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-exact' },
+        { title: 'Farm Emergency Routing', subtitle: 'Dijkstra shortest path', icon: 'fa-tractor', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-exact' },
+        { title: 'Agricultural Network Design', subtitle: 'Prim MST for field connectivity', icon: 'fa-leaf', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-exact' },
+        { title: 'Crop Irrigation Planning', subtitle: 'Network optimization for agriculture', icon: 'fa-cloud-rain', url: 'applications/irrigation-network.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Ambulance Placement', subtitle: 'p-Median \u00b7 Quebec City', icon: 'fa-ambulance', url: 'applications/ambulance-placement.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Emergency Vehicle Routing', subtitle: 'Shortest Path', icon: 'fa-route', url: 'applications/emergency-routing.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
         { title: 'Investment Portfolio', subtitle: 'Robust Portfolio', icon: 'fa-chart-pie', url: 'applications/portfolio.html', group: 'Applications', badge: 'Demo', badgeColor: 'method-heuristic' },
