@@ -155,6 +155,69 @@ class CVRPInstance:
             name=name,
         )
 
+    @classmethod
+    def from_ors(
+        cls,
+        depot: list[float] | str,
+        customers: list[list[float]] | list[str],
+        demands: list[float] | np.ndarray,
+        capacity: float,
+        metric: str = "distance",
+        profile: str = "driving-car",
+        api_key: str | None = None,
+        name: str = "ors_cvrp",
+    ) -> CVRPInstance:
+        """Create a CVRP instance from real-world locations via OpenRouteService.
+
+        Uses the ORS Matrix API to compute road-network distances between
+        the depot and customer locations.
+
+        Args:
+            depot: [longitude, latitude] or place name for the depot.
+            customers: List of [lon, lat] pairs or place names for customers.
+            demands: Customer demands array of length n.
+            capacity: Vehicle capacity.
+            metric: 'distance' (meters) or 'duration' (seconds).
+            profile: Routing profile ('driving-car', 'driving-hgv', etc.).
+            api_key: ORS API key.
+            name: Instance name.
+
+        Returns:
+            CVRPInstance with real road distances.
+        """
+        import sys
+        from pathlib import Path
+        _root = str(Path(__file__).resolve().parent.parent.parent.parent)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from shared.api.openrouteservice import ORSClient
+
+        client = ORSClient(api_key=api_key, profile=profile)
+
+        # Geocode if strings
+        if isinstance(depot, str):
+            depot_coord = client.geocode_locations([depot])[0]
+        else:
+            depot_coord = np.asarray(depot, dtype=float)
+
+        if customers and isinstance(customers[0], str):
+            cust_coords = client.geocode_locations(customers)
+        else:
+            cust_coords = np.asarray(customers, dtype=float)
+
+        all_coords = np.vstack([depot_coord.reshape(1, 2), cust_coords])
+
+        matrix = client.distance_matrix(all_coords, metric=metric)
+
+        return cls(
+            n=len(cust_coords),
+            capacity=capacity,
+            demands=np.asarray(demands, dtype=float),
+            distance_matrix=matrix,
+            coords=all_coords,
+            name=name,
+        )
+
     def route_distance(self, route: list[int]) -> float:
         """Compute distance of a single route (depot -> customers -> depot).
 

@@ -120,6 +120,64 @@ class TSPInstance:
         return cls(n=n, distance_matrix=dist, coords=coords, name=name)
 
     @classmethod
+    def from_ors(
+        cls,
+        locations: list[list[float]] | list[str],
+        metric: str = "distance",
+        profile: str = "driving-car",
+        api_key: str | None = None,
+        name: str = "ors_tsp",
+    ) -> TSPInstance:
+        """Create a TSP instance from real-world locations via OpenRouteService.
+
+        Uses the ORS Matrix API to compute road-network distances or travel
+        times between locations, producing a realistic asymmetric TSP instance.
+
+        Args:
+            locations: Either a list of [longitude, latitude] pairs, or
+                a list of place name strings to geocode.
+            metric: 'distance' (meters) or 'duration' (seconds).
+            profile: Routing profile ('driving-car', 'driving-hgv',
+                'cycling-regular', 'foot-walking').
+            api_key: ORS API key. Falls back to ORS_API_KEY env var.
+            name: Instance name.
+
+        Returns:
+            TSPInstance with real road distances and lon/lat coordinates.
+
+        Example:
+            >>> inst = TSPInstance.from_ors([
+            ...     [8.681495, 49.41461],   # Heidelberg
+            ...     [8.687872, 49.420318],  # Heidelberg Altstadt
+            ...     [8.651177, 49.418865],  # Neuenheim
+            ... ])
+        """
+        import sys
+        from pathlib import Path
+        _root = str(Path(__file__).resolve().parent.parent.parent.parent)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from shared.api.openrouteservice import ORSClient
+
+        client = ORSClient(api_key=api_key, profile=profile)
+
+        # Geocode if place names provided
+        if locations and isinstance(locations[0], str):
+            coords = client.geocode_locations(locations)
+        else:
+            coords = np.asarray(locations, dtype=float)
+
+        # Get road-network distance/duration matrix
+        matrix = client.distance_matrix(coords, metric=metric)
+
+        return cls(
+            n=len(coords),
+            distance_matrix=matrix,
+            coords=coords,
+            name=name,
+        )
+
+    @classmethod
     def from_distance_matrix(
         cls, distance_matrix: np.ndarray | list, name: str = ""
     ) -> TSPInstance:

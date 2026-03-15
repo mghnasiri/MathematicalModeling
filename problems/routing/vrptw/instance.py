@@ -164,6 +164,74 @@ class VRPTWInstance:
             name=f"random_{n}",
         )
 
+    @classmethod
+    def from_ors(
+        cls,
+        depot: list[float] | str,
+        customers: list[list[float]] | list[str],
+        demands: list[float] | np.ndarray,
+        capacity: float,
+        time_windows: list[list[float]] | np.ndarray,
+        service_times: list[float] | np.ndarray,
+        profile: str = "driving-car",
+        api_key: str | None = None,
+        name: str = "ors_vrptw",
+    ) -> VRPTWInstance:
+        """Create a VRPTW instance from real-world locations via OpenRouteService.
+
+        Uses the ORS Matrix API with 'duration' metric so that travel times
+        are realistic road-network travel times in seconds.
+
+        Args:
+            depot: [longitude, latitude] or place name for the depot.
+            customers: List of [lon, lat] pairs or place names.
+            demands: Customer demands, length n.
+            capacity: Vehicle capacity.
+            time_windows: (n+1, 2) array of [earliest, latest] in seconds.
+                Row 0 is the depot planning horizon.
+            service_times: (n+1,) array of service durations in seconds.
+            profile: Routing profile.
+            api_key: ORS API key.
+            name: Instance name.
+
+        Returns:
+            VRPTWInstance with real travel times as distances.
+        """
+        import sys
+        from pathlib import Path
+        _root = str(Path(__file__).resolve().parent.parent.parent.parent)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from shared.api.openrouteservice import ORSClient
+
+        client = ORSClient(api_key=api_key, profile=profile)
+
+        if isinstance(depot, str):
+            depot_coord = client.geocode_locations([depot])[0]
+        else:
+            depot_coord = np.asarray(depot, dtype=float)
+
+        if customers and isinstance(customers[0], str):
+            cust_coords = client.geocode_locations(customers)
+        else:
+            cust_coords = np.asarray(customers, dtype=float)
+
+        all_coords = np.vstack([depot_coord.reshape(1, 2), cust_coords])
+
+        # Use duration for time-window consistency
+        matrix = client.distance_matrix(all_coords, metric="duration")
+
+        return cls(
+            n=len(cust_coords),
+            capacity=capacity,
+            demands=np.asarray(demands, dtype=float),
+            distance_matrix=matrix,
+            time_windows=np.asarray(time_windows, dtype=float),
+            service_times=np.asarray(service_times, dtype=float),
+            coords=all_coords,
+            name=name,
+        )
+
     def travel_time(self, i: int, j: int) -> float:
         """Travel time from node i to node j (equals distance for unit speed)."""
         return self.distance_matrix[i][j]

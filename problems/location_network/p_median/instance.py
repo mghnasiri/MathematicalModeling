@@ -119,6 +119,79 @@ class PMedianInstance:
             name=f"random_{m}_{n}_p{p}",
         )
 
+    @classmethod
+    def from_ors(
+        cls,
+        facilities: list[list[float]] | list[str],
+        customers: list[list[float]] | list[str],
+        p: int,
+        weights: list[float] | np.ndarray | None = None,
+        metric: str = "distance",
+        profile: str = "driving-car",
+        api_key: str | None = None,
+        name: str = "ors_pmedian",
+    ) -> PMedianInstance:
+        """Create a p-Median instance from real-world locations via ORS.
+
+        Args:
+            facilities: List of [lon, lat] or place names for candidates.
+            customers: List of [lon, lat] or place names for demand points.
+            p: Number of facilities to open.
+            weights: Customer demand weights. If None, all equal to 1.
+            metric: 'distance' (meters) or 'duration' (seconds).
+            profile: Routing profile.
+            api_key: ORS API key.
+            name: Instance name.
+
+        Returns:
+            PMedianInstance with real road distances.
+        """
+        import sys
+        from pathlib import Path
+        _root = str(Path(__file__).resolve().parent.parent.parent.parent)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
+        from shared.api.openrouteservice import ORSClient
+
+        client = ORSClient(api_key=api_key, profile=profile)
+
+        if facilities and isinstance(facilities[0], str):
+            fac_coords = client.geocode_locations(facilities)
+        else:
+            fac_coords = np.asarray(facilities, dtype=float)
+
+        if customers and isinstance(customers[0], str):
+            cust_coords = client.geocode_locations(customers)
+        else:
+            cust_coords = np.asarray(customers, dtype=float)
+
+        m = len(fac_coords)
+        n = len(cust_coords)
+
+        all_coords = np.vstack([fac_coords, cust_coords])
+        result = client.matrix(
+            all_coords.tolist(),
+            metrics=[metric],
+            sources=list(range(m)),
+            destinations=list(range(m, m + n)),
+        )
+        key = "distances" if metric == "distance" else "durations"
+        dist_matrix = result[key]
+
+        if weights is None:
+            weights = np.ones(n)
+
+        return cls(
+            n=n,
+            m=m,
+            p=p,
+            weights=np.asarray(weights, dtype=float),
+            distance_matrix=dist_matrix,
+            coords_facilities=fac_coords,
+            coords_customers=cust_coords,
+            name=name,
+        )
+
     def total_cost(
         self, open_facilities: list[int], assignments: list[int]
     ) -> float:
