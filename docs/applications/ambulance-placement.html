@@ -28,6 +28,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --midnight: #0A192F;
@@ -434,6 +436,20 @@
             display: block;
             border-radius: 2px;
         }
+        #map {
+            width: 100%;
+            height: 550px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--midnight);
+            color: var(--ivory);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+        }
+        .leaflet-popup-tip { background: var(--midnight); }
+        .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.82rem; }
 
         .results-table {
             width: 100%;
@@ -2245,7 +2261,7 @@
 
                 <!-- Canvas -->
                 <div class="solver-canvas-wrap">
-                    <canvas id="map-canvas" width="700" height="500"></canvas>
+                    <div id="map"></div>
                 </div>
 
                 <!-- Results -->
@@ -2402,16 +2418,21 @@
 // Quebec City Ambulance Station Placement — p-Median Solver
 // ═══════════════════════════════════════════════════════════════
 
-// ── Coordinate System ──
-// Lat range: 46.740 → 46.900 → y: 480 → 20 (inverted)
-// Lng range: -71.370 → -71.140 → x: 20 → 680
-const LAT_MIN = 46.740, LAT_MAX = 46.900;
-const LNG_MIN = -71.370, LNG_MAX = -71.140;
-const CW = 700, CH = 500;
-const PAD = 20;
+// ── Leaflet Map ──
+const map = L.map('map', {
+    center: [46.820, -71.240],
+    zoom: 12,
+    zoomControl: true,
+    scrollWheelZoom: true
+});
 
-function latToY(lat) { return PAD + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (CH - 2 * PAD); }
-function lngToX(lng) { return PAD + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (CW - 2 * PAD); }
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+}).addTo(map);
+
+const markersLayer = L.layerGroup().addTo(map);
+const overlayLayer = L.layerGroup().addTo(map);
 
 // Approximate km per degree at Quebec City latitude (~46.8)
 const KM_PER_DEG_LAT = 111.0;
@@ -2437,9 +2458,6 @@ const CANDIDATE_INDICES = [0, 2, 3, 4, 5];
 let pValue = 3;
 let selectedAlgo = 'greedy';
 let currentResult = null;
-
-const canvas = document.getElementById('map-canvas');
-const ctx = canvas.getContext('2d');
 
 const STATION_COLORS = ['#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc'];
 
@@ -2564,136 +2582,63 @@ function teitzBart(p, D) {
     return openSet;
 }
 
-// ── Map Drawing ──
-function drawMap() {
-    ctx.fillStyle = '#112240';
-    ctx.fillRect(0, 0, CW, CH);
-
-    // St. Lawrence River
-    ctx.beginPath();
-    ctx.moveTo(0, CH);
-    ctx.lineTo(CW, CH);
-    ctx.lineTo(CW, CH * 0.45);
-    ctx.bezierCurveTo(CW * 0.85, CH * 0.50, CW * 0.65, CH * 0.62, CW * 0.50, CH * 0.70);
-    ctx.bezierCurveTo(CW * 0.35, CH * 0.78, CW * 0.20, CH * 0.85, 0, CH * 0.90);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(122, 162, 247, 0.10)';
-    ctx.fill();
-
-    // River label
-    ctx.font = '11px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(122, 162, 247, 0.30)';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('St. Lawrence River', CW * 0.60, CH * 0.82);
-
-    // Faint road grid
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.05)';
-    ctx.lineWidth = 1;
-
-    // Autoroute Laurentienne (N-S)
-    ctx.beginPath();
-    ctx.moveTo(lngToX(-71.240), PAD);
-    ctx.lineTo(lngToX(-71.235), CH * 0.75);
-    ctx.stroke();
-
-    // Autoroute de la Capitale (E-W)
-    ctx.beginPath();
-    ctx.moveTo(PAD, latToY(46.840));
-    ctx.lineTo(CW - PAD, latToY(46.840));
-    ctx.stroke();
-
-    // Boulevard Laurier (E-W)
-    ctx.beginPath();
-    ctx.moveTo(lngToX(-71.350), latToY(46.780));
-    ctx.lineTo(lngToX(-71.200), latToY(46.780));
-    ctx.stroke();
-}
+// ══════════════════════════════════════════════════════════════
+// Leaflet Map Drawing
+// ══════════════════════════════════════════════════════════════
 
 function drawInitialState() {
-    drawMap();
+    markersLayer.clearLayers();
+    overlayLayer.clearLayers();
 
     const maxPop = Math.max(...DEMAND_ZONES.map(z => z.pop));
 
-    // Draw demand zones
+    // Draw demand zones as circles
     for (let j = 0; j < DEMAND_ZONES.length; j++) {
         const z = DEMAND_ZONES[j];
-        const x = lngToX(z.lng);
-        const y = latToY(z.lat);
-        const radius = 8 + (z.pop / maxPop) * 16;
+        const radius = 300 + (z.pop / maxPop) * 800;
 
-        // Zone circle
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(168, 178, 209, 0.15)';
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(168, 178, 209, 0.4)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        L.circle([z.lat, z.lng], {
+            radius: radius,
+            color: 'rgba(168, 178, 209, 0.4)',
+            fillColor: 'rgba(168, 178, 209, 0.15)',
+            fillOpacity: 0.3,
+            weight: 1.5
+        }).bindPopup(`<strong>${z.name}</strong><br>Population: ${z.pop.toLocaleString()}`).addTo(markersLayer);
 
-        // Small inner dot
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = 'var(--slate-light)';
-        ctx.fillStyle = '#a8b2d1';
-        ctx.fill();
-
-        // Label
-        ctx.font = '10px Inter, sans-serif';
-        ctx.fillStyle = '#a8b2d1';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(z.name, x, y + radius + 4);
-
-        // Population label
-        ctx.font = '9px JetBrains Mono, monospace';
-        ctx.fillStyle = 'rgba(168, 178, 209, 0.5)';
-        ctx.fillText('pop: ' + z.pop.toLocaleString(), x, y + radius + 16);
+        // Inner dot
+        L.circleMarker([z.lat, z.lng], {
+            radius: 4,
+            color: '#a8b2d1',
+            fillColor: '#a8b2d1',
+            fillOpacity: 1,
+            weight: 0
+        }).addTo(markersLayer);
     }
 
-    // Mark candidate sites with a subtle indicator
+    // Mark candidate sites
     for (const ci of CANDIDATE_INDICES) {
         const z = DEMAND_ZONES[ci];
-        const x = lngToX(z.lng);
-        const y = latToY(z.lat);
-
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
-        ctx.fill();
+        L.circleMarker([z.lat, z.lng], {
+            radius: 5,
+            color: 'rgba(197, 160, 89, 0.8)',
+            fillColor: 'rgba(197, 160, 89, 0.6)',
+            fillOpacity: 1,
+            weight: 1
+        }).bindPopup(`<strong>${z.name}</strong><br>Candidate Station Site`).addTo(markersLayer);
     }
 
-    // Legend
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    // Demand zone legend
-    ctx.beginPath();
-    ctx.arc(CW - 150, 25, 6, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(168, 178, 209, 0.15)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(168, 178, 209, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#8892B0';
-    ctx.fillText('Demand Zone', CW - 138, 25);
-
-    // Candidate site legend
-    ctx.beginPath();
-    ctx.arc(CW - 150, 45, 3, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
-    ctx.fill();
-    ctx.fillStyle = '#8892B0';
-    ctx.fillText('Candidate Site', CW - 138, 45);
+    // Fit bounds
+    const bounds = L.latLngBounds(DEMAND_ZONES.map(z => [z.lat, z.lng]));
+    map.fitBounds(bounds.pad(0.15));
 }
 
 function drawSolution(openSet, assignments, D) {
-    drawMap();
+    markersLayer.clearLayers();
+    overlayLayer.clearLayers();
 
     const maxPop = Math.max(...DEMAND_ZONES.map(z => z.pop));
 
-    // Build color mapping: station candidate index -> color
+    // Build color mapping
     const stationColorMap = {};
     openSet.forEach((ci, idx) => {
         stationColorMap[ci] = STATION_COLORS[idx % STATION_COLORS.length];
@@ -2705,119 +2650,56 @@ function drawSolution(openSet, assignments, D) {
         const station = DEMAND_ZONES[CANDIDATE_INDICES[a.station]];
         const color = stationColorMap[a.station];
 
-        const zx = lngToX(zone.lng);
-        const zy = latToY(zone.lat);
-        const sx = lngToX(station.lng);
-        const sy = latToY(station.lat);
-
-        ctx.beginPath();
-        ctx.moveTo(zx, zy);
-        ctx.lineTo(sx, sy);
-        ctx.strokeStyle = color + '40'; // 25% opacity
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Dashed line effect
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(zx, zy);
-        ctx.lineTo(sx, sy);
-        ctx.strokeStyle = color + '80';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.setLineDash([]);
+        L.polyline([[zone.lat, zone.lng], [station.lat, station.lng]], {
+            color: color,
+            weight: 2,
+            opacity: 0.4,
+            dashArray: '6, 6'
+        }).addTo(overlayLayer);
     }
 
-    // Draw demand zones (colored by assigned station)
+    // Draw demand zones colored by assigned station
     for (let j = 0; j < DEMAND_ZONES.length; j++) {
         const z = DEMAND_ZONES[j];
-        const x = lngToX(z.lng);
-        const y = latToY(z.lat);
-        const radius = 8 + (z.pop / maxPop) * 16;
+        const radius = 300 + (z.pop / maxPop) * 800;
         const a = assignments.find(a => a.zone === j);
         const color = stationColorMap[a.station];
 
-        // Zone circle with station color
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = color + '18';
-        ctx.fill();
-        ctx.strokeStyle = color + '60';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+        L.circle([z.lat, z.lng], {
+            radius: radius,
+            color: color,
+            fillColor: color,
+            fillOpacity: 0.15,
+            weight: 1.5,
+            opacity: 0.5
+        }).bindPopup(`<strong>${z.name}</strong><br>Pop: ${z.pop.toLocaleString()}<br>Assigned to: ${DEMAND_ZONES[CANDIDATE_INDICES[a.station]].name}<br>Distance: ${a.dist.toFixed(2)} km`).addTo(markersLayer);
 
         // Inner dot
-        ctx.beginPath();
-        ctx.arc(x, y, 3, 0, Math.PI * 2);
-        ctx.fillStyle = color;
-        ctx.fill();
-
-        // Label
-        ctx.font = '10px Inter, sans-serif';
-        ctx.fillStyle = '#a8b2d1';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(z.name, x, y + radius + 4);
-
-        // Distance label
-        ctx.font = '9px JetBrains Mono, monospace';
-        ctx.fillStyle = color + 'aa';
-        ctx.fillText(a.dist.toFixed(1) + ' km', x, y + radius + 16);
+        L.circleMarker([z.lat, z.lng], {
+            radius: 4,
+            color: color,
+            fillColor: color,
+            fillOpacity: 1,
+            weight: 0
+        }).addTo(markersLayer);
     }
 
-    // Draw open stations as gold stars
+    // Draw open stations as prominent markers
     for (const ci of openSet) {
         const z = DEMAND_ZONES[CANDIDATE_INDICES[ci]];
-        const x = lngToX(z.lng);
-        const y = latToY(z.lat);
         const color = stationColorMap[ci];
 
-        drawStar(x, y, 12, 6, 5, color);
+        const stationIcon = L.divIcon({
+            className: '',
+            html: `<div style="width:24px;height:24px;background:${color};border:3px solid #fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:#0A192F;">+</div>`,
+            iconSize: [24, 24],
+            iconAnchor: [12, 12]
+        });
 
-        // Station label
-        ctx.font = 'bold 8px JetBrains Mono, monospace';
-        ctx.fillStyle = color;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText('STATION', x, y - 15);
+        L.marker([z.lat, z.lng], { icon: stationIcon })
+            .bindPopup(`<strong>STATION: ${z.name}</strong>`)
+            .addTo(markersLayer);
     }
-
-    // Legend
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    drawStar(CW - 150, 25, 7, 3.5, 5, '#C5A059');
-    ctx.fillStyle = '#8892B0';
-    ctx.fillText('Open Station', CW - 138, 25);
-
-    ctx.beginPath();
-    ctx.arc(CW - 150, 45, 6, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(168, 178, 209, 0.15)';
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(168, 178, 209, 0.4)';
-    ctx.lineWidth = 1;
-    ctx.stroke();
-    ctx.fillStyle = '#8892B0';
-    ctx.fillText('Demand Zone', CW - 138, 45);
-}
-
-function drawStar(cx, cy, outerR, innerR, points, color) {
-    ctx.beginPath();
-    for (let i = 0; i < points * 2; i++) {
-        const r = i % 2 === 0 ? outerR : innerR;
-        const angle = (Math.PI / points) * i - Math.PI / 2;
-        const x = cx + r * Math.cos(angle);
-        const y = cy + r * Math.sin(angle);
-        if (i === 0) ctx.moveTo(x, y);
-        else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-    ctx.strokeStyle = '#0A192F';
-    ctx.lineWidth = 1;
-    ctx.stroke();
 }
 
 // ── UI Controls ──
@@ -2900,6 +2782,10 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initial Draw ──
 drawInitialState();
+
+window.addEventListener('resize', () => {
+    map.invalidateSize();
+});
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

@@ -48,7 +48,7 @@ def _load_mod(name, filepath):
     return mod
 
 
-_inst = _load_mod("pm_instance_ts", os.path.join(_parent_dir, "instance.py"))
+_inst = _load_mod("pmedian_instance_ts", os.path.join(_parent_dir, "instance.py"))
 PMedianInstance = _inst.PMedianInstance
 PMedianSolution = _inst.PMedianSolution
 

@@ -28,6 +28,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --midnight: #0A192F;
@@ -434,6 +436,39 @@
             display: block;
             border-radius: 2px;
         }
+        #map {
+            width: 100%;
+            height: 550px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--midnight);
+            color: var(--ivory);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+        }
+        .leaflet-popup-tip { background: var(--midnight); }
+        .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.82rem; }
+        .depot-icon {
+            background: #ff6b6b;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            width: 18px !important;
+            height: 18px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            color: #0A192F;
+        }
+        .stop-icon {
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 14px !important;
+            height: 14px !important;
+        }
 
         .results-table {
             width: 100%;
@@ -738,7 +773,7 @@
         html[data-theme="light"] .solver-panel {
             background: var(--midnight-light);
         }
-        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+        /* Leaflet tiles handle their own styling, no canvas invert needed */
 
         /* ── 2. Command Palette (Ctrl+K) ── */
         .cmd-palette-overlay {
@@ -2229,7 +2264,7 @@
 
                 <!-- Map Canvas -->
                 <div class="solver-canvas-wrap">
-                    <canvas id="map-canvas" width="600" height="500"></canvas>
+                    <div id="map"></div>
                 </div>
 
                 <!-- Results -->
@@ -2348,25 +2383,35 @@
 // Quebec City Delivery Route Planner — CVRP Solver
 // ═══════════════════════════════════════════════════════════════
 
-// ── Coordinate System ──
-// Lat range: 46.760 → 46.860 → y: 480 → 20 (inverted)
-// Lng range: -71.310 → -71.170 → x: 20 → 580
+// ── Leaflet Map Initialization ──
+const map = L.map('map', {
+    center: [46.810, -71.230],
+    zoom: 13,
+    zoomControl: true,
+    scrollWheelZoom: true
+});
 
-const LAT_MIN = 46.760, LAT_MAX = 46.860;
-const LNG_MIN = -71.310, LNG_MAX = -71.170;
-const CW = 600, CH = 500;
-const PAD = 20;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+}).addTo(map);
 
-function latToY(lat) { return PAD + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (CH - 2 * PAD); }
-function lngToX(lng) { return PAD + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (CW - 2 * PAD); }
+// Layer groups for markers and routes
+const markersLayer = L.layerGroup().addTo(map);
+const routesLayer = L.layerGroup().addTo(map);
 
-// Scale factor: approximate km per pixel (rough Euclidean based on lat/lng range)
-// Lat span ~0.1 deg ≈ 11.1 km; Lng span ~0.14 deg ≈ 10.0 km at this latitude
-// Canvas span: 560 px for ~10 km → ~0.018 km/px average
-const KM_PER_PX = 0.019;
+// ── Haversine distance (km) ──
+function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
 
 // ── Landmark Data ──
-// { name, lat, lng, demand8, demand12 }
 const LANDMARKS = [
     { name: "Depot: Sainte-Foy DC",    lat: 46.764, lng: -71.282, demand: 0 },
     { name: "Place Laurier",            lat: 46.781, lng: -71.277, demand: 15 },
@@ -2388,160 +2433,99 @@ const LANDMARKS = [
 const PRESET_8  = [0, 1, 3, 4, 6, 7, 9, 11, 13];        // depot + 8 stops
 const PRESET_12 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13]; // depot + 12 stops
 
-// ── State ──
-let activeStops = [];   // array of {name, x, y, demand, idx}
-let capacity = 60;
-let dist = [];          // distance matrix (pixels)
-let demands = [];       // demand array aligned to activeStops
-let currentResults = [];
-
-const canvas = document.getElementById('map-canvas');
-const ctx = canvas.getContext('2d');
-
 const ROUTE_COLORS = [
     '#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc',
     '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c'
 ];
 
-// ── Projection ──
-function project(landmark) {
-    return { x: lngToX(landmark.lng), y: latToY(landmark.lat) };
-}
+// ── State ──
+let activeStops = [];   // array of {name, lat, lng, demand, idx}
+let capacity = 60;
+let dist = [];          // distance matrix (km via haversine)
+let demands = [];       // demand array aligned to activeStops
+let currentResults = [];
 
 // ── Distance Helpers ──
-function euclidean(a, b) {
-    return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2);
-}
-
 function buildDistMatrix() {
     const n = activeStops.length;
     dist = Array.from({ length: n }, () => new Float64Array(n));
     for (let i = 0; i < n; i++)
         for (let j = i + 1; j < n; j++) {
-            const d = euclidean(activeStops[i], activeStops[j]);
+            const d = haversine(activeStops[i].lat, activeStops[i].lng,
+                                activeStops[j].lat, activeStops[j].lng);
             dist[i][j] = d;
             dist[j][i] = d;
         }
     demands = activeStops.map(s => s.demand);
 }
 
-// ── Map Drawing ──
-function drawMap() {
-    ctx.fillStyle = '#112240';
-    ctx.fillRect(0, 0, CW, CH);
-
-    // St. Lawrence River — a band along bottom-right
-    ctx.beginPath();
-    ctx.moveTo(0, CH);
-    ctx.lineTo(CW, CH);
-    ctx.lineTo(CW, CH * 0.55);
-    ctx.bezierCurveTo(CW * 0.85, CH * 0.60, CW * 0.70, CH * 0.72, CW * 0.55, CH * 0.78);
-    ctx.bezierCurveTo(CW * 0.40, CH * 0.84, CW * 0.25, CH * 0.88, 0, CH * 0.92);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(122, 162, 247, 0.12)';
-    ctx.fill();
-
-    // River label
-    ctx.font = '11px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(122, 162, 247, 0.35)';
-    ctx.fillText('St. Lawrence River', CW * 0.55, CH * 0.88);
-
-    // Faint road lines
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
-    ctx.lineWidth = 1;
-
-    // Autoroute Laurentienne (N-S)
-    ctx.beginPath();
-    ctx.moveTo(lngToX(-71.240), PAD);
-    ctx.lineTo(lngToX(-71.230), CH * 0.75);
-    ctx.stroke();
-
-    // Autoroute de la Capitale (E-W)
-    ctx.beginPath();
-    ctx.moveTo(PAD, latToY(46.830));
-    ctx.lineTo(CW - PAD, latToY(46.830));
-    ctx.stroke();
-
-    // Boulevard Laurier (E-W lower)
-    ctx.beginPath();
-    ctx.moveTo(PAD, latToY(46.780));
-    ctx.lineTo(lngToX(-71.200), latToY(46.780));
-    ctx.stroke();
-
-    // Chemin Sainte-Foy
-    ctx.beginPath();
-    ctx.moveTo(lngToX(-71.300), latToY(46.785));
-    ctx.lineTo(lngToX(-71.200), latToY(46.810));
-    ctx.stroke();
-}
+// ══════════════════════════════════════════════════════════════
+// Leaflet Map Drawing
+// ══════════════════════════════════════════════════════════════
 
 function drawStops() {
-    drawMap();
+    markersLayer.clearLayers();
+    routesLayer.clearLayers();
 
     for (let i = 0; i < activeStops.length; i++) {
         const s = activeStops[i];
+        let marker;
         if (i === 0) {
-            // Depot: red square
-            ctx.fillStyle = '#ff6b6b';
-            ctx.fillRect(s.x - 7, s.y - 7, 14, 14);
-            ctx.fillStyle = '#0A192F';
-            ctx.font = 'bold 10px JetBrains Mono, monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('D', s.x, s.y + 1);
-
-            ctx.fillStyle = '#ff6b6b';
-            ctx.font = '10px Inter, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText('Depot', s.x + 12, s.y + 4);
+            // Depot marker
+            const depotIcon = L.divIcon({
+                className: 'depot-icon',
+                html: 'D',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+            marker = L.marker([s.lat, s.lng], { icon: depotIcon });
+            marker.bindPopup(`<strong>${s.name}</strong><br>Depot`);
         } else {
-            // Customer: gold circle
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, 6, 0, Math.PI * 2);
-            ctx.fillStyle = '#C5A059';
-            ctx.fill();
-
-            // Label
-            ctx.fillStyle = 'rgba(248,249,250,0.8)';
-            ctx.font = '9px Inter, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'middle';
-            const label = s.name + ' (' + s.demand + ' kg)';
-            // Alternate label side to reduce overlap
-            const labelX = (s.x > CW * 0.6) ? s.x - ctx.measureText(label).width - 10 : s.x + 10;
-            ctx.fillText(label, labelX, s.y);
+            const r = Math.max(8, Math.min(14, s.demand / 2));
+            marker = L.marker([s.lat, s.lng], { icon: L.divIcon({
+                className: '',
+                html: `<div style="width:${r}px;height:${r}px;background:#C5A059;border:2px solid #fff;border-radius:50%;"></div>`,
+                iconSize: [r, r],
+                iconAnchor: [r/2, r/2]
+            })});
+            marker.bindPopup(`<strong>${s.name}</strong><br>Demand: ${s.demand} kg`);
         }
+        marker.addTo(markersLayer);
     }
-    ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
 }
 
 function drawRoutes(routes) {
-    drawStops();
+    routesLayer.clearLayers();
     const depot = activeStops[0];
+
     routes.forEach((route, ri) => {
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        ctx.beginPath();
-        ctx.moveTo(depot.x, depot.y);
-        for (const c of route) {
-            ctx.lineTo(activeStops[c].x, activeStops[c].y);
-        }
-        ctx.lineTo(depot.x, depot.y);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.globalAlpha = 0.8;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+        const latlngs = [[depot.lat, depot.lng]];
+        for (const c of route) latlngs.push([activeStops[c].lat, activeStops[c].lng]);
+        latlngs.push([depot.lat, depot.lng]);
 
-        // Draw route nodes on top with route color ring
+        const polyline = L.polyline(latlngs, {
+            color: color,
+            weight: 3.5,
+            opacity: 0.85
+        });
+        polyline.addTo(routesLayer);
+
+        // Highlight route stops with colored rings
         for (const c of route) {
-            ctx.beginPath();
-            ctx.arc(activeStops[c].x, activeStops[c].y, 8, 0, Math.PI * 2);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            const st = activeStops[c];
+            L.circleMarker([st.lat, st.lng], {
+                radius: 8,
+                color: color,
+                weight: 2.5,
+                fillOpacity: 0,
+                opacity: 0.9
+            }).addTo(routesLayer);
         }
     });
+
+    // Re-add markers on top
+    markersLayer.eachLayer(m => m.bringToFront());
 }
 
 // ── Preset Loading ──
@@ -2549,8 +2533,7 @@ function loadPreset(size) {
     const indices = size === '8' ? PRESET_8 : PRESET_12;
     activeStops = indices.map(i => {
         const lm = LANDMARKS[i];
-        const p = project(lm);
-        return { name: lm.name, x: p.x, y: p.y, demand: lm.demand, idx: i };
+        return { name: lm.name, lat: lm.lat, lng: lm.lng, demand: lm.demand, idx: i };
     });
 
     // Button states
@@ -2559,6 +2542,11 @@ function loadPreset(size) {
 
     buildDistMatrix();
     drawStops();
+
+    // Fit map bounds to all stops
+    const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
+    map.fitBounds(bounds.pad(0.1));
+
     buildDemandEditor();
     clearResults();
 }
@@ -2677,7 +2665,7 @@ function sweep() {
     const dep = activeStops[0];
     const angles = [];
     for (let i = 1; i <= n; i++) {
-        const a = Math.atan2(activeStops[i].y - dep.y, activeStops[i].x - dep.x);
+        const a = Math.atan2(activeStops[i].lat - dep.lat, activeStops[i].lng - dep.lng);
         angles.push({ a, i });
     }
     angles.sort((a, b) => a.a - b.a);
@@ -2785,7 +2773,7 @@ function solveAll() {
     tbody.innerHTML = '';
     currentResults.forEach((r, i) => {
         const tr = document.createElement('tr');
-        const distKm = (r.distance * KM_PER_PX).toFixed(1);
+        const distKm = r.distance.toFixed(1);
         tr.innerHTML = `
             <td class="algo-label">${r.name}</td>
             <td class="${i === 0 ? 'best-val' : ''}">${distKm}</td>
@@ -2810,12 +2798,12 @@ function showResult(r) {
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
         const load = routeLoad(route);
         totalLoad += load;
-        const d = (routeDist(route) * KM_PER_PX).toFixed(1);
+        const d = routeDist(route).toFixed(1);
         const stops = route.map(c => activeStops[c].name).join(' → ');
         lines.push(`Route ${ri + 1}: Depot → ${stops} → Depot  (${d} km, ${load} kg)`);
     });
 
-    const totalKm = (r.distance * KM_PER_PX).toFixed(1);
+    const totalKm = r.distance.toFixed(1);
     const avgLoad = (totalLoad / r.routes.length).toFixed(0);
     lines.push('');
     lines.push(`Total: ${totalKm} km  |  ${r.vehicles} van${r.vehicles > 1 ? 's' : ''}  |  Avg load: ${avgLoad} kg`);
