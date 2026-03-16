@@ -690,3 +690,236 @@ class TestAgricultureColdStorage:
         # Should have method results with positive roll counts
         assert "Greedy" in cs or "FFD" in cs
         assert cs.get("lower_bound", 1) >= 1
+
+
+# ── Finance, Retail, Telecom, Energy, Logistics Applications ────────────────
+
+
+class TestFinancePortfolio:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("finance_test", "finance_portfolio.py")
+
+    def test_create_instance(self):
+        data = self.mod.create_portfolio_instance()
+        assert data["n_assets"] == 8
+        assert data["expected_returns"].shape == (8,)
+        assert data["covariance"].shape == (8, 8)
+
+    def test_covariance_positive_semidefinite(self):
+        data = self.mod.create_portfolio_instance()
+        eigvals = np.linalg.eigvalsh(data["covariance"])
+        assert np.all(eigvals >= -1e-8)
+
+    def test_solve_all_methods(self):
+        results = self.mod.solve_portfolio(verbose=False)
+        for method in ["Markowitz", "Robust", "Equal-Weight", "Min-Variance", "Max-Return"]:
+            assert method in results
+            assert results[method]["expected_return"] > 0
+            assert results[method]["portfolio_std"] >= 0
+
+    def test_weights_sum_to_one(self):
+        results = self.mod.solve_portfolio(verbose=False)
+        for method, res in results.items():
+            assert abs(np.sum(res["weights"]) - 1.0) < 1e-4, \
+                f"{method}: weights sum to {np.sum(res['weights'])}"
+
+    def test_robust_more_conservative(self):
+        results = self.mod.solve_portfolio(verbose=False)
+        # Robust portfolio should have lower or equal expected return
+        # (it sacrifices return for robustness)
+        assert results["Robust"]["expected_return"] <= \
+               results["Markowitz"]["expected_return"] + 1e-6
+
+
+class TestRetailInventory:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("retail_test", "retail_inventory.py")
+
+    def test_create_bakery_instances(self):
+        instances = self.mod.create_bakery_instances()
+        assert len(instances) == 5
+        for inst in instances:
+            assert inst["cost"] < inst["price"]
+            assert len(inst["scenarios"]) == 200
+
+    def test_create_eoq_instances(self):
+        instances = self.mod.create_eoq_instances()
+        assert len(instances) == 3
+        for inst in instances:
+            assert inst["annual_demand"] > 0
+            assert inst["ordering_cost"] > 0
+
+    def test_create_lot_sizing(self):
+        data = self.mod.create_lot_sizing_instance()
+        assert data["T"] == 12
+        assert len(data["demands"]) == 12
+
+    def test_bakery_newsvendor(self):
+        results = self.mod.solve_bakery_newsvendor(verbose=False)
+        assert "bakery" in results
+        assert len(results["bakery"]) == 5
+        for r in results["bakery"]:
+            assert r["order_quantity"] > 0
+            assert 0 < r["critical_fractile"] < 1
+
+    def test_staple_eoq(self):
+        results = self.mod.solve_staple_eoq(verbose=False)
+        assert "staples" in results
+        assert len(results["staples"]) == 3
+        for r in results["staples"]:
+            assert r["eoq"] > 0
+            assert r["total_cost"] > 0
+
+    def test_seasonal_lot_sizing(self):
+        results = self.mod.solve_seasonal_lot_sizing(verbose=False)
+        assert "lot_sizing" in results
+        for method in ["Wagner-Whitin", "Silver-Meal", "Lot-for-Lot"]:
+            assert method in results["lot_sizing"]
+            assert results["lot_sizing"][method]["total_cost"] > 0
+
+    def test_ww_optimal(self):
+        results = self.mod.solve_seasonal_lot_sizing(verbose=False)
+        ls = results["lot_sizing"]
+        assert ls["Wagner-Whitin"]["total_cost"] <= ls["Lot-for-Lot"]["total_cost"] + 1e-6
+
+    def test_solve_all(self):
+        results = self.mod.solve_retail_inventory(verbose=False)
+        assert "bakery" in results
+        assert "staples" in results
+        assert "lot_sizing" in results
+
+
+class TestTelecomNetwork:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("telecom_test", "telecom_network.py")
+
+    def test_create_coverage_instance(self):
+        data = self.mod.create_coverage_instance()
+        assert data["m"] == 40  # demand zones
+        assert data["n"] == 15  # tower sites
+        assert len(data["subsets"]) == 15
+
+    def test_all_zones_coverable(self):
+        data = self.mod.create_coverage_instance()
+        all_covered = set()
+        for s in data["subsets"]:
+            all_covered.update(s)
+        # At least some zones should be coverable
+        assert len(all_covered) >= 20
+
+    def test_solve_produces_results(self):
+        results = self.mod.solve_telecom_network(verbose=False)
+        assert "coverage" in results
+        assert "frequency" in results
+
+    def test_coverage_methods(self):
+        results = self.mod.solve_telecom_network(verbose=False)
+        for method in ["Greedy-CE", "Greedy-LF"]:
+            assert method in results["coverage"]
+            assert results["coverage"][method]["total_cost"] > 0
+            assert results["coverage"][method]["n_towers"] >= 1
+
+    def test_frequency_valid(self):
+        results = self.mod.solve_telecom_network(verbose=False)
+        for method in ["DSatur", "Greedy-LF"]:
+            assert method in results["frequency"]
+            assert results["frequency"][method]["valid"]
+            assert results["frequency"][method]["n_frequencies"] >= 1
+
+    def test_interference_graph_created(self):
+        results = self.mod.solve_telecom_network(verbose=False)
+        assert "selected_towers" in results
+        assert len(results["selected_towers"]) >= 1
+
+
+class TestEnergyGrid:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("energy_test", "energy_grid.py")
+
+    def test_create_dispatch(self):
+        data = self.mod.create_dispatch_instance()
+        assert data["n_plants"] == 6
+        assert data["total_demand"] > 0
+        assert len(data["costs"]) == 6
+
+    def test_create_grid_network(self):
+        data = self.mod.create_grid_network()
+        assert data["n"] == 16  # 6 plants + 8 districts + 2 super nodes
+        assert data["source"] == 14
+        assert data["sink"] == 15
+
+    def test_create_backbone(self):
+        data = self.mod.create_backbone_network()
+        assert data["n"] == 14
+        assert len(data["edges"]) > 0
+
+    def test_dispatch_feasible(self):
+        results = self.mod.solve_energy_grid(verbose=False)
+        assert results["dispatch"]["success"]
+        assert results["dispatch"]["total_cost"] > 0
+
+    def test_generation_meets_demand(self):
+        results = self.mod.solve_energy_grid(verbose=False)
+        total_gen = sum(results["dispatch"]["generation"])
+        total_demand = results["dispatch"]["total_demand"]
+        assert abs(total_gen - total_demand) < 1.0
+
+    def test_max_flow_positive(self):
+        results = self.mod.solve_energy_grid(verbose=False)
+        assert results["max_flow"]["max_throughput"] > 0
+
+    def test_mst_backbone(self):
+        results = self.mod.solve_energy_grid(verbose=False)
+        assert results["mst"]["total_cost"] > 0
+        assert results["mst"]["n_links"] >= 1
+
+
+class TestLogisticsGateAssignment:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mod = _load_app("logistics_test", "logistics_gate_assignment.py")
+
+    def test_create_gate_instance(self):
+        data = self.mod.create_gate_assignment_instance()
+        assert data["n"] == 10
+        assert data["cost_matrix"].shape == (10, 10)
+
+    def test_wide_body_penalty(self):
+        data = self.mod.create_gate_assignment_instance()
+        # Wide-body flights (indices 3,4,8) should have high cost for narrow gates
+        # BA722 (index 3) is wide, gate A3 (index 2) is narrow
+        wide_flight = 3
+        narrow_gate = 2
+        wide_gate = 0
+        assert data["cost_matrix"][wide_flight][narrow_gate] > \
+               data["cost_matrix"][wide_flight][wide_gate]
+
+    def test_create_turnaround(self):
+        data = self.mod.create_turnaround_instance()
+        assert data["n_jobs"] == 10
+        assert data["n_machines"] == 3
+        assert len(data["jobs"]) == 10
+
+    def test_solve_assignment(self):
+        results = self.mod.solve_gate_assignment(verbose=False)
+        assert "assignment" in results
+        assert results["assignment"]["Hungarian"]["cost"] <= \
+               results["assignment"]["Greedy"]["cost"] + 1e-6
+
+    def test_solve_turnaround(self):
+        results = self.mod.solve_gate_assignment(verbose=False)
+        assert "turnaround" in results
+        for method in ["SPT", "LPT", "MWR", "SA"]:
+            assert method in results["turnaround"]
+            assert results["turnaround"][method]["makespan"] > 0
+
+    def test_sa_improves_dispatching(self):
+        results = self.mod.solve_gate_assignment(verbose=False)
+        best_dispatch = min(
+            results["turnaround"][m]["makespan"] for m in ["SPT", "LPT", "MWR"]
+        )
+        assert results["turnaround"]["SA"]["makespan"] <= best_dispatch
