@@ -2166,25 +2166,51 @@
 <div class="formula-block">min &Sigma; c<sub>i</sub>x<sub>i</sub> s.t. l<sub>i</sub> &le; x<sub>i</sub> &le; u<sub>i</sub>, &Sigma;x<sub>i</sub> &le; 5000</div>
 </div></div></div></div></section>
 
-<section id="interactive"><div class="container"><div class="section-header fade-in"><h2>Try It Yourself</h2><p>Allocate water from a 5,000 m&sup3; reservoir to 6 fields</p></div>
+<section id="interactive"><div class="container"><div class="section-header fade-in"><h2>Try It Yourself</h2><p>Edit field water requirements &amp; costs, adjust reservoir size, then optimize allocation</p></div>
 <div class="row justify-content-center"><div class="col-lg-11"><div class="interactive-panel fade-in">
-<div class="panel-header"><h3><i class="fas fa-sliders-h" style="color:var(--gold);margin-right:0.7rem;"></i>Field Water Requirements</h3><span style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Fields &middot; 5,000 m&sup3; Reservoir</span></div>
+<div class="panel-header"><h3><i class="fas fa-sliders-h" style="color:var(--gold);margin-right:0.7rem;"></i>Field Water Requirements</h3><span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Fields · Click any cell to edit</span></div>
 <div class="panel-body">
-<table class="patient-table"><thead><tr><th>Field</th><th>Crop</th><th>Min (m&sup3;)</th><th>Max (m&sup3;)</th><th>Cost ($/m&sup3;)</th></tr></thead>
-<tbody>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#f0c040;"></span>North</td><td>Corn</td><td>400</td><td>1200</td><td>2.50</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#d4a054;"></span>South</td><td>Wheat</td><td>300</td><td>900</td><td>1.80</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#7cc67c;"></span>East</td><td>Soybean</td><td>500</td><td>1100</td><td>2.20</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#e8d44d;"></span>West</td><td>Canola</td><td>200</td><td>800</td><td>3.10</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#c8956c;"></span>Central</td><td>Barley</td><td>350</td><td>1000</td><td>1.50</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#a8c8a0;"></span>Hilltop</td><td>Oats</td><td>250</td><td>700</td><td>2.80</td></tr>
-</tbody></table>
+
+<!-- Reservoir slider -->
+<div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:0.7rem 1rem;background:rgba(197,160,89,0.06);border:1px solid rgba(197,160,89,0.15);border-radius:6px;">
+    <span style="color:var(--gold);font-weight:600;font-size:0.85rem;white-space:nowrap;"><i class="fas fa-water" style="margin-right:0.4rem;"></i>Reservoir:</span>
+    <input type="range" id="resSlider" min="1000" max="15000" value="5000" step="500" oninput="document.getElementById('resVal').textContent=this.value;updateConfigLabel();" style="flex:1;accent-color:var(--gold);">
+    <span id="resVal" style="color:var(--ivory);font-family:JetBrains Mono,monospace;font-weight:600;min-width:50px;text-align:center;">5000</span>
+    <span style="color:var(--slate);font-size:0.8rem;">m&sup3;</span>
+</div>
+
+<!-- Editable table -->
+<div style="overflow-x:auto;">
+<table class="patient-table" id="fieldTable">
+    <thead><tr><th>Field</th><th>Crop</th><th>Min (m&sup3;)</th><th>Max (m&sup3;)</th><th>Cost ($/m&sup3;)</th><th style="width:35px;"></th></tr></thead>
+    <tbody id="fieldTableBody"></tbody>
+</table>
+</div>
+
+<!-- Action buttons -->
+<div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.5rem;">
+    <button class="algo-chip" onclick="addField()" style="border:1px dashed var(--gold);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Field</button>
+    <button class="algo-chip" onclick="resetDefaults()" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset 6 Fields</button>
+    <button class="algo-chip" onclick="randomizeFields()" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+    <button class="algo-chip" onclick="loadScenario('drought')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-sun" style="margin-right:0.3rem;"></i> Drought (Low Supply)</button>
+    <button class="algo-chip" onclick="loadScenario('large')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-expand" style="margin-right:0.3rem;"></i> 10 Fields</button>
+</div>
 
 <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Select Method</div>
 <div class="algorithm-chips">
 <button class="algo-chip active" data-algo="optimal" onclick="selectAlgorithm('optimal')">Optimal Allocation <span class="chip-tag">LP</span></button>
-<button class="algo-chip" data-algo="min" onclick="selectAlgorithm('min')">Minimum Allocation <span class="chip-tag">baseline</span></button>
+<button class="algo-chip" data-algo="equal" onclick="selectAlgorithm('equal')">Equal Share <span class="chip-tag">baseline</span></button>
+<button class="algo-chip" data-algo="min" onclick="selectAlgorithm('min')">Minimum Only <span class="chip-tag">baseline</span></button>
 </div>
+
+<!-- Solve button -->
+<div style="text-align:center;margin:1.2rem 0;">
+    <button id="solveBtn" onclick="runSolver()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--midnight);border:none;padding:0.8rem 2.5rem;border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(197,160,89,0.3);">
+        <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Visualize
+    </button>
+</div>
+
+<div class="legend" id="legendContainer"></div>
 
 <div class="gantt-container">
 <div class="gantt-title">Water Allocation by Field</div>
@@ -2256,89 +2282,274 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const FLDS=[
-    {name:'North',crop:'Corn',min:400,max:1200,cost:2.50,color:'#f0c040'},
-    {name:'South',crop:'Wheat',min:300,max:900,cost:1.80,color:'#d4a054'},
-    {name:'East',crop:'Soybean',min:500,max:1100,cost:2.20,color:'#7cc67c'},
-    {name:'West',crop:'Canola',min:200,max:800,cost:3.10,color:'#e8d44d'},
-    {name:'Central',crop:'Barley',min:350,max:1000,cost:1.50,color:'#c8956c'},
-    {name:'Hilltop',crop:'Oats',min:250,max:700,cost:2.80,color:'#a8c8a0'},
+/* ── Data & Constants ── */
+const FIELD_COLORS = ['#f0c040','#d4a054','#7cc67c','#e8d44d','#c8956c','#a8c8a0','#e06c75','#61afef','#c678dd','#56b6c2'];
+const CROP_NAMES = ['Corn','Wheat','Soybean','Canola','Barley','Oats','Rye','Millet','Flax','Hemp'];
+const FIELD_NAMES = ['North','South','East','West','Central','Hilltop','Valley','Ridge','Creek','Meadow'];
+
+const DEFAULT_FIELDS = [
+    {name:'North',crop:'Corn',min:400,max:1200,cost:2.50},{name:'South',crop:'Wheat',min:300,max:900,cost:1.80},
+    {name:'East',crop:'Soybean',min:500,max:1100,cost:2.20},{name:'West',crop:'Canola',min:200,max:800,cost:3.10},
+    {name:'Central',crop:'Barley',min:350,max:1000,cost:1.50},{name:'Hilltop',crop:'Oats',min:250,max:700,cost:2.80},
 ];
-const RESERVOIR=5000;
+const DROUGHT_FIELDS = [
+    {name:'North',crop:'Corn',min:400,max:1200,cost:2.50},{name:'South',crop:'Wheat',min:300,max:900,cost:1.80},
+    {name:'East',crop:'Soybean',min:500,max:1100,cost:2.20},{name:'West',crop:'Canola',min:200,max:800,cost:3.10},
+    {name:'Central',crop:'Barley',min:350,max:1000,cost:1.50},{name:'Hilltop',crop:'Oats',min:250,max:700,cost:2.80},
+];
+const LARGE_FIELDS = [
+    {name:'North',crop:'Corn',min:400,max:1200,cost:2.50},{name:'South',crop:'Wheat',min:300,max:900,cost:1.80},
+    {name:'East',crop:'Soybean',min:500,max:1100,cost:2.20},{name:'West',crop:'Canola',min:200,max:800,cost:3.10},
+    {name:'Central',crop:'Barley',min:350,max:1000,cost:1.50},{name:'Hilltop',crop:'Oats',min:250,max:700,cost:2.80},
+    {name:'Valley',crop:'Rye',min:300,max:850,cost:2.00},{name:'Ridge',crop:'Millet',min:200,max:600,cost:3.50},
+    {name:'Creek',crop:'Flax',min:450,max:1000,cost:1.70},{name:'Meadow',crop:'Hemp',min:150,max:500,cost:2.30},
+];
 
-function solveOptimal(){
-    const t0=performance.now();
-    const alloc=FLDS.map(f=>f.min);
-    let remain=RESERVOIR-alloc.reduce((s,v)=>s+v,0);
-    // Sort indices by cost ascending
-    const order=FLDS.map((_,i)=>i).sort((a,b)=>FLDS[a].cost-FLDS[b].cost);
-    for(const i of order){
-        const extra=Math.min(remain,FLDS[i].max-alloc[i]);
-        alloc[i]+=extra;remain-=extra;
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:60px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+
+let currentAlgo = 'optimal';
+
+/* ── Render table ── */
+function renderTable(fields) {
+    const tbody = document.getElementById('fieldTableBody');
+    tbody.innerHTML = '';
+    fields.forEach((f, i) => {
+        const color = FIELD_COLORS[i % FIELD_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="patient-name"><span class="patient-dot" style="background:${color};"></span><input type="text" value="${f.name}" style="${nameStyle}"></td>
+            <td><input type="text" value="${f.crop}" style="${nameStyle}"></td>
+            <td><input type="number" value="${f.min}" min="0" max="5000" step="50" style="${inputStyle}"></td>
+            <td><input type="number" value="${f.max}" min="0" max="5000" step="50" style="${inputStyle}"></td>
+            <td><input type="number" value="${f.cost}" min="0.1" max="20" step="0.1" style="${inputStyle}"></td>
+            <td><button onclick="removeField(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateConfigLabel();
+}
+
+/* ── Read from DOM ── */
+function readFieldsFromTable() {
+    const rows = document.querySelectorAll('#fieldTableBody tr');
+    const fields = [];
+    rows.forEach((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        fields.push({
+            name: inputs[0].value.trim() || ('Field '+(i+1)),
+            crop: inputs[1].value.trim() || 'Crop',
+            min: Math.max(0, parseInt(inputs[2].value)||0),
+            max: Math.max(1, parseInt(inputs[3].value)||100),
+            cost: Math.max(0.1, parseFloat(inputs[4].value)||1),
+            color: FIELD_COLORS[i % FIELD_COLORS.length],
+        });
+    });
+    return fields;
+}
+
+function updateConfigLabel() {
+    const n = document.querySelectorAll('#fieldTableBody tr').length;
+    const res = document.getElementById('resSlider').value;
+    document.getElementById('configLabel').textContent = n + ' Fields \u00b7 Reservoir ' + res + 'm\u00b3 \u00b7 Click any cell to edit';
+}
+
+/* ── Actions ── */
+function addField() {
+    const rows = document.querySelectorAll('#fieldTableBody tr');
+    const idx = rows.length;
+    const name = FIELD_NAMES[idx % FIELD_NAMES.length];
+    const crop = CROP_NAMES[idx % CROP_NAMES.length];
+    const min = Math.floor(Math.random()*300)+100;
+    const max = min + Math.floor(Math.random()*600)+200;
+    const cost = +(Math.random()*3+1).toFixed(2);
+    const color = FIELD_COLORS[idx % FIELD_COLORS.length];
+    const tbody = document.getElementById('fieldTableBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="patient-name"><span class="patient-dot" style="background:${color};"></span><input type="text" value="${name}" style="${nameStyle}"></td>
+        <td><input type="text" value="${crop}" style="${nameStyle}"></td>
+        <td><input type="number" value="${min}" min="0" max="5000" step="50" style="${inputStyle}"></td>
+        <td><input type="number" value="${max}" min="0" max="5000" step="50" style="${inputStyle}"></td>
+        <td><input type="number" value="${cost}" min="0.1" max="20" step="0.1" style="${inputStyle}"></td>
+        <td><button onclick="removeField(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateConfigLabel();
+}
+
+function removeField(btn) {
+    if (document.querySelectorAll('#fieldTableBody tr').length <= 1) { alert('Need at least 1 field.'); return; }
+    btn.closest('tr').remove();
+    updateConfigLabel();
+}
+
+function resetDefaults() {
+    renderTable(DEFAULT_FIELDS);
+    document.getElementById('resSlider').value = 5000;
+    document.getElementById('resVal').textContent = '5000';
+}
+
+function randomizeFields() {
+    document.querySelectorAll('#fieldTableBody tr').forEach(row => {
+        const inputs = row.querySelectorAll('input[type="number"]');
+        const min = Math.floor(Math.random()*400)+100;
+        inputs[0].value = min;
+        inputs[1].value = min + Math.floor(Math.random()*600)+200;
+        inputs[2].value = (Math.random()*3+1).toFixed(2);
+    });
+}
+
+function loadScenario(type) {
+    if (type === 'drought') { renderTable(DROUGHT_FIELDS); document.getElementById('resSlider').value=2500; document.getElementById('resVal').textContent='2500'; }
+    else if (type === 'large') { renderTable(LARGE_FIELDS); document.getElementById('resSlider').value=8000; document.getElementById('resVal').textContent='8000'; }
+}
+
+/* ── Algorithms ── */
+function solveOptimal(fields, reservoir) {
+    const t0 = performance.now();
+    const alloc = fields.map(f => f.min);
+    let remain = reservoir - alloc.reduce((s,v) => s+v, 0);
+    if (remain < 0) {
+        /* Not enough water even for minimums — proportional reduction */
+        const totalMin = fields.reduce((s,f)=>s+f.min,0);
+        fields.forEach((f,i) => { alloc[i] = Math.floor(f.min * reservoir / totalMin); });
+        remain = 0;
     }
-    const totalCost=alloc.reduce((s,v,i)=>s+v*FLDS[i].cost,0);
-    const totalWater=alloc.reduce((s,v)=>s+v,0);
-    return {alloc,totalCost,totalWater,elapsed:performance.now()-t0,method:'Optimal Allocation (LP)'};
+    const order = fields.map((_,i) => i).sort((a,b) => fields[a].cost - fields[b].cost);
+    for (const i of order) {
+        const extra = Math.min(remain, fields[i].max - alloc[i]);
+        alloc[i] += extra; remain -= extra;
+    }
+    const totalCost = alloc.reduce((s,v,i) => s + v*fields[i].cost, 0);
+    const totalWater = alloc.reduce((s,v) => s+v, 0);
+    return {alloc, totalCost, totalWater, elapsed:performance.now()-t0, method:'Optimal (Cheapest-First LP)', fields, reservoir};
 }
 
-function solveMin(){
-    const t0=performance.now();
-    const alloc=FLDS.map(f=>f.min);
-    const totalCost=alloc.reduce((s,v,i)=>s+v*FLDS[i].cost,0);
-    const totalWater=alloc.reduce((s,v)=>s+v,0);
-    return {alloc,totalCost,totalWater,elapsed:performance.now()-t0,method:'Minimum Allocation (Baseline)'};
+function solveEqual(fields, reservoir) {
+    const t0 = performance.now();
+    const n = fields.length;
+    const share = Math.floor(reservoir / n);
+    const alloc = fields.map(f => Math.max(f.min, Math.min(f.max, share)));
+    const totalCost = alloc.reduce((s,v,i) => s + v*fields[i].cost, 0);
+    const totalWater = alloc.reduce((s,v) => s+v, 0);
+    return {alloc, totalCost, totalWater, elapsed:performance.now()-t0, method:'Equal Share', fields, reservoir};
 }
 
-function renderChart(data){
-    const canvas=document.getElementById('chartCanvas');const ctx=canvas.getContext('2d');
-    const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
-    const leftPad=80,topPad=20,barH=30,gap=12;
-    const maxVal=Math.max(...FLDS.map(f=>f.max));
-    const scale=(W-leftPad-40)/maxVal;
-    FLDS.forEach((f,i)=>{
-        const y=topPad+i*(barH+gap);
-        ctx.fillStyle='#8892B0';ctx.font='12px Inter';ctx.textAlign='right';ctx.fillText(f.name,leftPad-10,y+barH/2+4);
-        // Max bar (ghost)
-        ctx.fillStyle='#1a1a2e';ctx.fillRect(leftPad,y,f.max*scale,barH);
-        // Min bar (darker)
-        ctx.fillStyle=f.color+'30';ctx.fillRect(leftPad,y,f.min*scale,barH);
-        // Allocated bar
-        ctx.fillStyle=f.color+'aa';ctx.fillRect(leftPad,y,data.alloc[i]*scale,barH);
-        ctx.strokeStyle=f.color;ctx.lineWidth=1;ctx.strokeRect(leftPad,y,data.alloc[i]*scale,barH);
-        // Labels
-        ctx.fillStyle='#fff';ctx.font='bold 10px JetBrains Mono';ctx.textAlign='left';
-        if(data.alloc[i]*scale>60)ctx.fillText(data.alloc[i]+'m\u00B3',leftPad+5,y+barH/2+4);
-        // Max marker
-        ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.setLineDash([3,3]);
-        ctx.beginPath();ctx.moveTo(leftPad+f.max*scale,y);ctx.lineTo(leftPad+f.max*scale,y+barH);ctx.stroke();
+function solveMin(fields, reservoir) {
+    const t0 = performance.now();
+    const alloc = fields.map(f => f.min);
+    const totalCost = alloc.reduce((s,v,i) => s + v*fields[i].cost, 0);
+    const totalWater = alloc.reduce((s,v) => s+v, 0);
+    return {alloc, totalCost, totalWater, elapsed:performance.now()-t0, method:'Minimum Only (Baseline)', fields, reservoir};
+}
+
+/* ── Render Chart ── */
+function renderChart(data) {
+    const fields = data.fields;
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    const n = fields.length;
+    const barH = Math.min(30, Math.max(16, (280-40)/(n+0.5)-8));
+    const gap = Math.min(12, barH*0.3);
+    canvas.height = Math.max(280, 40 + n*(barH+gap));
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const leftPad = 80, topPad = 20;
+    const maxVal = Math.max(...fields.map(f => f.max), 1);
+    const scale = (W - leftPad - 40) / maxVal;
+
+    fields.forEach((f, i) => {
+        const y = topPad + i*(barH+gap);
+        ctx.fillStyle = '#8892B0'; ctx.font = '11px Inter'; ctx.textAlign = 'right';
+        ctx.fillText(f.name, leftPad-10, y+barH/2+4);
+        ctx.fillStyle = '#1a1a2e'; ctx.fillRect(leftPad, y, f.max*scale, barH);
+        ctx.fillStyle = f.color+'30'; ctx.fillRect(leftPad, y, f.min*scale, barH);
+        ctx.fillStyle = f.color+'aa'; ctx.fillRect(leftPad, y, data.alloc[i]*scale, barH);
+        ctx.strokeStyle = f.color; ctx.lineWidth = 1; ctx.strokeRect(leftPad, y, data.alloc[i]*scale, barH);
+        if (data.alloc[i]*scale > 50) {
+            ctx.fillStyle = '#fff'; ctx.font = 'bold 9px JetBrains Mono'; ctx.textAlign = 'left';
+            ctx.fillText(data.alloc[i]+'m\u00B3', leftPad+5, y+barH/2+3);
+        }
+        ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(leftPad+f.max*scale, y); ctx.lineTo(leftPad+f.max*scale, y+barH); ctx.stroke();
         ctx.setLineDash([]);
     });
 }
 
-function renderResults(data){
-    const util=(data.totalWater/RESERVOIR*100).toFixed(1);
-    document.getElementById('resultsGrid').innerHTML=`
+/* ── Render Results ── */
+function renderResults(data) {
+    const fields = data.fields;
+    const reservoir = data.reservoir;
+    const util = (data.totalWater/reservoir*100).toFixed(1);
+
+    document.getElementById('resultsGrid').innerHTML = `
         <div class="result-card"><div class="result-value">$${(data.totalCost/1000).toFixed(1)}K</div><div class="result-label">Total Cost</div></div>
-        <div class="result-card"><div class="result-value">${data.totalWater}</div><div class="result-label">Water Used (m\u00B3)</div></div>
+        <div class="result-card"><div class="result-value">${data.totalWater}</div><div class="result-label">Water Used (m\u00b3)</div></div>
         <div class="result-card"><div class="result-value">${util}%</div><div class="result-label">Reservoir Used</div></div>
         <div class="result-card"><div class="result-value">${data.elapsed.toFixed(2)}</div><div class="result-label">Time (ms)</div></div>`;
-    let detail=`<span class="room-name">Method:</span> ${data.method}<br><br>`;
-    FLDS.forEach((f,i)=>{detail+=`<span class="room-name">${f.name} (${f.crop}):</span> ${data.alloc[i]}m\u00B3 [${f.min}-${f.max}] cost=$${(data.alloc[i]*f.cost).toFixed(0)}<br>`;});
-    document.getElementById('scheduleDetail').innerHTML=detail;
+
+    let detail = `<span class="room-name">Method:</span> ${data.method}<br>`;
+    detail += `<span class="room-name">Reservoir:</span> ${reservoir}m\u00b3<br><br>`;
+    fields.forEach((f, i) => {
+        const pct = ((data.alloc[i]/f.max)*100).toFixed(0);
+        const atMin = data.alloc[i] <= f.min;
+        detail += `<span class="room-name">${f.name} (${f.crop}):</span> ${data.alloc[i]}m\u00b3 [${f.min}-${f.max}] = ${pct}% &nbsp; $${(data.alloc[i]*f.cost).toFixed(0)} ${atMin?'<span style="color:#e8d44d;">min only</span>':''}<br>`;
+    });
+
+    /* Compare all three */
+    const optR = solveOptimal(fields, reservoir), eqR = solveEqual(fields, reservoir), minR = solveMin(fields, reservoir);
+    detail += `<br><span class="room-name">Comparison:</span><br>`;
+    detail += `&nbsp;&nbsp;Optimal: $${(optR.totalCost/1000).toFixed(1)}K, ${optR.totalWater}m\u00b3 used<br>`;
+    detail += `&nbsp;&nbsp;Equal: $${(eqR.totalCost/1000).toFixed(1)}K, ${eqR.totalWater}m\u00b3 used<br>`;
+    detail += `&nbsp;&nbsp;Minimum: $${(minR.totalCost/1000).toFixed(1)}K, ${minR.totalWater}m\u00b3 used<br>`;
+    const savings = ((1 - optR.totalCost/eqR.totalCost)*100).toFixed(1);
+    detail += `&nbsp;&nbsp;<em style="color:var(--green);">Optimal saves ${savings}% vs Equal Share</em>`;
+
+    document.getElementById('scheduleDetail').innerHTML = detail;
     renderChart(data);
 }
 
-function selectAlgorithm(algo){
-    document.querySelectorAll('.algo-chip').forEach(c=>c.classList.remove('active'));
-    document.querySelector(`.algo-chip[data-algo="${algo}"]`).classList.add('active');
-    renderResults(algo==='optimal'?solveOptimal():solveMin());
+/* ── Algorithm Selection ── */
+function selectAlgorithm(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('.algo-chip[data-algo]').forEach(c => c.classList.remove('active'));
+    const chip = document.querySelector(`.algo-chip[data-algo="${algo}"]`);
+    if (chip) chip.classList.add('active');
 }
 
+/* ── Main Solve ── */
+function runSolver() {
+    const fields = readFieldsFromTable();
+    if (fields.length < 1) { alert('Need at least 1 field.'); return; }
+    const reservoir = parseInt(document.getElementById('resSlider').value) || 5000;
+
+    for (const f of fields) {
+        if (f.max < f.min) { alert(f.name + ': Max must be >= Min.'); return; }
+    }
+
+    const btn = document.getElementById('solveBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Solving...';
+    btn.disabled = true;
+
+    setTimeout(() => {
+        let data;
+        if (currentAlgo === 'optimal') data = solveOptimal(fields, reservoir);
+        else if (currentAlgo === 'equal') data = solveEqual(fields, reservoir);
+        else data = solveMin(fields, reservoir);
+        renderResults(data);
+        btn.innerHTML = '<i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Visualize';
+        btn.disabled = false;
+    }, 80);
+}
+
+/* ── Init ── */
 window.addEventListener('scroll',()=>{document.querySelector('.navbar').classList.toggle('scrolled',window.scrollY>50);});
 document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const href=a.getAttribute('href');if(href==='#')return;e.preventDefault();const t=document.querySelector(href);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
 const observer=new IntersectionObserver((entries)=>{entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('visible');});},{threshold:0.1});
 document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
-document.addEventListener('DOMContentLoaded',()=>{selectAlgorithm('optimal');});
+document.addEventListener('DOMContentLoaded',()=>{
+    renderTable(DEFAULT_FIELDS);
+    runSolver();
+});
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
