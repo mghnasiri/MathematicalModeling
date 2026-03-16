@@ -2165,16 +2165,35 @@
 <div class="formula-block">LAP &mdash; O(n&sup3;) via Hungarian method (Kuhn, 1955)</div>
 </div></div></div></div></section>
 
-<section id="interactive"><div class="container"><div class="section-header fade-in"><h2>Try It Yourself</h2><p>Assign 6 crops to 6 fields to maximize total yield</p></div>
+<section id="interactive"><div class="container"><div class="section-header fade-in"><h2>Try It Yourself</h2><p>Edit the yield matrix, add/remove fields and crops, then find the optimal assignment</p></div>
 <div class="row justify-content-center"><div class="col-lg-11"><div class="interactive-panel fade-in">
-<div class="panel-header"><h3><i class="fas fa-sliders-h" style="color:var(--gold);margin-right:0.7rem;"></i>Yield Matrix (tons/acre)</h3><span style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Fields &times; 6 Crops</span></div>
+<div class="panel-header"><h3><i class="fas fa-sliders-h" style="color:var(--gold);margin-right:0.7rem;"></i>Yield Matrix (tons/acre)</h3><span id="matrixSize" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Fields &times; 6 Crops &middot; Click any cell to edit</span></div>
 <div class="panel-body">
-<div id="matrixView" style="overflow-x:auto;margin-bottom:1.5rem;"></div>
+
+<!-- Editable matrix -->
+<div id="matrixView" style="overflow-x:auto;margin-bottom:1rem;"></div>
+
+<!-- Action buttons -->
+<div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.5rem;">
+    <button class="algo-chip" onclick="addField()" style="border:1px dashed var(--gold);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Field</button>
+    <button class="algo-chip" onclick="addCrop()" style="border:1px dashed var(--green);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Crop</button>
+    <button class="algo-chip" onclick="resetDefaults()" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset 6&times;6</button>
+    <button class="algo-chip" onclick="randomizeMatrix()" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+    <button class="algo-chip" onclick="loadScenario('small')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-compress" style="margin-right:0.3rem;"></i> Small 3&times;3</button>
+    <button class="algo-chip" onclick="loadScenario('large')" style="border:1px solid rgba(255,158,100,0.3);background:transparent;"><i class="fas fa-expand" style="margin-right:0.3rem;"></i> Large 8&times;8</button>
+</div>
 
 <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Select Algorithm</div>
 <div class="algorithm-chips">
 <button class="algo-chip active" data-algo="hungarian" onclick="selectAlgorithm('hungarian')">Hungarian Method <span class="chip-tag">exact</span></button>
 <button class="algo-chip" data-algo="greedy" onclick="selectAlgorithm('greedy')">Greedy Assignment <span class="chip-tag">heuristic</span></button>
+</div>
+
+<!-- Solve button -->
+<div style="text-align:center;margin:1.2rem 0;">
+    <button id="solveBtn" onclick="runSolver()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--midnight);border:none;padding:0.8rem 2.5rem;border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(197,160,89,0.3);">
+        <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Visualize
+    </button>
 </div>
 
 <div class="results-grid" id="resultsGrid"></div>
@@ -2242,9 +2261,11 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const FIELDS = ['North Valley','South Ridge','East Meadow','West Plain','Central Plot','Hilltop'];
-const CROP_NAMES = ['Corn','Wheat','Soybean','Canola','Barley','Oats'];
-const YIELDS = [
+// ─── Field-to-Crop Assignment — Interactive Hungarian Solver ───
+
+const DEFAULT_FIELDS = ['North Valley','South Ridge','East Meadow','West Plain','Central Plot','Hilltop'];
+const DEFAULT_CROPS = ['Corn','Wheat','Soybean','Canola','Barley','Oats'];
+const DEFAULT_YIELDS = [
     [180, 140, 160, 90, 150, 120],
     [130, 170, 120, 140, 160, 110],
     [150, 130, 180, 110, 120, 140],
@@ -2252,60 +2273,203 @@ const YIELDS = [
     [170, 110, 150, 130, 180, 100],
     [100, 150, 130, 160, 110, 170],
 ];
+
+let fields = [], crops = [], yields = [];
 let currentAssignment = [];
+let currentAlgo = 'hungarian';
+
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.3rem;width:55px;text-align:center;font-size:0.82rem;font-family:"JetBrains Mono",monospace;';
+const nameInputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.15);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;width:100px;font-size:0.8rem;font-family:"Inter",sans-serif;';
+
+function loadData(f, c, y) {
+    fields = [...f];
+    crops = [...c];
+    yields = y.map(row => [...row]);
+    currentAssignment = [];
+    renderMatrix();
+    updateSizeLabel();
+}
+
+function updateSizeLabel() {
+    const el = document.getElementById('matrixSize');
+    el.textContent = `${fields.length} Fields × ${crops.length} Crops · Click any cell to edit`;
+}
 
 function renderMatrix() {
-    let html = '<table class="patient-table"><thead><tr><th>Field \\ Crop</th>';
-    CROP_NAMES.forEach(c => html += `<th>${c}</th>`);
+    const n = fields.length, m = crops.length;
+    let html = '<table class="patient-table"><thead><tr><th style="min-width:120px;">Field \\ Crop</th>';
+    for (let j = 0; j < m; j++) {
+        html += `<th><input type="text" value="${crops[j]}" onchange="crops[${j}]=this.value" style="${nameInputStyle}width:75px;">`;
+        if (m > 1) html += ` <button onclick="removeCrop(${j})" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.7rem;" title="Remove crop"><i class="fas fa-times"></i></button>`;
+        html += '</th>';
+    }
     html += '</tr></thead><tbody>';
-    FIELDS.forEach((f, i) => {
-        html += `<tr><td class="patient-name">${f}</td>`;
-        CROP_NAMES.forEach((_, j) => {
+    for (let i = 0; i < n; i++) {
+        html += '<tr><td class="patient-name" style="white-space:nowrap;">';
+        html += `<input type="text" value="${fields[i]}" onchange="fields[${i}]=this.value" style="${nameInputStyle}">`;
+        if (n > 1) html += ` <button onclick="removeField(${i})" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.7rem;" title="Remove field"><i class="fas fa-times"></i></button>`;
+        html += '</td>';
+        for (let j = 0; j < m; j++) {
             const isAssigned = currentAssignment.some(a => a[0] === i && a[1] === j);
-            const bg = isAssigned ? 'background:rgba(197,160,89,0.25);border:2px solid var(--gold);font-weight:bold;color:var(--gold);' : '';
-            html += `<td style="${bg}">${YIELDS[i][j]}</td>`;
-        });
+            const cellStyle = isAssigned ? 'background:rgba(197,160,89,0.2);border:2px solid var(--gold);border-radius:6px;' : '';
+            const valStyle = isAssigned ? inputStyle + 'color:var(--gold);font-weight:bold;border-color:var(--gold);' : inputStyle;
+            html += `<td style="${cellStyle}"><input type="number" value="${yields[i][j]}" min="0" step="10" onchange="yields[${i}][${j}]=parseFloat(this.value)||0" style="${valStyle}"></td>`;
+        }
         html += '</tr>';
-    });
+    }
     html += '</tbody></table>';
     document.getElementById('matrixView').innerHTML = html;
 }
 
-function hungarian() {
-    const t0 = performance.now();
-    const n = 6;
-    // Convert to minimization (negate yields, add offset)
-    const maxVal = 200;
-    const cost = YIELDS.map(row => row.map(v => maxVal - v));
-    // Simple O(n!) brute-force for n=6 (720 permutations)
-    let bestPerm = null, bestCost = Infinity;
-    function permute(arr, l, r) {
-        if (l === r) {
-            let c = 0;
-            for (let i = 0; i < n; i++) c += cost[i][arr[i]];
-            if (c < bestCost) { bestCost = c; bestPerm = [...arr]; }
-            return;
+function addField() {
+    const m = crops.length;
+    fields.push('Field ' + (fields.length + 1));
+    yields.push(Array.from({length: m}, () => 80 + Math.floor(Math.random() * 120)));
+    renderMatrix();
+    updateSizeLabel();
+}
+
+function addCrop() {
+    const n = fields.length;
+    crops.push('Crop ' + (crops.length + 1));
+    for (let i = 0; i < n; i++) yields[i].push(80 + Math.floor(Math.random() * 120));
+    renderMatrix();
+    updateSizeLabel();
+}
+
+function removeField(idx) {
+    if (fields.length <= 1) return;
+    fields.splice(idx, 1);
+    yields.splice(idx, 1);
+    currentAssignment = [];
+    renderMatrix();
+    updateSizeLabel();
+}
+
+function removeCrop(idx) {
+    if (crops.length <= 1) return;
+    crops.splice(idx, 1);
+    for (let i = 0; i < fields.length; i++) yields[i].splice(idx, 1);
+    currentAssignment = [];
+    renderMatrix();
+    updateSizeLabel();
+}
+
+function resetDefaults() {
+    loadData(DEFAULT_FIELDS.slice(), DEFAULT_CROPS.slice(), DEFAULT_YIELDS.map(r => [...r]));
+}
+
+function randomizeMatrix() {
+    for (let i = 0; i < fields.length; i++)
+        for (let j = 0; j < crops.length; j++)
+            yields[i][j] = 50 + Math.floor(Math.random() * 180);
+    currentAssignment = [];
+    renderMatrix();
+}
+
+function loadScenario(name) {
+    if (name === 'small') {
+        loadData(
+            ['North Field', 'South Field', 'East Field'],
+            ['Corn', 'Wheat', 'Soy'],
+            [[150, 120, 180], [170, 90, 130], [110, 160, 140]]
+        );
+    } else if (name === 'large') {
+        const f = ['Valley A','Ridge B','Meadow C','Plain D','Hill E','Creek F','Plateau G','Hollow H'];
+        const c = ['Corn','Wheat','Soy','Canola','Barley','Oats','Rye','Millet'];
+        const y = [];
+        for (let i = 0; i < 8; i++) {
+            y.push([]);
+            for (let j = 0; j < 8; j++) y[i].push(60 + Math.floor(Math.random() * 160));
         }
-        for (let i = l; i <= r; i++) {
-            [arr[l], arr[i]] = [arr[i], arr[l]];
-            permute(arr, l + 1, r);
-            [arr[l], arr[i]] = [arr[i], arr[l]];
+        loadData(f, c, y);
+    }
+}
+
+// ── Read current yields from DOM (in case user edited inputs directly) ──
+function syncYieldsFromDOM() {
+    const rows = document.querySelectorAll('#matrixView tbody tr');
+    rows.forEach((row, i) => {
+        const nameInput = row.querySelector('td:first-child input');
+        if (nameInput) fields[i] = nameInput.value;
+        const numInputs = row.querySelectorAll('td:not(:first-child) input[type="number"]');
+        numInputs.forEach((inp, j) => {
+            yields[i][j] = parseFloat(inp.value) || 0;
+        });
+    });
+    // Sync crop names from header
+    const headInputs = document.querySelectorAll('#matrixView thead input');
+    headInputs.forEach((inp, j) => { crops[j] = inp.value; });
+}
+
+// ── Hungarian method (exact, works for rectangular matrices via padding) ──
+function hungarian() {
+    syncYieldsFromDOM();
+    const t0 = performance.now();
+    const n = fields.length, m = crops.length;
+    const dim = Math.max(n, m);
+
+    // Pad to square, fill with 0 (since we maximize, padding doesn't affect)
+    const maxVal = 1000;
+    const cost = [];
+    for (let i = 0; i < dim; i++) {
+        cost.push([]);
+        for (let j = 0; j < dim; j++) {
+            const val = (i < n && j < m) ? yields[i][j] : 0;
+            cost[i].push(maxVal - val); // convert to minimization
         }
     }
-    permute([0,1,2,3,4,5], 0, 5);
-    const assignment = bestPerm.map((j, i) => [i, j]);
-    const totalYield = assignment.reduce((s, [i, j]) => s + YIELDS[i][j], 0);
-    return { assignment, totalYield, elapsed: performance.now() - t0, method: 'Hungarian (Exact)' };
+
+    // Full Hungarian algorithm
+    const INF = 1e9;
+    const u = new Array(dim + 1).fill(0);
+    const v = new Array(dim + 1).fill(0);
+    const p = new Array(dim + 1).fill(0);
+    const way = new Array(dim + 1).fill(0);
+
+    for (let i = 1; i <= dim; i++) {
+        p[0] = i;
+        let j0 = 0;
+        const minv = new Array(dim + 1).fill(INF);
+        const used = new Array(dim + 1).fill(false);
+        do {
+            used[j0] = true;
+            let i0 = p[j0], delta = INF, j1;
+            for (let j = 1; j <= dim; j++) {
+                if (!used[j]) {
+                    const cur = cost[i0 - 1][j - 1] - u[i0] - v[j];
+                    if (cur < minv[j]) { minv[j] = cur; way[j] = j0; }
+                    if (minv[j] < delta) { delta = minv[j]; j1 = j; }
+                }
+            }
+            for (let j = 0; j <= dim; j++) {
+                if (used[j]) { u[p[j]] += delta; v[j] -= delta; }
+                else minv[j] -= delta;
+            }
+            j0 = j1;
+        } while (p[j0] !== 0);
+        do { const j1 = way[j0]; p[j0] = p[j1]; j0 = j1; } while (j0);
+    }
+
+    const assignment = [];
+    for (let j = 1; j <= dim; j++) {
+        const i = p[j] - 1, jj = j - 1;
+        if (i < n && jj < m) assignment.push([i, jj]);
+    }
+    const totalYield = assignment.reduce((s, [i, j]) => s + yields[i][j], 0);
+    return { assignment, totalYield, elapsed: performance.now() - t0, method: 'Hungarian (Exact — O(n³))' };
 }
 
 function greedy() {
+    syncYieldsFromDOM();
     const t0 = performance.now();
-    const n = 6;
+    const n = fields.length, m = crops.length;
     const usedRows = new Set(), usedCols = new Set();
     const assignment = [];
-    // Build list of all cells, sort by yield descending
     const cells = [];
-    for (let i = 0; i < n; i++) for (let j = 0; j < n; j++) cells.push([i, j, YIELDS[i][j]]);
+    for (let i = 0; i < n; i++)
+        for (let j = 0; j < m; j++)
+            cells.push([i, j, yields[i][j]]);
     cells.sort((a, b) => b[2] - a[2]);
     for (const [i, j, v] of cells) {
         if (!usedRows.has(i) && !usedCols.has(j)) {
@@ -2313,38 +2477,68 @@ function greedy() {
             usedRows.add(i); usedCols.add(j);
         }
     }
-    const totalYield = assignment.reduce((s, [i, j]) => s + YIELDS[i][j], 0);
+    const totalYield = assignment.reduce((s, [i, j]) => s + yields[i][j], 0);
     return { assignment, totalYield, elapsed: performance.now() - t0, method: 'Greedy (Heuristic)' };
 }
 
 function renderResults(data) {
     currentAssignment = data.assignment;
-    renderMatrix();
-    const avgYield = (data.totalYield / 6).toFixed(0);
+    renderMatrix(); // re-render with highlights
+    const nAssigned = data.assignment.length;
+    const avgYield = nAssigned > 0 ? (data.totalYield / nAssigned).toFixed(0) : 0;
     document.getElementById('resultsGrid').innerHTML = `
         <div class="result-card"><div class="result-value">${data.totalYield}</div><div class="result-label">Total Yield (tons)</div></div>
-        <div class="result-card"><div class="result-value">6</div><div class="result-label">Assignments</div></div>
+        <div class="result-card"><div class="result-value">${nAssigned}</div><div class="result-label">Assignments</div></div>
         <div class="result-card"><div class="result-value">${avgYield}</div><div class="result-label">Avg Yield/Field</div></div>
         <div class="result-card"><div class="result-value">${data.elapsed.toFixed(2)}</div><div class="result-label">Time (ms)</div></div>
     `;
     let detail = `<span class="room-name">Method:</span> ${data.method}<br><br>`;
-    for (const [i, j] of data.assignment.sort((a,b)=>a[0]-b[0])) {
-        detail += `<span class="room-name">${FIELDS[i]}</span> &rarr; ${CROP_NAMES[j]} (${YIELDS[i][j]} tons)<br>`;
+    for (const [i, j] of data.assignment.sort((a,b) => a[0] - b[0])) {
+        detail += `<span style="display:inline-block;width:10px;height:10px;background:var(--gold);border-radius:2px;margin-right:6px;vertical-align:middle;"></span>`;
+        detail += `<span class="room-name">${fields[i]}</span> → ${crops[j]} (<strong>${yields[i][j]}</strong> tons)<br>`;
+    }
+    // Show optimality gap if greedy
+    if (data.method.includes('Greedy')) {
+        const opt = hungarian();
+        if (opt.totalYield > data.totalYield) {
+            const gap = ((opt.totalYield - data.totalYield) / opt.totalYield * 100).toFixed(1);
+            detail += `<br><span style="color:var(--red);">Gap from optimal: ${gap}% (optimal = ${opt.totalYield} tons)</span>`;
+        } else {
+            detail += `<br><span style="color:var(--green);">Greedy found the optimal solution!</span>`;
+        }
     }
     document.getElementById('scheduleDetail').innerHTML = detail;
 }
 
-function selectAlgorithm(algo) {
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
-    document.querySelector(`.algo-chip[data-algo="${algo}"]`).classList.add('active');
-    renderResults(algo === 'hungarian' ? hungarian() : greedy());
+function runSolver() {
+    syncYieldsFromDOM();
+    const btn = document.getElementById('solveBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Solving...';
+    setTimeout(() => {
+        const data = currentAlgo === 'hungarian' ? hungarian() : greedy();
+        renderResults(data);
+        btn.innerHTML = '<i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve & Visualize';
+    }, 30);
 }
 
+function selectAlgorithm(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('.algo-chip[data-algo]').forEach(c => c.classList.remove('active'));
+    const el = document.querySelector(`.algo-chip[data-algo="${algo}"]`);
+    if (el) el.classList.add('active');
+    runSolver();
+}
+
+// ── Init ──
 window.addEventListener('scroll', () => { document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 50); });
 document.querySelectorAll('a[href^="#"]').forEach(a => { a.addEventListener('click', e => { const href = a.getAttribute('href'); if (href === '#') return; e.preventDefault(); const t = document.querySelector(href); if (t) t.scrollIntoView({ behavior: 'smooth', block: 'start' }); }); });
 const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-document.addEventListener('DOMContentLoaded', () => { renderMatrix(); selectAlgorithm('hungarian'); });
+
+document.addEventListener('DOMContentLoaded', () => {
+    loadData(DEFAULT_FIELDS.slice(), DEFAULT_CROPS.slice(), DEFAULT_YIELDS.map(r => [...r]));
+    runSolver();
+});
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
