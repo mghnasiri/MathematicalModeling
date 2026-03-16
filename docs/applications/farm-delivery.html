@@ -1375,7 +1375,7 @@
             <p>Plan farm-to-market delivery routes across Quebec City</p>
         </div>
 
-        <div class="solver-panel fade-in">
+        <div class="solver-panel">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-route"></i> Farm-to-Market Route Planner</h4>
                 <span class="help-icon" title="Configure capacity, edit demands, choose algorithms, and click Optimize Routes."><i class="fas fa-question-circle"></i></span>
@@ -1652,22 +1652,10 @@
 //  Uses OSRM for real road distances and route geometries
 // ══════════════════════════════════════════════════════════════
 
-// ── Leaflet Map Initialization ──
-const map = L.map('map', {
-    center: [46.810, -71.230],
-    zoom: 13,
-    zoomControl: true,
-    scrollWheelZoom: true
-});
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
-    maxZoom: 19
-}).addTo(map);
-
-// Layer groups for markers and routes
-const markersLayer = L.layerGroup().addTo(map);
-const routesLayer = L.layerGroup().addTo(map);
+// ── Globals (set during init) ──
+let leafletMap = null;
+let markersLayer = null;
+let routesLayer = null;
 
 // Haversine distance (km) — fallback when OSRM is unavailable
 function haversine(lat1, lng1, lat2, lng2) {
@@ -1711,7 +1699,9 @@ let capacity = 2000;
 let dist = [];
 let demands = [];
 let currentResults = [];
-let useRoadDist = false;  // true when OSRM matrix loaded successfully
+let useRoadDist = false;
+let mapReady = false;
+let solving = false;
 
 // ── Initialize stops ──
 function initStops() {
@@ -1743,19 +1733,22 @@ async function buildOSRMDistMatrix() {
     const coords = activeStops.map(s => `${s.lng},${s.lat}`).join(';');
     const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
     try {
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`OSRM table API returned ${resp.status}`);
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
         const data = await resp.json();
-        if (data.code !== 'Ok') throw new Error(`OSRM error: ${data.code}`);
+        if (data.code !== 'Ok') throw new Error(`OSRM: ${data.code}`);
         const n = activeStops.length;
         dist = Array.from({ length: n }, () => new Float64Array(n));
         for (let i = 0; i < n; i++)
             for (let j = 0; j < n; j++)
-                dist[i][j] = data.distances[i][j] / 1000;  // meters → km
+                dist[i][j] = data.distances[i][j] / 1000;
         useRoadDist = true;
         return true;
     } catch (e) {
-        console.warn('OSRM table API failed, using Haversine fallback:', e.message);
+        console.warn('OSRM table API unavailable, using Haversine:', e.message);
         buildHaversineMatrix();
         useRoadDist = false;
         return false;
@@ -1764,13 +1757,16 @@ async function buildOSRMDistMatrix() {
 
 // ── OSRM: Get road geometry for a route ──
 async function getRouteGeometry(waypoints) {
-    const coords = waypoints.map(idx => `${activeStops[idx].lng},${activeStops[idx].lat}`).join(';');
-    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
     try {
-        const resp = await fetch(url);
+        const coords = waypoints.map(idx => `${activeStops[idx].lng},${activeStops[idx].lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
         if (!resp.ok) return null;
         const data = await resp.json();
-        if (data.code !== 'Ok' || !data.routes.length) return null;
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
         return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
     } catch (e) {
         return null;
@@ -1798,6 +1794,7 @@ function routeLoad(route) {
 // ══════════════════════════════════════════════════════════════
 
 function drawStops() {
+    if (!markersLayer || !routesLayer) return;
     markersLayer.clearLayers();
     routesLayer.clearLayers();
 
@@ -1805,7 +1802,6 @@ function drawStops() {
         const s = activeStops[i];
         let marker;
         if (i === 0) {
-            // Depot marker
             const depotIcon = L.divIcon({
                 className: 'depot-icon',
                 html: 'D',
@@ -1816,13 +1812,6 @@ function drawStops() {
             marker.bindPopup(`<strong>${s.name}</strong><br>Depot`);
         } else {
             const r = Math.max(8, Math.min(14, s.demand / 25));
-            const stopIcon = L.divIcon({
-                className: 'stop-icon',
-                html: '',
-                iconSize: [r, r],
-                iconAnchor: [r/2, r/2]
-            });
-            stopIcon.options.html = `<div style="width:${r}px;height:${r}px;background:#C5A059;border:2px solid #fff;border-radius:50%;"></div>`;
             marker = L.marker([s.lat, s.lng], { icon: L.divIcon({
                 className: '',
                 html: `<div style="width:${r}px;height:${r}px;background:#C5A059;border:2px solid #fff;border-radius:50%;"></div>`,
@@ -1836,6 +1825,7 @@ function drawStops() {
 }
 
 async function drawRoutes(routes) {
+    if (!routesLayer || !markersLayer) return;
     routesLayer.clearLayers();
     const depot = activeStops[0];
 
@@ -2092,6 +2082,9 @@ const ALGO_MAP = {
 };
 
 async function solveAll() {
+    if (solving) return;
+    solving = true;
+    if (!mapReady) initMap();
     const solveBtn = document.getElementById('solve-btn');
     const statusEl = document.getElementById('solver-status');
     solveBtn.disabled = true;
@@ -2104,6 +2097,7 @@ async function solveAll() {
     if (selectedAlgos.length === 0) {
         statusEl.textContent = 'Select at least one algorithm.';
         solveBtn.disabled = false;
+        solving = false;
         return;
     }
 
@@ -2147,6 +2141,7 @@ async function solveAll() {
     statusEl.textContent =
         `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''} using ${distType} in ${currentResults.reduce((s, r) => s + r.time, 0).toFixed(1)} ms. Click a row to view its routes.`;
     solveBtn.disabled = false;
+    solving = false;
 }
 
 async function showResult(r) {
@@ -2182,31 +2177,71 @@ const observer = new IntersectionObserver(entries => {
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-// ── Initialize ──
+// ── Initialize Leaflet map ──
+function initMap() {
+    if (mapReady) return;
+    const mapEl = document.getElementById('map');
+    if (!mapEl) return;
+
+    leafletMap = L.map('map', {
+        center: [46.810, -71.230],
+        zoom: 13,
+        zoomControl: true,
+        scrollWheelZoom: true
+    });
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
+        maxZoom: 19
+    }).addTo(leafletMap);
+
+    markersLayer = L.layerGroup().addTo(leafletMap);
+    routesLayer = L.layerGroup().addTo(leafletMap);
+
+    drawStops();
+
+    const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
+    leafletMap.fitBounds(bounds.pad(0.1));
+
+    mapReady = true;
+
+    // Force tile refresh after a brief delay (handles edge cases)
+    setTimeout(() => { leafletMap.invalidateSize(); }, 300);
+}
+
+// ── Initialize data ──
 initStops();
-buildHaversineMatrix();  // immediate fallback
-drawStops();
+buildHaversineMatrix();
 
-// Fit map to all markers
-const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
-map.fitBounds(bounds.pad(0.1));
+// ── Boot: init map, load OSRM, auto-solve ──
+async function boot() {
+    if (mapReady) return;  // prevent double-boot
+    initMap();
 
-window.addEventListener('resize', () => {
-    map.invalidateSize();
-});
+    window.addEventListener('resize', () => {
+        if (leafletMap) leafletMap.invalidateSize();
+    });
 
-// Load OSRM road distances, then auto-run solver
-(async function() {
     const statusEl = document.getElementById('solver-status');
-    statusEl.textContent = 'Loading real road distances from OSRM...';
-    const ok = await buildOSRMDistMatrix();
-    if (ok) {
-        statusEl.textContent = 'Road distances loaded. Running all algorithms...';
-    } else {
-        statusEl.textContent = 'OSRM unavailable — using Haversine. Running all algorithms...';
+    try {
+        statusEl.textContent = 'Loading real road distances from OSRM...';
+        await buildOSRMDistMatrix();
+        statusEl.textContent = useRoadDist
+            ? 'Road distances loaded. Running algorithms...'
+            : 'Using Haversine distances. Running algorithms...';
+        await solveAll();
+    } catch (e) {
+        console.error('Auto-solve failed:', e);
+        statusEl.textContent = 'Ready. Click Optimize Routes to solve.';
     }
-    await solveAll();
-})();
+}
+
+// Run boot when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
