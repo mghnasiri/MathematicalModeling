@@ -2365,7 +2365,7 @@ const map = L.map('map', {
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
     maxZoom: 19
 }).addTo(map);
 
@@ -2373,6 +2373,27 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const markersLayer = L.layerGroup().addTo(map);
 const edgesLayer = L.layerGroup().addTo(map);
 const pathLayer = L.layerGroup().addTo(map);
+
+// ── State ──
+let solving = false;
+
+// ── OSRM: Get road geometry between two nodes ──
+async function getRouteGeometry(nodeIndices) {
+    try {
+        const coords = nodeIndices.map(idx => `${NODES[idx].lng},${NODES[idx].lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
+        return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    } catch (e) {
+        return null;
+    }
+}
 
 // Fit map to all nodes
 const allBounds = L.latLngBounds(NODES.map(n => [n.lat, n.lng]));
@@ -2561,7 +2582,7 @@ function makeNodeIcon(color, label, size) {
     });
 }
 
-function drawGraph(result) {
+async function drawGraph(result) {
     // Clear previous overlays
     markersLayer.clearLayers();
     edgesLayer.clearLayers();
@@ -2631,9 +2652,17 @@ function drawGraph(result) {
         L.marker([offsetLat, offsetLng], { icon: weightIcon, interactive: false }).addTo(edgesLayer);
     }
 
-    // Draw path highlight on top
+    // Draw path highlight on top (try OSRM road geometry, fall back to straight lines)
     if (result && result.path.length > 1) {
-        const pathLatLngs = result.path.map(nid => [NODES[nid].lat, NODES[nid].lng]);
+        let pathLatLngs = null;
+        try {
+            pathLatLngs = await getRouteGeometry(result.path);
+        } catch (e) {
+            // silently fall back
+        }
+        if (!pathLatLngs) {
+            pathLatLngs = result.path.map(nid => [NODES[nid].lat, NODES[nid].lng]);
+        }
         L.polyline(pathLatLngs, {
             color: COLORS.pathEdge,
             weight: 5,
@@ -2688,93 +2717,109 @@ function clearAllAlgos() {
 // ── Solve ──
 let currentResults = [];
 
-function solve() {
-    const source = parseInt(document.getElementById('source-select').value);
-    const target = parseInt(document.getElementById('dest-select').value);
+async function solve() {
+    if (solving) return;
+    solving = true;
+    const solveBtn = document.querySelector('.solver-btn.primary');
+    const statusEl = document.getElementById('solver-status');
+    if (solveBtn) solveBtn.disabled = true;
 
-    if (source === target) {
-        document.getElementById('solver-status').textContent = 'Source and destination must be different.';
-        return;
-    }
+    try {
+        const source = parseInt(document.getElementById('source-select').value);
+        const target = parseInt(document.getElementById('dest-select').value);
 
-    const selectedAlgos = [];
-    document.querySelectorAll('.algo-chip.selected').forEach(chip => {
-        selectedAlgos.push(chip.dataset.algo);
-    });
-
-    if (selectedAlgos.length === 0) {
-        document.getElementById('solver-status').textContent = 'Please select at least one algorithm.';
-        return;
-    }
-
-    currentResults = [];
-
-    for (const algo of selectedAlgos) {
-        const t0 = performance.now();
-        let result;
-        let algoName;
-
-        if (algo === 'dijkstra') {
-            result = dijkstra(source, target);
-            algoName = "Dijkstra's Algorithm";
-        } else {
-            result = bellmanFord(source, target);
-            algoName = "Bellman-Ford";
+        if (source === target) {
+            statusEl.textContent = 'Source and destination must be different.';
+            return;
         }
 
-        const elapsed = performance.now() - t0;
-        currentResults.push({
-            key: algo,
-            name: algoName,
-            distance: result.distance,
-            path: result.path,
-            visited: result.visited,
-            nodesVisited: result.nodesVisited,
-            negativeCycle: result.negativeCycle || false,
-            time: elapsed
+        const selectedAlgos = [];
+        document.querySelectorAll('.algo-chip.selected').forEach(chip => {
+            selectedAlgos.push(chip.dataset.algo);
         });
+
+        if (selectedAlgos.length === 0) {
+            statusEl.textContent = 'Please select at least one algorithm.';
+            return;
+        }
+
+        statusEl.textContent = 'Finding shortest path...';
+
+        currentResults = [];
+
+        for (const algo of selectedAlgos) {
+            const t0 = performance.now();
+            let result;
+            let algoName;
+
+            if (algo === 'dijkstra') {
+                result = dijkstra(source, target);
+                algoName = "Dijkstra's Algorithm";
+            } else {
+                result = bellmanFord(source, target);
+                algoName = "Bellman-Ford";
+            }
+
+            const elapsed = performance.now() - t0;
+            currentResults.push({
+                key: algo,
+                name: algoName,
+                distance: result.distance,
+                path: result.path,
+                visited: result.visited,
+                nodesVisited: result.nodesVisited,
+                negativeCycle: result.negativeCycle || false,
+                time: elapsed
+            });
+        }
+
+        // Sort by distance (best first)
+        currentResults.sort((a, b) => a.distance - b.distance);
+
+        // Populate results table immediately (before async map drawing)
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            const pathStr = r.path.length > 0
+                ? r.path.map(n => NODES[n].name).join(' -> ')
+                : 'No path found';
+            const distStr = r.distance < Infinity ? r.distance.toString() : 'N/A';
+            const timeStr = r.time < 1 ? r.time.toFixed(3) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 && r.distance < Infinity ? 'best-val' : ''}">${distStr}</td>
+                <td style="font-size:0.7rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pathStr}</td>
+                <td>${r.nodesVisited}</td>
+                <td>${timeStr}</td>
+            `;
+            tr.addEventListener('click', () => showResult(r));
+            tbody.appendChild(tr);
+        });
+
+        showRouteDetails(currentResults[0]);
+
+        // Draw graph on map (async, may fail if OSRM geometry unavailable)
+        try {
+            await drawGraph(currentResults[0]);
+        } catch (mapErr) {
+            console.warn('Graph drawing failed, results still shown:', mapErr);
+        }
+
+        const statusMsg = currentResults[0].distance < Infinity
+            ? `Shortest path found: ${currentResults[0].distance} min. Click a row to view its trace.`
+            : 'No path exists between selected nodes.';
+        statusEl.textContent = statusMsg;
+    } catch (e) {
+        console.error('solve error:', e);
+        statusEl.textContent = 'Error during pathfinding. Try clicking Find Route again.';
+    } finally {
+        if (solveBtn) solveBtn.disabled = false;
+        solving = false;
     }
-
-    // Sort by distance (best first)
-    currentResults.sort((a, b) => a.distance - b.distance);
-
-    // Draw best result
-    if (currentResults.length > 0) {
-        drawGraph(currentResults[0]);
-    }
-
-    // Update results table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        const pathStr = r.path.length > 0
-            ? r.path.map(n => NODES[n].name).join(' -> ')
-            : 'No path found';
-        const distStr = r.distance < Infinity ? r.distance.toString() : 'N/A';
-        const timeStr = r.time < 1 ? r.time.toFixed(3) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 && r.distance < Infinity ? 'best-val' : ''}">${distStr}</td>
-            <td style="font-size:0.7rem; max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${pathStr}</td>
-            <td>${r.nodesVisited}</td>
-            <td>${timeStr}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r));
-        tbody.appendChild(tr);
-    });
-
-    showResult(currentResults[0]);
-
-    const statusMsg = currentResults[0].distance < Infinity
-        ? `Shortest path found: ${currentResults[0].distance} min. Click a row to view its trace.`
-        : 'No path exists between selected nodes.';
-    document.getElementById('solver-status').textContent = statusMsg;
 }
 
-function showResult(r) {
-    drawGraph(r);
-
+function showRouteDetails(r) {
     const lines = [];
     if (r.negativeCycle) {
         lines.push('WARNING: Negative cycle detected in the graph!');
@@ -2802,6 +2847,15 @@ function showResult(r) {
     document.getElementById('route-output').textContent = lines.join('\n');
 }
 
+async function showResult(r) {
+    showRouteDetails(r);
+    try {
+        await drawGraph(r);
+    } catch (e) {
+        console.warn('Graph drawing failed:', e);
+    }
+}
+
 // ── Scroll Animations ──
 const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
@@ -2813,6 +2867,23 @@ drawGraph(null);
 
 // Handle resize for Leaflet map
 window.addEventListener('resize', () => { map.invalidateSize(); });
+
+// ── Boot: auto-solve ──
+async function boot() {
+    const statusEl = document.getElementById('solver-status');
+    statusEl.textContent = 'Running algorithms...';
+
+    // Auto-solve with all algorithms
+    document.querySelectorAll('.algo-chip').forEach(c => c.classList.add('selected'));
+    await solve();
+}
+
+// Run boot when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

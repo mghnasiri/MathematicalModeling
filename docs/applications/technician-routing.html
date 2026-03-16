@@ -2426,6 +2426,11 @@ const KM_PER_DEG_LAT = 111.0;
 const KM_PER_DEG_LNG = 78.0;
 const SPEED_KMH = 40;
 
+// ── State ──
+let useRoadDist = false;
+let solving = false;
+let distMatrix = null;  // OSRM distance matrix (km), null = use distKm()
+
 // Locations: index 0 = depot
 const locations = [
     { name: "Service Depot (Place Royale)",   lat: 46.8123, lng: -71.2033, tw_start: 480, tw_end: 1020, service: 0 },
@@ -2449,14 +2454,64 @@ function minutesToTime(m) {
     return (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min;
 }
 
-function distKm(i, j) {
+function euclidKm(i, j) {
     const dlat = (locations[i].lat - locations[j].lat) * KM_PER_DEG_LAT;
     const dlng = (locations[i].lng - locations[j].lng) * KM_PER_DEG_LNG;
     return Math.sqrt(dlat * dlat + dlng * dlng);
 }
 
+function distKm(i, j) {
+    if (distMatrix) return distMatrix[i][j];
+    return euclidKm(i, j);
+}
+
 function travelTime(i, j) {
     return (distKm(i, j) / SPEED_KMH) * 60; // minutes
+}
+
+// ── OSRM: Fetch real road distance matrix ──
+async function buildOSRMDistMatrix() {
+    const coords = locations.map(l => `${l.lng},${l.lat}`).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.code !== 'Ok') throw new Error(`OSRM: ${data.code}`);
+        const n = locations.length;
+        distMatrix = Array.from({ length: n }, () => new Float64Array(n));
+        for (let i = 0; i < n; i++)
+            for (let j = 0; j < n; j++)
+                distMatrix[i][j] = data.distances[i][j] / 1000;
+        useRoadDist = true;
+        return true;
+    } catch (e) {
+        console.warn('OSRM table API unavailable, using Euclidean:', e.message);
+        distMatrix = null;
+        useRoadDist = false;
+        return false;
+    }
+}
+
+// ── OSRM: Get road geometry for a route ──
+async function getRouteGeometry(indices) {
+    try {
+        const coords = indices.map(idx => `${locations[idx].lng},${locations[idx].lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
+        return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    } catch (e) {
+        return null;
+    }
 }
 
 // ── Leaflet Map Initialization ──
@@ -2468,7 +2523,7 @@ const map = L.map('map', {
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
     maxZoom: 19
 }).addTo(map);
 
@@ -2533,16 +2588,25 @@ function drawMap() {
     });
 }
 
-function drawRoutes(routes, routeDetails) {
+async function drawRoutes(routes, routeDetails) {
     routesLayer.clearLayers();
     markersLayer.clearLayers();
 
     // Draw route polylines
-    routes.forEach((route, ri) => {
-        if (route.length === 0) return;
+    for (let ri = 0; ri < routes.length; ri++) {
+        const route = routes[ri];
+        if (route.length === 0) continue;
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
         const fullRoute = [DEPOT_IDX, ...route, DEPOT_IDX];
-        const latlngs = fullRoute.map(idx => [locations[idx].lat, locations[idx].lng]);
+
+        // Try OSRM road geometry, fall back to straight lines
+        let latlngs = null;
+        if (useRoadDist) {
+            latlngs = await getRouteGeometry(fullRoute);
+        }
+        if (!latlngs) {
+            latlngs = fullRoute.map(idx => [locations[idx].lat, locations[idx].lng]);
+        }
 
         const polyline = L.polyline(latlngs, {
             color: color,
@@ -2894,67 +2958,94 @@ const ALGO_MAP = {
     'nn-tw': { name: 'Nearest Neighbor TW', fn: nearestNeighborTW }
 };
 
-function solveProblem() {
-    const algos = getSelectedAlgos();
-    if (algos.length === 0) {
-        document.getElementById('vrptw-status').textContent = 'Select at least one algorithm.';
-        return;
-    }
+async function solveProblem() {
+    if (solving) return;
+    solving = true;
+    const solveBtn = document.querySelector('.solver-btn.primary');
+    const statusEl = document.getElementById('vrptw-status');
+    if (solveBtn) solveBtn.disabled = true;
 
-    const numTech = parseInt(document.getElementById('numTechnicians').value);
-    const results = [];
+    try {
+        const algos = getSelectedAlgos();
+        if (algos.length === 0) {
+            statusEl.textContent = 'Select at least one algorithm.';
+            return;
+        }
 
-    for (const key of algos) {
-        const algo = ALGO_MAP[key];
-        const t0 = performance.now();
-        const result = algo.fn(numTech);
-        const elapsed = performance.now() - t0;
-        const dist = totalDistance(result.routes);
-        const twSat = countTWSatisfied(result.routeDetails);
-        results.push({
-            key, name: algo.name,
-            routes: result.routes,
-            routeDetails: result.routeDetails,
-            unvisited: result.unvisited,
-            distance: dist,
-            vehicles: result.routes.length,
-            twSatisfied: twSat,
-            time: elapsed
+        statusEl.textContent = useRoadDist
+            ? 'Optimizing with real road distances...'
+            : 'Optimizing with Euclidean distances...';
+
+        const numTech = parseInt(document.getElementById('numTechnicians').value);
+        const results = [];
+
+        for (const key of algos) {
+            const algo = ALGO_MAP[key];
+            const t0 = performance.now();
+            const result = algo.fn(numTech);
+            const elapsed = performance.now() - t0;
+            const dist = totalDistance(result.routes);
+            const twSat = countTWSatisfied(result.routeDetails);
+            results.push({
+                key, name: algo.name,
+                routes: result.routes,
+                routeDetails: result.routeDetails,
+                unvisited: result.unvisited,
+                distance: dist,
+                vehicles: result.routes.length,
+                twSatisfied: twSat,
+                time: elapsed
+            });
+        }
+
+        results.sort((a, b) => a.distance - b.distance);
+
+        // Populate results table immediately (before async map drawing)
+        const tbody = document.getElementById('vrptw-results').querySelector('tbody');
+        tbody.innerHTML = '';
+        results.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(2)} km</td>
+                <td>${r.vehicles}</td>
+                <td>${r.twSatisfied}</td>
+                <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+            `;
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', async () => {
+                try {
+                    await drawRoutes(r.routes, r.routeDetails);
+                } catch (e) {
+                    console.warn('Route drawing failed:', e);
+                }
+                updateRouteOutput(r);
+            });
+            tbody.appendChild(tr);
         });
+
+        updateRouteOutput(results[0]);
+
+        // Draw routes on map (async, may fail if OSRM geometry unavailable)
+        try {
+            await drawRoutes(results[0].routes, results[0].routeDetails);
+        } catch (mapErr) {
+            console.warn('Route drawing failed, results still shown:', mapErr);
+        }
+
+        const unvisitedMsg = results[0].unvisited.length > 0
+            ? ` Warning: ${results[0].unvisited.length} customer(s) could not be scheduled.`
+            : '';
+        const distType = useRoadDist ? 'road distances (OSRM)' : 'Euclidean (straight-line) distances';
+        statusEl.textContent =
+            `Solved with ${results.length} algorithm(s) using ${distType}. Click a row to view its routes.${unvisitedMsg}`;
+    } catch (e) {
+        console.error('solveProblem error:', e);
+        statusEl.textContent = 'Error during optimization. Try clicking Solve again.';
+    } finally {
+        if (solveBtn) solveBtn.disabled = false;
+        solving = false;
     }
-
-    results.sort((a, b) => a.distance - b.distance);
-
-    // Draw best result
-    drawRoutes(results[0].routes, results[0].routeDetails);
-
-    // Update results table
-    const tbody = document.getElementById('vrptw-results').querySelector('tbody');
-    tbody.innerHTML = '';
-    results.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(2)} km</td>
-            <td>${r.vehicles}</td>
-            <td>${r.twSatisfied}</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.style.cursor = 'pointer';
-        tr.addEventListener('click', () => {
-            drawRoutes(r.routes, r.routeDetails);
-            updateRouteOutput(r);
-        });
-        tbody.appendChild(tr);
-    });
-
-    updateRouteOutput(results[0]);
-
-    const unvisitedMsg = results[0].unvisited.length > 0
-        ? ` Warning: ${results[0].unvisited.length} customer(s) could not be scheduled.`
-        : '';
-    document.getElementById('vrptw-status').textContent =
-        `Solved with ${results.length} algorithm(s). Click a row to view its routes.${unvisitedMsg}`;
 }
 
 function updateRouteOutput(result) {
@@ -2981,9 +3072,9 @@ function updateRouteOutput(result) {
     document.getElementById('vrptw-route-output').innerHTML = html;
 }
 
-function solveAll() {
+async function solveAll() {
     document.querySelectorAll('#vrptw-algo-select .algo-chip').forEach(c => c.classList.add('selected'));
-    solveProblem();
+    await solveProblem();
 }
 
 // ── Initialize ──
@@ -2993,6 +3084,35 @@ drawMap();
 window.addEventListener('resize', () => {
     map.invalidateSize();
 });
+
+// ── Boot: load OSRM distances, auto-solve ──
+async function boot() {
+    const statusEl = document.getElementById('vrptw-status');
+
+    // Try loading OSRM distances, fall back to Euclidean silently
+    try {
+        statusEl.textContent = 'Loading real road distances from OSRM...';
+        await buildOSRMDistMatrix();
+    } catch (e) {
+        console.warn('OSRM load failed, using Euclidean:', e);
+        distMatrix = null;
+        useRoadDist = false;
+    }
+
+    statusEl.textContent = useRoadDist
+        ? 'Road distances loaded. Running algorithms...'
+        : 'Using Euclidean distances. Running algorithms...';
+
+    // Auto-solve with all algorithms
+    await solveAll();
+}
+
+// Run boot when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
