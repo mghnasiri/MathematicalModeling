@@ -2392,7 +2392,7 @@ const map = L.map('map', {
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
     maxZoom: 19
 }).addTo(map);
 
@@ -2400,7 +2400,11 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const markersLayer = L.layerGroup().addTo(map);
 const routesLayer = L.layerGroup().addTo(map);
 
-// ── Haversine distance (km) ──
+// ── State ──
+let useRoadDist = false;
+let solving = false;
+
+// ── Haversine distance (km) — fallback when OSRM is unavailable ──
 function haversine(lat1, lng1, lat2, lng2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -2446,7 +2450,7 @@ let demands = [];       // demand array aligned to activeStops
 let currentResults = [];
 
 // ── Distance Helpers ──
-function buildDistMatrix() {
+function buildHaversineMatrix() {
     const n = activeStops.length;
     dist = Array.from({ length: n }, () => new Float64Array(n));
     for (let i = 0; i < n; i++)
@@ -2457,6 +2461,56 @@ function buildDistMatrix() {
             dist[j][i] = d;
         }
     demands = activeStops.map(s => s.demand);
+}
+
+function buildDistMatrix() {
+    buildHaversineMatrix();
+}
+
+// ── OSRM: Fetch real road distance matrix ──
+async function buildOSRMDistMatrix() {
+    const coords = activeStops.map(s => `${s.lng},${s.lat}`).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.code !== 'Ok') throw new Error(`OSRM: ${data.code}`);
+        const n = activeStops.length;
+        dist = Array.from({ length: n }, () => new Float64Array(n));
+        for (let i = 0; i < n; i++)
+            for (let j = 0; j < n; j++)
+                dist[i][j] = data.distances[i][j] / 1000;
+        demands = activeStops.map(s => s.demand);
+        useRoadDist = true;
+        return true;
+    } catch (e) {
+        console.warn('OSRM table API unavailable, using Haversine:', e.message);
+        buildHaversineMatrix();
+        useRoadDist = false;
+        return false;
+    }
+}
+
+// ── OSRM: Get road geometry for a route ──
+async function getRouteGeometry(waypoints) {
+    try {
+        const coords = waypoints.map(idx => `${activeStops[idx].lng},${activeStops[idx].lat}`).join(';');
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
+        return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    } catch (e) {
+        return null;
+    }
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2494,15 +2548,22 @@ function drawStops() {
     }
 }
 
-function drawRoutes(routes) {
+async function drawRoutes(routes) {
     routesLayer.clearLayers();
-    const depot = activeStops[0];
 
-    routes.forEach((route, ri) => {
+    for (let ri = 0; ri < routes.length; ri++) {
+        const route = routes[ri];
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        const latlngs = [[depot.lat, depot.lng]];
-        for (const c of route) latlngs.push([activeStops[c].lat, activeStops[c].lng]);
-        latlngs.push([depot.lat, depot.lng]);
+        const waypoints = [0, ...route, 0];
+
+        // Try OSRM road geometry, fall back to straight lines
+        let latlngs = null;
+        if (useRoadDist) {
+            latlngs = await getRouteGeometry(waypoints);
+        }
+        if (!latlngs) {
+            latlngs = waypoints.map(idx => [activeStops[idx].lat, activeStops[idx].lng]);
+        }
 
         const polyline = L.polyline(latlngs, {
             color: color,
@@ -2522,7 +2583,7 @@ function drawRoutes(routes) {
                 opacity: 0.9
             }).addTo(routesLayer);
         }
-    });
+    }
 
     // Re-add markers on top
     markersLayer.eachLayer(m => m.bringToFront());
@@ -2645,8 +2706,8 @@ function clarkeWright() {
         let merged;
         if (rI[rI.length - 1] === i && rJ[0] === j) merged = [...rI, ...rJ];
         else if (rJ[rJ.length - 1] === j && rI[0] === i) merged = [...rJ, ...rI];
-        else if (rI[0] === i && rJ[0] === j) merged = [...rI.reverse(), ...rJ];
-        else merged = [...rI, ...rJ.reverse()];
+        else if (rI[0] === i && rJ[0] === j) merged = [...[...rI].reverse(), ...rJ];
+        else merged = [...rI, ...[...rJ].reverse()];
 
         routes[ri] = merged;
         loads[ri] += loads[rj];
@@ -2738,69 +2799,88 @@ const ALGO_MAP = {
     nn:    { name: 'Nearest Neighbor', fn: nearestNeighbor }
 };
 
-function solveAll() {
-    if (activeStops.length < 2) {
-        document.getElementById('solver-status').textContent = 'Load a scenario first.';
-        return;
-    }
-    buildDistMatrix();
+async function solveAll() {
+    if (solving) return;
+    solving = true;
+    const solveBtn = document.querySelector('.solver-btn.primary');
+    const statusEl = document.getElementById('solver-status');
+    if (solveBtn) solveBtn.disabled = true;
 
-    const algos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected')).map(c => c.dataset.algo);
-    if (algos.length === 0) {
-        document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
-        return;
-    }
+    try {
+        if (activeStops.length < 2) {
+            statusEl.textContent = 'Load a scenario first.';
+            return;
+        }
 
-    currentResults = [];
-    for (const key of algos) {
-        const algo = ALGO_MAP[key];
-        const t0 = performance.now();
-        const routes = algo.fn();
-        const elapsed = performance.now() - t0;
-        const d = totalDist(routes);
-        currentResults.push({
-            key, name: algo.name, routes, distance: d,
-            vehicles: routes.length, time: elapsed
+        const algos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected')).map(c => c.dataset.algo);
+        if (algos.length === 0) {
+            statusEl.textContent = 'Select at least one algorithm.';
+            return;
+        }
+
+        statusEl.textContent = useRoadDist
+            ? 'Optimizing with real road distances...'
+            : 'Optimizing with Haversine distances...';
+
+        currentResults = [];
+        for (const key of algos) {
+            const algo = ALGO_MAP[key];
+            const t0 = performance.now();
+            const routes = algo.fn();
+            const elapsed = performance.now() - t0;
+            const d = totalDist(routes);
+            currentResults.push({
+                key, name: algo.name, routes, distance: d,
+                vehicles: routes.length, time: elapsed
+            });
+        }
+        currentResults.sort((a, b) => a.distance - b.distance);
+
+        // Populate results table immediately (before async map drawing)
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(1)}</td>
+                <td>${r.vehicles}</td>
+                <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+            `;
+            tr.addEventListener('click', () => showResult(r));
+            tbody.appendChild(tr);
         });
+
+        showRouteDetails(currentResults[0]);
+
+        // Draw routes on map (async, may fail if OSRM geometry unavailable)
+        try {
+            await drawRoutes(currentResults[0].routes);
+        } catch (mapErr) {
+            console.warn('Route drawing failed, results still shown:', mapErr);
+        }
+
+        const distType = useRoadDist ? 'road distances (OSRM)' : 'Haversine (straight-line) distances';
+        statusEl.textContent =
+            `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''} using ${distType}. Click a row to view its routes.`;
+    } catch (e) {
+        console.error('solveAll error:', e);
+        statusEl.textContent = 'Error during optimization. Try clicking Optimize Routes again.';
+    } finally {
+        if (solveBtn) solveBtn.disabled = false;
+        solving = false;
     }
-    currentResults.sort((a, b) => a.distance - b.distance);
-
-    // Draw best solution
-    drawRoutes(currentResults[0].routes);
-
-    // Update results table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        const distKm = r.distance.toFixed(1);
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">${distKm}</td>
-            <td>${r.vehicles}</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r));
-        tbody.appendChild(tr);
-    });
-
-    showResult(currentResults[0]);
-    document.getElementById('solver-status').textContent =
-        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its routes.`;
 }
 
-function showResult(r) {
-    drawRoutes(r.routes);
-
+function showRouteDetails(r) {
     const lines = [];
     let totalLoad = 0;
     r.routes.forEach((route, ri) => {
-        const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
         const load = routeLoad(route);
         totalLoad += load;
         const d = routeDist(route).toFixed(1);
-        const stops = route.map(c => activeStops[c].name).join(' → ');
-        lines.push(`Route ${ri + 1}: Depot → ${stops} → Depot  (${d} km, ${load} kg)`);
+        const stops = route.map(c => activeStops[c].name).join(' \u2192 ');
+        lines.push(`Route ${ri + 1}: Depot \u2192 ${stops} \u2192 Depot  (${d} km, ${load} kg)`);
     });
 
     const totalKm = r.distance.toFixed(1);
@@ -2811,6 +2891,15 @@ function showResult(r) {
     document.getElementById('route-output').textContent = lines.join('\n');
 }
 
+async function showResult(r) {
+    showRouteDetails(r);
+    try {
+        await drawRoutes(r.routes);
+    } catch (e) {
+        console.warn('Route drawing failed:', e);
+    }
+}
+
 // ── Scroll Animations ──
 const observer = new IntersectionObserver(entries => {
     entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
@@ -2819,6 +2908,40 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
 loadPreset('8');
+
+window.addEventListener('resize', () => {
+    map.invalidateSize();
+});
+
+// ── Boot: load OSRM distances, auto-solve ──
+async function boot() {
+    const statusEl = document.getElementById('solver-status');
+
+    // Try loading OSRM distances, fall back to Haversine silently
+    try {
+        statusEl.textContent = 'Loading real road distances from OSRM...';
+        await buildOSRMDistMatrix();
+    } catch (e) {
+        console.warn('OSRM load failed, using Haversine:', e);
+        buildHaversineMatrix();
+        useRoadDist = false;
+    }
+
+    statusEl.textContent = useRoadDist
+        ? 'Road distances loaded. Running algorithms...'
+        : 'Using Haversine distances. Running algorithms...';
+
+    // Auto-solve with all algorithms
+    document.querySelectorAll('#algo-select .algo-chip').forEach(c => c.classList.add('selected'));
+    await solveAll();
+}
+
+// Run boot when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

@@ -2427,12 +2427,17 @@ const map = L.map('map', {
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
     maxZoom: 19
 }).addTo(map);
 
 const markersLayer = L.layerGroup().addTo(map);
 const overlayLayer = L.layerGroup().addTo(map);
+
+// ── State ──
+let solving = false;
+let useRoadDist = false;
+let osrmDistMatrix = null;  // OSRM full distance matrix (km)
 
 // Approximate km per degree at Quebec City latitude (~46.8)
 const KM_PER_DEG_LAT = 111.0;
@@ -2461,11 +2466,61 @@ let currentResult = null;
 
 const STATION_COLORS = ['#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc'];
 
-// ── Distance (km) between two zones ──
-function distKm(a, b) {
+// ── Distance (km) between two zones (Euclidean fallback) ──
+function euclidKm(a, b) {
     const dlat = (a.lat - b.lat) * KM_PER_DEG_LAT;
     const dlng = (a.lng - b.lng) * KM_PER_DEG_LNG;
     return Math.sqrt(dlat * dlat + dlng * dlng);
+}
+
+function distKm(a, b) {
+    return euclidKm(a, b);
+}
+
+// ── OSRM: Fetch real road distance matrix ──
+async function buildOSRMDistMatrix() {
+    const coords = DEMAND_ZONES.map(z => `${z.lng},${z.lat}`).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
+    try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        if (data.code !== 'Ok') throw new Error(`OSRM: ${data.code}`);
+        const n = DEMAND_ZONES.length;
+        osrmDistMatrix = Array.from({ length: n }, () => new Float64Array(n));
+        for (let i = 0; i < n; i++)
+            for (let j = 0; j < n; j++)
+                osrmDistMatrix[i][j] = data.distances[i][j] / 1000;
+        useRoadDist = true;
+        return true;
+    } catch (e) {
+        console.warn('OSRM table API unavailable, using Euclidean:', e.message);
+        osrmDistMatrix = null;
+        useRoadDist = false;
+        return false;
+    }
+}
+
+// ── OSRM: Get road geometry between two points ──
+async function getRouteGeometry(fromIdx, toIdx) {
+    try {
+        const a = DEMAND_ZONES[fromIdx], b = DEMAND_ZONES[toIdx];
+        const coords = `${a.lng},${a.lat};${b.lng},${b.lat}`;
+        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 5000);
+        const resp = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
+        return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    } catch (e) {
+        return null;
+    }
 }
 
 // ── Build full distance matrix (demand zones x candidate sites) ──
@@ -2476,7 +2531,11 @@ function buildDistMatrix() {
     for (let j = 0; j < n; j++) {
         D[j] = [];
         for (let ci = 0; ci < m; ci++) {
-            D[j][ci] = distKm(DEMAND_ZONES[j], DEMAND_ZONES[CANDIDATE_INDICES[ci]]);
+            if (useRoadDist && osrmDistMatrix) {
+                D[j][ci] = osrmDistMatrix[j][CANDIDATE_INDICES[ci]];
+            } else {
+                D[j][ci] = euclidKm(DEMAND_ZONES[j], DEMAND_ZONES[CANDIDATE_INDICES[ci]]);
+            }
         }
     }
     return D;
@@ -2632,7 +2691,7 @@ function drawInitialState() {
     map.fitBounds(bounds.pad(0.15));
 }
 
-function drawSolution(openSet, assignments, D) {
+async function drawSolution(openSet, assignments, D) {
     markersLayer.clearLayers();
     overlayLayer.clearLayers();
 
@@ -2644,13 +2703,22 @@ function drawSolution(openSet, assignments, D) {
         stationColorMap[ci] = STATION_COLORS[idx % STATION_COLORS.length];
     });
 
-    // Draw assignment lines
+    // Draw assignment lines (try OSRM road geometry, fall back to straight lines)
     for (const a of assignments) {
         const zone = DEMAND_ZONES[a.zone];
-        const station = DEMAND_ZONES[CANDIDATE_INDICES[a.station]];
+        const stationIdx = CANDIDATE_INDICES[a.station];
+        const station = DEMAND_ZONES[stationIdx];
         const color = stationColorMap[a.station];
 
-        L.polyline([[zone.lat, zone.lng], [station.lat, station.lng]], {
+        let latlngs = null;
+        if (useRoadDist && a.zone !== stationIdx) {
+            latlngs = await getRouteGeometry(a.zone, stationIdx);
+        }
+        if (!latlngs) {
+            latlngs = [[zone.lat, zone.lng], [station.lat, station.lng]];
+        }
+
+        L.polyline(latlngs, {
             color: color,
             weight: 2,
             opacity: 0.4,
@@ -2715,63 +2783,86 @@ function selectAlgo(el) {
 }
 
 // ── Solver ──
-function solve() {
-    const D = buildDistMatrix();
-    const t0 = performance.now();
+async function solve() {
+    if (solving) return;
+    solving = true;
+    const solveBtn = document.querySelector('.solver-btn.primary');
+    const statusEl = document.getElementById('solver-status');
+    if (solveBtn) solveBtn.disabled = true;
 
-    let openSet;
-    let algoName;
+    try {
+        statusEl.textContent = useRoadDist
+            ? 'Optimizing with real road distances...'
+            : 'Optimizing with Euclidean distances...';
 
-    if (selectedAlgo === 'greedy') {
-        openSet = greedyAdd(pValue, D);
-        algoName = 'Greedy Add';
-    } else {
-        openSet = teitzBart(pValue, D);
-        algoName = 'Teitz-Bart Interchange';
+        const D = buildDistMatrix();
+        const t0 = performance.now();
+
+        let openSet;
+        let algoName;
+
+        if (selectedAlgo === 'greedy') {
+            openSet = greedyAdd(pValue, D);
+            algoName = 'Greedy Add';
+        } else {
+            openSet = teitzBart(pValue, D);
+            algoName = 'Teitz-Bart Interchange';
+        }
+
+        const elapsed = performance.now() - t0;
+        const cost = totalWeightedDist(openSet, D);
+        const assignments = assignZones(openSet, D);
+
+        // Compute average response distance (weighted)
+        const totalPop = DEMAND_ZONES.reduce((s, z) => s + z.pop, 0);
+        const avgDist = cost / totalPop;
+
+        // Station names
+        const stationNames = openSet.map(ci => DEMAND_ZONES[CANDIDATE_INDICES[ci]].name);
+
+        // Populate results table immediately (before async map drawing)
+        const resultsContainer = document.getElementById('results-container');
+        resultsContainer.style.display = 'block';
+
+        const tbody = document.getElementById('results-body');
+        tbody.innerHTML = `
+            <tr>
+                <td class="algo-label">${algoName}</td>
+                <td class="best-val">${cost.toFixed(0)}</td>
+                <td>${avgDist.toFixed(2)} km</td>
+                <td>${stationNames.join(', ')}</td>
+                <td>${elapsed.toFixed(1)} ms</td>
+            </tr>
+        `;
+
+        // Zone assignments output
+        const output = document.getElementById('assignment-output');
+        let html = '<strong style="color:var(--gold); font-family:Inter,sans-serif; font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;">Zone Assignments</strong><br>';
+        for (const a of assignments) {
+            const zoneName = DEMAND_ZONES[a.zone].name;
+            const stationName = DEMAND_ZONES[CANDIDATE_INDICES[a.station]].name;
+            const pop = DEMAND_ZONES[a.zone].pop;
+            html += `${zoneName} (pop: ${pop.toLocaleString()}) \u2192 ${stationName} [${a.dist.toFixed(2)} km]<br>`;
+        }
+        output.innerHTML = html;
+
+        // Draw solution on map (async, may fail if OSRM geometry unavailable)
+        try {
+            await drawSolution(openSet, assignments, D);
+        } catch (mapErr) {
+            console.warn('Solution drawing failed, results still shown:', mapErr);
+        }
+
+        const distType = useRoadDist ? 'road distances (OSRM)' : 'Euclidean (straight-line) distances';
+        statusEl.textContent =
+            `${algoName} completed in ${elapsed.toFixed(1)} ms using ${distType}. Total weighted distance: ${cost.toFixed(0)} (pop\u00b7km).`;
+    } catch (e) {
+        console.error('solve error:', e);
+        statusEl.textContent = 'Error during optimization. Try clicking Solve again.';
+    } finally {
+        if (solveBtn) solveBtn.disabled = false;
+        solving = false;
     }
-
-    const elapsed = performance.now() - t0;
-    const cost = totalWeightedDist(openSet, D);
-    const assignments = assignZones(openSet, D);
-
-    // Compute average response distance (weighted)
-    const totalPop = DEMAND_ZONES.reduce((s, z) => s + z.pop, 0);
-    const avgDist = cost / totalPop;
-
-    // Station names
-    const stationNames = openSet.map(ci => DEMAND_ZONES[CANDIDATE_INDICES[ci]].name);
-
-    // Draw solution
-    drawSolution(openSet, assignments, D);
-
-    // Update results table
-    const resultsContainer = document.getElementById('results-container');
-    resultsContainer.style.display = 'block';
-
-    const tbody = document.getElementById('results-body');
-    tbody.innerHTML = `
-        <tr>
-            <td class="algo-label">${algoName}</td>
-            <td class="best-val">${cost.toFixed(0)}</td>
-            <td>${avgDist.toFixed(2)} km</td>
-            <td>${stationNames.join(', ')}</td>
-            <td>${elapsed.toFixed(1)} ms</td>
-        </tr>
-    `;
-
-    // Zone assignments output
-    const output = document.getElementById('assignment-output');
-    let html = '<strong style="color:var(--gold); font-family:Inter,sans-serif; font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;">Zone Assignments</strong><br>';
-    for (const a of assignments) {
-        const zoneName = DEMAND_ZONES[a.zone].name;
-        const stationName = DEMAND_ZONES[CANDIDATE_INDICES[a.station]].name;
-        const pop = DEMAND_ZONES[a.zone].pop;
-        html += `${zoneName} (pop: ${pop.toLocaleString()}) → ${stationName} [${a.dist.toFixed(2)} km]<br>`;
-    }
-    output.innerHTML = html;
-
-    document.getElementById('solver-status').textContent =
-        `${algoName} completed in ${elapsed.toFixed(1)} ms. Total weighted distance: ${cost.toFixed(0)} (pop·km).`;
 }
 
 // ── Scroll Animation ──
@@ -2786,6 +2877,35 @@ drawInitialState();
 window.addEventListener('resize', () => {
     map.invalidateSize();
 });
+
+// ── Boot: load OSRM distances, auto-solve ──
+async function boot() {
+    const statusEl = document.getElementById('solver-status');
+
+    // Try loading OSRM distances, fall back to Euclidean silently
+    try {
+        statusEl.textContent = 'Loading real road distances from OSRM...';
+        await buildOSRMDistMatrix();
+    } catch (e) {
+        console.warn('OSRM load failed, using Euclidean:', e);
+        osrmDistMatrix = null;
+        useRoadDist = false;
+    }
+
+    statusEl.textContent = useRoadDist
+        ? 'Road distances loaded. Running algorithm...'
+        : 'Using Euclidean distances. Running algorithm...';
+
+    // Auto-solve
+    await solve();
+}
+
+// Run boot when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot);
+} else {
+    boot();
+}
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
