@@ -28,6 +28,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --midnight: #0A192F;
@@ -426,6 +428,34 @@
             width: 100%;
             display: block;
             border-radius: 2px;
+        }
+
+        #map {
+            width: 100%;
+            height: 550px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--midnight);
+            color: var(--ivory);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+        }
+        .leaflet-popup-tip { background: var(--midnight); }
+        .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.82rem; }
+        .depot-marker-icon {
+            background: #C5A059;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            width: 20px !important;
+            height: 20px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            color: #0A192F;
         }
 
         .results-table {
@@ -2194,7 +2224,7 @@
                 <!-- Canvas -->
                 <div class="solver-section-label">Quebec City Map</div>
                 <div class="solver-canvas-wrap">
-                    <canvas id="vrptwCanvas" width="700" height="500"></canvas>
+                    <div id="map"></div>
                 </div>
 
                 <!-- Results -->
@@ -2391,10 +2421,6 @@ fadeEls.forEach(el => fadeObserver.observe(el));
 // VRPTW Solver
 // ══════════════════════════════════════════════════════════════════
 
-const CANVAS_W = 700, CANVAS_H = 500;
-const LAT_MIN = 46.760, LAT_MAX = 46.900;
-const LNG_MIN = -71.310, LNG_MAX = -71.140;
-
 // Speed: ~40 km/h average city driving. 1 degree lat ~ 111km, 1 degree lng ~ ~78km at 46.8N
 const KM_PER_DEG_LAT = 111.0;
 const KM_PER_DEG_LNG = 78.0;
@@ -2433,12 +2459,26 @@ function travelTime(i, j) {
     return (distKm(i, j) / SPEED_KMH) * 60; // minutes
 }
 
-function latToY(lat) {
-    return CANVAS_H - ((lat - LAT_MIN) / (LAT_MAX - LAT_MIN)) * (CANVAS_H - 40) - 20;
-}
-function lngToX(lng) {
-    return ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * (CANVAS_W - 60) + 30;
-}
+// ── Leaflet Map Initialization ──
+const map = L.map('map', {
+    center: [46.840, -71.220],
+    zoom: 12,
+    zoomControl: true,
+    scrollWheelZoom: true
+});
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+}).addTo(map);
+
+// Layer groups for markers and routes
+const markersLayer = L.layerGroup().addTo(map);
+const routesLayer = L.layerGroup().addTo(map);
+
+// Fit map bounds to all locations
+const allBounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lng]));
+map.fitBounds(allBounds.pad(0.1));
 
 // Populate service calls table
 function populateServiceCalls() {
@@ -2457,193 +2497,122 @@ function populateServiceCalls() {
     });
 }
 
-// ── Canvas Drawing ──
+// ── Leaflet Map Drawing ──
 function drawMap() {
-    const canvas = document.getElementById('vrptwCanvas');
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    markersLayer.clearLayers();
+    routesLayer.clearLayers();
 
-    // Background
-    ctx.fillStyle = '#0d1f38';
-    ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-
-    // Grid
-    ctx.strokeStyle = 'rgba(197,160,89,0.06)';
-    ctx.lineWidth = 0.5;
-    for (let lat = 46.77; lat <= 46.90; lat += 0.01) {
-        const y = latToY(lat);
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(CANVAS_W, y); ctx.stroke();
-    }
-    for (let lng = -71.30; lng <= -71.15; lng += 0.01) {
-        const x = lngToX(lng);
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, CANVAS_H); ctx.stroke();
-    }
-
-    // St. Lawrence River approximation (simplified polygon)
-    ctx.fillStyle = 'rgba(122,162,247,0.06)';
-    ctx.strokeStyle = 'rgba(122,162,247,0.15)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(lngToX(-71.31), latToY(46.835));
-    ctx.lineTo(lngToX(-71.24), latToY(46.830));
-    ctx.lineTo(lngToX(-71.20), latToY(46.825));
-    ctx.lineTo(lngToX(-71.18), latToY(46.830));
-    ctx.lineTo(lngToX(-71.14), latToY(46.835));
-    ctx.lineTo(lngToX(-71.14), latToY(46.820));
-    ctx.lineTo(lngToX(-71.18), latToY(46.815));
-    ctx.lineTo(lngToX(-71.20), latToY(46.810));
-    ctx.lineTo(lngToX(-71.24), latToY(46.815));
-    ctx.lineTo(lngToX(-71.31), latToY(46.820));
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-
-    // River label
-    ctx.fillStyle = 'rgba(122,162,247,0.25)';
-    ctx.font = '11px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('St. Lawrence River', lngToX(-71.22), latToY(46.824));
-
-    // Quebec City label
-    ctx.fillStyle = 'rgba(197,160,89,0.2)';
-    ctx.font = '13px "Cormorant Garamond", serif';
-    ctx.textAlign = 'left';
-    ctx.fillText('QUEBEC CITY', 15, 20);
-
-    drawLocations(ctx);
-}
-
-function drawLocations(ctx) {
     locations.forEach((loc, i) => {
-        const x = lngToX(loc.lng);
-        const y = latToY(loc.lat);
-
+        let marker;
         if (i === 0) {
-            // Depot: gold square
-            ctx.fillStyle = 'var(--gold)';
-            ctx.strokeStyle = '#C5A059';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.rect(x - 8, y - 8, 16, 16);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = '#0A192F';
-            ctx.font = 'bold 10px "JetBrains Mono", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('D', x, y);
-
-            ctx.fillStyle = '#C5A059';
-            ctx.font = '10px "Inter", sans-serif';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            ctx.fillText('Depot', x + 12, y - 6);
+            // Depot: gold square marker
+            const depotIcon = L.divIcon({
+                className: 'depot-marker-icon',
+                html: 'D',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+            marker = L.marker([loc.lat, loc.lng], { icon: depotIcon });
+            marker.bindPopup(`<strong>${loc.name}</strong><br>Depot<br>${minutesToTime(loc.tw_start)} \u2013 ${minutesToTime(loc.tw_end)}`);
         } else {
-            // Customer: circle with TW annotation
-            ctx.fillStyle = 'rgba(122,162,247,0.2)';
-            ctx.strokeStyle = '#7aa2f7';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(x, y, 7, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-
-            // Number inside
-            ctx.fillStyle = '#7aa2f7';
-            ctx.font = 'bold 9px "JetBrains Mono", monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText(i, x, y);
-
-            // Name + TW annotation
-            ctx.fillStyle = 'var(--slate-light)';
-            ctx.font = '9px "Inter", sans-serif';
-            ctx.textAlign = 'left';
-            ctx.textBaseline = 'top';
-            const label = loc.name.length > 18 ? loc.name.substring(0, 18) + '...' : loc.name;
-            ctx.fillText(label, x + 11, y - 10);
-
-            ctx.fillStyle = 'rgba(197,160,89,0.7)';
-            ctx.font = '8px "JetBrains Mono", monospace';
-            ctx.fillText(minutesToTime(loc.tw_start) + '-' + minutesToTime(loc.tw_end) + ' (' + loc.service + 'm)', x + 11, y + 2);
+            // Customer: numbered circle marker
+            const customerIcon = L.divIcon({
+                className: '',
+                html: `<div style="width:18px;height:18px;background:rgba(122,162,247,0.25);border:2px solid #7aa2f7;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#7aa2f7;font-weight:bold;font-size:10px;font-family:'JetBrains Mono',monospace;">${i}</div>`,
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+            marker = L.marker([loc.lat, loc.lng], { icon: customerIcon });
+            marker.bindPopup(
+                `<strong>${loc.name}</strong><br>` +
+                `Time Window: ${minutesToTime(loc.tw_start)} \u2013 ${minutesToTime(loc.tw_end)}<br>` +
+                `Service: ${loc.service} min`
+            );
         }
+        marker.addTo(markersLayer);
     });
 }
 
 function drawRoutes(routes, routeDetails) {
-    const canvas = document.getElementById('vrptwCanvas');
-    const ctx = canvas.getContext('2d');
-    drawMap(); // redraw base
+    routesLayer.clearLayers();
+    markersLayer.clearLayers();
 
+    // Draw route polylines
     routes.forEach((route, ri) => {
         if (route.length === 0) return;
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
         const fullRoute = [DEPOT_IDX, ...route, DEPOT_IDX];
+        const latlngs = fullRoute.map(idx => [locations[idx].lat, locations[idx].lng]);
 
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2;
-        ctx.setLineDash([]);
-        ctx.globalAlpha = 0.8;
-        ctx.beginPath();
-        for (let i = 0; i < fullRoute.length; i++) {
-            const x = lngToX(locations[fullRoute[i]].lng);
-            const y = latToY(locations[fullRoute[i]].lat);
-            if (i === 0) ctx.moveTo(x, y);
-            else ctx.lineTo(x, y);
-        }
-        ctx.stroke();
-        ctx.globalAlpha = 1.0;
+        const polyline = L.polyline(latlngs, {
+            color: color,
+            weight: 3.5,
+            opacity: 0.85
+        });
+        polyline.addTo(routesLayer);
 
-        // Draw arrows along route
-        for (let i = 0; i < fullRoute.length - 1; i++) {
-            const x1 = lngToX(locations[fullRoute[i]].lng);
-            const y1 = latToY(locations[fullRoute[i]].lat);
-            const x2 = lngToX(locations[fullRoute[i + 1]].lng);
-            const y2 = latToY(locations[fullRoute[i + 1]].lat);
-            const mx = (x1 + x2) / 2;
-            const my = (y1 + y2) / 2;
-            const angle = Math.atan2(y2 - y1, x2 - x1);
-            const arrowLen = 6;
-
-            ctx.fillStyle = color;
-            ctx.beginPath();
-            ctx.moveTo(mx + arrowLen * Math.cos(angle), my + arrowLen * Math.sin(angle));
-            ctx.lineTo(mx + arrowLen * Math.cos(angle + 2.5), my + arrowLen * Math.sin(angle + 2.5));
-            ctx.lineTo(mx + arrowLen * Math.cos(angle - 2.5), my + arrowLen * Math.sin(angle - 2.5));
-            ctx.closePath();
-            ctx.fill();
-        }
-
-        // Route label
-        if (route.length > 0) {
-            const firstX = lngToX(locations[route[0]].lng);
-            const firstY = latToY(locations[route[0]].lat);
-            ctx.fillStyle = color;
-            ctx.font = 'bold 10px "Inter", sans-serif';
-            ctx.textAlign = 'right';
-            ctx.textBaseline = 'bottom';
-            ctx.fillText('T' + (ri + 1), firstX - 12, firstY - 2);
+        // Highlight route stops with colored rings
+        for (const c of route) {
+            L.circleMarker([locations[c].lat, locations[c].lng], {
+                radius: 10,
+                color: color,
+                weight: 2.5,
+                fillOpacity: 0,
+                opacity: 0.9
+            }).addTo(routesLayer);
         }
     });
 
-    // Redraw nodes on top
-    drawLocations(ctx);
-
-    // Draw arrival time annotations if details available
-    if (routeDetails) {
-        routeDetails.forEach((rd, ri) => {
-            const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-            rd.stops.forEach(stop => {
-                const x = lngToX(locations[stop.idx].lng);
-                const y = latToY(locations[stop.idx].lat);
-                ctx.fillStyle = stop.feasible ? 'rgba(100,255,218,0.8)' : 'rgba(255,107,107,0.8)';
-                ctx.font = '8px "JetBrains Mono", monospace';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'bottom';
-                ctx.fillText(minutesToTime(stop.arrival), x, y - 10);
+    // Redraw location markers on top
+    locations.forEach((loc, i) => {
+        let marker;
+        if (i === 0) {
+            const depotIcon = L.divIcon({
+                className: 'depot-marker-icon',
+                html: 'D',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
             });
-        });
-    }
+            marker = L.marker([loc.lat, loc.lng], { icon: depotIcon });
+            marker.bindPopup(`<strong>${loc.name}</strong><br>Depot<br>${minutesToTime(loc.tw_start)} \u2013 ${minutesToTime(loc.tw_end)}`);
+        } else {
+            // Find which route this customer belongs to and its arrival info
+            let assignedColor = '#7aa2f7';
+            let arrivalInfo = '';
+            if (routeDetails) {
+                for (let ri = 0; ri < routes.length; ri++) {
+                    const rd = routeDetails[ri];
+                    for (const stop of rd.stops) {
+                        if (stop.idx === i) {
+                            assignedColor = ROUTE_COLORS[ri % ROUTE_COLORS.length];
+                            const statusColor = stop.feasible ? '#64ffda' : '#ff6b6b';
+                            arrivalInfo = `<br><span style="color:${statusColor}">Arrival: ${minutesToTime(stop.arrival)}</span>` +
+                                          `<br>Technician ${ri + 1}`;
+                            break;
+                        }
+                    }
+                }
+            }
+
+            const customerIcon = L.divIcon({
+                className: '',
+                html: `<div style="width:18px;height:18px;background:rgba(122,162,247,0.25);border:2px solid #7aa2f7;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#7aa2f7;font-weight:bold;font-size:10px;font-family:'JetBrains Mono',monospace;">${i}</div>`,
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+            marker = L.marker([loc.lat, loc.lng], { icon: customerIcon });
+            marker.bindPopup(
+                `<strong>${loc.name}</strong><br>` +
+                `Time Window: ${minutesToTime(loc.tw_start)} \u2013 ${minutesToTime(loc.tw_end)}<br>` +
+                `Service: ${loc.service} min` +
+                arrivalInfo
+            );
+        }
+        marker.addTo(markersLayer);
+    });
+
+    // Bring markers to front
+    markersLayer.eachLayer(m => m.bringToFront());
 }
 
 // ── Solomon I1 Insertion ──
@@ -3020,6 +2989,10 @@ function solveAll() {
 // ── Initialize ──
 populateServiceCalls();
 drawMap();
+
+window.addEventListener('resize', () => {
+    map.invalidateSize();
+});
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

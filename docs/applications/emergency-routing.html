@@ -28,6 +28,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --midnight: #0A192F;
@@ -396,6 +398,20 @@
             display: block;
             border-radius: 2px;
         }
+        #map {
+            width: 100%;
+            height: 550px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--midnight);
+            color: var(--ivory);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+        }
+        .leaflet-popup-tip { background: var(--midnight); }
+        .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.82rem; }
 
         .results-table {
             width: 100%;
@@ -2169,9 +2185,9 @@
                     </div>
                 </div>
 
-                <!-- Canvas -->
+                <!-- Map -->
                 <div class="solver-canvas-wrap">
-                    <canvas id="graph-canvas" width="700" height="500"></canvas>
+                    <div id="map"></div>
                 </div>
 
                 <!-- Results -->
@@ -2340,19 +2356,27 @@ const EDGES = [
     { from: 7, to: 6, weight: 8 }
 ];
 
-// ── Map Projection ──
-const LAT_MIN = 46.760, LAT_MAX = 46.880;
-const LNG_MIN = -71.310, LNG_MAX = -71.170;
-const CW = 700, CH = 500;
-const PAD = 40;
+// ── Leaflet Map Initialization ──
+const map = L.map('map', {
+    center: [46.820, -71.240],
+    zoom: 13,
+    zoomControl: true,
+    scrollWheelZoom: true
+});
 
-function project(lat, lng) {
-    const x = PAD + ((lng - LNG_MIN) / (LNG_MAX - LNG_MIN)) * (CW - 2 * PAD);
-    const y = PAD + ((LAT_MAX - lat) / (LAT_MAX - LAT_MIN)) * (CH - 2 * PAD);
-    return { x, y };
-}
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+}).addTo(map);
 
-const nodePositions = NODES.map(n => project(n.lat, n.lng));
+// Layer groups for markers and edges
+const markersLayer = L.layerGroup().addTo(map);
+const edgesLayer = L.layerGroup().addTo(map);
+const pathLayer = L.layerGroup().addTo(map);
+
+// Fit map to all nodes
+const allBounds = L.latLngBounds(NODES.map(n => [n.lat, n.lng]));
+map.fitBounds(allBounds.pad(0.15));
 
 // ── Adjacency list ──
 function buildAdj() {
@@ -2506,77 +2530,42 @@ function bellmanFord(source, target) {
     };
 }
 
-// ── Drawing ──
-const canvas = document.getElementById('graph-canvas');
-const ctx = canvas.getContext('2d');
+// ── Drawing (Leaflet) ──
 
-const NODE_RADIUS = 16;
 const COLORS = {
     node: '#8892B0',
-    nodeStroke: 'rgba(197, 160, 89, 0.4)',
-    edge: 'rgba(136, 146, 176, 0.3)',
+    edge: 'rgba(136, 146, 176, 0.5)',
     edgeWeight: '#8892B0',
     pathEdge: '#64ffda',
     pathNode: '#64ffda',
     visitedNode: '#7aa2f7',
     sourceNode: '#C5A059',
-    targetNode: '#ff6b6b',
-    label: '#a8b2d1',
-    background: '#112240'
+    targetNode: '#ff6b6b'
 };
 
-function drawArrow(x1, y1, x2, y2, color, lineWidth) {
-    const dx = x2 - x1, dy = y2 - y1;
-    const len = Math.sqrt(dx * dx + dy * dy);
-    const ux = dx / len, uy = dy / len;
-
-    // Shorten line to stop at node edge
-    const sx = x1 + ux * NODE_RADIUS;
-    const sy = y1 + uy * NODE_RADIUS;
-    const ex = x2 - ux * (NODE_RADIUS + 6);
-    const ey = y2 - uy * (NODE_RADIUS + 6);
-
-    ctx.beginPath();
-    ctx.moveTo(sx, sy);
-    ctx.lineTo(ex, ey);
-    ctx.strokeStyle = color;
-    ctx.lineWidth = lineWidth;
-    ctx.stroke();
-
-    // Arrowhead
-    const headLen = 8;
-    const angle = Math.atan2(ey - sy, ex - sx);
-    ctx.beginPath();
-    ctx.moveTo(ex, ey);
-    ctx.lineTo(ex - headLen * Math.cos(angle - 0.4), ey - headLen * Math.sin(angle - 0.4));
-    ctx.lineTo(ex - headLen * Math.cos(angle + 0.4), ey - headLen * Math.sin(angle + 0.4));
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
+function makeNodeIcon(color, label, size) {
+    const sz = size || 28;
+    return L.divIcon({
+        className: '',
+        iconSize: [sz, sz],
+        iconAnchor: [sz / 2, sz / 2],
+        popupAnchor: [0, -sz / 2],
+        html: `<div style="
+            width:${sz}px;height:${sz}px;border-radius:50%;
+            background:rgba(10,25,47,0.9);
+            border:2px solid ${color};
+            display:flex;align-items:center;justify-content:center;
+            font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+            color:${color};box-shadow:0 0 8px ${color}44;
+        ">${label}</div>`
+    });
 }
 
-function drawGraph(result, highlightAlgo) {
-    ctx.clearRect(0, 0, CW, CH);
-
-    // Background
-    ctx.fillStyle = COLORS.background;
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Grid lines for map feel
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.03)';
-    ctx.lineWidth = 1;
-    for (let x = PAD; x <= CW - PAD; x += 40) {
-        ctx.beginPath(); ctx.moveTo(x, PAD); ctx.lineTo(x, CH - PAD); ctx.stroke();
-    }
-    for (let y = PAD; y <= CH - PAD; y += 40) {
-        ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(CW - PAD, y); ctx.stroke();
-    }
-
-    // Map label
-    ctx.font = '10px Inter';
-    ctx.fillStyle = 'rgba(197, 160, 89, 0.2)';
-    ctx.textAlign = 'right';
-    ctx.fillText('QUEBEC CITY', CW - PAD, CH - PAD + 16);
+function drawGraph(result) {
+    // Clear previous overlays
+    markersLayer.clearLayers();
+    edgesLayer.clearLayers();
+    pathLayer.clearLayers();
 
     const source = parseInt(document.getElementById('source-select').value);
     const target = parseInt(document.getElementById('dest-select').value);
@@ -2589,115 +2578,100 @@ function drawGraph(result, highlightAlgo) {
         }
     }
 
-    // Draw edges
+    // Draw edges as polylines with arrows
     for (const e of EDGES) {
-        const p1 = nodePositions[e.from];
-        const p2 = nodePositions[e.to];
+        const n1 = NODES[e.from], n2 = NODES[e.to];
         const isPathEdge = pathEdgeSet.has(e.from + '-' + e.to);
+        const color = isPathEdge ? COLORS.pathEdge : COLORS.edge;
+        const weight = isPathEdge ? 4 : 2;
+        const opacity = isPathEdge ? 0.9 : 0.5;
 
-        drawArrow(p1.x, p1.y, p2.x, p2.y,
-            isPathEdge ? COLORS.pathEdge : COLORS.edge,
-            isPathEdge ? 3 : 1.2
+        const line = L.polyline(
+            [[n1.lat, n1.lng], [n2.lat, n2.lng]],
+            { color: color, weight: weight, opacity: opacity, dashArray: isPathEdge ? null : '6 4' }
         );
+        line.addTo(edgesLayer);
 
-        // Weight label
-        const mx = (p1.x + p2.x) / 2;
-        const my = (p1.y + p2.y) / 2;
-        const dx = p2.x - p1.x, dy = p2.y - p1.y;
+        // Arrowhead at midpoint using a small triangle marker
+        const midLat = (n1.lat + n2.lat) / 2;
+        const midLng = (n1.lng + n2.lng) / 2;
+        const angle = Math.atan2(n2.lng - n1.lng, n2.lat - n1.lat) * 180 / Math.PI;
+        const arrowIcon = L.divIcon({
+            className: '',
+            iconSize: [12, 12],
+            iconAnchor: [6, 6],
+            html: `<div style="
+                transform: rotate(${90 - angle}deg);
+                color: ${color};
+                font-size: 12px;
+                line-height: 12px;
+                opacity: ${opacity};
+            ">&#9654;</div>`
+        });
+        L.marker([midLat, midLng], { icon: arrowIcon, interactive: false }).addTo(edgesLayer);
+
+        // Weight label offset slightly from midpoint
+        const dx = n2.lng - n1.lng, dy = n2.lat - n1.lat;
         const len = Math.sqrt(dx * dx + dy * dy);
-        const nx = -dy / len, ny = dx / len;
-        const ox = mx + nx * 12, oy = my + ny * 12;
+        const nx = -dx / len, ny = dy / len;
+        const offsetLat = midLat + ny * 0.0012;
+        const offsetLng = midLng + nx * 0.0012;
 
-        ctx.font = '600 11px JetBrains Mono';
-        ctx.fillStyle = isPathEdge ? COLORS.pathEdge : COLORS.edgeWeight;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(e.weight.toString(), ox, oy);
+        const weightIcon = L.divIcon({
+            className: '',
+            iconSize: [24, 16],
+            iconAnchor: [12, 8],
+            html: `<div style="
+                font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+                color:${isPathEdge ? COLORS.pathEdge : COLORS.edgeWeight};
+                text-shadow: 0 0 4px rgba(10,25,47,0.9), 0 0 8px rgba(10,25,47,0.9);
+                text-align:center;white-space:nowrap;
+            ">${e.weight}</div>`
+        });
+        L.marker([offsetLat, offsetLng], { icon: weightIcon, interactive: false }).addTo(edgesLayer);
+    }
+
+    // Draw path highlight on top
+    if (result && result.path.length > 1) {
+        const pathLatLngs = result.path.map(nid => [NODES[nid].lat, NODES[nid].lng]);
+        L.polyline(pathLatLngs, {
+            color: COLORS.pathEdge,
+            weight: 5,
+            opacity: 0.8
+        }).addTo(pathLayer);
     }
 
     // Build visited set
     const visitedSet = new Set(result ? result.visited : []);
     const pathSet = new Set(result ? result.path : []);
 
-    // Draw nodes
+    // Draw nodes as markers
     for (let i = 0; i < NODES.length; i++) {
-        const pos = nodePositions[i];
-        let fillColor = COLORS.node;
-        let strokeColor = COLORS.nodeStroke;
-        let radius = NODE_RADIUS;
+        const n = NODES[i];
+        let color = COLORS.node;
+        let size = 28;
 
         if (i === source) {
-            fillColor = COLORS.sourceNode;
-            strokeColor = COLORS.sourceNode;
-            radius = NODE_RADIUS + 2;
+            color = COLORS.sourceNode;
+            size = 32;
         } else if (i === target) {
-            fillColor = COLORS.targetNode;
-            strokeColor = COLORS.targetNode;
-            radius = NODE_RADIUS + 2;
+            color = COLORS.targetNode;
+            size = 32;
         } else if (result && pathSet.has(i)) {
-            fillColor = COLORS.pathNode;
-            strokeColor = COLORS.pathNode;
+            color = COLORS.pathNode;
         } else if (result && visitedSet.has(i)) {
-            fillColor = COLORS.visitedNode;
-            strokeColor = COLORS.visitedNode;
+            color = COLORS.visitedNode;
         }
 
-        // Glow for path nodes
-        if (result && (pathSet.has(i) || i === source || i === target)) {
-            ctx.beginPath();
-            ctx.arc(pos.x, pos.y, radius + 6, 0, Math.PI * 2);
-            ctx.fillStyle = (i === source ? 'rgba(197,160,89,0.15)' :
-                            i === target ? 'rgba(255,107,107,0.15)' :
-                            'rgba(100,255,218,0.15)');
-            ctx.fill();
-        }
+        const icon = makeNodeIcon(color, i.toString(), size);
+        const marker = L.marker([n.lat, n.lng], { icon: icon });
 
-        // Node circle
-        ctx.beginPath();
-        ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(10,25,47,0.9)';
-        ctx.fill();
-        ctx.strokeStyle = strokeColor;
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Node ID
-        ctx.font = '600 11px JetBrains Mono';
-        ctx.fillStyle = fillColor;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(i.toString(), pos.x, pos.y);
-
-        // Node name label
-        ctx.font = '10px Inter';
-        ctx.fillStyle = COLORS.label;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(NODES[i].name, pos.x, pos.y + radius + 6);
+        const roleTag = i === source ? '<br><span style="color:#C5A059;">SOURCE</span>'
+                      : i === target ? '<br><span style="color:#ff6b6b;">DESTINATION</span>'
+                      : '';
+        marker.bindPopup(`<strong>${n.name}</strong> (node ${i})${roleTag}`);
+        marker.addTo(markersLayer);
     }
-
-    // Legend
-    const legendX = PAD + 4, legendY = PAD + 4;
-    ctx.font = '9px Inter';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-
-    const legendItems = [
-        { color: COLORS.sourceNode, label: 'Source' },
-        { color: COLORS.targetNode, label: 'Destination' },
-        { color: COLORS.pathNode, label: 'Shortest Path' },
-        { color: COLORS.visitedNode, label: 'Visited' }
-    ];
-
-    legendItems.forEach((item, idx) => {
-        const y = legendY + idx * 16;
-        ctx.beginPath();
-        ctx.arc(legendX + 5, y, 4, 0, Math.PI * 2);
-        ctx.fillStyle = item.color;
-        ctx.fill();
-        ctx.fillStyle = 'rgba(168, 178, 209, 0.7)';
-        ctx.fillText(item.label, legendX + 14, y);
-    });
 }
 
 // ── Algorithm Selection ──
@@ -2836,6 +2810,9 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
 drawGraph(null);
+
+// Handle resize for Leaflet map
+window.addEventListener('resize', () => { map.invalidateSize(); });
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

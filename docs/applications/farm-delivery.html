@@ -28,6 +28,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
         :root {
             --midnight: #0A192F;
@@ -433,6 +435,39 @@
             width: 100%;
             display: block;
             border-radius: 2px;
+        }
+        #map {
+            width: 100%;
+            height: 550px;
+            border-radius: 4px;
+            z-index: 1;
+        }
+        .leaflet-popup-content-wrapper {
+            background: var(--midnight);
+            color: var(--ivory);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+        }
+        .leaflet-popup-tip { background: var(--midnight); }
+        .leaflet-popup-content { font-family: 'Inter', sans-serif; font-size: 0.82rem; }
+        .depot-icon {
+            background: #ff6b6b;
+            border: 2px solid #fff;
+            border-radius: 4px;
+            width: 18px !important;
+            height: 18px !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 10px;
+            color: #0A192F;
+        }
+        .stop-icon {
+            border: 2px solid #fff;
+            border-radius: 50%;
+            width: 14px !important;
+            height: 14px !important;
         }
 
         .results-table {
@@ -1375,9 +1410,9 @@
                     </div>
                 </div>
 
-                <!-- Map Canvas -->
+                <!-- Interactive Map -->
                 <div class="solver-canvas-wrap">
-                    <canvas id="map-canvas" width="700" height="550"></canvas>
+                    <div id="map"></div>
                 </div>
 
                 <!-- Route Capacity Bars -->
@@ -1613,18 +1648,22 @@
 //  15 delivery points across Quebec City farm-to-market network
 // ══════════════════════════════════════════════════════════════
 
-const canvas = document.getElementById('map-canvas');
-const ctx = canvas.getContext('2d');
+// ── Leaflet Map Initialization ──
+const map = L.map('map', {
+    center: [46.810, -71.230],
+    zoom: 13,
+    zoomControl: true,
+    scrollWheelZoom: true
+});
 
-// Canvas dimensions
-const CW = 700, CH = 550, PAD = 45;
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    maxZoom: 19
+}).addTo(map);
 
-// Geographic bounds (Quebec City region)
-const LAT_MIN = 46.750, LAT_MAX = 46.870;
-const LNG_MIN = -71.320, LNG_MAX = -71.160;
-
-function latToY(lat) { return PAD + (LAT_MAX - lat) / (LAT_MAX - LAT_MIN) * (CH - 2 * PAD); }
-function lngToX(lng) { return PAD + (lng - LNG_MIN) / (LNG_MAX - LNG_MIN) * (CW - 2 * PAD); }
+// Layer groups for markers and routes
+const markersLayer = L.layerGroup().addTo(map);
+const routesLayer = L.layerGroup().addTo(map);
 
 // Haversine distance (km) between two lat/lng points
 function haversine(lat1, lng1, lat2, lng2) {
@@ -1669,14 +1708,12 @@ let dist = [];
 let demands = [];
 let currentResults = [];
 
-// ── Initialize stops with screen coords ──
+// ── Initialize stops ──
 function initStops() {
     activeStops = DEFAULT_STOPS.map((s, i) => ({
         name: s.name,
         lat: s.lat,
         lng: s.lng,
-        x: lngToX(s.lng),
-        y: latToY(s.lat),
         demand: s.demand,
         idx: i
     }));
@@ -1713,119 +1750,79 @@ function routeLoad(route) {
 }
 
 // ══════════════════════════════════════════════════════════════
-// Drawing
+// Leaflet Map Drawing
 // ══════════════════════════════════════════════════════════════
 
-function resizeCanvas() {
-    const wrap = canvas.parentElement;
-    const dpr = window.devicePixelRatio || 1;
-    const w = Math.min(wrap.clientWidth - 16, 700);
-    const h = Math.round(w * CH / CW);
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // Update projection scale
-    const sx = w / CW, sy = h / CH;
-    activeStops.forEach(s => {
-        s.x = lngToX(s.lng) * sx;
-        s.y = latToY(s.lat) * sy;
-    });
-    return { w, h, sx, sy };
-}
-
-function drawMap(w, h) {
-    ctx.fillStyle = '#112240';
-    ctx.fillRect(0, 0, w, h);
-
-    // St. Lawrence River
-    ctx.beginPath();
-    ctx.moveTo(0, h);
-    ctx.lineTo(w, h);
-    ctx.lineTo(w, h * 0.55);
-    ctx.bezierCurveTo(w * 0.85, h * 0.60, w * 0.70, h * 0.72, w * 0.55, h * 0.78);
-    ctx.bezierCurveTo(w * 0.40, h * 0.84, w * 0.25, h * 0.88, 0, h * 0.92);
-    ctx.closePath();
-    ctx.fillStyle = 'rgba(122, 162, 247, 0.10)';
-    ctx.fill();
-    ctx.font = '10px Inter, sans-serif';
-    ctx.fillStyle = 'rgba(122, 162, 247, 0.30)';
-    ctx.fillText('St. Lawrence River', w * 0.55, h * 0.88);
-
-    // Faint road grid
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.05)';
-    ctx.lineWidth = 1;
-    for (let x = 50; x < w; x += 60) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke();
-    }
-    for (let y = 50; y < h; y += 60) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke();
-    }
-}
-
 function drawStops() {
-    const { w, h } = resizeCanvas();
-    drawMap(w, h);
+    markersLayer.clearLayers();
+    routesLayer.clearLayers();
 
     for (let i = 0; i < activeStops.length; i++) {
         const s = activeStops[i];
+        let marker;
         if (i === 0) {
-            // Depot: red square
-            ctx.fillStyle = '#ff6b6b';
-            ctx.fillRect(s.x - 7, s.y - 7, 14, 14);
-            ctx.fillStyle = '#0A192F';
-            ctx.font = 'bold 10px JetBrains Mono, monospace';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('D', s.x, s.y + 1);
-            ctx.fillStyle = '#ff6b6b';
-            ctx.font = '9px Inter, sans-serif';
-            ctx.textAlign = 'left';
-            ctx.fillText('Depot', s.x + 12, s.y + 4);
+            // Depot marker
+            const depotIcon = L.divIcon({
+                className: 'depot-icon',
+                html: 'D',
+                iconSize: [18, 18],
+                iconAnchor: [9, 9]
+            });
+            marker = L.marker([s.lat, s.lng], { icon: depotIcon });
+            marker.bindPopup(`<strong>${s.name}</strong><br>Depot`);
         } else {
-            const r = Math.max(4, Math.min(8, s.demand / 40));
-            ctx.beginPath();
-            ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
-            ctx.fillStyle = '#C5A059';
-            ctx.fill();
-
-            ctx.fillStyle = 'rgba(248,249,250,0.75)';
-            ctx.font = '8px Inter, sans-serif';
-            ctx.textAlign = (s.x > w * 0.6) ? 'right' : 'left';
-            ctx.textBaseline = 'middle';
-            const label = s.name + ' (' + s.demand + ' kg)';
-            const lx = (s.x > w * 0.6) ? s.x - r - 4 : s.x + r + 4;
-            ctx.fillText(label, lx, s.y);
+            const r = Math.max(8, Math.min(14, s.demand / 25));
+            const stopIcon = L.divIcon({
+                className: 'stop-icon',
+                html: '',
+                iconSize: [r, r],
+                iconAnchor: [r/2, r/2]
+            });
+            stopIcon.options.html = `<div style="width:${r}px;height:${r}px;background:#C5A059;border:2px solid #fff;border-radius:50%;"></div>`;
+            marker = L.marker([s.lat, s.lng], { icon: L.divIcon({
+                className: '',
+                html: `<div style="width:${r}px;height:${r}px;background:#C5A059;border:2px solid #fff;border-radius:50%;"></div>`,
+                iconSize: [r, r],
+                iconAnchor: [r/2, r/2]
+            })});
+            marker.bindPopup(`<strong>${s.name}</strong><br>Demand: ${s.demand} kg`);
         }
+        marker.addTo(markersLayer);
     }
-    ctx.textAlign = 'start';
-    ctx.textBaseline = 'alphabetic';
 }
 
 function drawRoutes(routes) {
-    drawStops();
+    routesLayer.clearLayers();
     const depot = activeStops[0];
+
     routes.forEach((route, ri) => {
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        ctx.beginPath();
-        ctx.moveTo(depot.x, depot.y);
-        for (const c of route) ctx.lineTo(activeStops[c].x, activeStops[c].y);
-        ctx.lineTo(depot.x, depot.y);
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.globalAlpha = 0.8;
-        ctx.stroke();
-        ctx.globalAlpha = 1;
+        const latlngs = [[depot.lat, depot.lng]];
+        for (const c of route) latlngs.push([activeStops[c].lat, activeStops[c].lng]);
+        latlngs.push([depot.lat, depot.lng]);
 
+        const polyline = L.polyline(latlngs, {
+            color: color,
+            weight: 3.5,
+            opacity: 0.85
+        });
+        polyline.addTo(routesLayer);
+
+        // Highlight route stops with colored rings
         for (const c of route) {
-            ctx.beginPath();
-            ctx.arc(activeStops[c].x, activeStops[c].y, 8, 0, Math.PI * 2);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            const s = activeStops[c];
+            L.circleMarker([s.lat, s.lng], {
+                radius: 8,
+                color: color,
+                weight: 2.5,
+                fillOpacity: 0,
+                opacity: 0.9
+            }).addTo(routesLayer);
         }
     });
+
+    // Re-add markers on top
+    markersLayer.eachLayer(m => m.bringToFront());
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -2126,9 +2123,12 @@ initStops();
 buildDistMatrix();
 drawStops();
 
+// Fit map to all markers
+const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
+map.fitBounds(bounds.pad(0.1));
+
 window.addEventListener('resize', () => {
-    drawStops();
-    if (currentResults.length > 0) drawRoutes(currentResults[0].routes);
+    map.invalidateSize();
 });
 </script>
 
