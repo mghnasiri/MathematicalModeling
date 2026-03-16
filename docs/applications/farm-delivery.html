@@ -1324,9 +1324,10 @@
 
             <div class="disclaimer-box">
                 <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Educational Demonstration</div>
-                Locations represent real Quebec City landmarks. Distances are computed using the Haversine
-                formula on geographic coordinates, giving approximate road distances in kilometers. Demand
-                values and vehicle capacities are illustrative scenarios for educational purposes.
+                Locations represent real Quebec City landmarks. Distances are computed using <strong>OSRM
+                (Open Source Routing Machine)</strong> for real driving distances along actual road networks.
+                Routes are drawn following real roads on the map. Demand values and vehicle capacities are
+                illustrative scenarios for educational purposes.
             </div>
         </div>
     </div>
@@ -1352,7 +1353,7 @@
 
             <p>
                 Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">c<sub>ij</sub></span>
-                is the Haversine distance (km) between stops <em>i</em> and <em>j</em>,
+                is the real road distance (km) between stops <em>i</em> and <em>j</em> via OSRM,
                 <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>i</sub></span>
                 is the demand (kg) at stop <em>i</em>, and
                 <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">Q</span>
@@ -1626,9 +1627,11 @@
             <div class="disclaimer-box">
                 <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
                 This application is an educational demonstration of the Capacitated Vehicle Routing Problem
-                applied to a farm-to-market delivery scenario. Locations represent real Quebec City landmarks
-                but distances are approximate (Haversine formula). Demand values and vehicle capacities are
-                illustrative. This tool is not intended for operational logistics planning.
+                applied to a farm-to-market delivery scenario. Locations represent real Quebec City landmarks.
+                Distances are computed using the <strong>OSRM road routing engine</strong> for real driving
+                distances along actual roads (with Haversine straight-line as fallback). Routes displayed on
+                the map follow real road networks. Demand values and vehicle capacities are illustrative.
+                This tool is not intended for operational logistics planning.
             </div>
         </div>
     </div>
@@ -1646,6 +1649,7 @@
 // ══════════════════════════════════════════════════════════════
 //  Farm-to-Market Delivery Routing — CVRP Solver
 //  15 delivery points across Quebec City farm-to-market network
+//  Uses OSRM for real road distances and route geometries
 // ══════════════════════════════════════════════════════════════
 
 // ── Leaflet Map Initialization ──
@@ -1657,7 +1661,7 @@ const map = L.map('map', {
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
     maxZoom: 19
 }).addTo(map);
 
@@ -1665,7 +1669,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const markersLayer = L.layerGroup().addTo(map);
 const routesLayer = L.layerGroup().addTo(map);
 
-// Haversine distance (km) between two lat/lng points
+// Haversine distance (km) — fallback when OSRM is unavailable
 function haversine(lat1, lng1, lat2, lng2) {
     const R = 6371;
     const dLat = (lat2 - lat1) * Math.PI / 180;
@@ -1707,6 +1711,7 @@ let capacity = 2000;
 let dist = [];
 let demands = [];
 let currentResults = [];
+let useRoadDist = false;  // true when OSRM matrix loaded successfully
 
 // ── Initialize stops ──
 function initStops() {
@@ -1720,8 +1725,8 @@ function initStops() {
     demands = activeStops.map(s => s.demand);
 }
 
-// ── Build Haversine distance matrix (km) ──
-function buildDistMatrix() {
+// ── Build Haversine distance matrix (km) — fallback ──
+function buildHaversineMatrix() {
     const n = activeStops.length;
     dist = Array.from({ length: n }, () => new Float64Array(n));
     for (let i = 0; i < n; i++)
@@ -1731,6 +1736,45 @@ function buildDistMatrix() {
             dist[i][j] = d;
             dist[j][i] = d;
         }
+}
+
+// ── OSRM: Fetch real road distance matrix ──
+async function buildOSRMDistMatrix() {
+    const coords = activeStops.map(s => `${s.lng},${s.lat}`).join(';');
+    const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`OSRM table API returned ${resp.status}`);
+        const data = await resp.json();
+        if (data.code !== 'Ok') throw new Error(`OSRM error: ${data.code}`);
+        const n = activeStops.length;
+        dist = Array.from({ length: n }, () => new Float64Array(n));
+        for (let i = 0; i < n; i++)
+            for (let j = 0; j < n; j++)
+                dist[i][j] = data.distances[i][j] / 1000;  // meters → km
+        useRoadDist = true;
+        return true;
+    } catch (e) {
+        console.warn('OSRM table API failed, using Haversine fallback:', e.message);
+        buildHaversineMatrix();
+        useRoadDist = false;
+        return false;
+    }
+}
+
+// ── OSRM: Get road geometry for a route ──
+async function getRouteGeometry(waypoints) {
+    const coords = waypoints.map(idx => `${activeStops[idx].lng},${activeStops[idx].lat}`).join(';');
+    const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (data.code !== 'Ok' || !data.routes.length) return null;
+        return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
+    } catch (e) {
+        return null;
+    }
 }
 
 function routeDist(route) {
@@ -1791,22 +1835,31 @@ function drawStops() {
     }
 }
 
-function drawRoutes(routes) {
+async function drawRoutes(routes) {
     routesLayer.clearLayers();
     const depot = activeStops[0];
 
-    routes.forEach((route, ri) => {
+    for (let ri = 0; ri < routes.length; ri++) {
+        const route = routes[ri];
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        const latlngs = [[depot.lat, depot.lng]];
-        for (const c of route) latlngs.push([activeStops[c].lat, activeStops[c].lng]);
-        latlngs.push([depot.lat, depot.lng]);
 
-        const polyline = L.polyline(latlngs, {
+        // Build waypoint sequence: depot → customers → depot
+        const waypoints = [0, ...route, 0];
+
+        // Try OSRM road geometry, fall back to straight lines
+        let latlngs = null;
+        if (useRoadDist) {
+            latlngs = await getRouteGeometry(waypoints);
+        }
+        if (!latlngs) {
+            latlngs = waypoints.map(idx => [activeStops[idx].lat, activeStops[idx].lng]);
+        }
+
+        L.polyline(latlngs, {
             color: color,
-            weight: 3.5,
+            weight: 4,
             opacity: 0.85
-        });
-        polyline.addTo(routesLayer);
+        }).addTo(routesLayer);
 
         // Highlight route stops with colored rings
         for (const c of route) {
@@ -1819,7 +1872,7 @@ function drawRoutes(routes) {
                 opacity: 0.9
             }).addTo(routesLayer);
         }
-    });
+    }
 
     // Re-add markers on top
     markersLayer.eachLayer(m => m.bringToFront());
@@ -1862,8 +1915,8 @@ function solveClarkeWright(cap) {
         let merged;
         if (rI[rI.length - 1] === i && rJ[0] === j) merged = [...rI, ...rJ];
         else if (rJ[rJ.length - 1] === j && rI[0] === i) merged = [...rJ, ...rI];
-        else if (rI[0] === i && rJ[0] === j) merged = [...rI.reverse(), ...rJ];
-        else merged = [...rI, ...rJ.reverse()];
+        else if (rI[0] === i && rJ[0] === j) merged = [...[...rI].reverse(), ...rJ];
+        else merged = [...rI, ...[...rJ].reverse()];
 
         routes[ri] = merged;
         loads[ri] += loads[rj];
@@ -1990,9 +2043,9 @@ function updateDemand(el) {
     }
 }
 
-function resetDemands() {
+async function resetDemands() {
     initStops();
-    buildDistMatrix();
+    await buildOSRMDistMatrix();
     capacity = 2000;
     document.getElementById('capacity-slider').value = 2000;
     document.getElementById('capacity-display').textContent = '2000';
@@ -2038,11 +2091,19 @@ const ALGO_MAP = {
     nn:    { name: 'Nearest Neighbor',      fn: solveNearestNeighbor }
 };
 
-function solveAll() {
+async function solveAll() {
+    const solveBtn = document.getElementById('solve-btn');
+    const statusEl = document.getElementById('solver-status');
+    solveBtn.disabled = true;
+    statusEl.textContent = useRoadDist
+        ? 'Optimizing with real road distances...'
+        : 'Optimizing with Haversine distances...';
+
     const selectedAlgos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected'))
         .map(c => c.dataset.algo);
     if (selectedAlgos.length === 0) {
-        document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
+        statusEl.textContent = 'Select at least one algorithm.';
+        solveBtn.disabled = false;
         return;
     }
 
@@ -2061,8 +2122,8 @@ function solveAll() {
     }
     currentResults.sort((a, b) => a.distance - b.distance);
 
-    // Draw best
-    drawRoutes(currentResults[0].routes);
+    // Draw best route on real roads
+    await drawRoutes(currentResults[0].routes);
     showCapBars(currentResults[0].routes);
 
     // Populate results table
@@ -2070,6 +2131,7 @@ function solveAll() {
     tbody.innerHTML = '';
     currentResults.forEach((r, i) => {
         const tr = document.createElement('tr');
+        const distLabel = useRoadDist ? 'road' : 'straight-line';
         tr.innerHTML = `
             <td class="algo-label">${r.name}</td>
             <td class="${i === 0 ? 'best-val' : ''}">${r.distance.toFixed(1)}</td>
@@ -2080,13 +2142,15 @@ function solveAll() {
         tbody.appendChild(tr);
     });
 
-    showResult(currentResults[0]);
-    document.getElementById('solver-status').textContent =
-        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''} in ${currentResults.reduce((s, r) => s + r.time, 0).toFixed(1)} ms. Click a row to view its routes.`;
+    await showResult(currentResults[0]);
+    const distType = useRoadDist ? 'road distances (OSRM)' : 'Haversine (straight-line) distances';
+    statusEl.textContent =
+        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''} using ${distType} in ${currentResults.reduce((s, r) => s + r.time, 0).toFixed(1)} ms. Click a row to view its routes.`;
+    solveBtn.disabled = false;
 }
 
-function showResult(r) {
-    drawRoutes(r.routes);
+async function showResult(r) {
+    await drawRoutes(r.routes);
     showCapBars(r.routes);
 
     // Highlight selected row
@@ -2120,7 +2184,7 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
 initStops();
-buildDistMatrix();
+buildHaversineMatrix();  // immediate fallback
 drawStops();
 
 // Fit map to all markers
@@ -2130,6 +2194,19 @@ map.fitBounds(bounds.pad(0.1));
 window.addEventListener('resize', () => {
     map.invalidateSize();
 });
+
+// Load OSRM road distances, then auto-run solver
+(async function() {
+    const statusEl = document.getElementById('solver-status');
+    statusEl.textContent = 'Loading real road distances from OSRM...';
+    const ok = await buildOSRMDistMatrix();
+    if (ok) {
+        statusEl.textContent = 'Road distances loaded. Running all algorithms...';
+    } else {
+        statusEl.textContent = 'OSRM unavailable — using Haversine. Running all algorithms...';
+    }
+    await solveAll();
+})();
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
