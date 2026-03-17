@@ -1,0 +1,2708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Department Capacity Planning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive healthcare facility capacity planning demo using Facility Location (UFLP) and p-Median models with Greedy Add, Greedy Drop, and Simulated Annealing algorithms.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/capacity-planning.html">
+    <meta property="og:title" content="Department Capacity Planning | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive healthcare facility capacity planning demo using Facility Location and p-Median models.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Department Capacity Planning | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive healthcare facility capacity planning demo using Facility Location and p-Median models.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* Content Blocks */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* Disclaimer */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* Decision Chain */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        .chain-step {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.2rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+            transition: all 0.3s;
+        }
+        .chain-step.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .chain-arrow {
+            color: var(--slate);
+            opacity: 0.4;
+            font-size: 0.7rem;
+        }
+
+        /* Mapping Table */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 1.5rem 0;
+        }
+        .mapping-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.72rem;
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.6rem 1rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .mapping-table td:first-child {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+
+        /* Formulation */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* Theory Link */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        /* Scenario Chips */
+        .scenario-chips {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1.2rem;
+        }
+        .scenario-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .scenario-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .scenario-chip.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .scenario-chip .chip-dot {
+            width: 6px; height: 6px;
+            border-radius: 50%;
+        }
+        .chip-dot.easy { background: var(--green); }
+        .chip-dot.medium { background: var(--gold); }
+        .chip-dot.hard { background: var(--red); }
+
+        /* Data Tables */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .data-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.72rem;
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .data-table td {
+            padding: 0.5rem 0.6rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+        .data-table .row-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .data-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
+        /* Solver Controls */
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Canvas */
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        /* Results Table */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .assignment-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* Business Panel */
+        .business-panel {
+            margin-top: 1.2rem;
+            padding: 1rem 1.2rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 6px;
+        }
+        .business-panel-title {
+            font-size: 0.68rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .business-panel-title i { font-size: 0.72rem; }
+        .business-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+        }
+        .business-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .business-stat .biz-val {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .business-stat .biz-label {
+            font-size: 0.62rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0.2rem;
+            text-align: center;
+        }
+
+        /* Insight Box */
+        .insight-box {
+            background: rgba(100, 255, 218, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.15);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .insight-box .insight-title {
+            color: var(--green);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+        .insight-box p {
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* Algorithm Cards */
+        .algo-cards {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        @media (max-width: 992px) {
+            .algo-cards { grid-template-columns: 1fr; }
+        }
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 1.8rem 2rem;
+        }
+        .algo-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ivory);
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+        }
+        .algo-card h4 .algo-badge {
+            display: inline-block;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--blue);
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            border-radius: 2px;
+            padding: 2px 8px;
+            margin-left: 0.5rem;
+            vertical-align: middle;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.8;
+        }
+        .algo-card .algo-steps {
+            list-style: none;
+            padding: 0;
+            margin-top: 0.8rem;
+        }
+        .algo-card .algo-steps li {
+            padding: 0.3rem 0 0.3rem 1.2rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.85rem;
+        }
+        .algo-card .algo-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* Complexity Cards */
+        .complexity-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .complexity-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .complexity-card h5 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--ivory);
+            margin-bottom: 0.5rem;
+        }
+        .complexity-card h5 i {
+            color: var(--gold);
+            margin-right: 0.4rem;
+            font-size: 0.9rem;
+        }
+        .complexity-card p {
+            color: var(--slate-light);
+            font-size: 0.82rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* References */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* CTA */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Back Link */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Scroll Progress */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Tooltip */
+        .has-tooltip {
+            position: relative;
+            cursor: help;
+        }
+        .has-tooltip .tip-content {
+            position: absolute;
+            bottom: calc(100% + 8px);
+            left: 50%;
+            transform: translateX(-50%) translateY(4px);
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 6px;
+            padding: 0.6rem 0.8rem;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 5000;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+            max-width: 280px;
+            white-space: normal;
+            line-height: 1.5;
+        }
+        .has-tooltip:hover .tip-content {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+
+        /* Nav Search */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* Solve Animation */
+        @keyframes solvePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(197, 160, 89, 0); }
+        }
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+        .results-table tbody tr:hover { background: rgba(197, 160, 89, 0.06); }
+
+        /* Canvas Legend */
+        .canvas-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 0.5rem;
+            font-size: 0.7rem;
+            color: var(--slate);
+        }
+        .canvas-legend span {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+        .legend-sq {
+            width: 12px;
+            height: 12px;
+            border-radius: 2px;
+        }
+        .legend-circle {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; }
+            .algo-cards { grid-template-columns: 1fr; }
+            .complexity-cards { grid-template-columns: 1fr 1fr; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { padding: 0.4rem 0.8rem; font-size: 0.68rem; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .complexity-cards { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/location.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri" target="_blank" rel="noopener">GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&#8984;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Department Capacity Planning</li>
+        </ol>
+    </div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-building-columns"></i></div>
+        <h1>Capacity <span>Planning</span></h1>
+        <p class="hero-subtitle">Facility Location &middot; p-Median</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            A healthcare network must position <strong>p</strong> facilities among candidate sites
+            to minimize the population-weighted response time across demand zones. Optimal facility
+            placement can reduce emergency response times by <strong>20&ndash;40%</strong>
+            (Li et al., 2011), and every minute of reduced response for cardiac arrest increases
+            survival by <strong>5&ndash;10%</strong>. This is the <strong>Uncapacitated Facility
+            Location Problem</strong> (UFLP), an NP-hard cornerstone of location science.
+        </p>
+
+        <!-- Decision Chain -->
+        <div class="decision-chain">
+            <div class="chain-step active"><i class="fas fa-building-columns"></i> Strategic</div>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <div class="chain-step"><i class="fas fa-users"></i> Staff Planning</div>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <div class="chain-step"><i class="fas fa-heartbeat"></i> Patient Flow</div>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <div class="chain-step"><i class="fas fa-boxes-stacked"></i> Supply Chain</div>
+        </div>
+    </div>
+</section>
+
+<!-- 2. The Problem -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Optimal placement of healthcare facilities to minimize response time</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                A regional healthcare authority must decide where to place medical facilities
+                to serve a population spread across diverse neighborhoods &mdash; from the
+                dense <strong>Downtown Core</strong> with 45,000 residents to the sparse
+                <strong>Highway Corridor</strong> with 7,000. Each population zone generates
+                emergency calls proportional to its size, and the goal is to ensure that the
+                <strong>total population-weighted distance</strong> from every demand zone
+                to its nearest facility is minimized.
+            </p>
+
+            <table class="mapping-table">
+                <thead>
+                    <tr><th>Healthcare Domain</th><th>Mathematical Concept</th><th>In This Model</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Facility</td><td>Candidate site</td><td>10 candidate locations with fixed costs</td></tr>
+                    <tr><td>Population zone</td><td>Demand point</td><td>20 zones with weighted populations</td></tr>
+                    <tr><td>Population</td><td>Demand weight w<sub>j</sub></td><td>6K &ndash; 45K residents per zone</td></tr>
+                    <tr><td>Response time</td><td>Distance d<sub>ji</sub></td><td>Euclidean distance (grid units)</td></tr>
+                </tbody>
+            </table>
+
+            <p>
+                Given <em>m</em> = 10 candidate sites, <em>n</em> = 20 demand zones with population
+                weights <em>w<sub>j</sub></em>, and pairwise distances <em>d(j, i)</em>, the objective
+                is to select exactly <strong>p = 4</strong> facilities to open so as to
+                <strong>minimize &Sigma; w<sub>j</sub> &middot; min<sub>i &in; S</sub> d(j, i)</strong>,
+                where <em>S</em> is the set of opened facilities. This is the <strong>p-Median
+                Problem</strong> &mdash; NP-hard in general. The UFLP variant adds fixed opening costs
+                <em>f<sub>i</sub></em> and is also NP-hard with a best known approximation ratio of
+                1.488 (Li, 2013).
+            </p>
+
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Educational Demonstration</div>
+                Data shown is illustrative. Populations and distances are approximate.
+                Locations represent a fictional regional healthcare network; coordinates
+                and population figures are simplified for educational purposes.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Model -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Model</span></h2>
+            <p>Uncapacitated Facility Location Problem (UFLP)</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="formulation">
+                <span class="form-label">UFLP Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>i</sub> f<sub>i</sub> &middot; y<sub>i</sub> + &Sigma;<sub>j</sub> &Sigma;<sub>i</sub> w<sub>j</sub> &middot; d<sub>ji</sub> &middot; x<sub>ji</sub></span> &nbsp; <span class="comment">// fixed cost + weighted distance</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ji</sub> = 1 &nbsp; &forall; j</span> &nbsp; <span class="comment">// each zone assigned to exactly one facility</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ji</sub> &le; y<sub>i</sub> &nbsp; &forall; j, i</span> &nbsp; <span class="comment">// can only assign to open facilities</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> y<sub>i</sub> = p</span> &nbsp; <span class="comment">// exactly p facilities opened (p-Median variant)</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ji</sub>, y<sub>i</sub> &in; {0, 1}</span> &nbsp; <span class="comment">// binary decision variables</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">f<sub>i</sub></span>
+                is the fixed cost of opening facility <em>i</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">w<sub>j</sub></span>
+                is the population of demand zone <em>j</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>ji</sub></span>
+                is the distance from zone <em>j</em> to candidate site <em>i</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">y<sub>i</sub></span>
+                indicates whether facility <em>i</em> is opened, and
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">x<sub>ji</sub></span>
+                assigns zone <em>j</em> to facility <em>i</em>.
+            </p>
+
+            <a href="../families/location.html" class="theory-link">
+                <i class="fas fa-arrow-right"></i> See full Facility Location theory
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Try It Yourself -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Select a scenario, adjust parameters, then solve with all algorithms</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-building-columns"></i> Facility Location Solver</h4>
+                <span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">10 Sites &middot; 20 Zones &middot; p = 4</span>
+            </div>
+            <div class="solver-body">
+
+                <!-- Scenario Chips -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-chips" id="scenarioChips">
+                    <button class="scenario-chip active" data-scenario="regional">
+                        <span class="chip-dot easy"></span> Regional EMS Network
+                    </button>
+                    <button class="scenario-chip" data-scenario="urban">
+                        <span class="chip-dot medium"></span> Urban Hospital Expansion
+                    </button>
+                    <button class="scenario-chip" data-scenario="rural">
+                        <span class="chip-dot hard"></span> Rural Coverage Challenge
+                    </button>
+                </div>
+
+                <!-- p slider -->
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-building-columns" style="color:var(--gold);margin-right:0.4rem;"></i>Facilities (p):</label>
+                    <input type="range" id="p-slider" min="1" max="10" value="4" style="flex:1;accent-color:var(--gold);">
+                    <span id="p-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">4</span>
+                </div>
+
+                <!-- Candidate Sites Table -->
+                <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Candidate Sites</div>
+                <div style="overflow-x:auto;margin-bottom:1.2rem;max-height:260px;overflow-y:auto;">
+                    <table class="data-table" id="sitesTable">
+                        <thead><tr><th>Name</th><th>X</th><th>Y</th><th>Cost ($K)</th><th>Type</th></tr></thead>
+                        <tbody id="sitesBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Demand Zones Table -->
+                <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Population Zones</div>
+                <div style="overflow-x:auto;margin-bottom:1.2rem;max-height:300px;overflow-y:auto;">
+                    <table class="data-table" id="zonesTable">
+                        <thead><tr><th>Name</th><th>X</th><th>Y</th><th>Population (K)</th></tr></thead>
+                        <tbody id="zonesBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Solve button -->
+                <button class="algo-chip selected" id="solveAllBtn" style="width:100%;padding:0.7rem;font-size:0.95rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                    <span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span>
+                </button>
+
+                <!-- Location Map Canvas -->
+                <div class="solver-canvas-wrap">
+                    <canvas id="locationCanvas" height="500"></canvas>
+                </div>
+                <div class="canvas-legend" id="canvasLegend">
+                    <span><span class="legend-sq" style="background:var(--gold);"></span> Candidate Site (closed)</span>
+                    <span><span class="legend-sq" style="background:var(--green);"></span> Open Facility</span>
+                    <span><span class="legend-circle" style="background:var(--slate);"></span> Population Zone</span>
+                </div>
+
+                <!-- Results -->
+                <div id="results-container" style="margin-top:1.2rem; display:none;">
+                    <div class="solver-section-label">Comparison</div>
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Total Cost</th>
+                                <th>Avg Response (min)</th>
+                                <th>Coverage %</th>
+                                <th>Time (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="results-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Assignment Output -->
+                <div id="assignment-output" class="assignment-output" style="display:none;"></div>
+
+                <!-- Business Panel -->
+                <div class="business-panel" id="businessPanel" style="display:none;">
+                    <div class="business-panel-title"><i class="fas fa-chart-line"></i> Business Impact Analysis</div>
+                    <div class="business-grid" id="businessGrid"></div>
+                </div>
+
+                <div id="solver-status" class="solver-status">Select a scenario and click Solve &amp; Compare All Algorithms.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Algorithms -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Three approaches for the Facility Location Problem</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <div class="insight-box">
+                <div class="insight-title"><i class="fas fa-lightbulb"></i> Key Insight</div>
+                <p>
+                    The UFLP is NP-hard with a best known approximation ratio of 1.488.
+                    In practice, constructive heuristics (Greedy Add, Greedy Drop) produce
+                    solutions within 5&ndash;15% of optimality in milliseconds, while
+                    Simulated Annealing can close the gap to 1&ndash;3% with more computation time.
+                    For networks with 10&ndash;50 sites, these heuristics are often sufficient.
+                </p>
+            </div>
+        </div>
+
+        <div class="algo-cards fade-in">
+            <div class="algo-card">
+                <h4>Greedy Add <span class="algo-badge">Constructive</span></h4>
+                <p>Builds the solution incrementally by opening one facility at a time.</p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Start with no facilities open.</li>
+                    <li data-step="2.">Evaluate each closed candidate: compute total weighted distance if it were added.</li>
+                    <li data-step="3.">Open the facility that reduces total cost the most.</li>
+                    <li data-step="4.">Repeat until p facilities are open.</li>
+                </ol>
+                <p style="margin-top:0.8rem; font-size:0.82rem; color:var(--slate);">
+                    Complexity: O(p &middot; m &middot; n) &mdash; fast but may miss global optimum.
+                </p>
+            </div>
+            <div class="algo-card">
+                <h4>Greedy Drop <span class="algo-badge">Destructive</span></h4>
+                <p>Starts with all facilities open and removes the least useful one at each step.</p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Open all m facilities.</li>
+                    <li data-step="2.">Evaluate each open facility: compute total cost if it were closed.</li>
+                    <li data-step="3.">Close the facility whose removal increases cost the least.</li>
+                    <li data-step="4.">Repeat until exactly p facilities remain.</li>
+                </ol>
+                <p style="margin-top:0.8rem; font-size:0.82rem; color:var(--slate);">
+                    Complexity: O((m&minus;p) &middot; m &middot; n) &mdash; complementary perspective to Greedy Add.
+                </p>
+            </div>
+            <div class="algo-card">
+                <h4>Simulated Annealing <span class="algo-badge">Metaheuristic</span></h4>
+                <p>Probabilistic method that escapes local optima by accepting worse solutions with decreasing probability.</p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Start with a random set of p open facilities.</li>
+                    <li data-step="2.">Swap one open facility with one closed facility.</li>
+                    <li data-step="3.">Accept if cost improves, or probabilistically if it worsens.</li>
+                    <li data-step="4.">Cool temperature; repeat until frozen.</li>
+                </ol>
+                <p style="margin-top:0.8rem; font-size:0.82rem; color:var(--slate);">
+                    Complexity: O(iterations &middot; n &middot; m) &mdash; converges to near-optimal with tuning.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. Complexity -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Why It&rsquo;s <span>More Complex</span></h2>
+            <p>Real-world healthcare facility planning goes beyond the p-Median model</p>
+        </div>
+        <div class="complexity-cards fade-in">
+            <div class="complexity-card">
+                <h5><i class="fas fa-clock"></i> Time-Varying Demand</h5>
+                <p>Patient arrival rates shift between day and night, weekdays and weekends, requiring dynamic capacity allocation and repositioning strategies.</p>
+            </div>
+            <div class="complexity-card">
+                <h5><i class="fas fa-car"></i> Traffic &amp; Geography</h5>
+                <p>Travel times vary by time of day, road conditions, and terrain. Euclidean distance is a poor proxy for actual ambulance response time in urban areas.</p>
+            </div>
+            <div class="complexity-card">
+                <h5><i class="fas fa-shield-alt"></i> Coverage Constraints</h5>
+                <p>Regulations may require every zone to have a facility within a maximum response time, introducing hard Set Covering constraints alongside the p-Median objective.</p>
+            </div>
+            <div class="complexity-card">
+                <h5><i class="fas fa-hospital"></i> Capacity Limits</h5>
+                <p>Real facilities have finite bed counts, staffing levels, and equipment. The capacitated variant (CFLP) adds upper bounds on each facility&rsquo;s assignment volume.</p>
+            </div>
+            <div class="complexity-card">
+                <h5><i class="fas fa-coins"></i> Budget Constraints</h5>
+                <p>Opening costs, staffing budgets, and construction timelines create multi-period capital planning problems that extend beyond single-period UFLP models.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. References -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Li, X. et al.</span> (2011).
+                    <span class="ref-title">&ldquo;Covering models and optimization techniques for emergency response facility location.&rdquo;</span>
+                    <span class="ref-journal">Mathematical Methods of Operations Research, 74(3), 281&ndash;310. DOI: 10.1007/s00186-011-0363-4</span>
+                </li>
+                <li>
+                    <span class="ref-author">Brotcorne, L., Laporte, G. &amp; Semet, F.</span> (2003).
+                    <span class="ref-title">&ldquo;Ambulance location and relocation models.&rdquo;</span>
+                    <span class="ref-journal">European Journal of Operational Research, 147(3), 451&ndash;463. DOI: 10.1016/S0377-2217(02)00364-8</span>
+                </li>
+                <li>
+                    <span class="ref-author">Aringhieri, R. et al.</span> (2017).
+                    <span class="ref-title">&ldquo;Emergency medical services location problems.&rdquo;</span>
+                    <span class="ref-journal">Annals of Operations Research, 253(1), 129&ndash;154. DOI: 10.1007/s10479-016-2268-8</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 8. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to Optimize Facility Placement?</h3>
+            <p>
+                Every healthcare system has unique constraints &mdash; terrain, traffic
+                patterns, population density, regulatory requirements. This demo shows the
+                fundamentals, but real-world solutions require tailored modeling and implementation.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank" rel="noopener">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <p>&copy; 2025 M. G. Nasiri &middot; <a href="../index.html">Mathematical Modeling &amp; Operations Research</a></p>
+</footer>
+
+<!-- Back Link -->
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Home</a>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ===================================================================
+// Healthcare Facility Capacity Planning — Interactive Solver
+// ===================================================================
+(function() {
+'use strict';
+
+// ── Scenario Data ──
+var SCENARIOS = {
+    regional: {
+        name: 'Regional EMS Network',
+        p: 4,
+        sites: [
+            { name: 'Central Fire Station', x: 50, y: 50, cost: 850, type: 'urban' },
+            { name: 'North Hospital Campus', x: 48, y: 82, cost: 720, type: 'urban' },
+            { name: 'East Industrial Park', x: 85, y: 55, cost: 450, type: 'suburban' },
+            { name: 'South Community Center', x: 52, y: 18, cost: 380, type: 'suburban' },
+            { name: 'West Shopping District', x: 15, y: 48, cost: 520, type: 'suburban' },
+            { name: 'Airport Zone', x: 75, y: 78, cost: 400, type: 'suburban' },
+            { name: 'University Campus', x: 35, y: 65, cost: 600, type: 'urban' },
+            { name: 'Rural Highway Junction', x: 90, y: 15, cost: 280, type: 'rural' },
+            { name: 'Lakeside Residential', x: 20, y: 75, cost: 350, type: 'suburban' },
+            { name: 'Downtown Transit Hub', x: 55, y: 55, cost: 780, type: 'urban' }
+        ],
+        zones: [
+            { name: 'Downtown Core', x: 50, y: 52, pop: 45 },
+            { name: 'University District', x: 35, y: 63, pop: 32 },
+            { name: 'North Residential', x: 47, y: 80, pop: 28 },
+            { name: 'Hospital Area', x: 50, y: 78, pop: 18 },
+            { name: 'East Business Park', x: 82, y: 53, pop: 15 },
+            { name: 'South Suburbs', x: 53, y: 20, pop: 22 },
+            { name: 'West Village', x: 18, y: 50, pop: 20 },
+            { name: 'Airport District', x: 73, y: 75, pop: 12 },
+            { name: 'Waterfront', x: 60, y: 45, pop: 16 },
+            { name: 'Tech Campus', x: 70, y: 60, pop: 25 },
+            { name: 'Old Town', x: 42, y: 45, pop: 19 },
+            { name: 'Lakeside', x: 22, y: 73, pop: 14 },
+            { name: 'Industrial Zone', x: 88, y: 40, pop: 8 },
+            { name: 'South Gateway', x: 48, y: 12, pop: 11 },
+            { name: 'Hilltop Estates', x: 30, y: 85, pop: 9 },
+            { name: 'Highway Corridor', x: 85, y: 18, pop: 7 },
+            { name: 'River District', x: 40, y: 35, pop: 13 },
+            { name: 'Northern Heights', x: 55, y: 90, pop: 10 },
+            { name: 'Meadowlands', x: 25, y: 30, pop: 6 },
+            { name: 'Eastside Apartments', x: 78, y: 65, pop: 17 }
+        ]
+    },
+    urban: {
+        name: 'Urban Hospital Expansion',
+        p: 3,
+        sites: [
+            { name: 'Central Medical Plaza', x: 50, y: 50, cost: 1200, type: 'urban' },
+            { name: 'North Health Hub', x: 45, y: 75, cost: 980, type: 'urban' },
+            { name: 'East Clinic Complex', x: 72, y: 55, cost: 850, type: 'urban' },
+            { name: 'South Urgent Care', x: 48, y: 28, cost: 760, type: 'urban' },
+            { name: 'West Community Hospital', x: 25, y: 52, cost: 920, type: 'urban' },
+            { name: 'University Medical', x: 38, y: 62, cost: 1100, type: 'urban' },
+            { name: 'Transit Health Center', x: 55, y: 45, cost: 680, type: 'urban' },
+            { name: 'Riverfront Clinic', x: 60, y: 68, cost: 720, type: 'urban' }
+        ],
+        zones: [
+            { name: 'Financial District', x: 50, y: 50, pop: 55 },
+            { name: 'University Quarter', x: 38, y: 60, pop: 42 },
+            { name: 'Midtown North', x: 48, y: 70, pop: 38 },
+            { name: 'East End', x: 70, y: 52, pop: 30 },
+            { name: 'South Bank', x: 52, y: 30, pop: 28 },
+            { name: 'West Side', x: 25, y: 48, pop: 35 },
+            { name: 'Arts District', x: 42, y: 42, pop: 22 },
+            { name: 'Tech Row', x: 65, y: 60, pop: 32 },
+            { name: 'Harbor View', x: 58, y: 40, pop: 18 },
+            { name: 'North Hill', x: 45, y: 78, pop: 25 },
+            { name: 'Civic Center', x: 50, y: 55, pop: 40 },
+            { name: 'Market Square', x: 55, y: 48, pop: 20 },
+            { name: 'East Gardens', x: 68, y: 65, pop: 15 },
+            { name: 'South Gate', x: 48, y: 22, pop: 12 },
+            { name: 'West Park', x: 30, y: 55, pop: 24 }
+        ]
+    },
+    rural: {
+        name: 'Rural Coverage Challenge',
+        p: 3,
+        sites: [
+            { name: 'Town Hospital', x: 50, y: 50, cost: 420, type: 'rural' },
+            { name: 'Northern Clinic', x: 30, y: 90, cost: 180, type: 'rural' },
+            { name: 'Eastern Outpost', x: 95, y: 60, cost: 150, type: 'rural' },
+            { name: 'Southern Depot', x: 55, y: 10, cost: 200, type: 'rural' },
+            { name: 'Western Station', x: 5, y: 45, cost: 160, type: 'rural' },
+            { name: 'Highway Rest Stop', x: 70, y: 30, cost: 120, type: 'rural' },
+            { name: 'Mountain Pass', x: 20, y: 70, cost: 140, type: 'rural' },
+            { name: 'Lake Crossing', x: 80, y: 85, cost: 190, type: 'rural' },
+            { name: 'Valley Center', x: 40, y: 35, cost: 250, type: 'rural' },
+            { name: 'Prairie Junction', x: 60, y: 70, cost: 170, type: 'rural' },
+            { name: 'Ridge Point', x: 15, y: 15, cost: 130, type: 'rural' },
+            { name: 'River Bend', x: 85, y: 45, cost: 145, type: 'rural' }
+        ],
+        zones: [
+            { name: 'Town Center', x: 50, y: 50, pop: 12 },
+            { name: 'North Farm District', x: 28, y: 88, pop: 4 },
+            { name: 'East Ranch Lands', x: 92, y: 58, pop: 3 },
+            { name: 'South Valley', x: 55, y: 12, pop: 5 },
+            { name: 'West Homesteads', x: 8, y: 42, pop: 3 },
+            { name: 'Mountain Village', x: 22, y: 72, pop: 6 },
+            { name: 'Lake Community', x: 78, y: 82, pop: 4 },
+            { name: 'Highway Town', x: 68, y: 32, pop: 7 },
+            { name: 'Prairie Settlement', x: 58, y: 68, pop: 5 },
+            { name: 'Ridge Hamlet', x: 12, y: 18, pop: 2 }
+        ]
+    }
+};
+
+var SITE_COLORS = ['#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc', '#9ece6a', '#ff9e64', '#e06c75', '#f0c040', '#56b6c2'];
+var currentScenario = 'regional';
+var solving = false;
+
+// ── DOM refs ──
+var canvas = document.getElementById('locationCanvas');
+var ctx = canvas.getContext('2d');
+var pSlider = document.getElementById('p-slider');
+var pDisplay = document.getElementById('p-display');
+
+// ── Utility ──
+function dist(a, b) {
+    var dx = a.x - b.x;
+    var dy = a.y - b.y;
+    return Math.sqrt(dx * dx + dy * dy);
+}
+
+function totalWeightedDist(openSet, sites, zones) {
+    var total = 0;
+    for (var j = 0; j < zones.length; j++) {
+        var minD = Infinity;
+        for (var k = 0; k < openSet.length; k++) {
+            var d = dist(zones[j], sites[openSet[k]]);
+            if (d < minD) minD = d;
+        }
+        total += zones[j].pop * minD;
+    }
+    return total;
+}
+
+function assignZones(openSet, sites, zones) {
+    var assignments = [];
+    for (var j = 0; j < zones.length; j++) {
+        var minD = Infinity;
+        var bestSite = -1;
+        for (var k = 0; k < openSet.length; k++) {
+            var d = dist(zones[j], sites[openSet[k]]);
+            if (d < minD) {
+                minD = d;
+                bestSite = openSet[k];
+            }
+        }
+        assignments.push({ zone: j, site: bestSite, dist: minD });
+    }
+    return assignments;
+}
+
+function totalFixedCost(openSet, sites) {
+    var c = 0;
+    for (var k = 0; k < openSet.length; k++) {
+        c += sites[openSet[k]].cost;
+    }
+    return c;
+}
+
+function coveragePercent(assignments, maxDist) {
+    if (assignments.length === 0) return 0;
+    var covered = 0;
+    for (var i = 0; i < assignments.length; i++) {
+        if (assignments[i].dist <= maxDist) covered++;
+    }
+    return (covered / assignments.length) * 100;
+}
+
+// ── Greedy Add ──
+function greedyAdd(p, sites, zones) {
+    var openSet = [];
+    var closed = [];
+    for (var i = 0; i < sites.length; i++) closed.push(i);
+    var pClamped = Math.min(p, sites.length);
+
+    for (var k = 0; k < pClamped; k++) {
+        var bestIdx = -1;
+        var bestCost = Infinity;
+        for (var c = 0; c < closed.length; c++) {
+            var trial = openSet.slice();
+            trial.push(closed[c]);
+            var cost = totalWeightedDist(trial, sites, zones);
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestIdx = c;
+            }
+        }
+        openSet.push(closed[bestIdx]);
+        closed.splice(bestIdx, 1);
+    }
+    return openSet;
+}
+
+// ── Greedy Drop ──
+function greedyDrop(p, sites, zones) {
+    var openSet = [];
+    for (var i = 0; i < sites.length; i++) openSet.push(i);
+    var pClamped = Math.min(p, sites.length);
+
+    while (openSet.length > pClamped) {
+        var bestIdx = -1;
+        var bestCost = Infinity;
+        for (var o = 0; o < openSet.length; o++) {
+            var trial = openSet.slice();
+            trial.splice(o, 1);
+            if (trial.length === 0) continue;
+            var cost = totalWeightedDist(trial, sites, zones);
+            if (cost < bestCost) {
+                bestCost = cost;
+                bestIdx = o;
+            }
+        }
+        openSet.splice(bestIdx, 1);
+    }
+    return openSet;
+}
+
+// ── Simulated Annealing ──
+function simulatedAnnealing(p, sites, zones) {
+    var pClamped = Math.min(p, sites.length);
+    // Initial: random p facilities
+    var all = [];
+    for (var i = 0; i < sites.length; i++) all.push(i);
+    // Shuffle
+    for (var s = all.length - 1; s > 0; s--) {
+        var r = Math.floor(Math.random() * (s + 1));
+        var tmp = all[s]; all[s] = all[r]; all[r] = tmp;
+    }
+    var openSet = all.slice(0, pClamped);
+    var closedSet = all.slice(pClamped);
+    var currentCost = totalWeightedDist(openSet, sites, zones);
+    var bestOpen = openSet.slice();
+    var bestCost = currentCost;
+
+    var T = 1000;
+    var alpha = 0.995;
+    var maxIter = 2000;
+
+    for (var iter = 0; iter < maxIter; iter++) {
+        // Swap a random open with a random closed
+        var oi = Math.floor(Math.random() * openSet.length);
+        var ci = Math.floor(Math.random() * closedSet.length);
+        var trial = openSet.slice();
+        var swappedOut = trial[oi];
+        trial[oi] = closedSet[ci];
+        var trialCost = totalWeightedDist(trial, sites, zones);
+        var delta = trialCost - currentCost;
+
+        if (delta < 0 || Math.random() < Math.exp(-delta / T)) {
+            closedSet[ci] = swappedOut;
+            openSet = trial;
+            currentCost = trialCost;
+            if (currentCost < bestCost) {
+                bestCost = currentCost;
+                bestOpen = openSet.slice();
+            }
+        }
+        T *= alpha;
+    }
+    return bestOpen;
+}
+
+// ── Render Tables ──
+function renderSitesTable(sites) {
+    var tbody = document.getElementById('sitesBody');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    for (var i = 0; i < sites.length; i++) {
+        var s = sites[i];
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td');
+        td1.className = 'row-label';
+        var dot = document.createElement('span');
+        dot.className = 'data-dot';
+        dot.style.background = 'var(--gold)';
+        td1.appendChild(dot);
+        td1.appendChild(document.createTextNode(s.name));
+        var td2 = document.createElement('td');
+        td2.textContent = s.x;
+        var td3 = document.createElement('td');
+        td3.textContent = s.y;
+        var td4 = document.createElement('td');
+        td4.textContent = '$' + s.cost + 'K';
+        var td5 = document.createElement('td');
+        td5.textContent = s.type;
+        td5.style.textTransform = 'capitalize';
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tr.appendChild(td5);
+        tbody.appendChild(tr);
+    }
+}
+
+function renderZonesTable(zones) {
+    var tbody = document.getElementById('zonesBody');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    for (var i = 0; i < zones.length; i++) {
+        var z = zones[i];
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td');
+        td1.className = 'row-label';
+        td1.textContent = z.name;
+        var td2 = document.createElement('td');
+        td2.textContent = z.x;
+        var td3 = document.createElement('td');
+        td3.textContent = z.y;
+        var td4 = document.createElement('td');
+        td4.textContent = z.pop + 'K';
+        tr.appendChild(td1);
+        tr.appendChild(td2);
+        tr.appendChild(td3);
+        tr.appendChild(td4);
+        tbody.appendChild(tr);
+    }
+}
+
+function updateConfigLabel() {
+    var sc = SCENARIOS[currentScenario];
+    var p = parseInt(pSlider.value) || sc.p;
+    document.getElementById('configLabel').textContent =
+        sc.sites.length + ' Sites \u00b7 ' + sc.zones.length + ' Zones \u00b7 p = ' + p;
+}
+
+// ── Load Scenario ──
+function loadScenario(key) {
+    currentScenario = key;
+    var sc = SCENARIOS[key];
+    pSlider.value = sc.p;
+    pSlider.max = sc.sites.length;
+    pDisplay.textContent = sc.p;
+    renderSitesTable(sc.sites);
+    renderZonesTable(sc.zones);
+    updateConfigLabel();
+    drawInitialCanvas(sc.sites, sc.zones);
+    // Hide results
+    document.getElementById('results-container').style.display = 'none';
+    document.getElementById('assignment-output').style.display = 'none';
+    document.getElementById('businessPanel').style.display = 'none';
+    document.getElementById('solver-status').textContent = 'Scenario loaded: ' + sc.name + '. Click Solve to compare algorithms.';
+    // Update chips
+    var chips = document.querySelectorAll('.scenario-chip');
+    for (var i = 0; i < chips.length; i++) {
+        chips[i].classList.toggle('active', chips[i].getAttribute('data-scenario') === key);
+    }
+}
+
+// ── Canvas Drawing ──
+function getCanvasDims() {
+    var rect = canvas.parentElement.getBoundingClientRect();
+    var w = Math.floor(rect.width - 16);
+    var h = 500;
+    canvas.width = w * (window.devicePixelRatio || 1);
+    canvas.height = h * (window.devicePixelRatio || 1);
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(window.devicePixelRatio || 1, 0, 0, window.devicePixelRatio || 1, 0, 0);
+    return { w: w, h: h };
+}
+
+function toCanvasCoords(x, y, dims) {
+    var pad = 50;
+    return {
+        cx: pad + (x / 100) * (dims.w - 2 * pad),
+        cy: dims.h - pad - (y / 100) * (dims.h - 2 * pad)
+    };
+}
+
+function drawInitialCanvas(sites, zones) {
+    var dims = getCanvasDims();
+    ctx.clearRect(0, 0, dims.w, dims.h);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+    ctx.lineWidth = 1;
+    for (var gx = 0; gx <= 100; gx += 10) {
+        var p1 = toCanvasCoords(gx, 0, dims);
+        var p2 = toCanvasCoords(gx, 100, dims);
+        ctx.beginPath(); ctx.moveTo(p1.cx, p1.cy); ctx.lineTo(p2.cx, p2.cy); ctx.stroke();
+    }
+    for (var gy = 0; gy <= 100; gy += 10) {
+        var q1 = toCanvasCoords(0, gy, dims);
+        var q2 = toCanvasCoords(100, gy, dims);
+        ctx.beginPath(); ctx.moveTo(q1.cx, q1.cy); ctx.lineTo(q2.cx, q2.cy); ctx.stroke();
+    }
+
+    // Zones as circles
+    var maxPop = 0;
+    for (var i = 0; i < zones.length; i++) {
+        if (zones[i].pop > maxPop) maxPop = zones[i].pop;
+    }
+    for (var j = 0; j < zones.length; j++) {
+        var z = zones[j];
+        var zp = toCanvasCoords(z.x, z.y, dims);
+        var radius = 4 + (z.pop / maxPop) * 12;
+        ctx.beginPath();
+        ctx.arc(zp.cx, zp.cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(136, 146, 176, 0.2)';
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(136, 146, 176, 0.5)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        // Label
+        ctx.fillStyle = 'rgba(168, 178, 209, 0.7)';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(z.name, zp.cx, zp.cy + radius + 11);
+    }
+
+    // Sites as squares
+    for (var k = 0; k < sites.length; k++) {
+        var s = sites[k];
+        var sp = toCanvasCoords(s.x, s.y, dims);
+        var sz = 8;
+        ctx.fillStyle = 'rgba(197, 160, 89, 0.5)';
+        ctx.fillRect(sp.cx - sz/2, sp.cy - sz/2, sz, sz);
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.8)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(sp.cx - sz/2, sp.cy - sz/2, sz, sz);
+        ctx.fillStyle = 'rgba(197, 160, 89, 0.7)';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(s.name, sp.cx, sp.cy - sz/2 - 4);
+    }
+}
+
+function drawSolution(openSet, assignments, sites, zones) {
+    var dims = getCanvasDims();
+    ctx.clearRect(0, 0, dims.w, dims.h);
+
+    // Grid
+    ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+    ctx.lineWidth = 1;
+    for (var gx = 0; gx <= 100; gx += 10) {
+        var p1 = toCanvasCoords(gx, 0, dims);
+        var p2 = toCanvasCoords(gx, 100, dims);
+        ctx.beginPath(); ctx.moveTo(p1.cx, p1.cy); ctx.lineTo(p2.cx, p2.cy); ctx.stroke();
+    }
+    for (var gy = 0; gy <= 100; gy += 10) {
+        var q1 = toCanvasCoords(0, gy, dims);
+        var q2 = toCanvasCoords(100, gy, dims);
+        ctx.beginPath(); ctx.moveTo(q1.cx, q1.cy); ctx.lineTo(q2.cx, q2.cy); ctx.stroke();
+    }
+
+    // Color map for open sites
+    var colorMap = {};
+    for (var oi = 0; oi < openSet.length; oi++) {
+        colorMap[openSet[oi]] = SITE_COLORS[oi % SITE_COLORS.length];
+    }
+
+    // Assignment lines
+    for (var ai = 0; ai < assignments.length; ai++) {
+        var a = assignments[ai];
+        var zp = toCanvasCoords(zones[a.zone].x, zones[a.zone].y, dims);
+        var sp = toCanvasCoords(sites[a.site].x, sites[a.site].y, dims);
+        ctx.beginPath();
+        ctx.moveTo(zp.cx, zp.cy);
+        ctx.lineTo(sp.cx, sp.cy);
+        ctx.strokeStyle = colorMap[a.site] ? colorMap[a.site].replace(')', ',0.3)').replace('rgb', 'rgba') : 'rgba(136,146,176,0.2)';
+        if (ctx.strokeStyle.indexOf('rgba') === -1) {
+            ctx.strokeStyle = 'rgba(136,146,176,0.25)';
+        }
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    // Zones
+    var maxPop = 0;
+    for (var z0 = 0; z0 < zones.length; z0++) {
+        if (zones[z0].pop > maxPop) maxPop = zones[z0].pop;
+    }
+    for (var j = 0; j < zones.length; j++) {
+        var z = zones[j];
+        var zc = toCanvasCoords(z.x, z.y, dims);
+        var radius = 4 + (z.pop / maxPop) * 12;
+        var asgn = assignments[j];
+        var color = colorMap[asgn.site] || '#8892B0';
+
+        ctx.beginPath();
+        ctx.arc(zc.cx, zc.cy, radius, 0, Math.PI * 2);
+        ctx.fillStyle = hexToRGBA(color, 0.15);
+        ctx.fill();
+        ctx.strokeStyle = hexToRGBA(color, 0.6);
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        ctx.fillStyle = hexToRGBA(color, 0.8);
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(z.name, zc.cx, zc.cy + radius + 11);
+    }
+
+    // All sites
+    for (var k = 0; k < sites.length; k++) {
+        var s = sites[k];
+        var sc = toCanvasCoords(s.x, s.y, dims);
+        var isOpen = openSet.indexOf(k) !== -1;
+        var sz = isOpen ? 14 : 8;
+
+        if (isOpen) {
+            var siteColor = colorMap[k];
+            // Glow
+            ctx.beginPath();
+            ctx.arc(sc.cx, sc.cy, 18, 0, Math.PI * 2);
+            ctx.fillStyle = hexToRGBA(siteColor, 0.1);
+            ctx.fill();
+            // Square
+            ctx.fillStyle = siteColor;
+            ctx.fillRect(sc.cx - sz/2, sc.cy - sz/2, sz, sz);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(sc.cx - sz/2, sc.cy - sz/2, sz, sz);
+            // Plus sign
+            ctx.fillStyle = '#0A192F';
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('+', sc.cx, sc.cy);
+            ctx.textBaseline = 'alphabetic';
+            // Label
+            ctx.fillStyle = siteColor;
+            ctx.font = 'bold 10px Inter, sans-serif';
+            ctx.fillText(s.name, sc.cx, sc.cy - sz/2 - 6);
+        } else {
+            ctx.fillStyle = 'rgba(197, 160, 89, 0.25)';
+            ctx.fillRect(sc.cx - sz/2, sc.cy - sz/2, sz, sz);
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.4)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(sc.cx - sz/2, sc.cy - sz/2, sz, sz);
+            ctx.fillStyle = 'rgba(197, 160, 89, 0.4)';
+            ctx.font = '8px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(s.name, sc.cx, sc.cy - sz/2 - 4);
+        }
+    }
+}
+
+function hexToRGBA(hex, alpha) {
+    if (hex.charAt(0) === '#') {
+        var r = parseInt(hex.slice(1, 3), 16);
+        var g = parseInt(hex.slice(3, 5), 16);
+        var b = parseInt(hex.slice(5, 7), 16);
+        return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+    return hex;
+}
+
+// ── Solve All ──
+function solveAll() {
+    if (solving) return;
+    solving = true;
+
+    var spinner = document.getElementById('solveSpinner');
+    var solveBtn = document.getElementById('solveAllBtn');
+    var statusEl = document.getElementById('solver-status');
+    spinner.style.display = 'inline';
+    solveBtn.disabled = true;
+
+    var sc = SCENARIOS[currentScenario];
+    var p = Math.min(parseInt(pSlider.value) || sc.p, sc.sites.length);
+    if (p < 1) { statusEl.textContent = 'p must be at least 1.'; solving = false; spinner.style.display = 'none'; solveBtn.disabled = false; return; }
+
+    statusEl.textContent = 'Running all algorithms...';
+
+    setTimeout(function() {
+        try {
+            var sites = sc.sites;
+            var zones = sc.zones;
+            var totalPop = 0;
+            for (var i = 0; i < zones.length; i++) totalPop += zones[i].pop;
+            var results = [];
+
+            // Greedy Add
+            var t0 = performance.now();
+            var gaOpen = greedyAdd(p, sites, zones);
+            var gaTime = performance.now() - t0;
+            var gaAssign = assignZones(gaOpen, sites, zones);
+            var gaWD = totalWeightedDist(gaOpen, sites, zones);
+            var gaFC = totalFixedCost(gaOpen, sites);
+            results.push({
+                name: 'Greedy Add',
+                openSet: gaOpen,
+                assignments: gaAssign,
+                weightedDist: gaWD,
+                fixedCost: gaFC,
+                totalCost: gaFC + gaWD * 0.1,
+                avgResp: gaWD / totalPop,
+                coverage: coveragePercent(gaAssign, 30),
+                time: gaTime
+            });
+
+            // Greedy Drop
+            t0 = performance.now();
+            var gdOpen = greedyDrop(p, sites, zones);
+            var gdTime = performance.now() - t0;
+            var gdAssign = assignZones(gdOpen, sites, zones);
+            var gdWD = totalWeightedDist(gdOpen, sites, zones);
+            var gdFC = totalFixedCost(gdOpen, sites);
+            results.push({
+                name: 'Greedy Drop',
+                openSet: gdOpen,
+                assignments: gdAssign,
+                weightedDist: gdWD,
+                fixedCost: gdFC,
+                totalCost: gdFC + gdWD * 0.1,
+                avgResp: gdWD / totalPop,
+                coverage: coveragePercent(gdAssign, 30),
+                time: gdTime
+            });
+
+            // Simulated Annealing (run 3 times, keep best)
+            t0 = performance.now();
+            var bestSA = null;
+            var bestSACost = Infinity;
+            for (var run = 0; run < 3; run++) {
+                var saOpen = simulatedAnnealing(p, sites, zones);
+                var saCost = totalWeightedDist(saOpen, sites, zones);
+                if (saCost < bestSACost) {
+                    bestSACost = saCost;
+                    bestSA = saOpen;
+                }
+            }
+            var saTime = performance.now() - t0;
+            var saAssign = assignZones(bestSA, sites, zones);
+            var saFC = totalFixedCost(bestSA, sites);
+            results.push({
+                name: 'Simulated Annealing',
+                openSet: bestSA,
+                assignments: saAssign,
+                weightedDist: bestSACost,
+                fixedCost: saFC,
+                totalCost: saFC + bestSACost * 0.1,
+                avgResp: bestSACost / totalPop,
+                coverage: coveragePercent(saAssign, 30),
+                time: saTime
+            });
+
+            // Sort by total cost
+            results.sort(function(a, b) { return a.totalCost - b.totalCost; });
+            var bestTotalCost = results[0].totalCost;
+
+            // Show results table
+            var container = document.getElementById('results-container');
+            container.style.display = 'block';
+            var tbody = document.getElementById('results-body');
+            while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+            for (var ri = 0; ri < results.length; ri++) {
+                var r = results[ri];
+                var isBest = Math.abs(r.totalCost - bestTotalCost) < 0.01;
+                var tr = document.createElement('tr');
+
+                var tdName = document.createElement('td');
+                tdName.className = 'algo-label';
+                tdName.textContent = r.name;
+
+                var tdCost = document.createElement('td');
+                tdCost.textContent = '$' + r.totalCost.toFixed(0) + 'K';
+                if (isBest) tdCost.className = 'best-val';
+
+                var tdResp = document.createElement('td');
+                tdResp.textContent = (r.avgResp * 0.8).toFixed(1) + ' min';
+
+                var tdCov = document.createElement('td');
+                tdCov.textContent = r.coverage.toFixed(0) + '%';
+
+                var tdTime = document.createElement('td');
+                tdTime.textContent = r.time.toFixed(1) + ' ms';
+
+                tr.appendChild(tdName);
+                tr.appendChild(tdCost);
+                tr.appendChild(tdResp);
+                tr.appendChild(tdCov);
+                tr.appendChild(tdTime);
+
+                tr.title = 'Click to show this solution on the map';
+                (function(result) {
+                    tr.addEventListener('click', function() {
+                        drawSolution(result.openSet, result.assignments, sites, zones);
+                        showAssignments(result, sites, zones);
+                        showBusiness(result, sites, zones, totalPop);
+                    });
+                })(r);
+
+                tbody.appendChild(tr);
+            }
+
+            // Show best
+            var best = results[0];
+            drawSolution(best.openSet, best.assignments, sites, zones);
+            showAssignments(best, sites, zones);
+            showBusiness(best, sites, zones, totalPop);
+
+            statusEl.textContent = 'All algorithms compared. Best: ' + best.name +
+                ' with total cost $' + best.totalCost.toFixed(0) + 'K. Click a row to view its solution.';
+
+        } catch (e) {
+            statusEl.textContent = 'Error: ' + e.message;
+        } finally {
+            spinner.style.display = 'none';
+            solveBtn.disabled = false;
+            solving = false;
+        }
+    }, 30);
+}
+
+function showAssignments(result, sites, zones) {
+    var output = document.getElementById('assignment-output');
+    output.style.display = 'block';
+    while (output.firstChild) output.removeChild(output.firstChild);
+
+    var title = document.createElement('strong');
+    title.style.cssText = 'color:var(--gold);font-family:Inter,sans-serif;font-size:0.72rem;text-transform:uppercase;letter-spacing:1.5px;';
+    title.textContent = result.name + ' \u2014 Zone Assignments';
+    output.appendChild(title);
+    output.appendChild(document.createElement('br'));
+
+    var openNames = [];
+    for (var o = 0; o < result.openSet.length; o++) {
+        openNames.push(sites[result.openSet[o]].name);
+    }
+    var openLine = document.createElement('span');
+    openLine.style.color = 'var(--green)';
+    openLine.textContent = 'Open: ' + openNames.join(', ');
+    output.appendChild(openLine);
+    output.appendChild(document.createElement('br'));
+
+    for (var i = 0; i < result.assignments.length; i++) {
+        var a = result.assignments[i];
+        var line = document.createTextNode(
+            zones[a.zone].name + ' (' + zones[a.zone].pop + 'K) \u2192 ' +
+            sites[a.site].name + ' [' + a.dist.toFixed(1) + ' units]'
+        );
+        output.appendChild(line);
+        output.appendChild(document.createElement('br'));
+    }
+}
+
+function showBusiness(result, sites, zones, totalPop) {
+    var panel = document.getElementById('businessPanel');
+    panel.style.display = 'block';
+    var grid = document.getElementById('businessGrid');
+    while (grid.firstChild) grid.removeChild(grid.firstChild);
+
+    var avgRespMin = (result.avgResp * 0.8).toFixed(1);
+    var emergPerDay = Math.round(totalPop * 0.002);
+    var costPerMinute = 850;
+    var annualSavings = Math.round(emergPerDay * 365 * (12 - parseFloat(avgRespMin)) * costPerMinute / 1000);
+    var livesPerYear = Math.round(emergPerDay * 365 * 0.02 * (12 - parseFloat(avgRespMin)) * 0.07);
+
+    var stats = [
+        { val: '$' + result.fixedCost + 'K', label: 'Fixed Cost' },
+        { val: avgRespMin + ' min', label: 'Avg Response' },
+        { val: result.coverage.toFixed(0) + '%', label: 'Coverage (30-unit)' },
+        { val: emergPerDay + '/day', label: 'Emergencies' },
+        { val: annualSavings > 0 ? '$' + annualSavings + 'K' : 'N/A', label: 'Annual Savings' },
+        { val: livesPerYear > 0 ? livesPerYear.toString() : 'N/A', label: 'Lives Saved/Year' }
+    ];
+
+    for (var i = 0; i < stats.length; i++) {
+        var stat = document.createElement('div');
+        stat.className = 'business-stat';
+        var val = document.createElement('span');
+        val.className = 'biz-val';
+        val.textContent = stats[i].val;
+        var lbl = document.createElement('span');
+        lbl.className = 'biz-label';
+        lbl.textContent = stats[i].label;
+        stat.appendChild(val);
+        stat.appendChild(lbl);
+        grid.appendChild(stat);
+    }
+}
+
+// ── Events ──
+pSlider.addEventListener('input', function() {
+    pDisplay.textContent = this.value;
+    updateConfigLabel();
+});
+
+document.getElementById('solveAllBtn').addEventListener('click', solveAll);
+
+var scenarioChips = document.querySelectorAll('.scenario-chip');
+for (var i = 0; i < scenarioChips.length; i++) {
+    scenarioChips[i].addEventListener('click', function() {
+        loadScenario(this.getAttribute('data-scenario'));
+    });
+}
+
+// ── Resize ──
+window.addEventListener('resize', function() {
+    var sc = SCENARIOS[currentScenario];
+    drawInitialCanvas(sc.sites, sc.zones);
+});
+
+// ── Init ──
+loadScenario('regional');
+
+// ── Auto-Solve on load ──
+setTimeout(function() {
+    document.getElementById('solver-status').textContent = 'Running initial solve...';
+    solveAll();
+}, 100);
+
+})();
+</script>
+<script>
+(function() {
+    'use strict';
+
+    // ── 1. Theme Toggle ──
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ── 2. Command Palette ──
+    var SEARCH_DATA = [
+        { title: 'Location & Network', subtitle: 'Facility Location, p-Median', icon: 'fa-project-diagram', url: '../families/location.html', group: 'Families', badge: 'Family' },
+        { title: 'Scheduling', subtitle: 'Flow Shop, Job Shop', icon: 'fa-industry', url: '../families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'Routing', subtitle: 'TSP, VRP', icon: 'fa-route', url: '../families/routing.html', group: 'Families', badge: 'Family' },
+        { title: 'Ambulance Placement', subtitle: 'p-Median', icon: 'fa-ambulance', url: 'ambulance-placement.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Capacity Planning', subtitle: 'Facility Location', icon: 'fa-building-columns', url: 'capacity-planning.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Delivery Routing', subtitle: 'CVRP', icon: 'fa-truck', url: 'delivery-routing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Operating Room', subtitle: 'Job Shop', icon: 'fa-hospital', url: 'operating-room.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Portfolio Optimization', subtitle: 'Robust Portfolio', icon: 'fa-chart-pie', url: 'portfolio.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'construction-project.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'warehouse-packing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Emergency Routing', subtitle: 'Shortest Path', icon: 'fa-route', url: 'emergency-routing.html', group: 'Applications', badge: 'Demo' }
+    ];
+
+    var overlay = document.getElementById('cmdPalette');
+    var cmdInput = document.getElementById('cmdInput');
+    var cmdResults = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() {
+        overlay.classList.add('open');
+        cmdInput.value = '';
+        cmdInput.focus();
+        renderCmdResults('');
+        activeIdx = -1;
+    }
+    function closePalette() {
+        overlay.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function renderCmdResults(query) {
+        var q = query.toLowerCase();
+        var filtered = SEARCH_DATA.filter(function(item) {
+            if (!q) return true;
+            return item.title.toLowerCase().indexOf(q) !== -1 ||
+                   item.subtitle.toLowerCase().indexOf(q) !== -1 ||
+                   item.group.toLowerCase().indexOf(q) !== -1;
+        });
+
+        if (filtered.length === 0) {
+            while (cmdResults.firstChild) cmdResults.removeChild(cmdResults.firstChild);
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found';
+            cmdResults.appendChild(empty);
+            return;
+        }
+
+        var groups = {};
+        var order = ['Families', 'Applications'];
+        for (var i = 0; i < filtered.length; i++) {
+            var item = filtered[i];
+            if (!groups[item.group]) groups[item.group] = [];
+            groups[item.group].push(item);
+        }
+
+        while (cmdResults.firstChild) cmdResults.removeChild(cmdResults.firstChild);
+        for (var gi = 0; gi < order.length; gi++) {
+            var g = order[gi];
+            if (!groups[g]) continue;
+            var label = document.createElement('div');
+            label.className = 'cmd-group-label';
+            label.textContent = g;
+            cmdResults.appendChild(label);
+            for (var j = 0; j < groups[g].length; j++) {
+                var it = groups[g][j];
+                var a = document.createElement('a');
+                a.href = it.url;
+                a.className = 'cmd-result';
+
+                var iconDiv = document.createElement('div');
+                iconDiv.className = 'cmd-icon';
+                var icon = document.createElement('i');
+                icon.className = 'fas ' + it.icon;
+                iconDiv.appendChild(icon);
+
+                var infoDiv = document.createElement('div');
+                infoDiv.className = 'cmd-info';
+                var titleDiv = document.createElement('div');
+                titleDiv.className = 'cmd-title';
+                titleDiv.textContent = it.title;
+                var subDiv = document.createElement('div');
+                subDiv.className = 'cmd-subtitle';
+                subDiv.textContent = it.subtitle;
+                infoDiv.appendChild(titleDiv);
+                infoDiv.appendChild(subDiv);
+
+                var badge = document.createElement('span');
+                badge.className = 'cmd-badge';
+                badge.textContent = it.badge;
+                badge.style.cssText = 'background:rgba(197,160,89,0.1);color:var(--gold);';
+
+                a.appendChild(iconDiv);
+                a.appendChild(infoDiv);
+                a.appendChild(badge);
+                cmdResults.appendChild(a);
+            }
+        }
+    }
+
+    if (cmdInput) {
+        cmdInput.addEventListener('input', function() {
+            renderCmdResults(cmdInput.value);
+            activeIdx = -1;
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) closePalette();
+            else openPalette();
+            return;
+        }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+
+        var items = cmdResults.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, items.length - 1);
+            for (var i = 0; i < items.length; i++) {
+                if (i === activeIdx) items[i].classList.add('active');
+                else items[i].classList.remove('active');
+            }
+            if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+            for (var i2 = 0; i2 < items.length; i2++) {
+                if (i2 === activeIdx) items[i2].classList.add('active');
+                else items[i2].classList.remove('active');
+            }
+            if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && activeIdx >= 0 && items[activeIdx]) {
+            e.preventDefault();
+            items[activeIdx].click();
+        }
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePalette();
+        });
+    }
+
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) {
+        searchTrigger.addEventListener('click', openPalette);
+    }
+
+    // ── 3. Particle Network ──
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+        var CONNECTION_DIST = 120;
+
+        function resizeParticleCanvas() {
+            pCanvas.width = heroEl.offsetWidth;
+            pCanvas.height = heroEl.offsetHeight;
+        }
+        resizeParticleCanvas();
+        window.addEventListener('resize', resizeParticleCanvas);
+
+        for (var pi = 0; pi < PARTICLE_COUNT; pi++) {
+            particles.push({
+                x: Math.random() * pCanvas.width,
+                y: Math.random() * pCanvas.height,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                radius: Math.random() * 2 + 1
+            });
+        }
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > pCanvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > pCanvas.height) p.vy *= -1;
+                pCtx.beginPath();
+                pCtx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)';
+                pCtx.fill();
+            }
+            for (var a = 0; a < particles.length; a++) {
+                for (var b = a + 1; b < particles.length; b++) {
+                    var dx = particles[a].x - particles[b].x;
+                    var dy = particles[a].y - particles[b].y;
+                    var d = Math.sqrt(dx * dx + dy * dy);
+                    if (d < CONNECTION_DIST) {
+                        pCtx.beginPath();
+                        pCtx.moveTo(particles[a].x, particles[a].y);
+                        pCtx.lineTo(particles[b].x, particles[b].y);
+                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - d / CONNECTION_DIST)) + ')';
+                        pCtx.lineWidth = 0.6;
+                        pCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── 4. Scroll Progress + Scroll-to-Top ──
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    function onScroll() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (scrollTopBtn) {
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    // ── 5. Scroll Animations ──
+    var fadeEls = document.querySelectorAll('.fade-in');
+    var observer = new IntersectionObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) {
+                entries[i].target.classList.add('visible');
+            }
+        }
+    }, { threshold: 0.1 });
+    for (var fi = 0; fi < fadeEls.length; fi++) {
+        observer.observe(fadeEls[fi]);
+    }
+
+})();
+</script>
+</body>
+</html>

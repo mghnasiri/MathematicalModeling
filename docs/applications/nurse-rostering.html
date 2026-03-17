@@ -1,0 +1,2300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nurse Rostering | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Nurse Rostering modeled as Parallel Machine Scheduling (Pm||Cmax). Interactive LPT, MULTIFIT, and List Scheduling algorithms for balanced shift assignment.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/nurse-rostering.html">
+    <meta property="og:title" content="Nurse Rostering | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Nurse Rostering modeled as Parallel Machine Scheduling (Pm||Cmax). Interactive LPT, MULTIFIT, and List Scheduling algorithms for balanced shift assignment.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Nurse Rostering | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Nurse Rostering modeled as Parallel Machine Scheduling (Pm||Cmax). Interactive LPT, MULTIFIT, and List Scheduling algorithms for balanced shift assignment.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: transparent;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0 0;
+            margin-top: 70px;
+        }
+        .breadcrumb-nav ol {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a {
+            color: var(--slate);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        /* ── Hero ── */
+        .hero {
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 4rem 2rem 4rem;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 0.95rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+
+        /* ── Sections ── */
+        section { padding: 5rem 0; }
+        section:nth-child(even) { background: var(--midnight-light); }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        /* ── Content Cards ── */
+        .content-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+        }
+        .content-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.6rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .content-card p, .content-card li {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .content-card ul {
+            list-style: none;
+            padding: 0;
+        }
+        .content-card ul li {
+            padding: 0.3rem 0;
+            padding-left: 1.2rem;
+            position: relative;
+        }
+        .content-card ul li::before {
+            content: '\f105';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.75rem;
+        }
+
+        /* ── Mapping Table ── */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        .mapping-table th, .mapping-table td {
+            padding: 0.8rem 1.2rem;
+            text-align: left;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-family: 'Inter', sans-serif;
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.75rem;
+        }
+        .mapping-table td {
+            color: var(--slate-light);
+        }
+        .mapping-table tbody tr:hover {
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .mapping-table .icon-col {
+            color: var(--gold);
+            font-size: 1rem;
+            width: 40px;
+            text-align: center;
+        }
+
+        /* ── Decision Chain ── */
+        .decision-chain {
+            display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+            margin: 2rem 0; justify-content: center;
+        }
+        .chain-step {
+            display: flex; flex-direction: column; align-items: center;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(197,160,89,0.2); border-radius: 6px;
+            font-size: 0.82rem; color: var(--slate-light); text-align: center;
+            min-width: 110px; transition: border-color 0.2s;
+        }
+        .chain-step.active {
+            border-color: var(--gold); color: var(--gold);
+            background: rgba(197,160,89,0.07);
+        }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+
+        /* ── Interactive Panel ── */
+        .interactive-panel {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .panel-header {
+            padding: 1.5rem 2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .panel-header h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+        }
+        .panel-body {
+            padding: 2rem;
+        }
+
+        /* ── Scenario Chips ── */
+        .scenario-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+        .scenario-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+        .scenario-chip {
+            padding: 0.45rem 1rem;
+            border: 1px solid rgba(197,160,89,0.3);
+            border-radius: 3px;
+            font-size: 0.78rem;
+            letter-spacing: 0.8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--slate-light);
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+        .scenario-chip:hover { background: rgba(197,160,89,0.1); color: var(--gold); }
+        .scenario-chip.active {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+            font-weight: 500;
+        }
+        .scenario-context-box {
+            font-size: 0.82rem; color: var(--slate-light); line-height: 1.6;
+            padding: 0.6rem 0.9rem;
+            border-left: 2px solid rgba(197,160,89,0.35);
+            margin-bottom: 1.2rem; font-style: italic;
+            background: rgba(197,160,89,0.03); border-radius: 0 4px 4px 0;
+        }
+
+        .solver-section-label {
+            font-size: 0.7rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.4rem;
+        }
+
+        /* ── Shift Table ── */
+        .shift-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+        }
+        .shift-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-size: 0.7rem;
+            padding: 0.6rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+        }
+        .shift-table th:first-child { text-align: left; padding-left: 0.8rem; }
+        .shift-table td {
+            padding: 0.4rem 0.6rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .shift-table td:first-child {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+            text-align: left;
+            padding-left: 0.8rem;
+        }
+
+        /* ── Nurse List ── */
+        .nurse-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.6rem;
+            margin-bottom: 1.2rem;
+        }
+        .nurse-item {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.5rem 0.7rem;
+            border: 1px solid rgba(197,160,89,0.1);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            background: rgba(10,25,47,0.4);
+        }
+        .nurse-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            flex-shrink: 0;
+        }
+        .nurse-name {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+            flex: 1;
+            min-width: 0;
+        }
+        .nurse-meta {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            color: var(--slate);
+        }
+
+        /* ── Algorithm Chips ── */
+        .algorithm-chips {
+            display: flex;
+            gap: 0.6rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+        .algo-chip {
+            padding: 0.5rem 1.2rem;
+            border: 1px solid var(--blue);
+            border-radius: 3px;
+            font-size: 0.78rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--blue);
+            background: transparent;
+            font-family: 'Inter', sans-serif;
+        }
+        .algo-chip:hover {
+            background: rgba(122, 162, 247, 0.15);
+        }
+        .algo-chip.active {
+            background: var(--blue);
+            color: var(--midnight);
+        }
+        .algo-chip .chip-tag {
+            font-size: 0.62rem;
+            opacity: 0.7;
+            margin-left: 0.4rem;
+        }
+
+        /* ── Gantt / Roster Canvas ── */
+        .gantt-container {
+            background: rgba(10, 25, 47, 0.5);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+        }
+        .gantt-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+        }
+        .solver-canvas-wrap { position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+
+        /* ── Comparison Table ── */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            font-size: 0.82rem;
+        }
+        .compare-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-size: 0.7rem;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .compare-table td {
+            padding: 0.5rem 0.8rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+        .compare-table tr.best-row td {
+            color: var(--green);
+            font-weight: 600;
+        }
+
+        /* ── Results Panel ── */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .result-card {
+            background: rgba(10, 25, 47, 0.5);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .result-value {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .result-label {
+            font-size: 0.7rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0.3rem;
+        }
+
+        /* ── Business Panel ── */
+        .business-panel {
+            margin-top: 1.5rem; padding: 1.2rem;
+            border: 1px solid rgba(197,160,89,0.2); border-radius: 8px;
+            background: rgba(197,160,89,0.04);
+        }
+        .biz-controls {
+            display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem;
+            font-size: 0.82rem; color: var(--slate-light); align-items: center;
+        }
+        .biz-ctrl-label { display: flex; align-items: center; gap: 0.3rem; }
+        .biz-cards {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem; margin-bottom: 0.75rem;
+        }
+        .biz-card {
+            background: rgba(10,25,47,0.4);
+            border: 1px solid rgba(197,160,89,0.15); border-radius: 6px;
+            padding: 1rem; display: flex; flex-direction: column; gap: 0.4rem;
+        }
+        .biz-val {
+            font-size: 1.45rem; font-weight: 600; color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .biz-label-text { font-size: 0.75rem; color: var(--slate-light); line-height: 1.4; }
+        .biz-label-text small { color: var(--slate); }
+        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); font-style: italic; margin: 0; }
+        .biz-input {
+            width: 70px; background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px;
+            color: var(--gold); font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem; text-align: center; padding: 3px 4px;
+        }
+        .biz-input:focus { outline: none; border-color: var(--gold); }
+
+        /* ── Algorithm Detail ── */
+        .algo-step {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.2rem;
+            align-items: flex-start;
+        }
+        .step-number {
+            width: 28px;
+            height: 28px;
+            min-width: 28px;
+            background: var(--gold-dim);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--gold);
+            margin-top: 0.2rem;
+        }
+        .step-content h4 {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--ivory);
+            margin-bottom: 0.3rem;
+        }
+        .step-content p {
+            color: var(--slate-light);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── Insight Box ── */
+        .insight-box {
+            background: rgba(100, 255, 218, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+            border-radius: 6px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+        }
+        .insight-box h4 {
+            color: var(--green);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+        .insight-box p {
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── Complexity Cards ── */
+        .complexity-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+        .complexity-card:hover {
+            border-color: rgba(197, 160, 89, 0.3);
+            transform: translateY(-2px);
+        }
+        .complexity-card .card-icon {
+            font-size: 1.3rem;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+        }
+        .complexity-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+            margin-bottom: 0.5rem;
+        }
+        .complexity-card p {
+            color: var(--slate-light);
+            font-size: 0.85rem;
+            margin: 0;
+        }
+
+        /* ── Formula Block ── */
+        .formula-block {
+            background: rgba(10, 25, 47, 0.6);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 1.2rem 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        /* ── References ── */
+        .reference-item {
+            padding: 1rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.06);
+        }
+        .reference-item:last-child { border-bottom: none; }
+        .reference-authors {
+            color: var(--ivory);
+            font-size: 0.88rem;
+            font-weight: 500;
+        }
+        .reference-title {
+            color: var(--gold);
+            font-size: 0.88rem;
+            font-style: italic;
+        }
+        .reference-journal {
+            color: var(--slate);
+            font-size: 0.82rem;
+        }
+
+        /* ── CTA ── */
+        .cta-section {
+            text-align: center;
+            padding: 4rem 0;
+        }
+        .cta-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            margin-bottom: 1.5rem;
+        }
+        .btn-cta {
+            display: inline-block;
+            padding: 0.9rem 2.5rem;
+            border: 1px solid var(--gold);
+            background: transparent;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-size: 0.82rem;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+        }
+        .btn-cta:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* ── Disclaimer ── */
+        .disclaimer {
+            text-align: center;
+            padding: 1.5rem;
+            font-size: 0.78rem;
+            color: var(--slate);
+            border-top: 1px solid rgba(197, 160, 89, 0.08);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 2.5rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 0.5px;
+        }
+        footer a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            left: 2rem;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            color: var(--gold);
+            padding: 0.6rem 1.2rem;
+            border-radius: 3px;
+            font-size: 0.78rem;
+            text-decoration: none;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Solve Button ── */
+        .solve-btn {
+            width: 100%;
+            padding: 0.7rem;
+            font-size: 1rem;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--gold);
+            border-radius: 3px;
+            background: transparent;
+            color: var(--gold);
+            font-family: 'Cormorant Garamond', serif;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .solve-btn:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* ── Legend ── */
+        .legend {
+            display: flex;
+            gap: 1.2rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .legend-color {
+            width: 14px;
+            height: 14px;
+            border-radius: 2px;
+        }
+
+        /* ── Hero Particles ── */
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Scroll Top ── */
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* ── Fade In ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .section-header h2 { font-size: 1.8rem; }
+            .content-card { padding: 1.5rem; }
+            .panel-body { padding: 1.2rem; }
+            .results-grid { grid-template-columns: repeat(2, 1fr); }
+            .decision-chain { gap: 0.3rem; }
+            .nurse-list { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">Math Modeling</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navContent">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navContent">
+            <ul class="navbar-nav ms-auto align-items-center">
+                <li class="nav-item"><a class="nav-link" href="../index.html#702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702problems">Problems</a></li>
+                <li class="nav-item"><a class="nav-link active" href="../index.html#702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702applications">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="../index.html#about">About</a></li>
+                <li class="nav-item">
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="container breadcrumb-nav">
+    <ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702applications">Applications</a></li>
+        <li><a href="healthcare.html">Healthcare</a></li>
+        <li class="active">Nurse Rostering</li>
+    </ol>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+    <canvas class="hero-particles" id="heroCanvas"></canvas>
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-calendar-check"></i></div>
+        <h1>Nurse <span>Rostering</span></h1>
+        <p class="hero-subtitle">Parallel Machine Scheduling</p>
+        <div class="gold-line"></div>
+        <p style="color:var(--slate); max-width:650px; margin:0 auto; font-size:0.9rem; line-height:1.7;">
+            Assigning weekly shifts to nursing staff, modeled as P<sub>m</sub>||C<sub>max</sub>.
+            Nurses are parallel machines, shifts are jobs, and the objective is to minimize
+            the maximum workload across all nurses &mdash; ensuring balanced, fair rosters.
+        </p>
+    </div>
+</section>
+
+<!-- SECTION: Where This Decision Fits -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span style="color:var(--gold)">Decision</span> Fits</h2>
+            <p>Healthcare sector decision chain</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">
+                Strategic Planning
+                <span class="chain-sub">Capacity &amp; budgets</span>
+            </div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="chain-step active">
+                Staff Planning
+                <span class="chain-sub">Nurse rostering</span>
+            </div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="chain-step">
+                Patient Flow
+                <span class="chain-sub">Admissions &amp; scheduling</span>
+            </div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right"></i></div>
+            <div class="chain-step">
+                Supply Chain
+                <span class="chain-sub">Pharmacy &amp; equipment</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION: The Problem -->
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span style="color:var(--gold)">Problem</span></h2>
+            <p>Mapping nurse rostering to parallel machine scheduling</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="content-card fade-in">
+                    <p>
+                        A hospital ward must assign a set of shifts across a 7-day week to a pool of nurses.
+                        Each shift has an <strong>acuity load</strong> (effective hours weighted by patient
+                        complexity). The goal is to minimize the <strong>maximum total workload</strong>
+                        (C<sub>max</sub>) across all nurses, ensuring no single nurse is overloaded while
+                        others remain underutilized. Additional constraints limit maximum shifts per nurse
+                        and prohibit back-to-back shifts.
+                    </p>
+
+                    <table class="mapping-table">
+                        <thead>
+                            <tr>
+                                <th style="width:40px"></th>
+                                <th>Healthcare Domain</th>
+                                <th>Scheduling Element</th>
+                                <th>Example</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-user-nurse"></i></td>
+                                <td>Nurse</td>
+                                <td>Machine (parallel)</td>
+                                <td>Nurse Alvarez, Senior ICU</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-clock"></i></td>
+                                <td>Shift</td>
+                                <td>Job</td>
+                                <td>Day 3 Night Shift (10h)</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-heartbeat"></i></td>
+                                <td>Acuity hours</td>
+                                <td>Processing time (p<sub>j</sub>)</td>
+                                <td>Night = 12h weighted load</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-ban"></i></td>
+                                <td>Max shifts / nurse</td>
+                                <td>Machine capacity constraint</td>
+                                <td>&le; 5 shifts per 7-day cycle</td>
+                            </tr>
+                            <tr>
+                                <td class="icon-col"><i class="fas fa-balance-scale"></i></td>
+                                <td>Balanced workload</td>
+                                <td>Objective: min C<sub>max</sub></td>
+                                <td>Most-loaded nurse&rsquo;s total</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="formula-block">
+                        P<sub>m</sub> || C<sub>max</sub> &nbsp;&mdash;&nbsp;
+                        Minimize max<sub>i</sub> &sum;<sub>j &isin; S(i)</sub> p<sub>j</sub>
+                        &nbsp;&nbsp; subject to &nbsp;&nbsp;
+                        |S(i)| &le; K &nbsp; &forall; nurse i
+                    </div>
+
+                    <p style="margin-top:1rem;">
+                        This problem is <strong>NP-hard</strong> (strongly for m &ge; 3 machines).
+                        Approximation algorithms like LPT achieve a 4/3-approximation ratio.
+                        For theory details, see
+                        <a href="../families/scheduling.html" style="color:var(--gold);">Scheduling Problem Family</a>.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION: Interactive Solver -->
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span style="color:var(--gold)">Solver</span></h2>
+            <p>Choose a scenario, review data, then solve and compare algorithms</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-11">
+                <div class="interactive-panel fade-in">
+                    <div class="panel-header">
+                        <h3><i class="fas fa-stethoscope" style="color:var(--gold); margin-right:0.6rem;"></i> Roster Builder</h3>
+                        <span style="font-size:0.75rem; color:var(--slate); letter-spacing:1px; text-transform:uppercase;">Phase 2 &middot; Staff Planning</span>
+                    </div>
+                    <div class="panel-body">
+
+                        <!-- Scenario Selection -->
+                        <div class="scenario-row">
+                            <span class="solver-section-label">Choose a Scenario</span>
+                            <div class="scenario-chips" id="scenarioChips"></div>
+                        </div>
+                        <div class="scenario-context-box" id="scenarioContext"></div>
+
+                        <!-- Shift Table -->
+                        <div class="solver-section-label" style="margin-top:0.5rem;">Weekly Shift Schedule</div>
+                        <div style="overflow-x:auto;">
+                            <table class="shift-table" id="shiftTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+                        </div>
+
+                        <!-- Nurse List -->
+                        <div class="solver-section-label" style="margin-top:1rem;">Nurse Pool</div>
+                        <div class="nurse-list" id="nurseList"></div>
+
+                        <!-- Solve Button -->
+                        <button class="solve-btn" id="solveBtn" type="button">
+                            <i class="fas fa-play" style="margin-right:0.5rem;"></i> Solve &amp; Compare All Algorithms
+                        </button>
+
+                        <!-- Results Area (hidden until solved) -->
+                        <div id="resultsArea" style="display:none;">
+
+                            <!-- Results Grid -->
+                            <div class="results-grid" id="resultsGrid"></div>
+
+                            <!-- Legend -->
+                            <div class="legend" id="shiftLegend"></div>
+
+                            <!-- Gantt Canvas -->
+                            <div class="gantt-container">
+                                <div class="gantt-title" id="ganttTitle">Roster Grid &mdash; LPT Algorithm</div>
+                                <div class="solver-canvas-wrap">
+                                    <canvas id="rosterCanvas" height="320"></canvas>
+                                </div>
+                            </div>
+
+                            <!-- Algorithm Selector -->
+                            <div class="algorithm-chips" id="algoChips"></div>
+
+                            <!-- Comparison Table -->
+                            <table class="compare-table" id="compareTable">
+                                <thead></thead>
+                                <tbody></tbody>
+                            </table>
+
+                            <!-- Business Panel -->
+                            <div class="business-panel" id="businessPanel">
+                                <div class="solver-section-label" style="margin-bottom:0.5rem;">
+                                    <i class="fas fa-chart-line" style="margin-right:0.3rem;"></i> Business Impact (Illustrative)
+                                </div>
+                                <div class="biz-controls" id="bizControls"></div>
+                                <div class="biz-cards" id="bizCards"></div>
+                                <p class="biz-disclaimer">All values are illustrative estimates for educational purposes only.</p>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION: Algorithms -->
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span style="color:var(--gold)">Algorithms</span></h2>
+            <p>Three approaches from scheduling theory</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+
+                <!-- Insight Box -->
+                <div class="insight-box fade-in">
+                    <h4><i class="fas fa-lightbulb" style="margin-right:0.4rem;"></i> Key Insight</h4>
+                    <p>
+                        LPT (Longest Processing Time first) assigns the longest remaining shift to the
+                        least-loaded nurse. This single sorting step &mdash; processing shifts in
+                        descending order of acuity &mdash; dramatically improves workload balance
+                        compared to arbitrary assignment. Graham (1969) proved LPT achieves a
+                        4/3 &minus; 1/(3m) approximation ratio for P<sub>m</sub>||C<sub>max</sub>.
+                    </p>
+                </div>
+
+                <!-- LPT -->
+                <div class="content-card fade-in">
+                    <h3>LPT &mdash; Longest Processing Time</h3>
+                    <p style="margin-bottom:1rem; color:var(--slate); font-size:0.82rem; letter-spacing:0.5px;">
+                        4/3-approximation &middot; O(n log n) &middot; Greedy
+                    </p>
+                    <div class="algo-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Sort Shifts Descending</h4>
+                            <p>Order all shifts by acuity load from highest to lowest. Night shifts (12h) come first, then morning (10h), then evening (9h).</p>
+                        </div>
+                    </div>
+                    <div class="algo-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Assign to Least-Loaded Nurse</h4>
+                            <p>For each shift in sorted order, assign it to the nurse with the smallest current total workload. If tied, assign to the nurse with fewer shifts.</p>
+                        </div>
+                    </div>
+                    <div class="algo-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Enforce Constraints</h4>
+                            <p>Skip any nurse who has reached max shifts or would create a back-to-back violation. Move to next least-loaded eligible nurse.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- MULTIFIT -->
+                <div class="content-card fade-in">
+                    <h3>MULTIFIT &mdash; Binary Search + FFD</h3>
+                    <p style="margin-bottom:1rem; color:var(--slate); font-size:0.82rem; letter-spacing:0.5px;">
+                        1.22-approximation &middot; O(n log n &middot; log(p<sub>sum</sub>)) &middot; Bin-Packing Reduction
+                    </p>
+                    <div class="algo-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Set Bounds</h4>
+                            <p>Lower bound L = &lceil;total_acuity / m&rceil;. Upper bound U = max acuity shift + L. These bracket the optimal C<sub>max</sub>.</p>
+                        </div>
+                    </div>
+                    <div class="algo-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Binary Search on Target</h4>
+                            <p>Try mid = (L + U) / 2 as the target maximum load. Use First Fit Decreasing (FFD): sort shifts descending, assign each to the first nurse whose load + shift &le; target.</p>
+                        </div>
+                    </div>
+                    <div class="algo-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>Converge</h4>
+                            <p>If FFD fits all shifts into m nurses within target, tighten U = mid. Otherwise, loosen L = mid. Repeat until U &minus; L &lt; 0.5.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- List Scheduling -->
+                <div class="content-card fade-in">
+                    <h3>List Scheduling &mdash; Baseline</h3>
+                    <p style="margin-bottom:1rem; color:var(--slate); font-size:0.82rem; letter-spacing:0.5px;">
+                        2 &minus; 1/m approximation &middot; O(n log m) &middot; Greedy
+                    </p>
+                    <div class="algo-step">
+                        <div class="step-number">1</div>
+                        <div class="step-content">
+                            <h4>Process in Given Order</h4>
+                            <p>Take shifts in their natural order (Day 1 Morning, Day 1 Evening, Day 1 Night, Day 2 Morning, &hellip;) without sorting.</p>
+                        </div>
+                    </div>
+                    <div class="algo-step">
+                        <div class="step-number">2</div>
+                        <div class="step-content">
+                            <h4>Assign to Least-Loaded Nurse</h4>
+                            <p>Each shift goes to the nurse with the smallest current load (same greedy step as LPT, but input order differs).</p>
+                        </div>
+                    </div>
+                    <div class="algo-step">
+                        <div class="step-number">3</div>
+                        <div class="step-content">
+                            <h4>No Pre-Processing</h4>
+                            <p>The lack of sorting means large shifts may appear late, causing imbalance. This baseline demonstrates why LPT&rsquo;s sort step matters.</p>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION: Real-World Complexity -->
+<section id="complexity">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span style="color:var(--gold)">Complexity</span></h2>
+            <p>Why hospital rostering goes far beyond P<sub>m</sub>||C<sub>max</sub></p>
+        </div>
+        <div class="complexity-cards fade-in">
+            <div class="complexity-card">
+                <div class="card-icon"><i class="fas fa-gavel"></i></div>
+                <h4>Labor Law Compliance</h4>
+                <p>Working time directives mandate maximum weekly hours, minimum rest between shifts (e.g., 11h in the EU), and overtime caps. Violations incur legal penalties and endanger patient safety.</p>
+            </div>
+            <div class="complexity-card">
+                <div class="card-icon"><i class="fas fa-certificate"></i></div>
+                <h4>Skill &amp; Certification Constraints</h4>
+                <p>ICU, cardiac, pediatric, and general wards require specific certifications. A feasible roster must match skill supply to unit demand, not just balance hours.</p>
+            </div>
+            <div class="complexity-card">
+                <div class="card-icon"><i class="fas fa-heart"></i></div>
+                <h4>Nurse Preferences</h4>
+                <p>Preferred days off, shift-type preferences (no nights), seniority-based priority, and part-time contracts add soft constraints that affect retention and morale.</p>
+            </div>
+            <div class="complexity-card">
+                <div class="card-icon"><i class="fas fa-battery-quarter"></i></div>
+                <h4>Fatigue &amp; Safety</h4>
+                <p>Consecutive night shifts increase error rates. Circadian disruption models penalize rapid rotation patterns. Research links fatigue to medication errors and patient falls.</p>
+            </div>
+            <div class="complexity-card">
+                <div class="card-icon"><i class="fas fa-sync-alt"></i></div>
+                <h4>Continuity of Care</h4>
+                <p>Patients benefit from seeing the same nurse across shifts. Continuity constraints assign nurses to consistent patient groups, adding assignment dependencies across days.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SECTION: References -->
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2><span style="color:var(--gold)">References</span></h2>
+            <p>Foundational works in scheduling theory</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="content-card fade-in">
+                    <div class="reference-item">
+                        <span class="reference-authors">Graham, R.L., Lawler, E.L., Lenstra, J.K. &amp; Rinnooy Kan, A.H.G.</span> (1979).
+                        <span class="reference-title">&ldquo;Optimization and approximation in deterministic sequencing and scheduling: A survey.&rdquo;</span>
+                        <span class="reference-journal">Annals of Discrete Mathematics, 5, 287&ndash;326.</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Explore More <span style="color:var(--gold)">Applications</span></h2>
+        <div class="gold-line"></div>
+        <a href="../index.html#702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702702applications" class="btn-cta">View All Applications</a>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<div class="disclaimer">
+    All data on this page is illustrative and intended for educational purposes only. No real patient or employee data is used.
+</div>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 Mathematical Modeling &amp; Operations Research &mdash; Built by
+            <a href="https://github.com/mghnasiri" target="_blank">Mohammad Gh. Nasiri</a>
+        </p>
+    </div>
+</footer>
+
+<!-- Back Link -->
+<a href="healthcare.html" class="back-link"><i class="fas fa-arrow-left" style="margin-right:0.4rem;"></i> Healthcare</a>
+
+<!-- Scroll to Top -->
+<div class="scroll-top-btn" id="scrollTopBtn"><i class="fas fa-chevron-up"></i></div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+/* ── TODO: add Python application file applications/healthcare_nurse_rostering.py ── */
+(function() {
+    'use strict';
+
+    /* ════════════════════════════════════════════════════════════════
+       DATA — Illustrative scenarios
+       ════════════════════════════════════════════════════════════════ */
+
+    var SHIFT_COLORS = {
+        Morning: '#7aa2f7',
+        Evening: '#64ffda',
+        Night:   '#bb9af7'
+    };
+
+    var NURSE_COLORS = ['#7aa2f7','#64ffda','#ff9e64','#bb9af7','#ff6b6b','#d4af37'];
+
+    var SCENARIOS = [
+        {
+            id: 'general',
+            name: 'General Ward',
+            desc: 'Standard 7-day roster: 6 nurses, 21 shifts (3 per day), normal acuity levels. A textbook parallel machine scheduling instance. Illustrative example.',
+            nurses: [
+                { name: 'Alvarez',    seniority: 'Senior', years: 10, cert: 'ICU',      maxShifts: 5 },
+                { name: 'Brennan',    seniority: 'Mid',    years: 5,  cert: 'Med-Surg',  maxShifts: 5 },
+                { name: 'Chowdhury',  seniority: 'Junior', years: 2,  cert: 'General',   maxShifts: 5 },
+                { name: 'Dubois',     seniority: 'Senior', years: 8,  cert: 'Cardiac',   maxShifts: 5 },
+                { name: 'Evans',      seniority: 'Mid',    years: 4,  cert: 'Pediatric', maxShifts: 5 },
+                { name: 'Fernandez',  seniority: 'Junior', years: 1,  cert: 'General',   maxShifts: 5 }
+            ],
+            shifts: buildShifts(7, { Morning: 10, Evening: 9, Night: 12 })
+        },
+        {
+            id: 'icu',
+            name: 'ICU Short-Staffed',
+            desc: 'Only 5 nurses available for 21 shifts with higher night acuity (14h equivalent). Overtime risk is elevated. Illustrative example.',
+            nurses: [
+                { name: 'Alvarez',    seniority: 'Senior', years: 10, cert: 'ICU',      maxShifts: 5 },
+                { name: 'Brennan',    seniority: 'Mid',    years: 5,  cert: 'Med-Surg',  maxShifts: 5 },
+                { name: 'Chowdhury',  seniority: 'Junior', years: 2,  cert: 'General',   maxShifts: 5 },
+                { name: 'Dubois',     seniority: 'Senior', years: 8,  cert: 'Cardiac',   maxShifts: 5 },
+                { name: 'Evans',      seniority: 'Mid',    years: 4,  cert: 'Pediatric', maxShifts: 5 }
+            ],
+            shifts: buildShifts(7, { Morning: 10, Evening: 9, Night: 14 })
+        },
+        {
+            id: 'holiday',
+            name: 'Holiday Coverage',
+            desc: '4 nurses cover 15 high-acuity shifts (reduced schedule but every shift is demanding). Max 4 shifts each. Edge case for load balancing. Illustrative example.',
+            nurses: [
+                { name: 'Alvarez',    seniority: 'Senior', years: 10, cert: 'ICU',      maxShifts: 4 },
+                { name: 'Brennan',    seniority: 'Mid',    years: 5,  cert: 'Med-Surg',  maxShifts: 4 },
+                { name: 'Dubois',     seniority: 'Senior', years: 8,  cert: 'Cardiac',   maxShifts: 4 },
+                { name: 'Evans',      seniority: 'Mid',    years: 4,  cert: 'Pediatric', maxShifts: 4 }
+            ],
+            shifts: buildHolidayShifts()
+        }
+    ];
+
+    function buildShifts(days, acuity) {
+        var shifts = [];
+        var types = ['Morning', 'Evening', 'Night'];
+        for (var d = 1; d <= days; d++) {
+            for (var t = 0; t < types.length; t++) {
+                shifts.push({ day: d, type: types[t], acuity: acuity[types[t]] });
+            }
+        }
+        return shifts;
+    }
+
+    function buildHolidayShifts() {
+        var shifts = [];
+        var types = ['Morning', 'Evening', 'Night'];
+        for (var d = 1; d <= 5; d++) {
+            for (var t = 0; t < types.length; t++) {
+                shifts.push({ day: d, type: types[t], acuity: 12 });
+            }
+        }
+        return shifts;
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       STATE
+       ════════════════════════════════════════════════════════════════ */
+
+    var currentScenario = SCENARIOS[0];
+    var solveResults = null;
+    var selectedAlgo = 'LPT';
+
+    /* ════════════════════════════════════════════════════════════════
+       ALGORITHMS
+       ════════════════════════════════════════════════════════════════ */
+
+    function lptSchedule(nurses, shifts) {
+        var t0 = performance.now();
+        var sorted = shifts.slice().sort(function(a, b) { return b.acuity - a.acuity; });
+        var assignment = assignGreedy(nurses, sorted);
+        var elapsed = performance.now() - t0;
+        return { name: 'LPT', assignment: assignment, time: elapsed };
+    }
+
+    function listSchedule(nurses, shifts) {
+        var t0 = performance.now();
+        var assignment = assignGreedy(nurses, shifts.slice());
+        var elapsed = performance.now() - t0;
+        return { name: 'List Scheduling', assignment: assignment, time: elapsed };
+    }
+
+    function multifitSchedule(nurses, shifts) {
+        var t0 = performance.now();
+        var sorted = shifts.slice().sort(function(a, b) { return b.acuity - a.acuity; });
+        var totalAcuity = 0;
+        var maxAcuity = 0;
+        for (var i = 0; i < sorted.length; i++) {
+            totalAcuity += sorted[i].acuity;
+            if (sorted[i].acuity > maxAcuity) maxAcuity = sorted[i].acuity;
+        }
+        var m = nurses.length;
+        var lo = Math.ceil(totalAcuity / m);
+        var hi = maxAcuity + lo;
+        var bestAssignment = null;
+
+        for (var iter = 0; iter < 20; iter++) {
+            var mid = (lo + hi) / 2;
+            var attempt = ffdBinPack(nurses, sorted, mid);
+            if (attempt !== null) {
+                bestAssignment = attempt;
+                hi = mid;
+            } else {
+                lo = mid;
+            }
+            if (hi - lo < 0.5) break;
+        }
+
+        if (bestAssignment === null) {
+            bestAssignment = assignGreedy(nurses, sorted);
+        }
+
+        var elapsed = performance.now() - t0;
+        return { name: 'MULTIFIT', assignment: bestAssignment, time: elapsed };
+    }
+
+    function ffdBinPack(nurses, sortedShifts, target) {
+        var loads = [];
+        var counts = [];
+        var assignment = [];
+        for (var i = 0; i < nurses.length; i++) {
+            loads.push(0);
+            counts.push(0);
+            assignment.push([]);
+        }
+
+        for (var s = 0; s < sortedShifts.length; s++) {
+            var shift = sortedShifts[s];
+            var placed = false;
+            for (var n = 0; n < nurses.length; n++) {
+                if (counts[n] >= nurses[n].maxShifts) continue;
+                if (loads[n] + shift.acuity > target) continue;
+                if (hasBackToBack(assignment[n], shift)) continue;
+                loads[n] += shift.acuity;
+                counts[n]++;
+                assignment[n].push(shift);
+                placed = true;
+                break;
+            }
+            if (!placed) return null;
+        }
+        return assignment;
+    }
+
+    function assignGreedy(nurses, orderedShifts) {
+        var loads = [];
+        var counts = [];
+        var assignment = [];
+        for (var i = 0; i < nurses.length; i++) {
+            loads.push(0);
+            counts.push(0);
+            assignment.push([]);
+        }
+
+        for (var s = 0; s < orderedShifts.length; s++) {
+            var shift = orderedShifts[s];
+            var bestIdx = -1;
+            var bestLoad = Infinity;
+
+            for (var n = 0; n < nurses.length; n++) {
+                if (counts[n] >= nurses[n].maxShifts) continue;
+                if (hasBackToBack(assignment[n], shift)) continue;
+                if (loads[n] < bestLoad || (loads[n] === bestLoad && counts[n] < (bestIdx >= 0 ? counts[bestIdx] : Infinity))) {
+                    bestLoad = loads[n];
+                    bestIdx = n;
+                }
+            }
+
+            if (bestIdx === -1) {
+                // Relax back-to-back constraint if stuck
+                for (var n2 = 0; n2 < nurses.length; n2++) {
+                    if (counts[n2] >= nurses[n2].maxShifts) continue;
+                    if (loads[n2] < bestLoad) {
+                        bestLoad = loads[n2];
+                        bestIdx = n2;
+                    }
+                }
+            }
+
+            if (bestIdx >= 0) {
+                loads[bestIdx] += shift.acuity;
+                counts[bestIdx]++;
+                assignment[bestIdx].push(shift);
+            }
+        }
+        return assignment;
+    }
+
+    function hasBackToBack(nurseShifts, newShift) {
+        var typeOrder = { Morning: 0, Evening: 1, Night: 2 };
+        for (var i = 0; i < nurseShifts.length; i++) {
+            var s = nurseShifts[i];
+            // Same day consecutive
+            if (s.day === newShift.day) return true;
+            // Night then next day morning
+            if (s.type === 'Night' && newShift.type === 'Morning' && newShift.day === s.day + 1) return true;
+            if (newShift.type === 'Night' && s.type === 'Morning' && s.day === newShift.day + 1) return true;
+        }
+        return false;
+    }
+
+    function computeStats(assignment) {
+        var loads = [];
+        for (var i = 0; i < assignment.length; i++) {
+            var load = 0;
+            for (var j = 0; j < assignment[i].length; j++) {
+                load += assignment[i][j].acuity;
+            }
+            loads.push(load);
+        }
+        var cmax = Math.max.apply(null, loads);
+        var cmin = Math.min.apply(null, loads);
+        var imbalance = cmax - cmin;
+        return { loads: loads, cmax: cmax, cmin: cmin, imbalance: imbalance };
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       UI BUILD FUNCTIONS (createElement only)
+       ════════════════════════════════════════════════════════════════ */
+
+    function buildScenarioChips() {
+        var container = document.getElementById('scenarioChips');
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        for (var i = 0; i < SCENARIOS.length; i++) {
+            (function(sc) {
+                var chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'scenario-chip' + (sc.id === currentScenario.id ? ' active' : '');
+                chip.textContent = sc.name;
+                chip.addEventListener('click', function() {
+                    currentScenario = sc;
+                    document.getElementById('resultsArea').style.display = 'none';
+                    solveResults = null;
+                    buildScenarioChips();
+                    buildShiftTable();
+                    buildNurseList();
+                    updateScenarioContext();
+                });
+                container.appendChild(chip);
+            })(SCENARIOS[i]);
+        }
+    }
+
+    function updateScenarioContext() {
+        var box = document.getElementById('scenarioContext');
+        while (box.firstChild) box.removeChild(box.firstChild);
+        box.appendChild(document.createTextNode(currentScenario.desc));
+    }
+
+    function buildShiftTable() {
+        var table = document.getElementById('shiftTable');
+        var thead = table.querySelector('thead');
+        var tbody = table.querySelector('tbody');
+        while (thead.firstChild) thead.removeChild(thead.firstChild);
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        // Determine days
+        var days = [];
+        var dayMap = {};
+        for (var i = 0; i < currentScenario.shifts.length; i++) {
+            var d = currentScenario.shifts[i].day;
+            if (!dayMap[d]) { dayMap[d] = true; days.push(d); }
+        }
+
+        // Header
+        var headerRow = document.createElement('tr');
+        var thDay = document.createElement('th');
+        thDay.textContent = 'Day';
+        headerRow.appendChild(thDay);
+        var thType = document.createElement('th');
+        thType.textContent = 'Shift';
+        headerRow.appendChild(thType);
+        var thAcuity = document.createElement('th');
+        thAcuity.textContent = 'Acuity (hrs)';
+        headerRow.appendChild(thAcuity);
+        thead.appendChild(headerRow);
+
+        // Rows
+        for (var s = 0; s < currentScenario.shifts.length; s++) {
+            var shift = currentScenario.shifts[s];
+            var tr = document.createElement('tr');
+
+            var tdDay = document.createElement('td');
+            tdDay.textContent = 'Day ' + shift.day;
+            tr.appendChild(tdDay);
+
+            var tdType = document.createElement('td');
+            var dot = document.createElement('span');
+            dot.style.display = 'inline-block';
+            dot.style.width = '8px';
+            dot.style.height = '8px';
+            dot.style.borderRadius = '2px';
+            dot.style.marginRight = '0.4rem';
+            dot.style.verticalAlign = 'middle';
+            dot.style.background = SHIFT_COLORS[shift.type] || '#888';
+            tdType.appendChild(dot);
+            tdType.appendChild(document.createTextNode(shift.type));
+            tdType.style.fontFamily = "'Inter', sans-serif";
+            tdType.style.fontWeight = '500';
+            tdType.style.color = 'var(--ivory)';
+            tr.appendChild(tdType);
+
+            var tdAcuity = document.createElement('td');
+            tdAcuity.textContent = shift.acuity;
+            tr.appendChild(tdAcuity);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    function buildNurseList() {
+        var container = document.getElementById('nurseList');
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        for (var i = 0; i < currentScenario.nurses.length; i++) {
+            var nurse = currentScenario.nurses[i];
+            var item = document.createElement('div');
+            item.className = 'nurse-item';
+
+            var dot = document.createElement('div');
+            dot.className = 'nurse-dot';
+            dot.style.background = NURSE_COLORS[i % NURSE_COLORS.length];
+            item.appendChild(dot);
+
+            var nameSpan = document.createElement('span');
+            nameSpan.className = 'nurse-name';
+            nameSpan.textContent = nurse.name;
+            item.appendChild(nameSpan);
+
+            var metaSpan = document.createElement('span');
+            metaSpan.className = 'nurse-meta';
+            metaSpan.textContent = nurse.seniority + ' \u00B7 ' + nurse.cert + ' \u00B7 \u2264' + nurse.maxShifts;
+            item.appendChild(metaSpan);
+
+            container.appendChild(item);
+        }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       SOLVE & DISPLAY
+       ════════════════════════════════════════════════════════════════ */
+
+    function solveAll() {
+        var nurses = currentScenario.nurses;
+        var shifts = currentScenario.shifts;
+
+        var lpt = lptSchedule(nurses, shifts);
+        var multifit = multifitSchedule(nurses, shifts);
+        var listSch = listSchedule(nurses, shifts);
+
+        lpt.stats = computeStats(lpt.assignment);
+        multifit.stats = computeStats(multifit.assignment);
+        listSch.stats = computeStats(listSch.assignment);
+
+        solveResults = { LPT: lpt, MULTIFIT: multifit, 'List Scheduling': listSch };
+        selectedAlgo = 'LPT';
+
+        document.getElementById('resultsArea').style.display = 'block';
+
+        buildResultsGrid(lpt.stats);
+        buildAlgoChips();
+        buildCompareTable();
+        buildLegend();
+        drawRoster(lpt.assignment);
+        updateGanttTitle('LPT');
+        updateBusinessPanel();
+    }
+
+    function buildResultsGrid(stats) {
+        var container = document.getElementById('resultsGrid');
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var metrics = [
+            { label: 'Max Load (Cmax)', value: stats.cmax + 'h' },
+            { label: 'Min Load', value: stats.cmin + 'h' },
+            { label: 'Imbalance', value: stats.imbalance + 'h' },
+            { label: 'Nurses', value: String(currentScenario.nurses.length) },
+            { label: 'Shifts Assigned', value: String(currentScenario.shifts.length) }
+        ];
+
+        for (var i = 0; i < metrics.length; i++) {
+            var card = document.createElement('div');
+            card.className = 'result-card';
+
+            var val = document.createElement('div');
+            val.className = 'result-value';
+            val.textContent = metrics[i].value;
+            card.appendChild(val);
+
+            var lbl = document.createElement('div');
+            lbl.className = 'result-label';
+            lbl.textContent = metrics[i].label;
+            card.appendChild(lbl);
+
+            container.appendChild(card);
+        }
+    }
+
+    function buildAlgoChips() {
+        var container = document.getElementById('algoChips');
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var algos = ['LPT', 'MULTIFIT', 'List Scheduling'];
+        var tags = ['4/3 approx', '1.22 approx', '2-1/m approx'];
+
+        for (var i = 0; i < algos.length; i++) {
+            (function(algo, tag) {
+                var chip = document.createElement('button');
+                chip.type = 'button';
+                chip.className = 'algo-chip' + (algo === selectedAlgo ? ' active' : '');
+
+                var nameSpan = document.createTextNode(algo + ' ');
+                chip.appendChild(nameSpan);
+
+                var tagSpan = document.createElement('span');
+                tagSpan.className = 'chip-tag';
+                tagSpan.textContent = tag;
+                chip.appendChild(tagSpan);
+
+                chip.addEventListener('click', function() {
+                    selectedAlgo = algo;
+                    var result = solveResults[algo];
+                    buildResultsGrid(result.stats);
+                    buildAlgoChips();
+                    buildCompareTable();
+                    drawRoster(result.assignment);
+                    updateGanttTitle(algo);
+                    updateBusinessPanel();
+                });
+
+                container.appendChild(chip);
+            })(algos[i], tags[i]);
+        }
+    }
+
+    function buildCompareTable() {
+        var table = document.getElementById('compareTable');
+        var thead = table.querySelector('thead');
+        var tbody = table.querySelector('tbody');
+        if (!thead) { thead = document.createElement('thead'); table.appendChild(thead); }
+        if (!tbody) { tbody = document.createElement('tbody'); table.appendChild(tbody); }
+        while (thead.firstChild) thead.removeChild(thead.firstChild);
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        var headerRow = document.createElement('tr');
+        var headers = ['Algorithm', 'Max Load (hrs)', 'Imbalance (hrs)', 'Time (ms)'];
+        for (var h = 0; h < headers.length; h++) {
+            var th = document.createElement('th');
+            th.textContent = headers[h];
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+
+        var algos = ['LPT', 'MULTIFIT', 'List Scheduling'];
+        var bestCmax = Infinity;
+        for (var a = 0; a < algos.length; a++) {
+            if (solveResults[algos[a]].stats.cmax < bestCmax) {
+                bestCmax = solveResults[algos[a]].stats.cmax;
+            }
+        }
+
+        for (var i = 0; i < algos.length; i++) {
+            var r = solveResults[algos[i]];
+            var tr = document.createElement('tr');
+            if (r.stats.cmax === bestCmax) {
+                tr.className = 'best-row';
+            }
+
+            var tdName = document.createElement('td');
+            tdName.textContent = r.name;
+            tdName.style.fontFamily = "'Inter', sans-serif";
+            tdName.style.fontWeight = '500';
+            tr.appendChild(tdName);
+
+            var tdCmax = document.createElement('td');
+            tdCmax.textContent = r.stats.cmax;
+            tr.appendChild(tdCmax);
+
+            var tdImb = document.createElement('td');
+            tdImb.textContent = r.stats.imbalance;
+            tr.appendChild(tdImb);
+
+            var tdTime = document.createElement('td');
+            tdTime.textContent = r.time.toFixed(2);
+            tr.appendChild(tdTime);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    function buildLegend() {
+        var container = document.getElementById('shiftLegend');
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var types = ['Morning', 'Evening', 'Night'];
+        for (var i = 0; i < types.length; i++) {
+            var item = document.createElement('div');
+            item.className = 'legend-item';
+
+            var colorBox = document.createElement('div');
+            colorBox.className = 'legend-color';
+            colorBox.style.background = SHIFT_COLORS[types[i]];
+            item.appendChild(colorBox);
+
+            var label = document.createElement('span');
+            label.textContent = types[i];
+            item.appendChild(label);
+
+            container.appendChild(item);
+        }
+    }
+
+    function updateGanttTitle(algoName) {
+        var el = document.getElementById('ganttTitle');
+        while (el.firstChild) el.removeChild(el.firstChild);
+        el.appendChild(document.createTextNode('Roster Grid \u2014 ' + algoName + ' Algorithm'));
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       CANVAS — Roster Grid
+       ════════════════════════════════════════════════════════════════ */
+
+    function drawRoster(assignment) {
+        var canvas = document.getElementById('rosterCanvas');
+        var ctx = canvas.getContext('2d');
+
+        var dpr = window.devicePixelRatio || 1;
+        var cssWidth = canvas.parentElement.offsetWidth;
+
+        // Determine days
+        var maxDay = 0;
+        for (var i = 0; i < currentScenario.shifts.length; i++) {
+            if (currentScenario.shifts[i].day > maxDay) maxDay = currentScenario.shifts[i].day;
+        }
+
+        var nurses = currentScenario.nurses;
+        var m = nurses.length;
+        var rowH = 44;
+        var labelW = 110;
+        var headerH = 36;
+        var padding = 16;
+        var cssHeight = headerH + m * rowH + padding;
+
+        canvas.style.width = cssWidth + 'px';
+        canvas.style.height = cssHeight + 'px';
+        canvas.width = cssWidth * dpr;
+        canvas.height = cssHeight * dpr;
+        ctx.scale(dpr, dpr);
+
+        var chartW = cssWidth - labelW - padding;
+        var dayW = chartW / maxDay;
+
+        // Clear
+        ctx.clearRect(0, 0, cssWidth, cssHeight);
+
+        // Background
+        ctx.fillStyle = 'rgba(10, 25, 47, 0.3)';
+        ctx.fillRect(0, 0, cssWidth, cssHeight);
+
+        // Day headers
+        ctx.font = '500 11px Inter, sans-serif';
+        ctx.fillStyle = '#C5A059';
+        ctx.textAlign = 'center';
+        for (var d = 1; d <= maxDay; d++) {
+            var dayX = labelW + (d - 0.5) * dayW;
+            ctx.fillText('Day ' + d, dayX, headerH - 10);
+        }
+
+        // Grid lines
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.08)';
+        ctx.lineWidth = 1;
+        for (var d2 = 0; d2 <= maxDay; d2++) {
+            var x = labelW + d2 * dayW;
+            ctx.beginPath();
+            ctx.moveTo(x, headerH);
+            ctx.lineTo(x, cssHeight);
+            ctx.stroke();
+        }
+
+        // Nurse rows
+        for (var n = 0; n < m; n++) {
+            var rowY = headerH + n * rowH;
+
+            // Row background alternation
+            if (n % 2 === 0) {
+                ctx.fillStyle = 'rgba(197, 160, 89, 0.02)';
+                ctx.fillRect(0, rowY, cssWidth, rowH);
+            }
+
+            // Row line
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+            ctx.beginPath();
+            ctx.moveTo(0, rowY + rowH);
+            ctx.lineTo(cssWidth, rowY + rowH);
+            ctx.stroke();
+
+            // Label
+            ctx.font = '500 11px Inter, sans-serif';
+            ctx.fillStyle = '#a8b2d1';
+            ctx.textAlign = 'right';
+            ctx.fillText(nurses[n].name, labelW - 10, rowY + rowH / 2 + 4);
+
+            // Shift blocks
+            if (assignment[n]) {
+                for (var s = 0; s < assignment[n].length; s++) {
+                    var shift = assignment[n][s];
+                    var shiftTypes = ['Morning', 'Evening', 'Night'];
+                    var typeIdx = shiftTypes.indexOf(shift.type);
+
+                    var blockW = dayW / 3 - 3;
+                    var blockX = labelW + (shift.day - 1) * dayW + typeIdx * (dayW / 3) + 2;
+                    var blockY = rowY + 6;
+                    var blockH = rowH - 12;
+
+                    // Shift block
+                    ctx.fillStyle = SHIFT_COLORS[shift.type] || '#888';
+                    ctx.globalAlpha = 0.85;
+                    roundRect(ctx, blockX, blockY, blockW, blockH, 3);
+                    ctx.fill();
+                    ctx.globalAlpha = 1;
+
+                    // Shift label
+                    ctx.font = '500 9px JetBrains Mono, monospace';
+                    ctx.fillStyle = '#0A192F';
+                    ctx.textAlign = 'center';
+                    var shortLabel = shift.type.charAt(0) + shift.acuity;
+                    ctx.fillText(shortLabel, blockX + blockW / 2, blockY + blockH / 2 + 3);
+                }
+            }
+        }
+    }
+
+    function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + w - r, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+        ctx.lineTo(x + w, y + h - r);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+        ctx.lineTo(x + r, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+        ctx.lineTo(x, y + r);
+        ctx.quadraticCurveTo(x, y, x + r, y);
+        ctx.closePath();
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       BUSINESS PANEL
+       ════════════════════════════════════════════════════════════════ */
+
+    var overtimeCost = 75;
+    var rostersPerMonth = 4;
+
+    function updateBusinessPanel() {
+        if (!solveResults) return;
+        var result = solveResults[selectedAlgo];
+        var stats = result.stats;
+
+        // Controls
+        var controls = document.getElementById('bizControls');
+        while (controls.firstChild) controls.removeChild(controls.firstChild);
+
+        var lbl1 = document.createElement('label');
+        lbl1.className = 'biz-ctrl-label';
+        lbl1.appendChild(document.createTextNode('Overtime \u20AC/hr: '));
+        var inp1 = document.createElement('input');
+        inp1.type = 'number';
+        inp1.className = 'biz-input';
+        inp1.value = overtimeCost;
+        inp1.min = '10';
+        inp1.max = '500';
+        inp1.addEventListener('change', function() {
+            overtimeCost = parseInt(this.value) || 75;
+            updateBusinessPanel();
+        });
+        lbl1.appendChild(inp1);
+        controls.appendChild(lbl1);
+
+        var lbl2 = document.createElement('label');
+        lbl2.className = 'biz-ctrl-label';
+        lbl2.appendChild(document.createTextNode('Rosters/month: '));
+        var inp2 = document.createElement('input');
+        inp2.type = 'number';
+        inp2.className = 'biz-input';
+        inp2.value = rostersPerMonth;
+        inp2.min = '1';
+        inp2.max = '12';
+        inp2.addEventListener('change', function() {
+            rostersPerMonth = parseInt(this.value) || 4;
+            updateBusinessPanel();
+        });
+        lbl2.appendChild(inp2);
+        controls.appendChild(lbl2);
+
+        // Compute business metrics
+        var totalAcuity = 0;
+        for (var i = 0; i < currentScenario.shifts.length; i++) {
+            totalAcuity += currentScenario.shifts[i].acuity;
+        }
+        var avgIdeal = totalAcuity / currentScenario.nurses.length;
+        var overtimeHrs = Math.max(0, stats.cmax - avgIdeal);
+        var overtimeWeekly = overtimeHrs * currentScenario.nurses.length * 0.3; // rough estimate
+        var overtimeMonthly = overtimeWeekly * rostersPerMonth;
+        var costMonthly = overtimeMonthly * overtimeCost;
+        var fairnessScore = Math.max(0, 100 - stats.imbalance * 5);
+
+        // Compare to list scheduling
+        var listStats = solveResults['List Scheduling'].stats;
+        var listOvertimeHrs = Math.max(0, listStats.cmax - avgIdeal);
+        var listOvertimeMonthly = listOvertimeHrs * currentScenario.nurses.length * 0.3 * rostersPerMonth;
+        var listCostMonthly = listOvertimeMonthly * overtimeCost;
+        var savings = Math.max(0, listCostMonthly - costMonthly);
+
+        // Cards
+        var cards = document.getElementById('bizCards');
+        while (cards.firstChild) cards.removeChild(cards.firstChild);
+
+        var bizData = [
+            { val: '\u20AC' + Math.round(costMonthly).toLocaleString(), label: 'Est. Monthly OT Cost', sub: selectedAlgo },
+            { val: '\u20AC' + Math.round(savings).toLocaleString(), label: 'Monthly Savings', sub: 'vs. List Scheduling' },
+            { val: overtimeMonthly.toFixed(1) + 'h', label: 'Monthly OT Hours', sub: rostersPerMonth + ' rosters' },
+            { val: fairnessScore.toFixed(0) + '%', label: 'Fairness Score', sub: 'Imbalance: ' + stats.imbalance + 'h' }
+        ];
+
+        for (var b = 0; b < bizData.length; b++) {
+            var card = document.createElement('div');
+            card.className = 'biz-card';
+
+            var valEl = document.createElement('div');
+            valEl.className = 'biz-val';
+            valEl.textContent = bizData[b].val;
+            card.appendChild(valEl);
+
+            var lblEl = document.createElement('div');
+            lblEl.className = 'biz-label-text';
+            lblEl.textContent = bizData[b].label;
+            var smallEl = document.createElement('small');
+            smallEl.textContent = ' ' + bizData[b].sub;
+            lblEl.appendChild(smallEl);
+            card.appendChild(lblEl);
+
+            cards.appendChild(card);
+        }
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       PARTICLES (Hero background)
+       ════════════════════════════════════════════════════════════════ */
+
+    function initParticles() {
+        var canvas = document.getElementById('heroCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var hero = canvas.parentElement;
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+
+        function resize() {
+            canvas.width = hero.offsetWidth;
+            canvas.height = hero.offsetHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        function Particle() {
+            this.x = Math.random() * canvas.width;
+            this.y = Math.random() * canvas.height;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            this.r = Math.random() * 1.5 + 0.5;
+        }
+
+        for (var i = 0; i < PARTICLE_COUNT; i++) {
+            particles.push(new Particle());
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > canvas.width) p.vx *= -1;
+                if (p.y < 0 || p.y > canvas.height) p.vy *= -1;
+
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(197, 160, 89, 0.3)';
+                ctx.fill();
+
+                for (var j = i + 1; j < particles.length; j++) {
+                    var q = particles[j];
+                    var dx = p.x - q.x;
+                    var dy = p.y - q.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        ctx.beginPath();
+                        ctx.moveTo(p.x, p.y);
+                        ctx.lineTo(q.x, q.y);
+                        ctx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / 120)) + ')';
+                        ctx.lineWidth = 0.5;
+                        ctx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animate);
+        }
+        animate();
+    }
+
+    /* ════════════════════════════════════════════════════════════════
+       INIT
+       ════════════════════════════════════════════════════════════════ */
+
+    function init() {
+        buildScenarioChips();
+        updateScenarioContext();
+        buildShiftTable();
+        buildNurseList();
+
+        document.getElementById('solveBtn').addEventListener('click', solveAll);
+
+        // Navbar scroll
+        var navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 50) {
+                navbar.classList.add('scrolled');
+            } else {
+                navbar.classList.remove('scrolled');
+            }
+        });
+
+        // Scroll-to-top button
+        var scrollBtn = document.getElementById('scrollTopBtn');
+        window.addEventListener('scroll', function() {
+            if (window.scrollY > 400) {
+                scrollBtn.classList.add('visible');
+            } else {
+                scrollBtn.classList.remove('visible');
+            }
+        });
+        scrollBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        // Theme toggle
+        var themeToggle = document.getElementById('themeToggle');
+        themeToggle.addEventListener('click', function() {
+            var html = document.documentElement;
+            var current = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+        });
+
+        // Fade-in observer
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, { threshold: 0.1 });
+
+        var fadeEls = document.querySelectorAll('.fade-in');
+        for (var i = 0; i < fadeEls.length; i++) {
+            observer.observe(fadeEls[i]);
+        }
+
+        // Particles
+        initParticles();
+
+        // Resize canvas on window resize
+        window.addEventListener('resize', function() {
+            if (solveResults && solveResults[selectedAlgo]) {
+                drawRoster(solveResults[selectedAlgo].assignment);
+            }
+        });
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', init);
+    } else {
+        init();
+    }
+
+})();
+</script>
+</body>
+</html>

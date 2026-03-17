@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Patient Flow Routing | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Job Shop Scheduling demo for ED patient flow optimization. SPT, MWR, and Shifting Bottleneck algorithms with Gantt chart visualization.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/patient-flow.html">
+    <meta property="og:title" content="Patient Flow Routing | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Job Shop Scheduling demo for ED patient flow optimization. SPT, MWR, and Shifting Bottleneck algorithms with Gantt chart visualization.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Patient Flow Routing | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Job Shop Scheduling demo for ED patient flow optimization. SPT, MWR, and Shifting Bottleneck algorithms with Gantt chart visualization.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Decision Chain ── */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+        .chain-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--slate-light);
+            text-align: center;
+            min-width: 110px;
+        }
+        .chain-step.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(197,160,89,0.07);
+        }
+        .chain-sub {
+            font-size: 0.72rem;
+            color: var(--slate);
+            margin-top: 0.3rem;
+            font-weight: 400;
+        }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow {
+            color: var(--slate);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Mapping Table ── */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid rgba(197,160,89,0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.55rem 1rem;
+            border-bottom: 1px solid rgba(197,160,89,0.05);
+            color: var(--slate-light);
+        }
+        .mapping-table td:first-child {
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .mapping-table tr:hover td { background: rgba(197,160,89,0.03); }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* ── Scenario Chips ── */
+        .scenario-switcher {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .scenario-chip {
+            padding: 0.8rem 1rem;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .scenario-chip:hover { border-color: var(--gold); }
+        .scenario-chip.active {
+            border-color: var(--gold);
+            background: rgba(197,160,89,0.1);
+        }
+        .scenario-chip .sc-title {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--ivory);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+        .scenario-chip .sc-desc {
+            font-size: 0.7rem;
+            color: var(--slate);
+        }
+        .scenario-chip.active .sc-title { color: var(--gold); }
+
+        /* ── Algo Chips ── */
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        /* ── Solve Button ── */
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* ── Patient Table ── */
+        .stops-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-bottom: 0.5rem;
+        }
+        .stops-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+        }
+        .stops-table thead th:first-child { text-align: left; }
+        .stops-table tbody td {
+            padding: 0.35rem 0.3rem;
+            border-bottom: 1px solid rgba(136, 146, 176, 0.06);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            font-size: 0.8rem;
+        }
+        .stops-table tbody td:first-child {
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+        .stops-table .stop-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+        .stops-table-wrap {
+            max-height: 340px;
+            overflow-y: auto;
+            border: 1px solid rgba(197,160,89,0.08);
+            border-radius: 4px;
+        }
+        .stops-table-wrap::-webkit-scrollbar { width: 4px; }
+        .stops-table-wrap::-webkit-scrollbar-track { background: var(--midnight); }
+        .stops-table-wrap::-webkit-scrollbar-thumb { background: rgba(197,160,89,0.3); border-radius: 2px; }
+
+        /* ── Canvas Wrap ── */
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        /* ── Results Table ── */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .route-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Business Panel ── */
+        .biz-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .biz-card {
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197,160,89,0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .biz-card .biz-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .biz-card .biz-label {
+            font-size: 0.72rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Insight Box ── */
+        .insight-box {
+            background: rgba(100, 255, 218, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.15);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .insight-box h4 {
+            color: var(--green);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+        }
+        .insight-box p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+        .insight-box strong { color: var(--ivory); }
+
+        /* ── Algorithm Cards ── */
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            color: var(--ivory);
+        }
+        .algo-card h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .algo-card .algo-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid rgba(100, 255, 218, 0.25);
+            border-radius: 2px;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--green);
+            margin-bottom: 1rem;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .algo-card .algo-steps {
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
+        }
+        .algo-card .algo-steps li {
+            padding: 0.4rem 0 0.4rem 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.88rem;
+        }
+        .algo-card .algo-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* ── Complexity Cards ── */
+        .complexity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .complexity-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197,160,89,0.12);
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .complexity-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--ivory);
+        }
+        .complexity-card h4 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .complexity-card p {
+            color: var(--slate-light);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 992px) {
+            .biz-cards { grid-template-columns: repeat(2, 1fr); }
+            .scenario-switcher { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .biz-cards { grid-template-columns: 1fr; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+        }
+
+        /* ── ESI badge colors ── */
+        .esi-1 { color: var(--red); }
+        .esi-2 { color: #fb923c; }
+        .esi-3 { color: var(--blue); }
+        .esi-4 { color: var(--green); }
+        .esi-5 { color: var(--slate); }
+
+        /* ── Business inputs ── */
+        .biz-input-row {
+            display: flex;
+            gap: 1.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        .biz-input-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.3rem;
+        }
+        .biz-input-group label {
+            font-size: 0.7rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .biz-input-group input {
+            background: var(--midnight);
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 2px;
+            color: var(--ivory);
+            padding: 0.4rem 0.6rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            width: 120px;
+        }
+        .biz-input-group input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════ NAVBAR ═══════════════════ -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">Math Modeling</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../index.html#702">Applications</a></li>
+                <li class="nav-item"><a class="nav-link active" href="healthcare.html">Healthcare</a></li>
+                <li class="nav-item">
+                    <div class="theme-toggle" id="themeToggle" role="button" aria-label="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════════ BREADCRUMB ═══════════════════ -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#702">Applications</a></li>
+            <li>Patient Flow Routing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<header class="hero">
+    <div class="hero-icon"><i class="fas fa-hospital-user"></i></div>
+    <h1>Patient Flow <span>Routing</span></h1>
+    <p class="hero-subtitle">Job Shop Scheduling</p>
+    <div class="gold-line"></div>
+    <p class="hero-desc">
+        The average US ED patient spends 4.4 hours from arrival to disposition. Every shift,
+        emergency physicians must decide which patients move to which department next. The Job
+        Shop Scheduling Problem (J<sub>m</sub>||C<sub>max</sub>) &mdash; strongly NP-hard &mdash;
+        models this multi-department patient routing challenge.
+    </p>
+</header>
+
+<!-- ═══════════════════ DECISION CHAIN ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>Healthcare operations chain &mdash; the highlighted step is what this page optimizes</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">
+                Strategic
+                <span class="chain-sub">Facility location</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Staff Planning
+                <span class="chain-sub">Workforce scheduling</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">
+                Patient Flow
+                <span class="chain-sub">Routing &amp; scheduling</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Supply Chain
+                <span class="chain-sub">Medical distribution</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ PROBLEM FORMULATION ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Problem <span>Definition</span></h2>
+            <p>Mapping the real-world ED patient flow problem to a Job Shop formulation</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>Real-World Element</th>
+                        <th>JSP Abstraction</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Patient</td>
+                        <td>Job</td>
+                        <td>Each patient follows a unique route through departments</td>
+                    </tr>
+                    <tr>
+                        <td>Department</td>
+                        <td>Machine</td>
+                        <td>5 departments: Triage, Lab, Imaging, Consult, Treatment</td>
+                    </tr>
+                    <tr>
+                        <td>Processing Time</td>
+                        <td>Duration</td>
+                        <td>Minutes each patient spends at each department</td>
+                    </tr>
+                    <tr>
+                        <td>ESI Level</td>
+                        <td>Priority</td>
+                        <td>Emergency Severity Index (1=critical, 5=non-urgent)</td>
+                    </tr>
+                    <tr>
+                        <td>Makespan</td>
+                        <td>Total ED Time</td>
+                        <td>Time from first patient triage to last patient disposition</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">Job Shop Scheduling Formulation &mdash; J<sub>m</sub>||C<sub>max</sub></span>
+                <span class="keyword">minimize</span> &nbsp;&nbsp; <span class="variable">C<sub>max</sub></span> <span class="comment">&nbsp;/* makespan: completion time of last patient */</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp; <span class="variable">S<sub>ij</sub> + p<sub>ij</sub> &le; S<sub>i,j+1</sub></span> &nbsp;&nbsp;&nbsp; <span class="comment">/* precedence: patient i finishes dept j before starting j+1 */</span><br>
+                &nbsp;&nbsp; <span class="variable">S<sub>ij</sub> + p<sub>ij</sub> &le; S<sub>kj</sub> &or; S<sub>kj</sub> + p<sub>kj</sub> &le; S<sub>ij</sub></span> &nbsp;&nbsp;&nbsp; <span class="comment">/* disjunctive: no two patients use same dept at once */</span><br>
+                &nbsp;&nbsp; <span class="variable">S<sub>ij</sub> &ge; 0</span> &nbsp;&nbsp;&nbsp; <span class="comment">/* non-negative start times */</span><br>
+                &nbsp;&nbsp; <span class="variable">C<sub>max</sub> &ge; S<sub>ij</sub> + p<sub>ij</sub></span> &nbsp;&nbsp;&nbsp; <span class="comment">/* makespan definition */</span>
+            </div>
+
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Strongly NP-Hard</div>
+                The Job Shop Scheduling Problem is strongly NP-hard for m &ge; 2 machines.
+                Even the special case of J2||C<sub>max</sub> is NP-hard. This demo uses
+                priority-based dispatching rules (SPT, MWR) and the Shifting Bottleneck
+                decomposition to find high-quality feasible schedules in milliseconds.
+            </div>
+
+            <a href="../families/scheduling.html" class="theory-link">
+                <i class="fas fa-book"></i> Scheduling Problem Family &mdash; Theory
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ INTERACTIVE SOLVER ═══════════════════ -->
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>Solver</span></h2>
+            <p>Select a scenario, choose algorithms, and optimize patient flow</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-calendar-check"></i> Patient Flow Scheduler</h4>
+                <button class="solver-btn primary" id="solveBtn" type="button">
+                    <i class="fas fa-play"></i>&nbsp; Solve
+                </button>
+            </div>
+
+            <div class="solver-body">
+                <!-- Scenario Selection -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-switcher" id="scenarioSwitcher">
+                    <div class="scenario-chip active" data-scenario="0">
+                        <span class="sc-title">Weekday Morning ED</span>
+                        <span class="sc-desc">10 patients &middot; mixed acuity</span>
+                    </div>
+                    <div class="scenario-chip" data-scenario="1">
+                        <span class="sc-title">Friday Night Surge</span>
+                        <span class="sc-desc">15 patients &middot; high acuity</span>
+                    </div>
+                    <div class="scenario-chip" data-scenario="2">
+                        <span class="sc-title">Pediatric Cluster</span>
+                        <span class="sc-desc">8 patients &middot; Lab bottleneck</span>
+                    </div>
+                </div>
+
+                <!-- Algorithm Selection -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algoSelect">
+                    <div class="algo-chip selected" data-algo="spt">SPT <span class="chip-type">Dispatching</span></div>
+                    <div class="algo-chip selected" data-algo="mwr">MWR <span class="chip-type">Dispatching</span></div>
+                    <div class="algo-chip selected" data-algo="sb">Shifting Bottleneck <span class="chip-type">Decomposition</span></div>
+                </div>
+
+                <div class="solver-row">
+                    <!-- Patient Table -->
+                    <div>
+                        <div class="solver-section-label">Patients</div>
+                        <div class="stops-table-wrap">
+                            <table class="stops-table" id="patientTable">
+                                <thead>
+                                    <tr>
+                                        <th>Patient</th>
+                                        <th>ESI</th>
+                                        <th>Route</th>
+                                        <th>Total (min)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="patientBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Gantt Chart Canvas -->
+                    <div>
+                        <div class="solver-section-label">Gantt Chart</div>
+                        <div class="solver-canvas-wrap">
+                            <canvas id="ganttCanvas" width="700" height="350"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Table -->
+                <div class="solver-section-label">Algorithm Comparison</div>
+                <table class="results-table" id="comparisonTable">
+                    <thead>
+                        <tr>
+                            <th>Algorithm</th>
+                            <th>Makespan (min)</th>
+                            <th>Avg Wait (min)</th>
+                            <th>Time (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonBody"></tbody>
+                </table>
+
+                <div class="route-output" id="scheduleOutput"></div>
+
+                <!-- Business Impact -->
+                <div class="solver-section-label" style="margin-top: 1.5rem;">Business Impact</div>
+                <div class="biz-input-row">
+                    <div class="biz-input-group">
+                        <label>Cost per ED hour</label>
+                        <input type="number" id="bizCostPerHour" value="150" min="1">
+                    </div>
+                    <div class="biz-input-group">
+                        <label>Patients per shift</label>
+                        <input type="number" id="bizPatsPerShift" value="25" min="1">
+                    </div>
+                </div>
+                <div class="biz-cards" id="bizCards">
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizMakespan">--</span>
+                        <span class="biz-label">Makespan (min)</span>
+                    </div>
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizAvgWait">--</span>
+                        <span class="biz-label">Avg Wait (min)</span>
+                    </div>
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizShiftCost">--</span>
+                        <span class="biz-label">Shift ED Cost</span>
+                    </div>
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizThroughput">--</span>
+                        <span class="biz-label">Throughput / hr</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ ALGORITHMS ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>Algorithms</span></h2>
+            <p>Three approaches from dispatching rules to decomposition heuristics</p>
+        </div>
+
+        <div class="insight-box fade-in">
+            <h4><i class="fas fa-lightbulb"></i> Key Insight</h4>
+            <p>
+                <strong>Shifting Bottleneck</strong> decomposes the m-machine job shop into a
+                sequence of single-machine subproblems. At each iteration it identifies the
+                department with the largest single-machine makespan (the bottleneck), fixes
+                its optimal schedule via 1|r<sub>j</sub>|L<sub>max</sub>, then re-computes
+                release dates for remaining departments. This yields near-optimal solutions
+                in polynomial time for practical ED sizes.
+            </p>
+        </div>
+
+        <div class="algo-card fade-in">
+            <h3><i class="fas fa-sort-amount-down"></i> Shortest Processing Time (SPT)</h3>
+            <span class="algo-tag">Priority Dispatching Rule</span>
+            <p>
+                At each department, whenever the machine becomes free, select the patient
+                with the shortest processing time at that department. SPT minimizes average
+                flow time on a single machine and serves as a fast baseline for job shops.
+            </p>
+            <ol class="algo-steps">
+                <li data-step="1.">Initialize all patients at their first department in route</li>
+                <li data-step="2.">Advance simulation clock to next department availability</li>
+                <li data-step="3.">Among waiting patients, select the one with shortest processing time</li>
+                <li data-step="4.">Schedule patient, update completion and release to next department</li>
+                <li data-step="5.">Repeat until all patients complete all departments</li>
+            </ol>
+        </div>
+
+        <div class="algo-card fade-in">
+            <h3><i class="fas fa-tasks"></i> Most Work Remaining (MWR)</h3>
+            <span class="algo-tag">Priority Dispatching Rule</span>
+            <p>
+                At each department, when the machine becomes free, select the patient with
+                the most total processing time remaining across all unfinished departments.
+                MWR prioritizes complex patients to prevent them from becoming late bottlenecks.
+            </p>
+            <ol class="algo-steps">
+                <li data-step="1.">Compute total remaining work for each patient across unvisited departments</li>
+                <li data-step="2.">At each scheduling decision point, pick patient with highest remaining work</li>
+                <li data-step="3.">Break ties by ESI level (lower ESI = higher priority)</li>
+                <li data-step="4.">Schedule patient, update remaining work and release times</li>
+            </ol>
+        </div>
+
+        <div class="algo-card fade-in">
+            <h3><i class="fas fa-compress-arrows-alt"></i> Shifting Bottleneck</h3>
+            <span class="algo-tag">Decomposition Heuristic</span>
+            <p>
+                Adams, Balas &amp; Zawack (1988). Iteratively identifies the bottleneck
+                department (the one whose optimal single-machine schedule yields the largest
+                makespan), fixes its schedule, then re-computes release dates and deadlines
+                for remaining departments. Produces high-quality schedules by focusing
+                optimization effort where it matters most.
+            </p>
+            <ol class="algo-steps">
+                <li data-step="1.">Compute release dates from precedence constraints (longest path)</li>
+                <li data-step="2.">For each unscheduled department, solve 1|r<sub>j</sub>|L<sub>max</sub> optimally</li>
+                <li data-step="3.">Identify the department with the largest L<sub>max</sub> (bottleneck)</li>
+                <li data-step="4.">Fix the bottleneck schedule; add disjunctive arcs to the graph</li>
+                <li data-step="5.">Re-compute release dates; repeat until all departments scheduled</li>
+            </ol>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ REAL-WORLD COMPLEXITY ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Factors that extend the textbook Job Shop model in emergency departments</p>
+        </div>
+
+        <div class="complexity-grid fade-in">
+            <div class="complexity-card">
+                <h4><i class="fas fa-exclamation-triangle"></i> Acuity-Based Preemption</h4>
+                <p>
+                    ESI-1 patients (cardiac arrest, stroke) may preempt lower-acuity patients
+                    already being processed. This transforms the non-preemptive JSP into a
+                    preemptive variant with priority classes &mdash; significantly harder to
+                    optimize and requiring real-time rescheduling.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-users"></i> Department Capacity</h4>
+                <p>
+                    Real departments have multiple parallel resources (e.g., 3 imaging rooms,
+                    2 lab stations). This extends JSP to a Flexible Job Shop (FJSP) where each
+                    operation can be processed on any of several identical machines within
+                    a department.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-random"></i> Stochastic Arrivals</h4>
+                <p>
+                    Patients arrive continuously and unpredictably. The static JSP assumes all
+                    jobs are known at time zero; real EDs face a dynamic, online scheduling
+                    problem where the job set changes every few minutes and processing times
+                    are uncertain.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-user-md"></i> Staff Availability</h4>
+                <p>
+                    Department capacity varies by shift, break schedules, and specialization.
+                    A CT scanner requires a radiology technician; specialist consults depend on
+                    on-call availability. Machine availability windows add another layer of
+                    constraints to the scheduling model.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-redo"></i> Readmission Loops</h4>
+                <p>
+                    Some patients require return visits to departments (e.g., post-treatment
+                    imaging to verify reduction). This creates recirculation &mdash; a patient
+                    may visit Imaging twice &mdash; violating the classical JSP assumption that
+                    each job visits each machine at most once.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ REFERENCES ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Academic <span>References</span></h2>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Saghafian, S. et al.</span> (2015).
+                    <span class="ref-title">"Operations research/management contributions to emergency department patient flow optimization."</span>
+                    <span class="ref-journal">IIE Transactions on Healthcare Systems Engineering, 5(2), 101&ndash;123.</span>
+                    DOI: 10.1080/19488300.2015.1017676
+                </li>
+                <li>
+                    <span class="ref-author">Gunal, M.M. &amp; Pidd, M.</span> (2010).
+                    <span class="ref-title">"Discrete event simulation for performance modelling in health care: a review of the literature."</span>
+                    <span class="ref-journal">Journal of Simulation, 4(1), 42&ndash;51.</span>
+                    DOI: 10.1057/jos.2009.25
+                </li>
+                <li>
+                    <span class="ref-author">Wiler, J.L. et al.</span> (2011).
+                    <span class="ref-title">"Review of modeling approaches for emergency department patient flow and crowding research."</span>
+                    <span class="ref-journal">Academic Emergency Medicine, 18(12), 1371&ndash;1379.</span>
+                    DOI: 10.1111/j.1553-2712.2011.01135.x
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ CTA ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Explore More Applications</h3>
+            <p>
+                This patient flow scheduling demo is part of a comprehensive library of
+                optimization models across healthcare, agriculture, manufacturing, and logistics.
+            </p>
+            <div class="cta-links">
+                <a href="healthcare.html" class="cta-link">
+                    <i class="fas fa-heartbeat"></i> Healthcare Sector
+                </a>
+                <a href="../families/scheduling.html" class="cta-link">
+                    <i class="fas fa-book"></i> Scheduling Theory
+                </a>
+                <a href="../index.html" class="cta-link">
+                    <i class="fas fa-home"></i> All Models
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 Mathematical Modeling &amp; Operations Research &mdash; <a href="../index.html">mghnasiri.github.io</a></p>
+    </div>
+</footer>
+
+<a href="healthcare.html" class="back-link"><i class="fas fa-arrow-left"></i>&nbsp; Healthcare</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    /* ════════════════════════════════════════════
+       DATA — Patients, Departments, Scenarios, Colours
+       ════════════════════════════════════════════ */
+
+    var PATIENT_COLORS = [
+        '#64ffda', '#ff6b6b', '#7aa2f7', '#c084fc',
+        '#fb923c', '#facc15', '#34d399', '#f472b6',
+        '#38bdf8', '#a78bfa', '#e879f9', '#22d3ee',
+        '#fbbf24', '#4ade80', '#f87171'
+    ];
+
+    var DEPT_NAMES = ['Triage', 'Lab', 'Imaging', 'Consult', 'Treatment'];
+    var DEPT_SHORT = ['TRI', 'LAB', 'IMG', 'CON', 'TRT'];
+    var DEPT_INDEX = { Triage: 0, Lab: 1, Imaging: 2, Consult: 3, Treatment: 4 };
+
+    var ESI_COLORS = {
+        1: '#ff6b6b',
+        2: '#fb923c',
+        3: '#7aa2f7',
+        4: '#64ffda',
+        5: '#8892B0'
+    };
+
+    /* Each patient: { name, esi, route: [ { dept (index), time (minutes) } ] } */
+    var BASE_PATIENTS = [
+        { name: 'Chest Pain STEMI', esi: 2, route: [
+            { dept: 0, time: 8 }, { dept: 1, time: 25 }, { dept: 2, time: 20 }, { dept: 3, time: 15 }, { dept: 4, time: 30 }
+        ]},
+        { name: 'Ankle Fracture', esi: 3, route: [
+            { dept: 0, time: 5 }, { dept: 2, time: 15 }, { dept: 4, time: 45 }
+        ]},
+        { name: 'Abdominal Pain', esi: 3, route: [
+            { dept: 0, time: 8 }, { dept: 1, time: 20 }, { dept: 2, time: 25 }, { dept: 4, time: 20 }
+        ]},
+        { name: 'Stroke Code', esi: 1, route: [
+            { dept: 0, time: 5 }, { dept: 2, time: 10 }, { dept: 1, time: 15 }, { dept: 3, time: 20 }, { dept: 4, time: 35 }
+        ]},
+        { name: 'Laceration', esi: 3, route: [
+            { dept: 0, time: 5 }, { dept: 4, time: 40 }
+        ]},
+        { name: 'SOB', esi: 2, route: [
+            { dept: 0, time: 8 }, { dept: 1, time: 20 }, { dept: 2, time: 15 }, { dept: 4, time: 25 }
+        ]},
+        { name: 'Pediatric Fever', esi: 3, route: [
+            { dept: 0, time: 10 }, { dept: 1, time: 25 }, { dept: 4, time: 15 }
+        ]},
+        { name: 'Cardiac Arrest', esi: 1, route: [
+            { dept: 0, time: 3 }, { dept: 1, time: 15 }, { dept: 2, time: 20 }, { dept: 3, time: 25 }, { dept: 4, time: 45 }
+        ]},
+        { name: 'Back Pain', esi: 2, route: [
+            { dept: 0, time: 8 }, { dept: 2, time: 30 }, { dept: 3, time: 20 }, { dept: 4, time: 15 }
+        ]},
+        { name: 'Allergic Reaction', esi: 2, route: [
+            { dept: 0, time: 5 }, { dept: 1, time: 15 }, { dept: 4, time: 30 }
+        ]}
+    ];
+
+    var SURGE_EXTRA = [
+        { name: 'Multi-Trauma', esi: 1, route: [
+            { dept: 0, time: 3 }, { dept: 2, time: 25 }, { dept: 1, time: 20 }, { dept: 3, time: 30 }, { dept: 4, time: 50 }
+        ]},
+        { name: 'Chest Pain ACS', esi: 2, route: [
+            { dept: 0, time: 6 }, { dept: 1, time: 20 }, { dept: 2, time: 15 }, { dept: 3, time: 15 }, { dept: 4, time: 35 }
+        ]},
+        { name: 'Seizure', esi: 2, route: [
+            { dept: 0, time: 5 }, { dept: 1, time: 15 }, { dept: 2, time: 20 }, { dept: 4, time: 30 }
+        ]},
+        { name: 'OD / Toxicology', esi: 1, route: [
+            { dept: 0, time: 4 }, { dept: 1, time: 25 }, { dept: 4, time: 40 }
+        ]},
+        { name: 'Stab Wound', esi: 2, route: [
+            { dept: 0, time: 3 }, { dept: 2, time: 15 }, { dept: 4, time: 55 }
+        ]}
+    ];
+
+    var PEDS_PATIENTS = [
+        { name: 'Peds Fever (High)', esi: 2, route: [
+            { dept: 0, time: 8 }, { dept: 1, time: 30 }, { dept: 4, time: 20 }
+        ]},
+        { name: 'Peds RSV', esi: 2, route: [
+            { dept: 0, time: 10 }, { dept: 1, time: 25 }, { dept: 2, time: 15 }, { dept: 4, time: 25 }
+        ]},
+        { name: 'Peds Asthma', esi: 3, route: [
+            { dept: 0, time: 8 }, { dept: 1, time: 20 }, { dept: 4, time: 30 }
+        ]},
+        { name: 'Peds Dehydration', esi: 3, route: [
+            { dept: 0, time: 6 }, { dept: 1, time: 25 }, { dept: 4, time: 20 }
+        ]},
+        { name: 'Peds Fracture', esi: 3, route: [
+            { dept: 0, time: 5 }, { dept: 2, time: 15 }, { dept: 4, time: 40 }
+        ]},
+        { name: 'Peds Seizure', esi: 2, route: [
+            { dept: 0, time: 5 }, { dept: 1, time: 25 }, { dept: 2, time: 20 }, { dept: 4, time: 30 }
+        ]},
+        { name: 'Peds Croup', esi: 3, route: [
+            { dept: 0, time: 8 }, { dept: 1, time: 20 }, { dept: 4, time: 15 }
+        ]},
+        { name: 'Peds Febrile Convulsion', esi: 2, route: [
+            { dept: 0, time: 5 }, { dept: 1, time: 30 }, { dept: 2, time: 15 }, { dept: 3, time: 20 }, { dept: 4, time: 25 }
+        ]}
+    ];
+
+    var SCENARIOS = [
+        { name: 'Weekday Morning ED', patients: BASE_PATIENTS },
+        { name: 'Friday Night Surge', patients: BASE_PATIENTS.concat(SURGE_EXTRA) },
+        { name: 'Pediatric Cluster', patients: PEDS_PATIENTS }
+    ];
+
+    var currentScenario = 0;
+    var currentResults = {};
+    var selectedAlgos = { spt: true, mwr: true, sb: true };
+
+    /* ════════════════════════════════════════════
+       UTILITIES
+       ════════════════════════════════════════════ */
+
+    function getPatients() {
+        return SCENARIOS[currentScenario].patients;
+    }
+
+    function deepCopyPatients(patients) {
+        var copy = [];
+        for (var i = 0; i < patients.length; i++) {
+            var p = patients[i];
+            var r = [];
+            for (var j = 0; j < p.route.length; j++) {
+                r.push({ dept: p.route[j].dept, time: p.route[j].time });
+            }
+            copy.push({ name: p.name, esi: p.esi, route: r });
+        }
+        return copy;
+    }
+
+    function totalProcessingTime(patient) {
+        var t = 0;
+        for (var i = 0; i < patient.route.length; i++) {
+            t += patient.route[i].time;
+        }
+        return t;
+    }
+
+    /* ════════════════════════════════════════════
+       SCHEDULE RESULT FORMAT
+       schedule = [ { patient (index), dept (index), start, end } ]
+       ════════════════════════════════════════════ */
+
+    function computeMakespan(schedule) {
+        var maxEnd = 0;
+        for (var i = 0; i < schedule.length; i++) {
+            if (schedule[i].end > maxEnd) maxEnd = schedule[i].end;
+        }
+        return maxEnd;
+    }
+
+    function computeAvgWait(schedule, patients) {
+        /* Wait = total time patient is NOT being processed (gaps between operations) */
+        var n = patients.length;
+        var totalWait = 0;
+        for (var p = 0; p < n; p++) {
+            var ops = [];
+            for (var s = 0; s < schedule.length; s++) {
+                if (schedule[s].patient === p) ops.push(schedule[s]);
+            }
+            ops.sort(function(a, b) { return a.start - b.start; });
+            var wait = 0;
+            if (ops.length > 0) {
+                /* Wait before first op */
+                wait += ops[0].start;
+                /* Gaps between consecutive ops */
+                for (var i = 1; i < ops.length; i++) {
+                    wait += ops[i].start - ops[i - 1].end;
+                }
+            }
+            totalWait += wait;
+        }
+        return totalWait / n;
+    }
+
+    /* ════════════════════════════════════════════
+       SPT (Shortest Processing Time) Dispatching
+       ════════════════════════════════════════════ */
+
+    function solveSPT() {
+        var t0 = performance.now();
+        var patients = getPatients();
+        var n = patients.length;
+        var schedule = [];
+
+        /* Track progress: nextOp[i] = index into patients[i].route */
+        var nextOp = [];
+        var releaseTime = [];
+        for (var i = 0; i < n; i++) {
+            nextOp.push(0);
+            releaseTime.push(0);
+        }
+
+        /* Department availability */
+        var deptAvail = [0, 0, 0, 0, 0];
+
+        var completed = 0;
+        var totalOps = 0;
+        for (var i = 0; i < n; i++) totalOps += patients[i].route.length;
+
+        while (completed < totalOps) {
+            /* Find earliest time something can happen */
+            var earliestTime = Infinity;
+            for (var i = 0; i < n; i++) {
+                if (nextOp[i] < patients[i].route.length) {
+                    var dept = patients[i].route[nextOp[i]].dept;
+                    var canStart = Math.max(releaseTime[i], deptAvail[dept]);
+                    if (canStart < earliestTime) earliestTime = canStart;
+                }
+            }
+
+            /* Collect all patients that can start at each department at earliestTime */
+            for (var d = 0; d < 5; d++) {
+                if (deptAvail[d] > earliestTime) continue;
+
+                var candidates = [];
+                for (var i = 0; i < n; i++) {
+                    if (nextOp[i] < patients[i].route.length) {
+                        var op = patients[i].route[nextOp[i]];
+                        if (op.dept === d && releaseTime[i] <= earliestTime && deptAvail[d] <= earliestTime) {
+                            candidates.push(i);
+                        }
+                    }
+                }
+
+                if (candidates.length === 0) continue;
+
+                /* SPT: pick shortest processing time */
+                candidates.sort(function(a, b) {
+                    var ta = patients[a].route[nextOp[a]].time;
+                    var tb = patients[b].route[nextOp[b]].time;
+                    if (ta !== tb) return ta - tb;
+                    return patients[a].esi - patients[b].esi;
+                });
+
+                var chosen = candidates[0];
+                var op = patients[chosen].route[nextOp[chosen]];
+                var start = Math.max(releaseTime[chosen], deptAvail[d]);
+                var end = start + op.time;
+
+                schedule.push({ patient: chosen, dept: d, start: start, end: end });
+                deptAvail[d] = end;
+                releaseTime[chosen] = end;
+                nextOp[chosen]++;
+                completed++;
+            }
+
+            /* Safety: if nothing was scheduled, advance time */
+            if (completed < totalOps) {
+                var advanced = false;
+                for (var i = 0; i < n; i++) {
+                    if (nextOp[i] < patients[i].route.length) {
+                        var dept = patients[i].route[nextOp[i]].dept;
+                        var canStart = Math.max(releaseTime[i], deptAvail[dept]);
+                        if (canStart > earliestTime) { advanced = true; break; }
+                    }
+                }
+                if (!advanced) {
+                    /* Force advance by scheduling any available patient */
+                    var forceScheduled = false;
+                    for (var i = 0; i < n && !forceScheduled; i++) {
+                        if (nextOp[i] < patients[i].route.length) {
+                            var op = patients[i].route[nextOp[i]];
+                            var d = op.dept;
+                            var start = Math.max(releaseTime[i], deptAvail[d]);
+                            var end = start + op.time;
+                            schedule.push({ patient: i, dept: d, start: start, end: end });
+                            deptAvail[d] = end;
+                            releaseTime[i] = end;
+                            nextOp[i]++;
+                            completed++;
+                            forceScheduled = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        var elapsed = performance.now() - t0;
+        return { schedule: schedule, elapsed: elapsed };
+    }
+
+    /* ════════════════════════════════════════════
+       MWR (Most Work Remaining) Dispatching
+       ════════════════════════════════════════════ */
+
+    function solveMWR() {
+        var t0 = performance.now();
+        var patients = getPatients();
+        var n = patients.length;
+        var schedule = [];
+
+        var nextOp = [];
+        var releaseTime = [];
+        for (var i = 0; i < n; i++) {
+            nextOp.push(0);
+            releaseTime.push(0);
+        }
+
+        var deptAvail = [0, 0, 0, 0, 0];
+
+        var completed = 0;
+        var totalOps = 0;
+        for (var i = 0; i < n; i++) totalOps += patients[i].route.length;
+
+        function remainingWork(patIdx) {
+            var total = 0;
+            for (var j = nextOp[patIdx]; j < patients[patIdx].route.length; j++) {
+                total += patients[patIdx].route[j].time;
+            }
+            return total;
+        }
+
+        while (completed < totalOps) {
+            var earliestTime = Infinity;
+            for (var i = 0; i < n; i++) {
+                if (nextOp[i] < patients[i].route.length) {
+                    var dept = patients[i].route[nextOp[i]].dept;
+                    var canStart = Math.max(releaseTime[i], deptAvail[dept]);
+                    if (canStart < earliestTime) earliestTime = canStart;
+                }
+            }
+
+            for (var d = 0; d < 5; d++) {
+                if (deptAvail[d] > earliestTime) continue;
+
+                var candidates = [];
+                for (var i = 0; i < n; i++) {
+                    if (nextOp[i] < patients[i].route.length) {
+                        var op = patients[i].route[nextOp[i]];
+                        if (op.dept === d && releaseTime[i] <= earliestTime && deptAvail[d] <= earliestTime) {
+                            candidates.push(i);
+                        }
+                    }
+                }
+
+                if (candidates.length === 0) continue;
+
+                /* MWR: pick most remaining work, break ties by ESI */
+                candidates.sort(function(a, b) {
+                    var wa = remainingWork(a);
+                    var wb = remainingWork(b);
+                    if (wa !== wb) return wb - wa;
+                    return patients[a].esi - patients[b].esi;
+                });
+
+                var chosen = candidates[0];
+                var op = patients[chosen].route[nextOp[chosen]];
+                var start = Math.max(releaseTime[chosen], deptAvail[d]);
+                var end = start + op.time;
+
+                schedule.push({ patient: chosen, dept: d, start: start, end: end });
+                deptAvail[d] = end;
+                releaseTime[chosen] = end;
+                nextOp[chosen]++;
+                completed++;
+            }
+
+            /* Safety advance */
+            if (completed < totalOps) {
+                var needForce = true;
+                for (var i = 0; i < n; i++) {
+                    if (nextOp[i] < patients[i].route.length) {
+                        var dept = patients[i].route[nextOp[i]].dept;
+                        var canStart = Math.max(releaseTime[i], deptAvail[dept]);
+                        if (canStart > earliestTime) { needForce = false; break; }
+                    }
+                }
+                if (needForce) {
+                    for (var i = 0; i < n; i++) {
+                        if (nextOp[i] < patients[i].route.length) {
+                            var op = patients[i].route[nextOp[i]];
+                            var d = op.dept;
+                            var start = Math.max(releaseTime[i], deptAvail[d]);
+                            var end = start + op.time;
+                            schedule.push({ patient: i, dept: d, start: start, end: end });
+                            deptAvail[d] = end;
+                            releaseTime[i] = end;
+                            nextOp[i]++;
+                            completed++;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        var elapsed = performance.now() - t0;
+        return { schedule: schedule, elapsed: elapsed };
+    }
+
+    /* ════════════════════════════════════════════
+       SHIFTING BOTTLENECK
+       ════════════════════════════════════════════ */
+
+    function solveShiftingBottleneck() {
+        var t0 = performance.now();
+        var patients = getPatients();
+        var n = patients.length;
+
+        /* Build operation list: ops[i][j] = { dept, time } for patient i, step j */
+        /* We need to identify which departments are used */
+        var usedDepts = {};
+        for (var i = 0; i < n; i++) {
+            for (var j = 0; j < patients[i].route.length; j++) {
+                usedDepts[patients[i].route[j].dept] = true;
+            }
+        }
+        var deptList = [];
+        for (var d = 0; d < 5; d++) {
+            if (usedDepts[d]) deptList.push(d);
+        }
+
+        /* Compute release dates via longest-path from precedence constraints */
+        /* releaseDate[i][j] = earliest start for patient i, step j */
+        function computeReleaseDates(fixedSchedules) {
+            var rel = [];
+            for (var i = 0; i < n; i++) {
+                var r = [];
+                var t = 0;
+                for (var j = 0; j < patients[i].route.length; j++) {
+                    r.push(t);
+                    /* Check if this dept's predecessor op was scheduled with a fixed time */
+                    if (j > 0) {
+                        var prevDept = patients[i].route[j - 1].dept;
+                        if (fixedSchedules[prevDept]) {
+                            var prevEntry = fixedSchedules[prevDept][i];
+                            if (prevEntry !== undefined && prevEntry !== null) {
+                                t = Math.max(t, prevEntry.end);
+                                r[j] = t;
+                            }
+                        }
+                    }
+                    t = r[j] + patients[i].route[j].time;
+                }
+                rel.push(r);
+            }
+            return rel;
+        }
+
+        /* Solve single-machine 1|rj|Lmax for a given department */
+        /* Returns schedule for that department and its Lmax value */
+        function solveSingleMachine(dept, releaseDates, fixedSchedules) {
+            /* Collect operations on this department */
+            var ops = [];
+            for (var i = 0; i < n; i++) {
+                for (var j = 0; j < patients[i].route.length; j++) {
+                    if (patients[i].route[j].dept === dept) {
+                        ops.push({
+                            patient: i,
+                            step: j,
+                            time: patients[i].route[j].time,
+                            release: releaseDates[i][j]
+                        });
+                    }
+                }
+            }
+
+            if (ops.length === 0) return { schedule: {}, lmax: 0 };
+
+            /* EDD (Earliest Due Date) with release dates - simple dispatch */
+            /* Sort by release date, then by ESI for ties */
+            ops.sort(function(a, b) {
+                if (a.release !== b.release) return a.release - b.release;
+                return patients[a.patient].esi - patients[b.patient].esi;
+            });
+
+            var time = 0;
+            var deptSchedule = {};
+            var lmax = 0;
+
+            for (var k = 0; k < ops.length; k++) {
+                var op = ops[k];
+                var start = Math.max(time, op.release);
+                var end = start + op.time;
+                deptSchedule[op.patient] = { start: start, end: end, step: op.step };
+                time = end;
+
+                /* Lmax: lateness relative to a deadline (use sum of remaining processing as deadline proxy) */
+                var deadline = 0;
+                for (var j = 0; j < patients[op.patient].route.length; j++) {
+                    deadline += patients[op.patient].route[j].time;
+                }
+                deadline *= 2; /* generous deadline */
+                var lateness = end - deadline;
+                if (lateness > lmax) lmax = lateness;
+            }
+
+            return { schedule: deptSchedule, lmax: time }; /* Use makespan as bottleneck metric */
+        }
+
+        /* Main shifting bottleneck loop */
+        var fixedSchedules = {}; /* fixedSchedules[dept][patient] = { start, end, step } */
+        var scheduledDepts = {};
+
+        for (var iter = 0; iter < deptList.length; iter++) {
+            var releaseDates = computeReleaseDates(fixedSchedules);
+
+            var worstDept = -1;
+            var worstLmax = -Infinity;
+            var worstSchedule = null;
+
+            for (var di = 0; di < deptList.length; di++) {
+                var d = deptList[di];
+                if (scheduledDepts[d]) continue;
+
+                var result = solveSingleMachine(d, releaseDates, fixedSchedules);
+                if (result.lmax > worstLmax) {
+                    worstLmax = result.lmax;
+                    worstDept = d;
+                    worstSchedule = result.schedule;
+                }
+            }
+
+            if (worstDept === -1) break;
+
+            fixedSchedules[worstDept] = worstSchedule;
+            scheduledDepts[worstDept] = true;
+        }
+
+        /* Build final schedule from fixedSchedules */
+        /* Need to re-resolve with precedence to ensure consistency */
+        var schedule = [];
+        var releaseTime = [];
+        var nextOp = [];
+        for (var i = 0; i < n; i++) {
+            releaseTime.push(0);
+            nextOp.push(0);
+        }
+        var deptAvail = [0, 0, 0, 0, 0];
+
+        /* Build ordered list per department from fixedSchedules */
+        var deptOrders = {};
+        for (var d = 0; d < 5; d++) {
+            if (fixedSchedules[d]) {
+                var entries = [];
+                var patientKeys = Object.keys(fixedSchedules[d]);
+                for (var ki = 0; ki < patientKeys.length; ki++) {
+                    var pk = parseInt(patientKeys[ki], 10);
+                    entries.push({ patient: pk, origStart: fixedSchedules[d][pk].start });
+                }
+                entries.sort(function(a, b) { return a.origStart - b.origStart; });
+                deptOrders[d] = entries;
+            }
+        }
+
+        /* Schedule using department orders from shifting bottleneck */
+        var deptPos = {};
+        for (var d = 0; d < 5; d++) deptPos[d] = 0;
+
+        var completed = 0;
+        var totalOps = 0;
+        for (var i = 0; i < n; i++) totalOps += patients[i].route.length;
+
+        var maxIter = totalOps * totalOps + 1000;
+        var safetyCount = 0;
+
+        while (completed < totalOps && safetyCount < maxIter) {
+            safetyCount++;
+            var scheduled = false;
+
+            for (var d = 0; d < 5; d++) {
+                if (!deptOrders[d] || deptPos[d] >= deptOrders[d].length) continue;
+
+                var nextPatient = deptOrders[d][deptPos[d]].patient;
+
+                /* Check if this patient's next operation is at this department */
+                if (nextOp[nextPatient] >= patients[nextPatient].route.length) continue;
+                if (patients[nextPatient].route[nextOp[nextPatient]].dept !== d) continue;
+
+                var op = patients[nextPatient].route[nextOp[nextPatient]];
+                var start = Math.max(releaseTime[nextPatient], deptAvail[d]);
+                var end = start + op.time;
+
+                schedule.push({ patient: nextPatient, dept: d, start: start, end: end });
+                deptAvail[d] = end;
+                releaseTime[nextPatient] = end;
+                nextOp[nextPatient]++;
+                deptPos[d]++;
+                completed++;
+                scheduled = true;
+            }
+
+            if (!scheduled) {
+                /* Find a patient whose next dept is not in the fixed order or needs advancing */
+                for (var i = 0; i < n; i++) {
+                    if (nextOp[i] < patients[i].route.length) {
+                        var op = patients[i].route[nextOp[i]];
+                        var d = op.dept;
+                        var start = Math.max(releaseTime[i], deptAvail[d]);
+                        var end = start + op.time;
+                        schedule.push({ patient: i, dept: d, start: start, end: end });
+                        deptAvail[d] = end;
+                        releaseTime[i] = end;
+                        nextOp[i]++;
+                        completed++;
+                        /* Advance dept position if applicable */
+                        if (deptOrders[d] && deptPos[d] < deptOrders[d].length && deptOrders[d][deptPos[d]].patient === i) {
+                            deptPos[d]++;
+                        }
+                        break;
+                    }
+                }
+            }
+        }
+
+        var elapsed = performance.now() - t0;
+        return { schedule: schedule, elapsed: elapsed };
+    }
+
+    /* ════════════════════════════════════════════
+       GANTT CHART RENDERING
+       ════════════════════════════════════════════ */
+
+    function renderGantt(schedule) {
+        var canvas = document.getElementById('ganttCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width;
+        var H = canvas.height;
+        var patients = getPatients();
+
+        /* Clear */
+        ctx.fillStyle = '#0a1628';
+        ctx.fillRect(0, 0, W, H);
+
+        if (schedule.length === 0) {
+            ctx.fillStyle = 'rgba(168, 178, 209, 0.3)';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('Press Solve to generate Gantt chart', W / 2, H / 2);
+            return;
+        }
+
+        var makespan = computeMakespan(schedule);
+        if (makespan === 0) makespan = 1;
+
+        var leftPad = 85;
+        var rightPad = 20;
+        var topPad = 30;
+        var bottomPad = 40;
+        var chartW = W - leftPad - rightPad;
+        var chartH = H - topPad - bottomPad;
+        var rowH = chartH / 5;
+
+        /* Grid lines */
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+        ctx.lineWidth = 0.5;
+        var tickInterval = Math.ceil(makespan / 10 / 5) * 5;
+        if (tickInterval < 5) tickInterval = 5;
+        for (var t = 0; t <= makespan; t += tickInterval) {
+            var x = leftPad + (t / makespan) * chartW;
+            ctx.beginPath();
+            ctx.moveTo(x, topPad);
+            ctx.lineTo(x, topPad + chartH);
+            ctx.stroke();
+
+            /* Time label */
+            ctx.fillStyle = 'rgba(168, 178, 209, 0.5)';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(t + 'min', x, topPad + chartH + 15);
+        }
+
+        /* Department labels */
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (var d = 0; d < 5; d++) {
+            var y = topPad + d * rowH + rowH / 2;
+            ctx.fillStyle = 'rgba(197, 160, 89, 0.7)';
+            ctx.font = '10px Inter, sans-serif';
+            ctx.fillText(DEPT_NAMES[d], leftPad - 10, y);
+
+            /* Row separator */
+            ctx.strokeStyle = 'rgba(197, 160, 89, 0.08)';
+            ctx.beginPath();
+            ctx.moveTo(leftPad, topPad + d * rowH);
+            ctx.lineTo(W - rightPad, topPad + d * rowH);
+            ctx.stroke();
+        }
+
+        /* Draw bars */
+        var barPad = 4;
+        for (var s = 0; s < schedule.length; s++) {
+            var entry = schedule[s];
+            var x1 = leftPad + (entry.start / makespan) * chartW;
+            var x2 = leftPad + (entry.end / makespan) * chartW;
+            var y = topPad + entry.dept * rowH + barPad;
+            var h = rowH - 2 * barPad;
+            var w = x2 - x1;
+
+            var color = PATIENT_COLORS[entry.patient % PATIENT_COLORS.length];
+
+            /* Bar background */
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.75;
+            ctx.fillRect(x1, y, w, h);
+            ctx.globalAlpha = 1.0;
+
+            /* Bar border */
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x1, y, w, h);
+
+            /* Label inside bar if wide enough */
+            if (w > 30) {
+                ctx.fillStyle = '#0a1628';
+                ctx.font = 'bold 8px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                var label = 'P' + (entry.patient + 1);
+                ctx.fillText(label, x1 + w / 2, y + h / 2);
+            }
+        }
+
+        /* Legend */
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        var legendX = leftPad;
+        var legendY = H - 12;
+        var maxLegendItems = Math.min(patients.length, 10);
+        var legendSpacing = Math.min(65, (chartW - 10) / maxLegendItems);
+        for (var p = 0; p < maxLegendItems; p++) {
+            var color = PATIENT_COLORS[p % PATIENT_COLORS.length];
+            ctx.fillStyle = color;
+            ctx.fillRect(legendX, legendY - 4, 10, 3);
+            ctx.fillStyle = 'rgba(168, 178, 209, 0.6)';
+            ctx.font = '8px Inter, sans-serif';
+            ctx.fillText('P' + (p + 1), legendX + 13, legendY);
+            legendX += legendSpacing;
+        }
+
+        /* Title */
+        ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Departments vs Time (minutes)', leftPad, 15);
+
+        /* Makespan indicator */
+        ctx.fillStyle = 'rgba(100, 255, 218, 0.6)';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('Cmax = ' + makespan + ' min', W - rightPad, 15);
+    }
+
+    /* ════════════════════════════════════════════
+       UI RENDERING
+       ════════════════════════════════════════════ */
+
+    function renderPatientTable() {
+        var patients = getPatients();
+        var tbody = document.getElementById('patientBody');
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        for (var i = 0; i < patients.length; i++) {
+            var p = patients[i];
+            var tr = document.createElement('tr');
+
+            var tdName = document.createElement('td');
+            var dot = document.createElement('span');
+            dot.className = 'stop-dot';
+            dot.style.backgroundColor = PATIENT_COLORS[i % PATIENT_COLORS.length];
+            tdName.appendChild(dot);
+            tdName.appendChild(document.createTextNode(p.name));
+            tr.appendChild(tdName);
+
+            var tdESI = document.createElement('td');
+            var esiSpan = document.createElement('span');
+            esiSpan.className = 'esi-' + p.esi;
+            esiSpan.textContent = 'ESI-' + p.esi;
+            tdESI.appendChild(esiSpan);
+            tr.appendChild(tdESI);
+
+            var tdRoute = document.createElement('td');
+            var routeParts = [];
+            for (var j = 0; j < p.route.length; j++) {
+                routeParts.push(DEPT_SHORT[p.route[j].dept] + '(' + p.route[j].time + ')');
+            }
+            tdRoute.textContent = routeParts.join('\u2192');
+            tdRoute.style.fontSize = '0.72rem';
+            tr.appendChild(tdRoute);
+
+            var tdTotal = document.createElement('td');
+            tdTotal.textContent = totalProcessingTime(p);
+            tr.appendChild(tdTotal);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    function renderComparison() {
+        var tbody = document.getElementById('comparisonBody');
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        var patients = getPatients();
+        var keys = Object.keys(currentResults);
+        if (keys.length === 0) return;
+
+        var bestMakespan = Infinity;
+        for (var ki = 0; ki < keys.length; ki++) {
+            var ms = computeMakespan(currentResults[keys[ki]].schedule);
+            if (ms < bestMakespan) bestMakespan = ms;
+        }
+
+        var algoNames = {
+            spt: 'Shortest Processing Time',
+            mwr: 'Most Work Remaining',
+            sb: 'Shifting Bottleneck'
+        };
+
+        var bestRow = null;
+
+        for (var ki = 0; ki < keys.length; ki++) {
+            var key = keys[ki];
+            var res = currentResults[key];
+            var ms = computeMakespan(res.schedule);
+            var avgW = computeAvgWait(res.schedule, patients);
+
+            var tr = document.createElement('tr');
+
+            var tdAlgo = document.createElement('td');
+            tdAlgo.className = 'algo-label';
+            tdAlgo.textContent = algoNames[key] || key;
+            tr.appendChild(tdAlgo);
+
+            var tdMs = document.createElement('td');
+            tdMs.textContent = ms;
+            if (ms === bestMakespan) {
+                tdMs.className = 'best-val';
+                bestRow = key;
+            }
+            tr.appendChild(tdMs);
+
+            var tdWait = document.createElement('td');
+            tdWait.textContent = avgW.toFixed(1);
+            if (ms === bestMakespan) tdWait.className = 'best-val';
+            tr.appendChild(tdWait);
+
+            var tdTime = document.createElement('td');
+            tdTime.textContent = res.elapsed.toFixed(1);
+            tr.appendChild(tdTime);
+
+            (function(k) {
+                tr.addEventListener('click', function() {
+                    renderGantt(currentResults[k].schedule);
+                    renderScheduleDetail(k);
+                    updateBusinessPanel(k);
+                });
+            })(key);
+
+            tbody.appendChild(tr);
+        }
+
+        if (bestRow) {
+            renderGantt(currentResults[bestRow].schedule);
+            renderScheduleDetail(bestRow);
+            updateBusinessPanel(bestRow);
+        }
+    }
+
+    function renderScheduleDetail(algoKey) {
+        var patients = getPatients();
+        var res = currentResults[algoKey];
+        var output = document.getElementById('scheduleOutput');
+        while (output.firstChild) output.removeChild(output.firstChild);
+
+        var algoNames = {
+            spt: 'Shortest Processing Time',
+            mwr: 'Most Work Remaining',
+            sb: 'Shifting Bottleneck'
+        };
+
+        var title = document.createElement('div');
+        title.style.color = '#C5A059';
+        title.style.marginBottom = '0.5rem';
+        title.style.fontWeight = '500';
+        title.textContent = (algoNames[algoKey] || algoKey) + ' — Schedule Details';
+        output.appendChild(title);
+
+        for (var p = 0; p < patients.length; p++) {
+            var ops = [];
+            for (var s = 0; s < res.schedule.length; s++) {
+                if (res.schedule[s].patient === p) ops.push(res.schedule[s]);
+            }
+            ops.sort(function(a, b) { return a.start - b.start; });
+
+            var line = document.createElement('div');
+            var parts = [];
+            for (var o = 0; o < ops.length; o++) {
+                parts.push(DEPT_SHORT[ops[o].dept] + '[' + ops[o].start + '-' + ops[o].end + ']');
+            }
+            line.textContent = 'P' + (p + 1) + ' ' + patients[p].name + ': ' + parts.join(' \u2192 ');
+            line.style.color = PATIENT_COLORS[p % PATIENT_COLORS.length];
+            output.appendChild(line);
+        }
+    }
+
+    function updateBusinessPanel(algoKey) {
+        var patients = getPatients();
+        var res = currentResults[algoKey];
+        var ms = computeMakespan(res.schedule);
+        var avgW = computeAvgWait(res.schedule, patients);
+
+        var costPerHour = parseFloat(document.getElementById('bizCostPerHour').value) || 150;
+        var patsPerShift = parseFloat(document.getElementById('bizPatsPerShift').value) || 25;
+
+        var shiftCost = (ms / 60) * costPerHour * (patsPerShift / patients.length);
+        var throughput = (patients.length / ms * 60).toFixed(1);
+
+        document.getElementById('bizMakespan').textContent = ms + ' min';
+        document.getElementById('bizAvgWait').textContent = avgW.toFixed(1) + ' min';
+        document.getElementById('bizShiftCost').textContent = '\u20AC' + Math.round(shiftCost);
+        document.getElementById('bizThroughput').textContent = throughput + '/hr';
+    }
+
+    /* ════════════════════════════════════════════
+       SOLVE
+       ════════════════════════════════════════════ */
+
+    function solve() {
+        currentResults = {};
+
+        if (selectedAlgos.spt) {
+            currentResults.spt = solveSPT();
+        }
+        if (selectedAlgos.mwr) {
+            currentResults.mwr = solveMWR();
+        }
+        if (selectedAlgos.sb) {
+            currentResults.sb = solveShiftingBottleneck();
+        }
+
+        renderComparison();
+    }
+
+    /* ════════════════════════════════════════════
+       EVENT HANDLERS
+       ════════════════════════════════════════════ */
+
+    /* Scenario selection */
+    var scenarioChips = document.querySelectorAll('.scenario-chip');
+    for (var i = 0; i < scenarioChips.length; i++) {
+        (function(chip) {
+            chip.addEventListener('click', function() {
+                for (var j = 0; j < scenarioChips.length; j++) {
+                    scenarioChips[j].classList.remove('active');
+                }
+                chip.classList.add('active');
+                currentScenario = parseInt(chip.getAttribute('data-scenario'), 10);
+                renderPatientTable();
+                currentResults = {};
+                var tbody = document.getElementById('comparisonBody');
+                while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+                var output = document.getElementById('scheduleOutput');
+                while (output.firstChild) output.removeChild(output.firstChild);
+                document.getElementById('bizMakespan').textContent = '--';
+                document.getElementById('bizAvgWait').textContent = '--';
+                document.getElementById('bizShiftCost').textContent = '--';
+                document.getElementById('bizThroughput').textContent = '--';
+                renderGantt([]);
+            });
+        })(scenarioChips[i]);
+    }
+
+    /* Algorithm selection */
+    var algoChips = document.querySelectorAll('.algo-chip');
+    for (var i = 0; i < algoChips.length; i++) {
+        (function(chip) {
+            chip.addEventListener('click', function() {
+                chip.classList.toggle('selected');
+                var algo = chip.getAttribute('data-algo');
+                selectedAlgos[algo] = chip.classList.contains('selected');
+            });
+        })(algoChips[i]);
+    }
+
+    /* Solve button */
+    document.getElementById('solveBtn').addEventListener('click', function() {
+        var anySelected = false;
+        var keys = Object.keys(selectedAlgos);
+        for (var i = 0; i < keys.length; i++) {
+            if (selectedAlgos[keys[i]]) { anySelected = true; break; }
+        }
+        if (!anySelected) return;
+        solve();
+    });
+
+    /* Theme toggle */
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme');
+        html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+    });
+
+    /* Scroll animations */
+    var fadeEls = document.querySelectorAll('.fade-in');
+    var observer = new IntersectionObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) {
+                entries[i].target.classList.add('visible');
+            }
+        }
+    }, { threshold: 0.1 });
+    for (var i = 0; i < fadeEls.length; i++) {
+        observer.observe(fadeEls[i]);
+    }
+
+    /* ════════════════════════════════════════════
+       INIT
+       ════════════════════════════════════════════ */
+
+    renderPatientTable();
+    renderGantt([]);
+
+})();
+</script>
+
+</body>
+</html>

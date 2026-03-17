@@ -1,0 +1,2197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Supply Distribution | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive CVRP demo for medical supply delivery to rural clinics. Clarke-Wright, Sweep, and Simulated Annealing optimization.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/medical-supply.html">
+    <meta property="og:title" content="Medical Supply Distribution | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive CVRP demo for medical supply delivery to rural clinics. Clarke-Wright, Sweep, and Simulated Annealing optimization.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Medical Supply Distribution | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive CVRP demo for medical supply delivery to rural clinics. Clarke-Wright, Sweep, and Simulated Annealing optimization.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Decision Chain ── */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+        .chain-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 4px;
+            font-size: 0.85rem;
+            color: var(--slate-light);
+            text-align: center;
+            min-width: 110px;
+        }
+        .chain-step.active {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(197,160,89,0.07);
+        }
+        .chain-sub {
+            font-size: 0.72rem;
+            color: var(--slate);
+            margin-top: 0.3rem;
+            font-weight: 400;
+        }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow {
+            color: var(--slate);
+            font-size: 1.1rem;
+            flex-shrink: 0;
+        }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Mapping Table ── */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-size: 0.72rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.7rem 1rem;
+            border-bottom: 1px solid rgba(197,160,89,0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.55rem 1rem;
+            border-bottom: 1px solid rgba(197,160,89,0.05);
+            color: var(--slate-light);
+        }
+        .mapping-table td:first-child {
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .mapping-table tr:hover td { background: rgba(197,160,89,0.03); }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* ── Scenario Chips ── */
+        .scenario-switcher {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+        .scenario-chip {
+            padding: 0.8rem 1rem;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: center;
+        }
+        .scenario-chip:hover { border-color: var(--gold); }
+        .scenario-chip.active {
+            border-color: var(--gold);
+            background: rgba(197,160,89,0.1);
+        }
+        .scenario-chip .sc-title {
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--ivory);
+            display: block;
+            margin-bottom: 0.2rem;
+        }
+        .scenario-chip .sc-desc {
+            font-size: 0.7rem;
+            color: var(--slate);
+        }
+        .scenario-chip.active .sc-title { color: var(--gold); }
+
+        /* ── Algo Chips ── */
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        /* ── Solve Button ── */
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        /* ── Clinic Table ── */
+        .stops-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-bottom: 0.5rem;
+        }
+        .stops-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+        }
+        .stops-table thead th:first-child { text-align: left; }
+        .stops-table tbody td {
+            padding: 0.35rem 0.3rem;
+            border-bottom: 1px solid rgba(136, 146, 176, 0.06);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            font-size: 0.8rem;
+        }
+        .stops-table tbody td:first-child {
+            text-align: left;
+            font-family: 'Inter', sans-serif;
+            font-weight: 400;
+        }
+        .stops-table .stop-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+        .stops-table-wrap {
+            max-height: 340px;
+            overflow-y: auto;
+            border: 1px solid rgba(197,160,89,0.08);
+            border-radius: 4px;
+        }
+        .stops-table-wrap::-webkit-scrollbar { width: 4px; }
+        .stops-table-wrap::-webkit-scrollbar-track { background: var(--midnight); }
+        .stops-table-wrap::-webkit-scrollbar-thumb { background: rgba(197,160,89,0.3); border-radius: 2px; }
+
+        /* ── Canvas Wrap ── */
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        /* ── Results Table ── */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .route-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        /* ── Business Panel ── */
+        .biz-cards {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.75rem;
+            margin-top: 1rem;
+        }
+        .biz-card {
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197,160,89,0.1);
+            border-radius: 4px;
+            padding: 1rem;
+            text-align: center;
+        }
+        .biz-card .biz-val {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            color: var(--gold);
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .biz-card .biz-label {
+            font-size: 0.72rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* ── Insight Box ── */
+        .insight-box {
+            background: rgba(100, 255, 218, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.15);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .insight-box h4 {
+            color: var(--green);
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+        }
+        .insight-box p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+        .insight-box strong { color: var(--ivory); }
+
+        /* ── Algorithm Cards ── */
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            letter-spacing: 1px;
+            margin-bottom: 0.5rem;
+            color: var(--ivory);
+        }
+        .algo-card h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .algo-card .algo-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid rgba(100, 255, 218, 0.25);
+            border-radius: 2px;
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--green);
+            margin-bottom: 1rem;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .algo-card .algo-steps {
+            list-style: none;
+            padding: 0;
+            margin-top: 1rem;
+        }
+        .algo-card .algo-steps li {
+            padding: 0.4rem 0 0.4rem 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.88rem;
+        }
+        .algo-card .algo-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        /* ── Complexity Cards ── */
+        .complexity-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .complexity-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197,160,89,0.12);
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+        .complexity-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+            color: var(--ivory);
+        }
+        .complexity-card h4 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+            font-size: 0.9rem;
+        }
+        .complexity-card p {
+            color: var(--slate-light);
+            font-size: 0.85rem;
+            line-height: 1.7;
+            margin: 0;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+
+        /* ── Responsive ── */
+        @media (max-width: 992px) {
+            .biz-cards { grid-template-columns: repeat(2, 1fr); }
+            .scenario-switcher { grid-template-columns: 1fr; }
+        }
+        @media (max-width: 480px) {
+            .biz-cards { grid-template-columns: 1fr; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+        }
+
+        /* ── Type badge colors ── */
+        .type-hospital { color: var(--red); }
+        .type-clinic { color: var(--blue); }
+        .type-health_post { color: var(--green); }
+        .type-nursing_home { color: #c084fc; }
+        .type-pharmacy { color: #fb923c; }
+        .type-vaccine_hub { color: var(--gold); }
+
+    </style>
+</head>
+<body>
+
+<!-- ═══════════════════ NAVBAR ═══════════════════ -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">Math Modeling</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav align-items-center">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../index.html#702">Applications</a></li>
+                <li class="nav-item"><a class="nav-link active" href="healthcare.html">Healthcare</a></li>
+                <li class="nav-item">
+                    <div class="theme-toggle" id="themeToggle" role="button" aria-label="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ═══════════════════ BREADCRUMB ═══════════════════ -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="healthcare.html">Healthcare</a></li>
+            <li>Medical Supply Distribution</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ═══════════════════ HERO ═══════════════════ -->
+<header class="hero">
+    <div class="hero-icon"><i class="fas fa-truck-medical"></i></div>
+    <h1>Medical Supply <span>Distribution</span></h1>
+    <p class="hero-subtitle">Capacitated Vehicle Routing</p>
+    <div class="gold-line"></div>
+    <p class="hero-desc">
+        A regional medical depot must deliver medications, vaccines, and consumables to 18 rural
+        clinics using refrigerated vans. The WHO estimates up to 50% of vaccines are wasted due
+        to cold-chain failures during last-mile transport. Route optimization reduces cold-chain
+        exposure by 20&ndash;35% and fuel costs by 15&ndash;25%.
+    </p>
+</header>
+
+<!-- ═══════════════════ DECISION CHAIN ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>Healthcare operations chain &mdash; the highlighted step is what this page optimizes</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">
+                Strategic
+                <span class="chain-sub">Facility location</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Staff
+                <span class="chain-sub">Workforce scheduling</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Patient Flow
+                <span class="chain-sub">Admission &amp; queuing</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">
+                Supply Chain
+                <span class="chain-sub">Medical distribution</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ PROBLEM FORMULATION ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Problem <span>Definition</span></h2>
+            <p>Mapping the real-world medical logistics problem to a CVRP formulation</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>Real-World Element</th>
+                        <th>CVRP Abstraction</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Rural clinic</td>
+                        <td>Customer node</td>
+                        <td>18 facilities requiring medical supplies</td>
+                    </tr>
+                    <tr>
+                        <td>Refrigerated van</td>
+                        <td>Vehicle</td>
+                        <td>Homogeneous fleet, 500 kg capacity each</td>
+                    </tr>
+                    <tr>
+                        <td>Supply demand (kg)</td>
+                        <td>Load / demand</td>
+                        <td>15&ndash;120 kg per clinic, 915 kg total</td>
+                    </tr>
+                    <tr>
+                        <td>Medical depot</td>
+                        <td>Depot</td>
+                        <td>Central hub at coordinates (50, 50)</td>
+                    </tr>
+                    <tr>
+                        <td>Road distance</td>
+                        <td>Edge cost</td>
+                        <td>Euclidean distance (proxy for travel time)</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">CVRP Formulation</span>
+                <span class="keyword">minimize</span> &nbsp;&nbsp; <span class="variable">&Sigma;<sub>k</sub> &Sigma;<sub>i</sub> &Sigma;<sub>j</sub> c<sub>ij</sub> &middot; x<sub>ijk</sub></span> <span class="comment">&nbsp;/* total travel distance */</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp; <span class="variable">&Sigma;<sub>k</sub> &Sigma;<sub>j</sub> x<sub>ijk</sub> = 1</span> &nbsp;&nbsp;&nbsp; <span class="comment">/* every clinic visited exactly once */</span><br>
+                &nbsp;&nbsp; <span class="variable">&Sigma;<sub>i</sub> d<sub>i</sub> &middot; y<sub>ik</sub> &le; Q</span> &nbsp;&nbsp;&nbsp; <span class="comment">/* vehicle capacity Q = 500 kg */</span><br>
+                &nbsp;&nbsp; <span class="variable">&Sigma;<sub>j</sub> x<sub>0jk</sub> = &Sigma;<sub>j</sub> x<sub>j0k</sub> = 1</span> &nbsp;&nbsp;&nbsp; <span class="comment">/* each vehicle starts and returns to depot */</span><br>
+                &nbsp;&nbsp; <span class="variable">x<sub>ijk</sub> &isin; {0, 1}</span> &nbsp;&nbsp;&nbsp; <span class="comment">/* binary assignment */</span><br>
+                &nbsp;&nbsp; <span class="comment">/* subtour elimination constraints (MTZ or SEC) */</span>
+            </div>
+
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-info-circle"></i> NP-Hard Complexity</div>
+                The CVRP is NP-hard &mdash; exact solutions are impractical beyond ~25 nodes.
+                This demo uses constructive heuristics (Clarke-Wright, Sweep) and metaheuristic
+                search (Simulated Annealing) to find high-quality feasible solutions in milliseconds.
+            </div>
+
+            <a href="../families/routing.html" class="theory-link">
+                <i class="fas fa-book"></i> Routing Problem Family &mdash; Theory
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ INTERACTIVE SOLVER ═══════════════════ -->
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>Solver</span></h2>
+            <p>Select a scenario, choose algorithms, and optimize delivery routes</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-route"></i> Route Optimizer</h4>
+                <button class="solver-btn primary" id="solveBtn" type="button">
+                    <i class="fas fa-play"></i>&nbsp; Solve
+                </button>
+            </div>
+
+            <div class="solver-body">
+                <!-- Scenario Selection -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-switcher" id="scenarioSwitcher">
+                    <div class="scenario-chip active" data-scenario="0">
+                        <span class="sc-title">Weekly Supply Run</span>
+                        <span class="sc-desc">18 clinics &middot; 500 kg vans</span>
+                    </div>
+                    <div class="scenario-chip" data-scenario="1">
+                        <span class="sc-title">Vaccine Campaign Surge</span>
+                        <span class="sc-desc">Doubled hub demand &middot; 400 kg vans</span>
+                    </div>
+                    <div class="scenario-chip" data-scenario="2">
+                        <span class="sc-title">Emergency Resupply</span>
+                        <span class="sc-desc">10 remote clinics &middot; 300 kg vans</span>
+                    </div>
+                </div>
+
+                <!-- Algorithm Selection -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algoSelect">
+                    <div class="algo-chip selected" data-algo="cw">Clarke-Wright <span class="chip-type">Savings</span></div>
+                    <div class="algo-chip selected" data-algo="sweep">Sweep <span class="chip-type">Constructive</span></div>
+                    <div class="algo-chip selected" data-algo="sa">Simulated Annealing <span class="chip-type">Metaheuristic</span></div>
+                </div>
+
+                <div class="solver-row">
+                    <!-- Clinic Table -->
+                    <div>
+                        <div class="solver-section-label">Clinics</div>
+                        <div class="stops-table-wrap">
+                            <table class="stops-table" id="clinicTable">
+                                <thead>
+                                    <tr>
+                                        <th>Clinic</th>
+                                        <th>X</th>
+                                        <th>Y</th>
+                                        <th>Demand</th>
+                                        <th>Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clinicBody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Route Map Canvas -->
+                    <div>
+                        <div class="solver-section-label">Route Map</div>
+                        <div class="solver-canvas-wrap">
+                            <canvas id="routeCanvas" width="600" height="500"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Comparison Table -->
+                <div class="solver-section-label">Algorithm Comparison</div>
+                <table class="results-table" id="comparisonTable">
+                    <thead>
+                        <tr>
+                            <th>Algorithm</th>
+                            <th>Distance (km)</th>
+                            <th>Vehicles</th>
+                            <th>Cold-Chain (hr)</th>
+                            <th>Time (ms)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="comparisonBody"></tbody>
+                </table>
+
+                <div class="route-output" id="routeOutput"></div>
+
+                <!-- Business Impact -->
+                <div class="solver-section-label" style="margin-top: 1.5rem;">Business Impact</div>
+                <div class="biz-cards" id="bizCards">
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizCost">--</span>
+                        <span class="biz-label">Weekly Fuel Cost</span>
+                    </div>
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizDeliveries">--</span>
+                        <span class="biz-label">Deliveries / Week</span>
+                    </div>
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizColdChain">--</span>
+                        <span class="biz-label">Avg Cold-Chain (hr)</span>
+                    </div>
+                    <div class="biz-card">
+                        <span class="biz-val" id="bizUtilization">--</span>
+                        <span class="biz-label">Capacity Utilization</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ ALGORITHMS ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>Algorithms</span></h2>
+            <p>Three approaches from constructive heuristics to metaheuristic search</p>
+        </div>
+
+        <div class="insight-box fade-in">
+            <h4><i class="fas fa-lightbulb"></i> Key Insight</h4>
+            <p>
+                <strong>Clarke-Wright Savings</strong> computes a savings value
+                <em>s(i,j) = d(0,i) + d(0,j) &minus; d(i,j)</em> for every pair of clinics,
+                representing how much distance is saved by serving i and j on the same route
+                instead of separate trips from the depot. Routes are merged greedily by
+                decreasing savings &mdash; yielding near-optimal CVRP solutions in O(n&sup2; log n) time.
+            </p>
+        </div>
+
+        <div class="algo-card fade-in">
+            <h3><i class="fas fa-compress-arrows-alt"></i> Clarke-Wright Savings</h3>
+            <span class="algo-tag">Constructive Heuristic</span>
+            <p>
+                The classical CVRP heuristic from 1964. Starts with one route per clinic,
+                then iteratively merges the two routes that yield the greatest distance savings,
+                subject to vehicle capacity. Produces compact routes that minimize total distance.
+            </p>
+            <ol class="algo-steps">
+                <li data-step="1.">Initialize: create n individual depot&rarr;clinic&rarr;depot routes</li>
+                <li data-step="2.">Compute savings s(i,j) = d(0,i) + d(0,j) &minus; d(i,j) for all pairs</li>
+                <li data-step="3.">Sort savings in decreasing order</li>
+                <li data-step="4.">For each saving: merge routes if i and j are at route endpoints and merged demand &le; Q</li>
+                <li data-step="5.">Return remaining routes</li>
+            </ol>
+        </div>
+
+        <div class="algo-card fade-in">
+            <h3><i class="fas fa-compass"></i> Sweep Algorithm</h3>
+            <span class="algo-tag">Constructive Heuristic</span>
+            <p>
+                Gillett &amp; Miller (1974). Sorts clinics by their polar angle relative to the depot,
+                then &ldquo;sweeps&rdquo; around adding clinics to the current route until the vehicle
+                capacity is reached. Simple and fast, especially effective when clinics are
+                geographically clustered.
+            </p>
+            <ol class="algo-steps">
+                <li data-step="1.">Compute polar angle &theta;<sub>i</sub> = atan2(y<sub>i</sub>&minus;y<sub>0</sub>, x<sub>i</sub>&minus;x<sub>0</sub>) for each clinic</li>
+                <li data-step="2.">Sort clinics by increasing &theta;</li>
+                <li data-step="3.">Sweep: add clinic to current route while demand &le; Q</li>
+                <li data-step="4.">When capacity exceeded, start a new route and continue sweep</li>
+            </ol>
+        </div>
+
+        <div class="algo-card fade-in">
+            <h3><i class="fas fa-fire-alt"></i> Simulated Annealing</h3>
+            <span class="algo-tag">Metaheuristic</span>
+            <p>
+                A stochastic local-search method that explores the neighbourhood of a current
+                solution by performing random swap and relocate moves. Worse solutions are
+                accepted with probability e<sup>&minus;&Delta;/T</sup>, allowing escape from local optima.
+                Temperature T decreases over iterations, gradually focusing the search.
+            </p>
+            <ol class="algo-steps">
+                <li data-step="1.">Start from Clarke-Wright solution as initial state</li>
+                <li data-step="2.">Generate neighbour by swap (within route) or relocate (between routes)</li>
+                <li data-step="3.">Accept if better; accept worse with probability e<sup>&minus;&Delta;/T</sup></li>
+                <li data-step="4.">Cool: T &larr; T &times; &alpha; (cooling rate 0.9995)</li>
+                <li data-step="5.">Repeat for N iterations; return best solution found</li>
+            </ol>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ REAL-WORLD COMPLEXITY ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Factors that extend the textbook CVRP in pharmaceutical logistics</p>
+        </div>
+
+        <div class="complexity-grid fade-in">
+            <div class="complexity-card">
+                <h4><i class="fas fa-temperature-low"></i> Cold Chain</h4>
+                <p>
+                    Vaccines require 2&ndash;8&deg;C throughout transport. Total route duration
+                    directly impacts cold-chain integrity. WHO reports up to 50% wastage from
+                    temperature excursions during last-mile delivery.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-weight-hanging"></i> Heterogeneous Demand</h4>
+                <p>
+                    Hospitals need 85&ndash;120 kg; health posts need 15&ndash;25 kg. Demand
+                    variance makes bin-packing within vehicle capacity non-trivial and affects
+                    route balance across the fleet.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-road"></i> Road Quality</h4>
+                <p>
+                    Rural roads may be unpaved, seasonal, or flood-prone. Euclidean distance
+                    underestimates actual travel time. Real deployments use road-network
+                    distances and seasonal accessibility matrices.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-boxes-stacked"></i> Multi-Compartment</h4>
+                <p>
+                    Controlled substances, frozen vaccines, and ambient consumables require
+                    separate compartments. This extends CVRP to multi-compartment VRP (MCVRP)
+                    with per-compartment capacity constraints.
+                </p>
+            </div>
+            <div class="complexity-card">
+                <h4><i class="fas fa-clock"></i> Time Sensitivity</h4>
+                <p>
+                    Emergency resupply for antivenoms or blood products requires time-window
+                    constraints (CVRPTW). Priority clinics may need guaranteed delivery within
+                    2&ndash;4 hours of dispatch.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ REFERENCES ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Academic <span>References</span></h2>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Laporte, G.</span> (2009).
+                    <span class="ref-title">"Fifty years of vehicle routing."</span>
+                    <span class="ref-journal">Computers &amp; Operations Research, 36(11), 2927&ndash;2936.</span>
+                    DOI: 10.1016/j.cor.2008.04.007
+                </li>
+                <li>
+                    <span class="ref-author">Shavarani, S.M. et al.</span> (2018).
+                    <span class="ref-title">"Application of hierarchical facility location problem for optimization of a drone delivery system."</span>
+                    <span class="ref-journal">International Journal of Advanced Manufacturing Technology, 95, 3141&ndash;3153.</span>
+                    DOI: 10.1007/s00170-017-1363-1
+                </li>
+                <li>
+                    <span class="ref-author">World Health Organization</span> (2014).
+                    <span class="ref-title">"Temperature sensitivity of vaccines."</span>
+                    <span class="ref-journal">WHO/IVB/06.10.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ CTA ═══════════════════ -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Explore More Applications</h3>
+            <p>
+                This medical supply routing demo is part of a comprehensive library of
+                optimization models across healthcare, agriculture, manufacturing, and logistics.
+            </p>
+            <div class="cta-links">
+                <a href="healthcare.html" class="cta-link">
+                    <i class="fas fa-heartbeat"></i> Healthcare Sector
+                </a>
+                <a href="../families/routing.html" class="cta-link">
+                    <i class="fas fa-book"></i> Routing Theory
+                </a>
+                <a href="../index.html" class="cta-link">
+                    <i class="fas fa-home"></i> All Models
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ═══════════════════ FOOTER ═══════════════════ -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 Mathematical Modeling &amp; Operations Research &mdash; <a href="../index.html">mghnasiri.github.io</a></p>
+    </div>
+</footer>
+
+<a href="healthcare.html" class="back-link"><i class="fas fa-arrow-left"></i>&nbsp; Healthcare</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    /* ════════════════════════════════════════════
+       DATA — Clinics, Scenarios, Colours
+       ════════════════════════════════════════════ */
+
+    var ROUTE_COLORS = [
+        '#64ffda', '#ff6b6b', '#7aa2f7', '#c084fc',
+        '#fb923c', '#facc15', '#34d399', '#f472b6'
+    ];
+
+    var TYPE_COLORS = {
+        hospital: '#ff6b6b',
+        clinic: '#7aa2f7',
+        health_post: '#64ffda',
+        nursing_home: '#c084fc',
+        pharmacy: '#fb923c',
+        vaccine_hub: '#C5A059'
+    };
+
+    var BASE_CLINICS = [
+        { name: 'Regional Medical Depot', x: 50, y: 50, demand: 0, type: 'depot' },
+        { name: 'Valley General Hospital', x: 42, y: 75, demand: 120, type: 'hospital' },
+        { name: 'Riverside Community Clinic', x: 25, y: 60, demand: 45, type: 'clinic' },
+        { name: 'Mountain View Health Post', x: 15, y: 80, demand: 25, type: 'health_post' },
+        { name: 'Lakeside Family Clinic', x: 30, y: 45, demand: 55, type: 'clinic' },
+        { name: 'Eastfield District Hospital', x: 80, y: 55, demand: 95, type: 'hospital' },
+        { name: 'Pinewood Health Center', x: 70, y: 75, demand: 40, type: 'clinic' },
+        { name: 'Cedar Falls Clinic', x: 60, y: 88, demand: 30, type: 'clinic' },
+        { name: 'Southgate Medical Center', x: 55, y: 20, demand: 70, type: 'clinic' },
+        { name: 'Prairie Health Post', x: 85, y: 30, demand: 20, type: 'health_post' },
+        { name: 'Hillcrest Nursing Home', x: 38, y: 30, demand: 60, type: 'nursing_home' },
+        { name: 'Oakwood Pharmacy Depot', x: 65, y: 40, demand: 35, type: 'pharmacy' },
+        { name: 'North Plains Hospital', x: 45, y: 92, demand: 85, type: 'hospital' },
+        { name: 'Greenfield Rural Clinic', x: 10, y: 35, demand: 30, type: 'clinic' },
+        { name: 'Sunrise Aged Care', x: 75, y: 15, demand: 50, type: 'nursing_home' },
+        { name: 'Brookside Vaccination Hub', x: 20, y: 70, demand: 65, type: 'vaccine_hub' },
+        { name: 'Westlake Health Center', x: 8, y: 50, demand: 40, type: 'clinic' },
+        { name: 'Ridgeview Maternity Clinic', x: 90, y: 70, demand: 35, type: 'clinic' },
+        { name: 'Forest Glen Health Post', x: 55, y: 65, demand: 15, type: 'health_post' }
+    ];
+
+    var SCENARIOS = [
+        {
+            name: 'Weekly Supply Run',
+            capacity: 500,
+            clinics: BASE_CLINICS.slice()
+        },
+        {
+            name: 'Vaccine Campaign Surge',
+            capacity: 400,
+            clinics: (function() {
+                var c = JSON.parse(JSON.stringify(BASE_CLINICS));
+                // Double vaccine hub demand
+                c[15].demand = 130;
+                return c;
+            })()
+        },
+        {
+            name: 'Emergency Resupply',
+            capacity: 300,
+            clinics: (function() {
+                // Depot + 10 remote clinics (health posts, rural, nursing homes)
+                var depot = BASE_CLINICS[0];
+                var remote = [3, 9, 13, 16, 18, 10, 14, 4, 2, 15];
+                var c = [JSON.parse(JSON.stringify(depot))];
+                for (var i = 0; i < remote.length; i++) {
+                    c.push(JSON.parse(JSON.stringify(BASE_CLINICS[remote[i]])));
+                }
+                return c;
+            })()
+        }
+    ];
+
+    var currentScenario = 0;
+    var currentResults = {};
+    var selectedAlgos = { cw: true, sweep: true, sa: true };
+
+    /* ════════════════════════════════════════════
+       UTILITIES
+       ════════════════════════════════════════════ */
+
+    function getClinics() {
+        return SCENARIOS[currentScenario].clinics;
+    }
+
+    function getCapacity() {
+        return SCENARIOS[currentScenario].capacity;
+    }
+
+    function dist(clinics, a, b) {
+        var dx = clinics[a].x - clinics[b].x;
+        var dy = clinics[a].y - clinics[b].y;
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function routeDistance(clinics, route) {
+        if (route.length === 0) return 0;
+        var d = dist(clinics, 0, route[0]);
+        for (var i = 1; i < route.length; i++) {
+            d += dist(clinics, route[i - 1], route[i]);
+        }
+        d += dist(clinics, route[route.length - 1], 0);
+        return d;
+    }
+
+    function routeDemand(clinics, route) {
+        var s = 0;
+        for (var i = 0; i < route.length; i++) {
+            s += clinics[route[i]].demand;
+        }
+        return s;
+    }
+
+    function totalDistance(clinics, routes) {
+        var t = 0;
+        for (var i = 0; i < routes.length; i++) {
+            t += routeDistance(clinics, routes[i]);
+        }
+        return t;
+    }
+
+    /* ════════════════════════════════════════════
+       CLARKE-WRIGHT SAVINGS
+       ════════════════════════════════════════════ */
+
+    function clarkeWrightSavings() {
+        var t0 = performance.now();
+        var clinics = getClinics();
+        var cap = getCapacity();
+        var n = clinics.length;
+
+        // Initialize: one route per customer
+        var routes = [];
+        for (var i = 1; i < n; i++) {
+            routes.push([i]);
+        }
+
+        // Compute savings
+        var savings = [];
+        for (var i = 1; i < n; i++) {
+            for (var j = i + 1; j < n; j++) {
+                var s = dist(clinics, i, 0) + dist(clinics, 0, j) - dist(clinics, i, j);
+                savings.push({ i: i, j: j, s: s });
+            }
+        }
+        savings.sort(function(a, b) { return b.s - a.s; });
+
+        function findRoute(cust) {
+            for (var r = 0; r < routes.length; r++) {
+                var idx = routes[r].indexOf(cust);
+                if (idx !== -1) return { route: r, pos: idx };
+            }
+            return null;
+        }
+
+        for (var si = 0; si < savings.length; si++) {
+            var sav = savings[si];
+            var ri = findRoute(sav.i);
+            var rj = findRoute(sav.j);
+            if (!ri || !rj || ri.route === rj.route) continue;
+
+            var routeI = routes[ri.route];
+            var routeJ = routes[rj.route];
+
+            var iAtEnd = ri.pos === routeI.length - 1;
+            var iAtStart = ri.pos === 0;
+            var jAtEnd = rj.pos === routeJ.length - 1;
+            var jAtStart = rj.pos === 0;
+
+            if (!((iAtEnd || iAtStart) && (jAtEnd || jAtStart))) continue;
+
+            var mergedDemand = routeDemand(clinics, routeI) + routeDemand(clinics, routeJ);
+            if (mergedDemand > cap) continue;
+
+            var merged;
+            if (iAtEnd && jAtStart) {
+                merged = routeI.concat(routeJ);
+            } else if (iAtStart && jAtEnd) {
+                merged = routeJ.concat(routeI);
+            } else if (iAtEnd && jAtEnd) {
+                merged = routeI.concat(routeJ.slice().reverse());
+            } else {
+                merged = routeI.slice().reverse().concat(routeJ);
+            }
+
+            var idxRemove = Math.max(ri.route, rj.route);
+            var idxKeep = Math.min(ri.route, rj.route);
+            routes.splice(idxRemove, 1);
+            routes[idxKeep] = merged;
+        }
+
+        var elapsed = performance.now() - t0;
+        return { routes: routes, elapsed: elapsed };
+    }
+
+    /* ════════════════════════════════════════════
+       SWEEP ALGORITHM
+       ════════════════════════════════════════════ */
+
+    function sweepAlgorithm() {
+        var t0 = performance.now();
+        var clinics = getClinics();
+        var cap = getCapacity();
+        var depot = clinics[0];
+
+        // Compute angles from depot
+        var customers = [];
+        for (var i = 1; i < clinics.length; i++) {
+            var angle = Math.atan2(clinics[i].y - depot.y, clinics[i].x - depot.x);
+            customers.push({ id: i, angle: angle });
+        }
+        customers.sort(function(a, b) { return a.angle - b.angle; });
+
+        var routes = [];
+        var currentRoute = [];
+        var currentLoad = 0;
+
+        for (var ci = 0; ci < customers.length; ci++) {
+            var c = customers[ci];
+            if (currentLoad + clinics[c.id].demand > cap && currentRoute.length > 0) {
+                routes.push(currentRoute);
+                currentRoute = [];
+                currentLoad = 0;
+            }
+            currentRoute.push(c.id);
+            currentLoad += clinics[c.id].demand;
+        }
+        if (currentRoute.length > 0) routes.push(currentRoute);
+
+        var elapsed = performance.now() - t0;
+        return { routes: routes, elapsed: elapsed };
+    }
+
+    /* ════════════════════════════════════════════
+       SIMULATED ANNEALING
+       ════════════════════════════════════════════ */
+
+    function simulatedAnnealing() {
+        var t0 = performance.now();
+        var clinics = getClinics();
+        var cap = getCapacity();
+
+        // Start from Clarke-Wright solution
+        var initial = clarkeWrightSavings();
+        var bestRoutes = deepCopyRoutes(initial.routes);
+        var currentRoutes = deepCopyRoutes(bestRoutes);
+        var bestDist = totalDistance(clinics, bestRoutes);
+        var currentDist = bestDist;
+
+        var T = 100;
+        var alpha = 0.9995;
+        var iterations = 8000;
+
+        for (var iter = 0; iter < iterations; iter++) {
+            var candidate = deepCopyRoutes(currentRoutes);
+            var moved = false;
+
+            if (Math.random() < 0.5) {
+                // Swap within a route
+                var nonEmpty = [];
+                for (var ri = 0; ri < candidate.length; ri++) {
+                    if (candidate[ri].length >= 2) nonEmpty.push(ri);
+                }
+                if (nonEmpty.length > 0) {
+                    var r = nonEmpty[Math.floor(Math.random() * nonEmpty.length)];
+                    var a = Math.floor(Math.random() * candidate[r].length);
+                    var b = Math.floor(Math.random() * candidate[r].length);
+                    if (a !== b) {
+                        var tmp = candidate[r][a];
+                        candidate[r][a] = candidate[r][b];
+                        candidate[r][b] = tmp;
+                        moved = true;
+                    }
+                }
+            } else {
+                // Relocate between routes
+                var nonEmptyR = [];
+                for (var ri = 0; ri < candidate.length; ri++) {
+                    if (candidate[ri].length > 0) nonEmptyR.push(ri);
+                }
+                if (nonEmptyR.length >= 2) {
+                    var srcIdx = Math.floor(Math.random() * nonEmptyR.length);
+                    var dstIdx = Math.floor(Math.random() * nonEmptyR.length);
+                    while (dstIdx === srcIdx) {
+                        dstIdx = Math.floor(Math.random() * nonEmptyR.length);
+                    }
+                    var src = nonEmptyR[srcIdx];
+                    var dst = nonEmptyR[dstIdx];
+                    var pos = Math.floor(Math.random() * candidate[src].length);
+                    var cust = candidate[src][pos];
+
+                    // Check capacity
+                    if (routeDemand(clinics, candidate[dst]) + clinics[cust].demand <= cap) {
+                        candidate[src].splice(pos, 1);
+                        var insertPos = Math.floor(Math.random() * (candidate[dst].length + 1));
+                        candidate[dst].splice(insertPos, 0, cust);
+                        moved = true;
+                    }
+                }
+            }
+
+            if (!moved) continue;
+
+            // Remove empty routes
+            candidate = candidate.filter(function(r) { return r.length > 0; });
+
+            var candidateDist = totalDistance(clinics, candidate);
+            var delta = candidateDist - currentDist;
+
+            if (delta < 0 || Math.random() < Math.exp(-delta / T)) {
+                currentRoutes = candidate;
+                currentDist = candidateDist;
+                if (candidateDist < bestDist) {
+                    bestRoutes = deepCopyRoutes(candidate);
+                    bestDist = candidateDist;
+                }
+            }
+
+            T *= alpha;
+        }
+
+        var elapsed = performance.now() - t0;
+        return { routes: bestRoutes, elapsed: elapsed };
+    }
+
+    function deepCopyRoutes(routes) {
+        var copy = [];
+        for (var i = 0; i < routes.length; i++) {
+            copy.push(routes[i].slice());
+        }
+        return copy;
+    }
+
+    /* ════════════════════════════════════════════
+       CANVAS RENDERING
+       ════════════════════════════════════════════ */
+
+    function renderMap(routes) {
+        var canvas = document.getElementById('routeCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width;
+        var H = canvas.height;
+        var clinics = getClinics();
+
+        // Clear
+        ctx.fillStyle = '#0a1628';
+        ctx.fillRect(0, 0, W, H);
+
+        // Grid
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
+        ctx.lineWidth = 0.5;
+        for (var gx = 0; gx <= W; gx += 50) {
+            ctx.beginPath();
+            ctx.moveTo(gx, 0);
+            ctx.lineTo(gx, H);
+            ctx.stroke();
+        }
+        for (var gy = 0; gy <= H; gy += 50) {
+            ctx.beginPath();
+            ctx.moveTo(0, gy);
+            ctx.lineTo(W, gy);
+            ctx.stroke();
+        }
+
+        // Scale coordinates
+        var pad = 50;
+        var xs = clinics.map(function(c) { return c.x; });
+        var ys = clinics.map(function(c) { return c.y; });
+        var minX = Math.min.apply(null, xs);
+        var maxX = Math.max.apply(null, xs);
+        var minY = Math.min.apply(null, ys);
+        var maxY = Math.max.apply(null, ys);
+        var scaleX = (W - 2 * pad) / (maxX - minX || 1);
+        var scaleY = (H - 2 * pad) / (maxY - minY || 1);
+        var scale = Math.min(scaleX, scaleY);
+        var offsetX = (W - (maxX - minX) * scale) / 2;
+        var offsetY = (H - (maxY - minY) * scale) / 2;
+
+        function tx(c) { return offsetX + (c.x - minX) * scale; }
+        function ty(c) { return offsetY + (c.y - minY) * scale; }
+
+        var depot = clinics[0];
+
+        // Draw routes
+        for (var r = 0; r < routes.length; r++) {
+            var route = routes[r];
+            var color = ROUTE_COLORS[r % ROUTE_COLORS.length];
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2.5;
+            ctx.globalAlpha = 0.8;
+            ctx.setLineDash([]);
+
+            ctx.beginPath();
+            ctx.moveTo(tx(depot), ty(depot));
+            for (var ci = 0; ci < route.length; ci++) {
+                ctx.lineTo(tx(clinics[route[ci]]), ty(clinics[route[ci]]));
+            }
+            ctx.lineTo(tx(depot), ty(depot));
+            ctx.stroke();
+            ctx.globalAlpha = 1.0;
+
+            // Direction arrows
+            var points = [depot];
+            for (var ci = 0; ci < route.length; ci++) {
+                points.push(clinics[route[ci]]);
+            }
+            points.push(depot);
+
+            for (var pi = 0; pi < points.length - 1; pi++) {
+                var x1 = tx(points[pi]);
+                var y1 = ty(points[pi]);
+                var x2 = tx(points[pi + 1]);
+                var y2 = ty(points[pi + 1]);
+                var mx = (x1 + x2) / 2;
+                var my = (y1 + y2) / 2;
+                var angle = Math.atan2(y2 - y1, x2 - x1);
+
+                ctx.save();
+                ctx.translate(mx, my);
+                ctx.rotate(angle);
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.6;
+                ctx.beginPath();
+                ctx.moveTo(6, 0);
+                ctx.lineTo(-4, -4);
+                ctx.lineTo(-4, 4);
+                ctx.closePath();
+                ctx.fill();
+                ctx.restore();
+                ctx.globalAlpha = 1.0;
+            }
+        }
+
+        // Draw clinic nodes
+        for (var i = 1; i < clinics.length; i++) {
+            var c = clinics[i];
+            var cx = tx(c);
+            var cy = ty(c);
+
+            // Find route color
+            var nodeColor = TYPE_COLORS[c.type] || '#7aa2f7';
+            for (var r = 0; r < routes.length; r++) {
+                if (routes[r].indexOf(i) !== -1) {
+                    nodeColor = ROUTE_COLORS[r % ROUTE_COLORS.length];
+                    break;
+                }
+            }
+
+            // Glow
+            var gradient = ctx.createRadialGradient(cx, cy, 4, cx, cy, 16);
+            gradient.addColorStop(0, nodeColor + '33');
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Node circle
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, Math.PI * 2);
+            ctx.fillStyle = nodeColor;
+            ctx.fill();
+            ctx.strokeStyle = '#0a1628';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Demand label inside circle
+            ctx.fillStyle = '#0a1628';
+            ctx.font = 'bold 8px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(c.demand, cx, cy);
+
+            // Name label above
+            ctx.fillStyle = 'rgba(168, 178, 209, 0.75)';
+            ctx.font = '8px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            var shortName = c.name.length > 16 ? c.name.substring(0, 14) + '..' : c.name;
+            ctx.fillText(shortName, cx, cy - 15);
+        }
+
+        // Draw depot (diamond)
+        var dx = tx(depot);
+        var dy = ty(depot);
+
+        // Depot glow
+        var depotGrad = ctx.createRadialGradient(dx, dy, 4, dx, dy, 22);
+        depotGrad.addColorStop(0, 'rgba(197, 160, 89, 0.4)');
+        depotGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = depotGrad;
+        ctx.beginPath();
+        ctx.arc(dx, dy, 22, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Diamond shape
+        ctx.fillStyle = '#C5A059';
+        ctx.beginPath();
+        ctx.moveTo(dx, dy - 14);
+        ctx.lineTo(dx + 10, dy);
+        ctx.lineTo(dx, dy + 14);
+        ctx.lineTo(dx - 10, dy);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = '#D4AF37';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Depot label
+        ctx.fillStyle = '#C5A059';
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('DEPOT', dx, dy - 22);
+
+        // Legend
+        ctx.fillStyle = 'rgba(168, 178, 209, 0.5)';
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        var legendY = H - 15;
+        var legendX = 10;
+        for (var r = 0; r < routes.length; r++) {
+            ctx.fillStyle = ROUTE_COLORS[r % ROUTE_COLORS.length];
+            ctx.fillRect(legendX, legendY - 6, 12, 3);
+            ctx.fillStyle = 'rgba(168, 178, 209, 0.6)';
+            ctx.fillText('Route ' + (r + 1), legendX + 16, legendY);
+            legendX += 70;
+        }
+    }
+
+    /* ════════════════════════════════════════════
+       UI RENDERING
+       ════════════════════════════════════════════ */
+
+    function renderClinicTable() {
+        var clinics = getClinics();
+        var tbody = document.getElementById('clinicBody');
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        for (var i = 1; i < clinics.length; i++) {
+            var c = clinics[i];
+            var tr = document.createElement('tr');
+
+            var tdName = document.createElement('td');
+            var dot = document.createElement('span');
+            dot.className = 'stop-dot';
+            dot.style.backgroundColor = TYPE_COLORS[c.type] || '#7aa2f7';
+            tdName.appendChild(dot);
+            tdName.appendChild(document.createTextNode(c.name));
+            tr.appendChild(tdName);
+
+            var tdX = document.createElement('td');
+            tdX.textContent = c.x;
+            tr.appendChild(tdX);
+
+            var tdY = document.createElement('td');
+            tdY.textContent = c.y;
+            tr.appendChild(tdY);
+
+            var tdDemand = document.createElement('td');
+            tdDemand.textContent = c.demand + ' kg';
+            tr.appendChild(tdDemand);
+
+            var tdType = document.createElement('td');
+            var typeSpan = document.createElement('span');
+            typeSpan.className = 'type-' + c.type;
+            typeSpan.textContent = c.type.replace('_', ' ');
+            tdType.appendChild(typeSpan);
+            tr.appendChild(tdType);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    function renderComparison() {
+        var tbody = document.getElementById('comparisonBody');
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        var clinics = getClinics();
+        var keys = Object.keys(currentResults);
+        if (keys.length === 0) return;
+
+        // Find best distance
+        var bestDist = Infinity;
+        for (var ki = 0; ki < keys.length; ki++) {
+            var d = totalDistance(clinics, currentResults[keys[ki]].routes);
+            if (d < bestDist) bestDist = d;
+        }
+
+        var algoNames = {
+            cw: 'Clarke-Wright Savings',
+            sweep: 'Sweep Algorithm',
+            sa: 'Simulated Annealing'
+        };
+
+        // Conversion: 1 coordinate unit = 2 km (for realistic scaling)
+        var KM_SCALE = 2;
+        // Cold-chain: assume 40 km/h average speed
+        var SPEED_KPH = 40;
+
+        var bestRow = null;
+
+        for (var ki = 0; ki < keys.length; ki++) {
+            var key = keys[ki];
+            var res = currentResults[key];
+            var d = totalDistance(clinics, res.routes);
+            var distKm = d * KM_SCALE;
+            var coldChainHr = distKm / SPEED_KPH;
+
+            var tr = document.createElement('tr');
+
+            var tdAlgo = document.createElement('td');
+            tdAlgo.className = 'algo-label';
+            tdAlgo.textContent = algoNames[key] || key;
+            tr.appendChild(tdAlgo);
+
+            var tdDist = document.createElement('td');
+            tdDist.textContent = distKm.toFixed(1);
+            if (Math.abs(d - bestDist) < 0.001) {
+                tdDist.className = 'best-val';
+                bestRow = key;
+            }
+            tr.appendChild(tdDist);
+
+            var tdVehicles = document.createElement('td');
+            tdVehicles.textContent = res.routes.length;
+            tr.appendChild(tdVehicles);
+
+            var tdCold = document.createElement('td');
+            tdCold.textContent = coldChainHr.toFixed(2);
+            if (Math.abs(d - bestDist) < 0.001) tdCold.className = 'best-val';
+            tr.appendChild(tdCold);
+
+            var tdTime = document.createElement('td');
+            tdTime.textContent = res.elapsed.toFixed(1);
+            tr.appendChild(tdTime);
+
+            // Click to show route on canvas
+            (function(k) {
+                tr.addEventListener('click', function() {
+                    renderMap(currentResults[k].routes);
+                    renderRouteDetail(k);
+                });
+            })(key);
+
+            tbody.appendChild(tr);
+        }
+
+        // Show best route details and on canvas
+        if (bestRow) {
+            renderMap(currentResults[bestRow].routes);
+            renderRouteDetail(bestRow);
+            updateBusinessPanel(bestRow);
+        }
+    }
+
+    function renderRouteDetail(algoKey) {
+        var clinics = getClinics();
+        var res = currentResults[algoKey];
+        var output = document.getElementById('routeOutput');
+        while (output.firstChild) output.removeChild(output.firstChild);
+
+        var algoNames = {
+            cw: 'Clarke-Wright Savings',
+            sweep: 'Sweep Algorithm',
+            sa: 'Simulated Annealing'
+        };
+
+        var title = document.createElement('div');
+        title.style.color = '#C5A059';
+        title.style.marginBottom = '0.5rem';
+        title.style.fontWeight = '500';
+        title.textContent = (algoNames[algoKey] || algoKey) + ' — Route Details';
+        output.appendChild(title);
+
+        for (var r = 0; r < res.routes.length; r++) {
+            var route = res.routes[r];
+            var names = ['Depot'];
+            var load = 0;
+            for (var ci = 0; ci < route.length; ci++) {
+                names.push(clinics[route[ci]].name);
+                load += clinics[route[ci]].demand;
+            }
+            names.push('Depot');
+
+            var line = document.createElement('div');
+            var routeText = 'Route ' + (r + 1) + ': ' + names.join(' -> ');
+            routeText += '  [' + load + ' kg / ' + getCapacity() + ' kg]';
+            line.textContent = routeText;
+            line.style.color = ROUTE_COLORS[r % ROUTE_COLORS.length];
+            output.appendChild(line);
+        }
+    }
+
+    function updateBusinessPanel(algoKey) {
+        var clinics = getClinics();
+        var res = currentResults[algoKey];
+        var KM_SCALE = 2;
+        var SPEED_KPH = 40;
+        var COST_PER_KM = 1.80; // EUR per km for refrigerated van
+
+        var d = totalDistance(clinics, res.routes);
+        var distKm = d * KM_SCALE;
+        var coldChainHr = distKm / SPEED_KPH;
+        var weeklyCost = distKm * COST_PER_KM;
+        var deliveries = clinics.length - 1;
+        var avgColdChain = coldChainHr / res.routes.length;
+
+        // Capacity utilization
+        var totalDem = 0;
+        for (var i = 1; i < clinics.length; i++) totalDem += clinics[i].demand;
+        var totalCap = res.routes.length * getCapacity();
+        var utilization = (totalDem / totalCap * 100);
+
+        document.getElementById('bizCost').textContent = '\u20AC' + weeklyCost.toFixed(0);
+        document.getElementById('bizDeliveries').textContent = deliveries;
+        document.getElementById('bizColdChain').textContent = avgColdChain.toFixed(1) + 'h';
+        document.getElementById('bizUtilization').textContent = utilization.toFixed(0) + '%';
+    }
+
+    /* ════════════════════════════════════════════
+       SOLVE
+       ════════════════════════════════════════════ */
+
+    function solve() {
+        currentResults = {};
+
+        if (selectedAlgos.cw) {
+            currentResults.cw = clarkeWrightSavings();
+        }
+        if (selectedAlgos.sweep) {
+            currentResults.sweep = sweepAlgorithm();
+        }
+        if (selectedAlgos.sa) {
+            currentResults.sa = simulatedAnnealing();
+        }
+
+        renderComparison();
+    }
+
+    /* ════════════════════════════════════════════
+       EVENT HANDLERS
+       ════════════════════════════════════════════ */
+
+    // Scenario selection
+    var scenarioChips = document.querySelectorAll('.scenario-chip');
+    for (var i = 0; i < scenarioChips.length; i++) {
+        (function(chip) {
+            chip.addEventListener('click', function() {
+                for (var j = 0; j < scenarioChips.length; j++) {
+                    scenarioChips[j].classList.remove('active');
+                }
+                chip.classList.add('active');
+                currentScenario = parseInt(chip.getAttribute('data-scenario'), 10);
+                renderClinicTable();
+                // Clear results
+                currentResults = {};
+                var tbody = document.getElementById('comparisonBody');
+                while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+                var output = document.getElementById('routeOutput');
+                while (output.firstChild) output.removeChild(output.firstChild);
+                document.getElementById('bizCost').textContent = '--';
+                document.getElementById('bizDeliveries').textContent = '--';
+                document.getElementById('bizColdChain').textContent = '--';
+                document.getElementById('bizUtilization').textContent = '--';
+                // Show empty map
+                renderMap([]);
+            });
+        })(scenarioChips[i]);
+    }
+
+    // Algorithm selection
+    var algoChips = document.querySelectorAll('.algo-chip');
+    for (var i = 0; i < algoChips.length; i++) {
+        (function(chip) {
+            chip.addEventListener('click', function() {
+                chip.classList.toggle('selected');
+                var algo = chip.getAttribute('data-algo');
+                selectedAlgos[algo] = chip.classList.contains('selected');
+            });
+        })(algoChips[i]);
+    }
+
+    // Solve button
+    document.getElementById('solveBtn').addEventListener('click', function() {
+        var anySelected = false;
+        var keys = Object.keys(selectedAlgos);
+        for (var i = 0; i < keys.length; i++) {
+            if (selectedAlgos[keys[i]]) { anySelected = true; break; }
+        }
+        if (!anySelected) return;
+        solve();
+    });
+
+    // Theme toggle
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        var html = document.documentElement;
+        var current = html.getAttribute('data-theme');
+        html.setAttribute('data-theme', current === 'light' ? 'dark' : 'light');
+    });
+
+    // Scroll animations
+    var fadeEls = document.querySelectorAll('.fade-in');
+    var observer = new IntersectionObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) {
+                entries[i].target.classList.add('visible');
+            }
+        }
+    }, { threshold: 0.1 });
+    for (var i = 0; i < fadeEls.length; i++) {
+        observer.observe(fadeEls[i]);
+    }
+
+    /* ════════════════════════════════════════════
+       INIT
+       ════════════════════════════════════════════ */
+
+    renderClinicTable();
+    renderMap([]);
+
+})();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,2569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Workforce Assignment | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Nurse-Patient Assignment demo using the Hungarian Algorithm and Greedy Assignment for optimal workforce planning in healthcare.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/workforce-assignment.html">
+    <meta property="og:title" content="Workforce Assignment | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Nurse-Patient Assignment demo using the Hungarian Algorithm and Greedy Assignment for optimal workforce planning in healthcare.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Workforce Assignment | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Nurse-Patient Assignment demo using the Hungarian Algorithm and Greedy Assignment for optimal workforce planning in healthcare.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* ── Decision Chain ── */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .chain-step {
+            padding: 0.4rem 1rem;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 2px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+            transition: all 0.3s;
+        }
+        .chain-step.active-step {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .chain-arrow {
+            color: var(--slate);
+            font-size: 0.6rem;
+            opacity: 0.4;
+        }
+
+        /* ── Mapping Table ── */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 1.5rem 0;
+        }
+        .mapping-table th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.85rem;
+        }
+        .mapping-table td:first-child { color: var(--ivory); font-weight: 500; }
+
+        /* ── Cost Matrix Table ── */
+        .cost-matrix {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            margin: 1rem 0;
+        }
+        .cost-matrix th {
+            font-size: 0.65rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            padding: 0.4rem 0.5rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .cost-matrix td {
+            padding: 0.3rem 0.4rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+        }
+        .cost-matrix td:first-child {
+            text-align: left;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            font-size: 0.72rem;
+            white-space: nowrap;
+        }
+        .cost-matrix input {
+            width: 42px;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 2px;
+            color: var(--ivory);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            text-align: center;
+            padding: 2px 3px;
+        }
+        .cost-matrix input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .cost-cell-highlight {
+            background: rgba(100, 255, 218, 0.12) !important;
+            color: var(--green) !important;
+            font-weight: 600;
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── Algorithm Cards ── */
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            color: var(--ivory);
+        }
+        .algo-card .algo-complexity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--green);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+        }
+        .algo-card .algo-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            border-radius: 2px;
+            font-size: 0.68rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+        }
+
+        /* ── Insight Box ── */
+        .insight-box {
+            background: rgba(100, 255, 218, 0.05);
+            border: 1px solid rgba(100, 255, 218, 0.15);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin-bottom: 2rem;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .insight-box .insight-title {
+            color: var(--green);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Command Palette ── */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* ── Scroll Progress Bar + Scroll-to-Top ── */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* ── Solve Animation ── */
+        @keyframes solvePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(197, 160, 89, 0); }
+        }
+        .solver-btn.solving {
+            animation: solvePulse 1s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+
+        /* ── Business Panel ── */
+        .business-panel {
+            margin-top: 1rem;
+            padding: 1rem 1.2rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .business-panel-title {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .business-panel-title i { font-size: 0.7rem; }
+        .business-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .business-row .biz-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        /* ── Workload Bars ── */
+        .workload-panel {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .wl-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+        }
+        .wl-bar-row:last-child { margin-bottom: 0; }
+        .wl-bar-label {
+            font-size: 0.68rem;
+            color: var(--slate);
+            min-width: 70px;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wl-bar-track {
+            flex: 1;
+            height: 14px;
+            background: rgba(197, 160, 89, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .wl-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+        .wl-bar-fill.high { background: linear-gradient(90deg, #64ffda, #50fa7b); }
+        .wl-bar-fill.mid { background: linear-gradient(90deg, #e0af68, #C5A059); }
+        .wl-bar-fill.low { background: linear-gradient(90deg, #ff6b6b, #f7768e); }
+        .wl-bar-val {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            min-width: 30px;
+            text-align: right;
+        }
+
+        /* ── Scenario Chips ── */
+        .scenario-chips {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .decision-chain { gap: 0.2rem; }
+            .chain-step { padding: 0.3rem 0.5rem; font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top -->
+<button class="scroll-top-btn" id="scrollTopBtn" type="button">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- ── Navigation ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/assignment.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&#8984;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Command Palette ── -->
+<div class="cmd-palette-overlay" id="cmdOverlay">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="cmd-input" id="cmdInput" placeholder="Search pages, algorithms, concepts...">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><span class="cmd-kbd">&uarr;&darr;</span> Navigate</span>
+                <span><span class="cmd-kbd">&crarr;</span> Open</span>
+            </div>
+            <span>Workforce Assignment</span>
+        </div>
+    </div>
+</div>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Workforce Assignment</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-user-nurse"></i></div>
+        <h1>Workforce <span>Assignment</span></h1>
+        <p class="hero-subtitle">Linear Assignment Problem</p>
+        <div class="gold-line"></div>
+
+        <!-- Decision Chain -->
+        <div class="decision-chain">
+            <span class="chain-step">Strategic Planning</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step active-step">Staff Planning</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step">Patient Flow</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step">Supply Chain</span>
+        </div>
+
+        <p class="hero-desc">
+            A 30-bed medical-surgical ward must assign <strong>8 nurses</strong> to <strong>8 patients</strong>
+            each shift, matching competency to acuity while minimizing pod-distance travel.
+            This is the <strong>Linear Assignment Problem (LAP)</strong> &mdash; solvable optimally in
+            O(n&sup3;) time via the Hungarian algorithm. Research shows optimal assignment
+            reduces adverse events by 10&ndash;20% and nurse burnout by 15&ndash;25%.
+        </p>
+    </div>
+</section>
+
+<!-- ── 2. The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Phase 2 &middot; Staff Planning &mdash; Workforce Assignment</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                On a medical-surgical ward, each shift begins with a critical decision: which nurse
+                cares for which patient? The charge nurse must balance <strong>patient acuity</strong>
+                (severity levels 1&ndash;5), <strong>nurse competency</strong>, <strong>certification match</strong>,
+                and <strong>physical proximity</strong> across pods. The American Nurses Association recommends
+                a maximum of 4&ndash;6 patients per nurse on med-surg units; here we model the 1:1 assignment
+                for the highest-acuity subset.
+            </p>
+            <p>
+                The cost of assigning nurse <em>i</em> to patient <em>j</em> captures the
+                <strong>acuity-competency mismatch</strong> (squared, penalizing large gaps) plus a
+                <strong>pod-distance penalty</strong> minus a <strong>certification discount</strong>
+                when a nurse holds relevant credentials (CCRN, PCCN).
+            </p>
+
+            <!-- Mapping Table -->
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>OR Concept</th>
+                        <th>Healthcare Mapping</th>
+                    </tr>
+                </thead>
+                <tbody id="mappingBody"></tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">Assignment Problem Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>i</sub> &Sigma;<sub>j</sub> c<sub>ij</sub> &middot; x<sub>ij</sub></span> &nbsp; <span class="comment">// total assignment cost</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>j</sub> x<sub>ij</sub> = 1</span> &nbsp;&nbsp; <span class="comment">// each nurse assigned to exactly one patient</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ij</sub> = 1</span> &nbsp;&nbsp; <span class="comment">// each patient assigned to exactly one nurse</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary assignment decision</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">c<sub>ij</sub></span>
+                is the cost of assigning nurse <em>i</em> to patient <em>j</em>, computed as:<br>
+                <span style="font-family:'JetBrains Mono',monospace; font-size:0.82rem; color:var(--green);">
+                    c<sub>ij</sub> = (acuity<sub>j</sub> &minus; competency<sub>i</sub>)&sup2; &times; 20 + distance(pod<sub>i</sub>, pod<sub>j</sub>) &times; 15 &minus; certDiscount
+                </span>
+            </p>
+            <p>
+                Pod distances: <strong>same pod = 0</strong>, <strong>adjacent = 1</strong>,
+                <strong>far = 2</strong>. Certification discount: <strong>10 points</strong> when
+                the nurse holds CCRN or PCCN relevant to the patient condition.
+            </p>
+
+            <a href="../families/assignment.html" class="theory-link">
+                <i class="fas fa-arrow-right"></i> See full Assignment Problem theory
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Assign nurses to patients and compare algorithms</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-user-nurse"></i> Nurse-Patient Assignment Optimizer</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Nurses &middot; 8 Patients</span>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario Chips -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-chips" id="scenarioChips"></div>
+
+                <!-- Cost Matrix -->
+                <div class="solver-section-label">Cost Matrix (editable)</div>
+                <div style="overflow-x:auto;margin-bottom:1rem;">
+                    <table class="cost-matrix" id="costMatrix"></table>
+                </div>
+
+                <!-- Business Parameters -->
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <label style="font-size:0.72rem;color:var(--slate);white-space:nowrap;">Cost per mismatch unit (&euro;)</label>
+                        <input type="number" id="costPerUnit" value="150" min="10" max="5000" step="10"
+                               style="width:65px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:2px;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-align:center;padding:3px 4px;">
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <label style="font-size:0.72rem;color:var(--slate);white-space:nowrap;">Shifts per day</label>
+                        <input type="number" id="shiftsPerDay" value="3" min="1" max="4" step="1"
+                               style="width:45px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:2px;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-align:center;padding:3px 4px;">
+                    </div>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip active" id="solveBtn" type="button" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                </button>
+
+                <!-- Canvas Visualization -->
+                <div class="solver-section-label">Assignment Visualization</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="assignCanvas" width="900" height="480"></canvas>
+                </div>
+                <p class="solver-status" id="solverStatus">Ready. Select a scenario and click Solve.</p>
+
+                <!-- Results -->
+                <div class="solver-row" style="margin-top:1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Algorithm Comparison</div>
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Total Cost</th>
+                                    <th>Max Single</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody"></tbody>
+                        </table>
+
+                        <!-- Business Panel -->
+                        <div class="business-panel" id="businessPanel" style="display:none;">
+                            <div class="business-panel-title"><i class="fas fa-chart-line"></i> Business Impact</div>
+                            <div id="businessContent"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Assignment Details</div>
+                        <div id="assignDetails" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--slate-light);padding:0.8rem 1rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.08);border-radius:4px;line-height:1.8;max-height:220px;overflow-y:auto;">
+                            Assignment details will appear here after solving.
+                        </div>
+
+                        <!-- Workload Balance -->
+                        <div class="workload-panel" id="workloadPanel" style="display:none;">
+                            <div class="solver-section-label" style="margin-bottom:0.5rem;">Acuity Load per Nurse</div>
+                            <div id="workloadBars"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>From greedy heuristics to provably optimal solutions</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="insight-box">
+                <div class="insight-title"><i class="fas fa-lightbulb" style="margin-right:0.4rem;"></i> Key Insight</div>
+                Unlike many combinatorial optimization problems, the Linear Assignment Problem is
+                <strong>solvable in polynomial time</strong>. The Hungarian algorithm finds the
+                globally optimal assignment in O(n&sup3;), while a greedy approach runs in O(n&sup2;)
+                but offers no optimality guarantee. The difference can mean assigning a novice nurse
+                to a post-cardiac-surgery patient &mdash; a potentially life-threatening mismatch.
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Exact &middot; Optimal</div>
+                <h3>Hungarian Algorithm (Kuhn&ndash;Munkres)</h3>
+                <span class="algo-complexity">O(n&sup3;) &nbsp;|&nbsp; Guarantee: globally optimal</span>
+                <p>
+                    The Hungarian algorithm works by iteratively reducing the cost matrix through
+                    row and column subtractions, then finding a maximum matching of zero-cost entries.
+                    When a complete matching cannot be found, it adjusts the matrix using the minimum
+                    uncovered value. The result is a <strong>provably optimal</strong> one-to-one
+                    assignment that minimizes total cost across all nurse-patient pairs simultaneously.
+                </p>
+                <p>
+                    Named after the Hungarian mathematicians K&ouml;nig and Egerv&aacute;ry, and
+                    formalized by Harold Kuhn in 1955 and James Munkres in 1957. For an n&times;n
+                    cost matrix, the algorithm performs at most n iterations of O(n&sup2;) work.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>Greedy Assignment</h3>
+                <span class="algo-complexity">O(n&sup2;) &nbsp;|&nbsp; No optimality guarantee</span>
+                <p>
+                    Sort all n&sup2; nurse-patient pairs by cost (ascending). Iterate through the
+                    sorted list: assign the pair if neither the nurse nor the patient has been
+                    assigned yet. This is fast and intuitive &mdash; it always picks the locally
+                    cheapest available pair &mdash; but it ignores the <strong>global structure</strong>
+                    of the cost matrix. A cheap early assignment can block a much better overall solution.
+                </p>
+                <p>
+                    In practice, greedy often performs within 5&ndash;15% of optimal for well-structured
+                    cost matrices, but can be arbitrarily bad in adversarial cases. For safety-critical
+                    domains like healthcare staffing, the optimality gap matters.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Exact &middot; Parallel</div>
+                <h3>Auction Algorithm</h3>
+                <span class="algo-complexity">O(n&sup2; log n) typical &nbsp;|&nbsp; Guarantee: &epsilon;-optimal</span>
+                <p>
+                    Bertsekas' Auction Algorithm (1979) models the assignment as an auction: patients
+                    are &ldquo;objects&rdquo; and nurses are &ldquo;bidders.&rdquo; Each nurse bids on
+                    their most profitable patient, raising the patient&rsquo;s price. The process
+                    repeats until all nurses are assigned. It is naturally parallelizable and converges
+                    to within &epsilon; of the optimal cost, where &epsilon; is a tunable parameter.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. Real-World Complexity ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why nurse-patient assignment goes beyond a simple cost matrix</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-hospital"></i> Beyond the Assignment Matrix</h3>
+                <ul class="complexity-list">
+                    <li><strong>Continuity of care</strong> &mdash; Patients benefit from seeing the same nurse across consecutive shifts; reassignment disrupts therapeutic rapport and increases handoff errors</li>
+                    <li><strong>Skill mix requirements</strong> &mdash; Some patients need nurses with specific certifications (CCRN for cardiac, PCCN for progressive care); a competency gap can delay critical interventions</li>
+                    <li><strong>Workload balancing</strong> &mdash; Total acuity points per nurse should be equitable; overloading one nurse while underloading another leads to burnout and errors</li>
+                    <li><strong>Geographic clustering</strong> &mdash; Nurses assigned to patients in distant pods spend more time walking and less time at the bedside, reducing response times</li>
+                    <li><strong>Dynamic reassignment</strong> &mdash; Patient acuity can change mid-shift (deterioration, new admissions, discharges); the assignment must be re-optimized in real time</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational works in nurse-patient assignment optimization</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Mullinax, C. &amp; Lawley, M.</span> (2002).
+                    <span class="ref-title">&ldquo;Assigning patients to nurses in neonatal intensive care.&rdquo;</span>
+                    <span class="ref-journal">Journal of the Operational Research Society, 53(1), 25&ndash;35. DOI: 10.1057/palgrave.jors.2601248</span>
+                </li>
+                <li>
+                    <span class="ref-author">Sundaramoorthi, D. et al.</span> (2010).
+                    <span class="ref-title">&ldquo;A data-integrated simulation-based optimization for assigning nurses.&rdquo;</span>
+                    <span class="ref-journal">Health Care Management Science, 13(3), 210&ndash;221. DOI: 10.1007/s10729-009-9125-2</span>
+                </li>
+                <li>
+                    <span class="ref-author">Clark, A. et al.</span> (2015).
+                    <span class="ref-title">&ldquo;Rescheduling nursing shifts.&rdquo;</span>
+                    <span class="ref-journal">Journal of Nursing Management, 23(4), 411&ndash;420. DOI: 10.1111/jonm.12158</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. CTA ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize your healthcare staffing?</h3>
+            <p>
+                From nurse-patient assignment to operating room scheduling and resource allocation,
+                mathematical modeling can transform clinical operations.
+                Let&rsquo;s discuss how Operations Research can work for your organization.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Disclaimer ── -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. Nurse names, patient conditions, acuity scores, and cost parameters
+            are representative scenarios for educational purposes and do not reflect any specific
+            healthcare facility or real patient data.
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ===================================================================
+// Workforce Assignment — Nurse-Patient Interactive Demo
+// ===================================================================
+
+(function() {
+    "use strict";
+
+    // ── Canvas Setup ──
+    var canvas = document.getElementById("assignCanvas");
+    var ctx = canvas.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var CW = 900, CH = 480;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + "px";
+    canvas.style.height = CH + "px";
+    ctx.scale(dpr, dpr);
+
+    // ── Colors ──
+    var NURSE_COLORS = [
+        "#C5A059", "#7aa2f7", "#64ffda", "#ff6b6b",
+        "#bb9af7", "#e0af68", "#9ece6a", "#f7768e",
+        "#73daca", "#b4f9f8"
+    ];
+
+    // ── Pod distance map ──
+    var PODS = ["A", "B", "C", "D"];
+    function podDistance(p1, p2) {
+        var i1 = PODS.indexOf(p1);
+        var i2 = PODS.indexOf(p2);
+        var d = Math.abs(i1 - i2);
+        if (d === 0) return 0;
+        if (d === 1) return 1;
+        return 2;
+    }
+
+    // ── Scenario Data ──
+    var SCENARIOS = {
+        medsurg: {
+            name: "Medical-Surgical Day Shift",
+            difficulty: "medium",
+            nurses: [
+                { name: "Chen",     pod: "A", comp: 5, years: 12, certs: ["CCRN","PCCN"] },
+                { name: "Martinez", pod: "A", comp: 4, years: 8,  certs: ["PCCN"] },
+                { name: "Kim",      pod: "B", comp: 3, years: 4,  certs: [] },
+                { name: "Patel",    pod: "B", comp: 4, years: 6,  certs: ["CCRN"] },
+                { name: "Johnson",  pod: "C", comp: 3, years: 3,  certs: [] },
+                { name: "Lee",      pod: "C", comp: 5, years: 15, certs: ["CCRN","PCCN"] },
+                { name: "Garcia",   pod: "D", comp: 2, years: 1,  certs: [] },
+                { name: "Wilson",   pod: "D", comp: 4, years: 7,  certs: ["PCCN"] }
+            ],
+            patients: [
+                { name: "Pt A", room: "301", pod: "A", acuity: 5, condition: "Post-CABG day 1" },
+                { name: "Pt B", room: "302", pod: "A", acuity: 3, condition: "Pneumonia" },
+                { name: "Pt C", room: "305", pod: "B", acuity: 4, condition: "Sepsis" },
+                { name: "Pt D", room: "306", pod: "B", acuity: 2, condition: "Post-lap chole day 2" },
+                { name: "Pt E", room: "309", pod: "C", acuity: 4, condition: "DKA management" },
+                { name: "Pt F", room: "310", pod: "C", acuity: 1, condition: "Obs chest pain" },
+                { name: "Pt G", room: "313", pod: "D", acuity: 3, condition: "GI bleed workup" },
+                { name: "Pt H", room: "314", pod: "D", acuity: 5, condition: "Post-code stepdown" }
+            ]
+        },
+        icu: {
+            name: "ICU Night Shift",
+            difficulty: "hard",
+            nurses: [
+                { name: "Rivera",   pod: "A", comp: 5, years: 14, certs: ["CCRN"] },
+                { name: "Thompson", pod: "A", comp: 4, years: 7,  certs: ["CCRN"] },
+                { name: "Nguyen",   pod: "B", comp: 5, years: 11, certs: ["CCRN","PCCN"] },
+                { name: "Adams",    pod: "B", comp: 3, years: 3,  certs: [] },
+                { name: "Brown",    pod: "A", comp: 4, years: 6,  certs: ["PCCN"] },
+                { name: "Davis",    pod: "B", comp: 5, years: 16, certs: ["CCRN","PCCN"] }
+            ],
+            patients: [
+                { name: "Pt 1", room: "ICU-1", pod: "A", acuity: 5, condition: "Ventilated septic shock" },
+                { name: "Pt 2", room: "ICU-2", pod: "A", acuity: 5, condition: "Post-cardiac arrest" },
+                { name: "Pt 3", room: "ICU-3", pod: "A", acuity: 4, condition: "ARDS on BiPAP" },
+                { name: "Pt 4", room: "ICU-4", pod: "B", acuity: 5, condition: "Multi-organ failure" },
+                { name: "Pt 5", room: "ICU-5", pod: "B", acuity: 4, condition: "Post-craniotomy" },
+                { name: "Pt 6", room: "ICU-6", pod: "B", acuity: 4, condition: "DKA + intubated" }
+            ]
+        },
+        overflow: {
+            name: "Overflow Ward",
+            difficulty: "hard",
+            nurses: [
+                { name: "Chen",     pod: "A", comp: 5, years: 12, certs: ["CCRN","PCCN"] },
+                { name: "Martinez", pod: "A", comp: 4, years: 8,  certs: ["PCCN"] },
+                { name: "Kim",      pod: "B", comp: 3, years: 4,  certs: [] },
+                { name: "Patel",    pod: "B", comp: 4, years: 6,  certs: ["CCRN"] },
+                { name: "Johnson",  pod: "C", comp: 3, years: 3,  certs: [] },
+                { name: "Lee",      pod: "C", comp: 5, years: 15, certs: ["CCRN","PCCN"] },
+                { name: "Garcia",   pod: "D", comp: 2, years: 1,  certs: [] },
+                { name: "Wilson",   pod: "D", comp: 4, years: 7,  certs: ["PCCN"] },
+                { name: "FloatA",   pod: "A", comp: 3, years: 2,  certs: [] },
+                { name: "FloatB",   pod: "D", comp: 3, years: 5,  certs: ["PCCN"] }
+            ],
+            patients: [
+                { name: "Pt A", room: "401", pod: "A", acuity: 5, condition: "Post-CABG day 1" },
+                { name: "Pt B", room: "402", pod: "A", acuity: 2, condition: "Cellulitis" },
+                { name: "Pt C", room: "405", pod: "B", acuity: 4, condition: "Sepsis" },
+                { name: "Pt D", room: "406", pod: "B", acuity: 1, condition: "Obs chest pain" },
+                { name: "Pt E", room: "409", pod: "C", acuity: 3, condition: "COPD exacerbation" },
+                { name: "Pt F", room: "410", pod: "C", acuity: 5, condition: "Post-code stepdown" },
+                { name: "Pt G", room: "413", pod: "D", acuity: 4, condition: "GI bleed active" },
+                { name: "Pt H", room: "414", pod: "D", acuity: 2, condition: "Post-lap chole day 2" },
+                { name: "Pt I", room: "415", pod: "C", acuity: 3, condition: "Pneumonia" },
+                { name: "Pt J", room: "416", pod: "D", acuity: 4, condition: "DKA management" }
+            ]
+        }
+    };
+
+    var currentScenario = "medsurg";
+    var currentCostMatrix = [];
+    var currentResults = null;
+
+    // ── Build cost matrix ──
+    function buildCostMatrix(nurses, patients) {
+        var n = nurses.length;
+        var m = patients.length;
+        var size = Math.max(n, m);
+        var matrix = [];
+        for (var i = 0; i < size; i++) {
+            var row = [];
+            for (var j = 0; j < size; j++) {
+                if (i >= n || j >= m) {
+                    row.push(0);
+                } else {
+                    var nurse = nurses[i];
+                    var patient = patients[j];
+                    var mismatch = patient.acuity - nurse.comp;
+                    var cost = mismatch * mismatch * 20;
+                    cost += podDistance(nurse.pod, patient.pod) * 15;
+                    if (nurse.certs.length > 0 && patient.acuity >= 4) {
+                        cost -= 10;
+                    }
+                    if (cost < 0) cost = 0;
+                    row.push(cost);
+                }
+            }
+            matrix.push(row);
+        }
+        return matrix;
+    }
+
+    // ── Read cost matrix from DOM ──
+    function readCostMatrix() {
+        var sc = SCENARIOS[currentScenario];
+        var n = sc.nurses.length;
+        var m = sc.patients.length;
+        var size = Math.max(n, m);
+        var matrix = [];
+        for (var i = 0; i < size; i++) {
+            var row = [];
+            for (var j = 0; j < size; j++) {
+                var inp = document.getElementById("cost_" + i + "_" + j);
+                if (inp) {
+                    row.push(Math.max(0, parseInt(inp.value) || 0));
+                } else {
+                    row.push(0);
+                }
+            }
+            matrix.push(row);
+        }
+        return matrix;
+    }
+
+    // ── Render cost matrix table ──
+    function renderCostMatrix() {
+        var sc = SCENARIOS[currentScenario];
+        var nurses = sc.nurses;
+        var patients = sc.patients;
+        var matrix = buildCostMatrix(nurses, patients);
+        currentCostMatrix = matrix;
+        var size = matrix.length;
+
+        var table = document.getElementById("costMatrix");
+        while (table.firstChild) table.removeChild(table.firstChild);
+
+        // Header row
+        var thead = document.createElement("thead");
+        var headerRow = document.createElement("tr");
+        var corner = document.createElement("th");
+        corner.textContent = "Nurse \\ Patient";
+        headerRow.appendChild(corner);
+        for (var j = 0; j < size; j++) {
+            var th = document.createElement("th");
+            if (j < patients.length) {
+                th.textContent = patients[j].name + " (A" + patients[j].acuity + ")";
+            } else {
+                th.textContent = "Dummy " + (j + 1);
+            }
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Body rows
+        var tbody = document.createElement("tbody");
+        for (var i = 0; i < size; i++) {
+            var tr = document.createElement("tr");
+            var labelTd = document.createElement("td");
+            if (i < nurses.length) {
+                labelTd.textContent = nurses[i].name + " (C" + nurses[i].comp + ", " + nurses[i].pod + ")";
+            } else {
+                labelTd.textContent = "Dummy " + (i + 1);
+            }
+            tr.appendChild(labelTd);
+            for (var j2 = 0; j2 < size; j2++) {
+                var td = document.createElement("td");
+                var inp = document.createElement("input");
+                inp.type = "number";
+                inp.id = "cost_" + i + "_" + j2;
+                inp.value = matrix[i][j2];
+                inp.min = "0";
+                inp.max = "999";
+                td.appendChild(inp);
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+
+        document.getElementById("configSummary").textContent =
+            nurses.length + " Nurses \u00b7 " + patients.length + " Patients";
+    }
+
+    // ── Hungarian Algorithm ──
+    function hungarian(costMatrix) {
+        var n = costMatrix.length;
+        // Deep copy
+        var C = [];
+        for (var i = 0; i < n; i++) {
+            C.push(costMatrix[i].slice());
+        }
+
+        var u = new Array(n + 1).fill(0);
+        var v = new Array(n + 1).fill(0);
+        var p = new Array(n + 1).fill(0);
+        var way = new Array(n + 1).fill(0);
+
+        for (var i1 = 1; i1 <= n; i1++) {
+            p[0] = i1;
+            var j0 = 0;
+            var minv = new Array(n + 1).fill(Infinity);
+            var used = new Array(n + 1).fill(false);
+
+            do {
+                used[j0] = true;
+                var i0 = p[j0];
+                var delta = Infinity;
+                var j1 = -1;
+
+                for (var j = 1; j <= n; j++) {
+                    if (!used[j]) {
+                        var cur = C[i0 - 1][j - 1] - u[i0] - v[j];
+                        if (cur < minv[j]) {
+                            minv[j] = cur;
+                            way[j] = j0;
+                        }
+                        if (minv[j] < delta) {
+                            delta = minv[j];
+                            j1 = j;
+                        }
+                    }
+                }
+
+                for (var j = 0; j <= n; j++) {
+                    if (used[j]) {
+                        u[p[j]] += delta;
+                        v[j] -= delta;
+                    } else {
+                        minv[j] -= delta;
+                    }
+                }
+
+                j0 = j1;
+            } while (p[j0] !== 0);
+
+            do {
+                var j1b = way[j0];
+                p[j0] = p[j1b];
+                j0 = j1b;
+            } while (j0);
+        }
+
+        // Extract assignment
+        var assignment = new Array(n).fill(-1);
+        for (var j = 1; j <= n; j++) {
+            if (p[j] !== 0) {
+                assignment[p[j] - 1] = j - 1;
+            }
+        }
+
+        var totalCost = 0;
+        for (var i2 = 0; i2 < n; i2++) {
+            totalCost += costMatrix[i2][assignment[i2]];
+        }
+
+        return { assignment: assignment, totalCost: totalCost };
+    }
+
+    // ── Greedy Assignment ──
+    function greedyAssignment(costMatrix) {
+        var n = costMatrix.length;
+        var pairs = [];
+        for (var i = 0; i < n; i++) {
+            for (var j = 0; j < n; j++) {
+                pairs.push({ i: i, j: j, cost: costMatrix[i][j] });
+            }
+        }
+        pairs.sort(function(a, b) { return a.cost - b.cost; });
+
+        var assignedNurses = {};
+        var assignedPatients = {};
+        var assignment = new Array(n).fill(-1);
+        var count = 0;
+
+        for (var k = 0; k < pairs.length && count < n; k++) {
+            var pi = pairs[k].i;
+            var pj = pairs[k].j;
+            if (!assignedNurses[pi] && !assignedPatients[pj]) {
+                assignment[pi] = pj;
+                assignedNurses[pi] = true;
+                assignedPatients[pj] = true;
+                count++;
+            }
+        }
+
+        var totalCost = 0;
+        for (var i2 = 0; i2 < n; i2++) {
+            totalCost += costMatrix[i2][assignment[i2]];
+        }
+
+        return { assignment: assignment, totalCost: totalCost };
+    }
+
+    // ── Solve all algorithms ──
+    function solveAll() {
+        var matrix = readCostMatrix();
+        var sc = SCENARIOS[currentScenario];
+
+        var t0 = performance.now();
+        var hungarianResult = hungarian(matrix);
+        var t1 = performance.now();
+        var greedyResult = greedyAssignment(matrix);
+        var t2 = performance.now();
+
+        var results = [
+            {
+                name: "Hungarian",
+                assignment: hungarianResult.assignment,
+                totalCost: hungarianResult.totalCost,
+                time: (t1 - t0).toFixed(2),
+                optimal: true
+            },
+            {
+                name: "Greedy",
+                assignment: greedyResult.assignment,
+                totalCost: greedyResult.totalCost,
+                time: (t2 - t1).toFixed(2),
+                optimal: false
+            }
+        ];
+
+        currentResults = results;
+
+        renderResultsTable(results);
+        renderAssignmentDetails(results[0], sc);
+        renderCanvas(results[0], sc, matrix);
+        renderBusinessPanel(results, sc);
+        renderWorkloadBars(results[0], sc);
+        highlightCostMatrix(results[0].assignment);
+
+        document.getElementById("solverStatus").textContent =
+            "Solved in " + ((t2 - t0).toFixed(2)) + " ms. Hungarian: " +
+            hungarianResult.totalCost + " cost | Greedy: " + greedyResult.totalCost + " cost";
+    }
+
+    // ── Render results table ──
+    function renderResultsTable(results) {
+        var tbody = document.getElementById("resultsBody");
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        var bestCost = Infinity;
+        for (var k = 0; k < results.length; k++) {
+            if (results[k].totalCost < bestCost) bestCost = results[k].totalCost;
+        }
+
+        for (var i = 0; i < results.length; i++) {
+            var r = results[i];
+            var tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+
+            var tdName = document.createElement("td");
+            tdName.className = "algo-label";
+            tdName.textContent = r.name + (r.optimal ? " *" : "");
+            tr.appendChild(tdName);
+
+            var tdCost = document.createElement("td");
+            tdCost.textContent = r.totalCost;
+            if (r.totalCost === bestCost) tdCost.className = "best-val";
+            tr.appendChild(tdCost);
+
+            var maxSingle = 0;
+            var sc = SCENARIOS[currentScenario];
+            var matrix = readCostMatrix();
+            for (var j = 0; j < r.assignment.length; j++) {
+                var c = matrix[j][r.assignment[j]];
+                if (c > maxSingle) maxSingle = c;
+            }
+            var tdMax = document.createElement("td");
+            tdMax.textContent = maxSingle;
+            tr.appendChild(tdMax);
+
+            var tdTime = document.createElement("td");
+            tdTime.textContent = r.time + " ms";
+            tr.appendChild(tdTime);
+
+            (function(idx) {
+                tr.addEventListener("click", function() {
+                    var scn = SCENARIOS[currentScenario];
+                    var mat = readCostMatrix();
+                    renderAssignmentDetails(results[idx], scn);
+                    renderCanvas(results[idx], scn, mat);
+                    renderWorkloadBars(results[idx], scn);
+                    highlightCostMatrix(results[idx].assignment);
+                });
+            })(i);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    // ── Render assignment details ──
+    function renderAssignmentDetails(result, sc) {
+        var div = document.getElementById("assignDetails");
+        while (div.firstChild) div.removeChild(div.firstChild);
+
+        var nurses = sc.nurses;
+        var patients = sc.patients;
+        var matrix = readCostMatrix();
+
+        for (var i = 0; i < result.assignment.length; i++) {
+            var j = result.assignment[i];
+            var line = document.createElement("div");
+            line.style.padding = "0.15rem 0";
+            line.style.borderBottom = "1px solid rgba(197,160,89,0.05)";
+
+            var nurseName = i < nurses.length ? nurses[i].name : "Dummy" + (i + 1);
+            var patientName = j < patients.length ? (patients[j].name + " Rm " + patients[j].room) : "Dummy" + (j + 1);
+            var cost = matrix[i][j];
+
+            var span1 = document.createElement("span");
+            span1.style.color = NURSE_COLORS[i % NURSE_COLORS.length];
+            span1.textContent = nurseName;
+            line.appendChild(span1);
+
+            var arrow = document.createElement("span");
+            arrow.style.color = "var(--slate)";
+            arrow.textContent = " \u2192 ";
+            line.appendChild(arrow);
+
+            var span2 = document.createElement("span");
+            span2.style.color = "var(--ivory)";
+            span2.textContent = patientName;
+            line.appendChild(span2);
+
+            var costSpan = document.createElement("span");
+            costSpan.style.color = cost === 0 ? "var(--green)" : (cost > 40 ? "var(--red)" : "var(--gold)");
+            costSpan.style.marginLeft = "0.5rem";
+            costSpan.textContent = "(cost: " + cost + ")";
+            line.appendChild(costSpan);
+
+            if (j < patients.length) {
+                var condSpan = document.createElement("span");
+                condSpan.style.color = "var(--slate)";
+                condSpan.style.fontSize = "0.68rem";
+                condSpan.style.marginLeft = "0.4rem";
+                condSpan.textContent = "[" + patients[j].condition + "]";
+                line.appendChild(condSpan);
+            }
+
+            div.appendChild(line);
+        }
+    }
+
+    // ── Highlight cost matrix ──
+    function highlightCostMatrix(assignment) {
+        var sc = SCENARIOS[currentScenario];
+        var size = Math.max(sc.nurses.length, sc.patients.length);
+        for (var i = 0; i < size; i++) {
+            for (var j = 0; j < size; j++) {
+                var inp = document.getElementById("cost_" + i + "_" + j);
+                if (inp) {
+                    var td = inp.parentElement;
+                    if (assignment[i] === j) {
+                        td.className = "cost-cell-highlight";
+                    } else {
+                        td.className = "";
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Render Canvas ──
+    function renderCanvas(result, sc, matrix) {
+        ctx.clearRect(0, 0, CW, CH);
+
+        var nurses = sc.nurses;
+        var patients = sc.patients;
+        var n = nurses.length;
+        var m = patients.length;
+        var assignment = result.assignment;
+
+        var leftX = 120;
+        var rightX = CW - 120;
+        var topY = 40;
+        var nurseSpacing = (CH - 2 * topY) / Math.max(n - 1, 1);
+        var patientSpacing = (CH - 2 * topY) / Math.max(m - 1, 1);
+
+        // Title
+        ctx.fillStyle = "#C5A059";
+        ctx.font = "500 14px 'Inter', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(result.name + " Assignment (Total Cost: " + result.totalCost + ")", CW / 2, 22);
+
+        // Column labels
+        ctx.fillStyle = "#8892B0";
+        ctx.font = "600 11px 'Inter', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("NURSES", leftX, topY - 14);
+        ctx.fillText("PATIENTS", rightX, topY - 14);
+
+        // Draw assignment lines first (behind nodes)
+        for (var i = 0; i < n; i++) {
+            var j = assignment[i];
+            if (j < 0 || j >= m) continue;
+
+            var y1 = topY + i * nurseSpacing;
+            var y2 = topY + j * patientSpacing;
+            var cost = matrix[i][j];
+
+            // Color by cost quality
+            var lineColor;
+            if (cost === 0) {
+                lineColor = "rgba(100, 255, 218, 0.7)";
+            } else if (cost <= 15) {
+                lineColor = "rgba(100, 255, 218, 0.5)";
+            } else if (cost <= 35) {
+                lineColor = "rgba(197, 160, 89, 0.6)";
+            } else if (cost <= 60) {
+                lineColor = "rgba(224, 175, 104, 0.6)";
+            } else {
+                lineColor = "rgba(255, 107, 107, 0.6)";
+            }
+
+            ctx.strokeStyle = lineColor;
+            ctx.lineWidth = cost > 40 ? 3 : 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+
+            // Bezier curve
+            var cpx1 = leftX + (rightX - leftX) * 0.35;
+            var cpx2 = leftX + (rightX - leftX) * 0.65;
+            ctx.moveTo(leftX + 55, y1);
+            ctx.bezierCurveTo(cpx1, y1, cpx2, y2, rightX - 55, y2);
+            ctx.stroke();
+
+            // Cost label on line
+            var midX = (leftX + rightX) / 2;
+            var midY = (y1 + y2) / 2;
+            ctx.fillStyle = "rgba(10, 25, 47, 0.85)";
+            ctx.fillRect(midX - 14, midY - 8, 28, 16);
+            ctx.fillStyle = cost === 0 ? "#64ffda" : (cost > 40 ? "#ff6b6b" : "#C5A059");
+            ctx.font = "500 10px 'JetBrains Mono', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText(cost.toString(), midX, midY + 4);
+        }
+
+        // Draw nurse nodes
+        for (var i2 = 0; i2 < n; i2++) {
+            var ny = topY + i2 * nurseSpacing;
+            var color = NURSE_COLORS[i2 % NURSE_COLORS.length];
+
+            // Node circle
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.arc(leftX, ny, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Competency ring
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(leftX, ny, 12, 0, Math.PI * 2 * (nurses[i2].comp / 5));
+            ctx.stroke();
+
+            // Name label
+            ctx.fillStyle = "#F8F9FA";
+            ctx.font = "500 11px 'Inter', sans-serif";
+            ctx.textAlign = "right";
+            ctx.fillText(nurses[i2].name, leftX - 18, ny + 4);
+
+            // Pod + comp
+            ctx.fillStyle = "#8892B0";
+            ctx.font = "400 9px 'JetBrains Mono', monospace";
+            ctx.textAlign = "left";
+            ctx.fillText("C" + nurses[i2].comp + " " + nurses[i2].pod, leftX + 18, ny + 4);
+        }
+
+        // Draw patient nodes
+        for (var j2 = 0; j2 < m; j2++) {
+            var py = topY + j2 * patientSpacing;
+            var patient = patients[j2];
+
+            // Acuity color
+            var acuityColor;
+            if (patient.acuity >= 5) acuityColor = "#ff6b6b";
+            else if (patient.acuity >= 4) acuityColor = "#e0af68";
+            else if (patient.acuity >= 3) acuityColor = "#C5A059";
+            else acuityColor = "#64ffda";
+
+            // Node
+            ctx.fillStyle = acuityColor;
+            ctx.beginPath();
+            ctx.arc(rightX, py, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Acuity ring
+            ctx.strokeStyle = acuityColor;
+            ctx.lineWidth = 2;
+            ctx.setLineDash([]);
+            ctx.beginPath();
+            ctx.arc(rightX, py, 12, 0, Math.PI * 2 * (patient.acuity / 5));
+            ctx.stroke();
+
+            // Name label
+            ctx.fillStyle = "#F8F9FA";
+            ctx.font = "500 11px 'Inter', sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText(patient.name + " " + patient.room, rightX + 18, py + 4);
+
+            // Acuity + pod
+            ctx.fillStyle = "#8892B0";
+            ctx.font = "400 9px 'JetBrains Mono', monospace";
+            ctx.textAlign = "right";
+            ctx.fillText("A" + patient.acuity + " " + patient.pod, rightX - 18, py + 4);
+        }
+
+        // Legend
+        var legendY = CH - 18;
+        ctx.font = "400 9px 'Inter', sans-serif";
+        ctx.textAlign = "left";
+
+        var legendItems = [
+            { color: "rgba(100, 255, 218, 0.7)", label: "Low cost (0-15)" },
+            { color: "rgba(197, 160, 89, 0.6)", label: "Medium (16-35)" },
+            { color: "rgba(224, 175, 104, 0.6)", label: "High (36-60)" },
+            { color: "rgba(255, 107, 107, 0.6)", label: "Critical (>60)" }
+        ];
+
+        var lx = 40;
+        for (var li = 0; li < legendItems.length; li++) {
+            ctx.fillStyle = legendItems[li].color;
+            ctx.fillRect(lx, legendY - 6, 20, 3);
+            ctx.fillStyle = "#8892B0";
+            ctx.fillText(legendItems[li].label, lx + 24, legendY);
+            lx += 130;
+        }
+
+        // Cost matrix heatmap below assignment
+        renderHeatmap(matrix, assignment, n, m);
+    }
+
+    // ── Heatmap on canvas ──
+    function renderHeatmap(matrix, assignment, n, m) {
+        // not drawn on main canvas to keep it clean - the editable table serves this purpose
+    }
+
+    // ── Business Panel ──
+    function renderBusinessPanel(results, sc) {
+        var panel = document.getElementById("businessPanel");
+        panel.style.display = "block";
+        var content = document.getElementById("businessContent");
+        while (content.firstChild) content.removeChild(content.firstChild);
+
+        var costPerUnit = parseInt(document.getElementById("costPerUnit").value) || 150;
+        var shiftsPerDay = parseInt(document.getElementById("shiftsPerDay").value) || 3;
+
+        var hungarianCost = results[0].totalCost;
+        var greedyCost = results[1].totalCost;
+        var savings = greedyCost - hungarianCost;
+        var savingsPct = greedyCost > 0 ? ((savings / greedyCost) * 100).toFixed(1) : "0.0";
+
+        var rows = [
+            { label: "Hungarian total cost", val: hungarianCost + " units" },
+            { label: "Greedy total cost", val: greedyCost + " units" },
+            { label: "Optimality gap", val: savings + " units (" + savingsPct + "%)" },
+            { label: "Cost per unit (\u20AC)", val: "\u20AC" + costPerUnit },
+            { label: "Savings per shift", val: "\u20AC" + (savings * costPerUnit) },
+            { label: "Savings per day (" + shiftsPerDay + " shifts)", val: "\u20AC" + (savings * costPerUnit * shiftsPerDay) },
+            { label: "Annual savings (365 days)", val: "\u20AC" + (savings * costPerUnit * shiftsPerDay * 365).toLocaleString() }
+        ];
+
+        for (var i = 0; i < rows.length; i++) {
+            var row = document.createElement("div");
+            row.className = "business-row";
+
+            var lbl = document.createElement("span");
+            lbl.textContent = rows[i].label;
+            row.appendChild(lbl);
+
+            var val = document.createElement("span");
+            val.className = "biz-val";
+            val.textContent = rows[i].val;
+            row.appendChild(val);
+
+            content.appendChild(row);
+        }
+    }
+
+    // ── Workload Bars ──
+    function renderWorkloadBars(result, sc) {
+        var panel = document.getElementById("workloadPanel");
+        panel.style.display = "block";
+        var container = document.getElementById("workloadBars");
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var nurses = sc.nurses;
+        var patients = sc.patients;
+        var maxAcuity = 5;
+
+        for (var i = 0; i < nurses.length; i++) {
+            var j = result.assignment[i];
+            var acuity = (j >= 0 && j < patients.length) ? patients[j].acuity : 0;
+
+            var row = document.createElement("div");
+            row.className = "wl-bar-row";
+
+            var label = document.createElement("div");
+            label.className = "wl-bar-label";
+            label.textContent = nurses[i].name;
+            row.appendChild(label);
+
+            var track = document.createElement("div");
+            track.className = "wl-bar-track";
+
+            var fill = document.createElement("div");
+            fill.className = "wl-bar-fill";
+            var pct = (acuity / maxAcuity) * 100;
+            fill.style.width = pct + "%";
+
+            if (acuity <= 2) fill.classList.add("high");
+            else if (acuity <= 3) fill.classList.add("mid");
+            else fill.classList.add("low");
+
+            track.appendChild(fill);
+            row.appendChild(track);
+
+            var val = document.createElement("div");
+            val.className = "wl-bar-val";
+            val.textContent = "A" + acuity;
+            row.appendChild(val);
+
+            container.appendChild(row);
+        }
+    }
+
+    // ── Scenario Chips ──
+    function renderScenarioChips() {
+        var container = document.getElementById("scenarioChips");
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var keys = Object.keys(SCENARIOS);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var sc = SCENARIOS[key];
+            var chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "algo-chip" + (key === currentScenario ? " selected" : "");
+
+            var dot = document.createElement("span");
+            dot.style.display = "inline-block";
+            dot.style.width = "6px";
+            dot.style.height = "6px";
+            dot.style.borderRadius = "50%";
+            dot.style.marginRight = "6px";
+            if (sc.difficulty === "medium") dot.style.background = "var(--gold)";
+            else if (sc.difficulty === "hard") dot.style.background = "var(--red)";
+            else dot.style.background = "var(--green)";
+            chip.appendChild(dot);
+
+            var text = document.createTextNode(sc.name);
+            chip.appendChild(text);
+
+            (function(k) {
+                chip.addEventListener("click", function() {
+                    currentScenario = k;
+                    currentResults = null;
+                    renderScenarioChips();
+                    renderCostMatrix();
+                    clearResults();
+                });
+            })(key);
+
+            container.appendChild(chip);
+        }
+    }
+
+    // ── Mapping table ──
+    function renderMappingTable() {
+        var tbody = document.getElementById("mappingBody");
+        var mappings = [
+            ["Agents (i)", "Nurses on shift (8 nurses, competency 2-5, pods A-D)"],
+            ["Tasks (j)", "Patients requiring care (8 patients, acuity 1-5)"],
+            ["Cost c_ij", "(acuity - competency)\u00B2 \u00D7 20 + distance \u00D7 15 - cert discount"],
+            ["Constraint", "Each nurse assigned to exactly one patient and vice versa"],
+            ["Objective", "Minimize total assignment cost (mismatch + distance)"],
+            ["Solution", "Optimal 1:1 matching via Hungarian algorithm O(n\u00B3)"]
+        ];
+        for (var i = 0; i < mappings.length; i++) {
+            var tr = document.createElement("tr");
+            var td1 = document.createElement("td");
+            td1.textContent = mappings[i][0];
+            tr.appendChild(td1);
+            var td2 = document.createElement("td");
+            td2.textContent = mappings[i][1];
+            tr.appendChild(td2);
+            tbody.appendChild(tr);
+        }
+    }
+
+    // ── Clear results ──
+    function clearResults() {
+        var tbody = document.getElementById("resultsBody");
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        var tr = document.createElement("tr");
+        var td = document.createElement("td");
+        td.setAttribute("colspan", "4");
+        td.style.textAlign = "center";
+        td.style.color = "var(--slate)";
+        td.style.fontFamily = "'Inter', sans-serif";
+        td.textContent = "Click Solve & Compare All Algorithms";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+
+        var details = document.getElementById("assignDetails");
+        while (details.firstChild) details.removeChild(details.firstChild);
+        details.textContent = "Assignment details will appear here after solving.";
+
+        document.getElementById("businessPanel").style.display = "none";
+        document.getElementById("workloadPanel").style.display = "none";
+        document.getElementById("solverStatus").textContent = "Ready. Select a scenario and click Solve.";
+
+        ctx.clearRect(0, 0, CW, CH);
+        ctx.fillStyle = "#8892B0";
+        ctx.font = "400 14px 'Inter', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Select a scenario and click Solve to visualize assignments", CW / 2, CH / 2);
+    }
+
+    // ── Scroll Animations ──
+    function initScrollAnimations() {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("visible");
+                }
+            });
+        }, { threshold: 0.1 });
+
+        var elements = document.querySelectorAll(".fade-in");
+        elements.forEach(function(el) { observer.observe(el); });
+    }
+
+    // ── Scroll Progress ──
+    function initScrollProgress() {
+        var progressBar = document.getElementById("scrollProgress");
+        var scrollTopBtn = document.getElementById("scrollTopBtn");
+
+        window.addEventListener("scroll", function() {
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            var scrollPct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            progressBar.style.width = scrollPct + "%";
+
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add("visible");
+            } else {
+                scrollTopBtn.classList.remove("visible");
+            }
+        });
+
+        scrollTopBtn.addEventListener("click", function() {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+
+    // ── Theme Toggle ──
+    function initThemeToggle() {
+        var toggle = document.getElementById("themeToggle");
+        var saved = localStorage.getItem("mm-theme");
+        if (saved === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+        }
+        toggle.addEventListener("click", function() {
+            var current = document.documentElement.getAttribute("data-theme");
+            if (current === "light") {
+                document.documentElement.removeAttribute("data-theme");
+                localStorage.setItem("mm-theme", "dark");
+            } else {
+                document.documentElement.setAttribute("data-theme", "light");
+                localStorage.setItem("mm-theme", "light");
+            }
+        });
+    }
+
+    // ── Command Palette ──
+    function initCommandPalette() {
+        var overlay = document.getElementById("cmdOverlay");
+        var input = document.getElementById("cmdInput");
+        var results = document.getElementById("cmdResults");
+        var trigger = document.getElementById("navSearchTrigger");
+
+        var pages = [
+            { title: "Home", url: "../index.html", icon: "fa-home", cat: "Pages" },
+            { title: "Assignment Problem Family", url: "../families/assignment.html", icon: "fa-project-diagram", cat: "Families" },
+            { title: "Workforce Assignment", url: "#", icon: "fa-user-nurse", cat: "Applications" },
+            { title: "Warehouse Packing", url: "warehouse-packing.html", icon: "fa-warehouse", cat: "Applications" },
+            { title: "Operating Room Scheduling", url: "operating-room.html", icon: "fa-hospital", cat: "Applications" },
+            { title: "Delivery Routing", url: "delivery-routing.html", icon: "fa-truck", cat: "Applications" },
+            { title: "Portfolio Optimization", url: "portfolio.html", icon: "fa-chart-line", cat: "Applications" },
+            { title: "Healthcare Overview", url: "healthcare.html", icon: "fa-heartbeat", cat: "Applications" }
+        ];
+
+        function openPalette() {
+            overlay.classList.add("open");
+            input.value = "";
+            input.focus();
+            renderPaletteResults("");
+        }
+
+        function closePalette() {
+            overlay.classList.remove("open");
+        }
+
+        function renderPaletteResults(query) {
+            while (results.firstChild) results.removeChild(results.firstChild);
+            var q = query.toLowerCase();
+            var filtered = pages.filter(function(p) {
+                return p.title.toLowerCase().indexOf(q) >= 0 || p.cat.toLowerCase().indexOf(q) >= 0;
+            });
+
+            if (filtered.length === 0) {
+                var empty = document.createElement("div");
+                empty.className = "cmd-empty";
+                empty.textContent = "No results found";
+                results.appendChild(empty);
+                return;
+            }
+
+            var grouped = {};
+            filtered.forEach(function(p) {
+                if (!grouped[p.cat]) grouped[p.cat] = [];
+                grouped[p.cat].push(p);
+            });
+
+            Object.keys(grouped).forEach(function(cat) {
+                var label = document.createElement("div");
+                label.className = "cmd-group-label";
+                label.textContent = cat;
+                results.appendChild(label);
+
+                grouped[cat].forEach(function(p) {
+                    var a = document.createElement("a");
+                    a.className = "cmd-result";
+                    a.href = p.url;
+
+                    var iconDiv = document.createElement("div");
+                    iconDiv.className = "cmd-icon";
+                    var iconI = document.createElement("i");
+                    iconI.className = "fas " + p.icon;
+                    iconDiv.appendChild(iconI);
+                    a.appendChild(iconDiv);
+
+                    var info = document.createElement("div");
+                    info.className = "cmd-info";
+                    var title = document.createElement("div");
+                    title.className = "cmd-title";
+                    title.textContent = p.title;
+                    info.appendChild(title);
+                    a.appendChild(info);
+
+                    results.appendChild(a);
+                });
+            });
+        }
+
+        trigger.addEventListener("click", openPalette);
+        overlay.addEventListener("click", function(e) {
+            if (e.target === overlay) closePalette();
+        });
+        input.addEventListener("input", function() {
+            renderPaletteResults(input.value);
+        });
+
+        document.addEventListener("keydown", function(e) {
+            if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+                e.preventDefault();
+                if (overlay.classList.contains("open")) {
+                    closePalette();
+                } else {
+                    openPalette();
+                }
+            }
+            if (e.key === "Escape" && overlay.classList.contains("open")) {
+                closePalette();
+            }
+        });
+    }
+
+    // ── Solve button handler ──
+    document.getElementById("solveBtn").addEventListener("click", solveAll);
+
+    // ── Initialize ──
+    renderMappingTable();
+    renderScenarioChips();
+    renderCostMatrix();
+    clearResults();
+    initScrollAnimations();
+    initScrollProgress();
+    initThemeToggle();
+    initCommandPalette();
+
+})();
+</script>
+</body>
+</html>

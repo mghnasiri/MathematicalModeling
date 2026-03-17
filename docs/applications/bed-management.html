@@ -1,0 +1,2546 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hospital Bed Management | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Bin Packing + Knapsack demo for hospital bed management: ED surge allocation and cardiac ward triage optimization.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/bed-management.html">
+    <meta property="og:title" content="Hospital Bed Management | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Bin Packing + Knapsack demo for hospital bed management: ED surge allocation and cardiac ward triage optimization.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Hospital Bed Management | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Bin Packing + Knapsack demo for hospital bed management.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .bin-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 260px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            color: var(--ivory);
+        }
+        .algo-card .algo-complexity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--green);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+        }
+        .algo-card .algo-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            border-radius: 2px;
+            font-size: 0.68rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+        }
+
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Scroll Progress */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            color: var(--slate-light);
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Decision Chain */
+        .decision-chain {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .chain-node {
+            padding: 0.4rem 1rem;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 3px;
+            font-size: 0.72rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+        }
+        .chain-node.active-node {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+            font-weight: 500;
+        }
+        .chain-arrow {
+            color: var(--slate);
+            font-size: 0.6rem;
+            opacity: 0.5;
+        }
+
+        /* Mapping Table */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.85rem;
+        }
+        .mapping-table th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+        }
+        .mapping-table tr:hover td { color: var(--ivory); }
+
+        /* Scenario chips */
+        .scenario-chips {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+
+        /* Patient table */
+        .patient-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.78rem;
+            margin-bottom: 1rem;
+        }
+        .patient-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.68rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.5rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .patient-table tbody td {
+            padding: 0.35rem 0.6rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.75rem;
+        }
+        .patient-table tbody tr:hover td { color: var(--ivory); }
+
+        /* Ward utilization bars */
+        .ward-util-panel {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .ward-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.4rem;
+        }
+        .ward-bar-row:last-child { margin-bottom: 0; }
+        .ward-bar-label {
+            font-size: 0.7rem;
+            color: var(--slate);
+            min-width: 70px;
+            font-family: 'Inter', sans-serif;
+        }
+        .ward-bar-track {
+            flex: 1;
+            height: 16px;
+            background: rgba(197, 160, 89, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+            position: relative;
+        }
+        .ward-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+        .ward-bar-fill.safe { background: linear-gradient(90deg, #64ffda, #50fa7b); }
+        .ward-bar-fill.warn { background: linear-gradient(90deg, #e0af68, #C5A059); }
+        .ward-bar-fill.danger { background: linear-gradient(90deg, #ff6b6b, #f7768e); }
+        .ward-bar-pct {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* Business metrics */
+        .business-panel {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .business-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+        }
+        .biz-stat {
+            text-align: center;
+        }
+        .biz-stat .biz-val {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--gold);
+            line-height: 1;
+        }
+        .biz-stat .biz-label {
+            font-size: 0.6rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0.2rem;
+        }
+
+        @keyframes solvePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(197, 160, 89, 0); }
+        }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+        .results-table tbody tr:nth-child(4) { animation-delay: 0.15s; }
+
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .decision-chain { gap: 0.2rem; }
+            .chain-node { font-size: 0.6rem; padding: 0.3rem 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/packing.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&#8984;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Hospital Bed Management</li>
+        </ol>
+    </div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-bed"></i></div>
+        <h1>Bed <span>Management</span></h1>
+        <p class="hero-subtitle">Bin Packing + Knapsack</p>
+        <div class="gold-line"></div>
+
+        <div class="decision-chain">
+            <span class="chain-node">Strategic</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-node">Staff Planning</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-node active-node">Patient Flow</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-node">Supply Chain</span>
+        </div>
+
+        <p class="hero-desc">
+            A 120-bed hospital must assign incoming ED patients to wards of fixed capacity
+            while maximizing throughput. Occupancy above <strong>85%</strong> increases mortality
+            and ED boarding (Bain et al., 2010). This combines <strong>Bin Packing</strong>
+            for ward allocation with <strong>0-1 Knapsack</strong> for cardiac triage prioritization.
+        </p>
+    </div>
+</section>
+
+<!-- 2. The Problem -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Phase 3 &middot; Patient Flow &mdash; Bed Management</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Consider a 120-bed hospital with four specialty wards: <strong>Medical (35 beds)</strong>,
+                <strong>Surgical (30 beds)</strong>, <strong>Cardiac (25 beds)</strong>, and
+                <strong>General (30 beds)</strong>. Each shift, the Emergency Department admits patients
+                who require specific ward types. Some patients (isolation cases) consume
+                <strong>two bed-equivalents</strong> due to private-room requirements.
+            </p>
+            <p>
+                The <strong>bin packing component</strong> assigns ED patients to ward &ldquo;bins&rdquo; of
+                limited capacity. When beds are scarce, a secondary <strong>knapsack component</strong>
+                selects which waitlisted patients to admit, maximizing total clinical priority within
+                available bed-days. Optimizing bed allocation can improve throughput by
+                <strong>10&ndash;20%</strong> without adding physical capacity (Hulshof et al., 2012).
+            </p>
+
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>Real World</th>
+                        <th>Mathematical Model</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>Hospital ward</td><td>Bin (fixed capacity)</td></tr>
+                    <tr><td>Patient</td><td>Item (bed-equivalents = size)</td></tr>
+                    <tr><td>Ward bed count</td><td>Bin capacity C</td></tr>
+                    <tr><td>Specialty requirement</td><td>Bin-type constraint</td></tr>
+                    <tr><td>Clinical priority</td><td>Item value (knapsack)</td></tr>
+                    <tr><td>Length of stay</td><td>Item weight (knapsack)</td></tr>
+                </tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">Bin Packing Formulation (Ward Assignment)</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>j</sub> y<sub>j</sub></span> &nbsp; <span class="comment">// wards opened (overflow)</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>j</sub> x<sub>ij</sub> = 1</span> &nbsp;&nbsp; <span class="comment">// each patient assigned to exactly one ward</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> b<sub>i</sub> &middot; x<sub>ij</sub> &le; C<sub>j</sub></span> &nbsp;&nbsp; <span class="comment">// ward capacity not exceeded</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary assignment</span>
+            </div>
+
+            <div class="formulation">
+                <span class="form-label">Knapsack Formulation (Cardiac Triage)</span>
+                <span class="keyword">maximize</span> &nbsp; <span class="variable">&Sigma;<sub>i</sub> p<sub>i</sub> &middot; x<sub>i</sub></span> &nbsp; <span class="comment">// total clinical priority</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> d<sub>i</sub> &middot; x<sub>i</sub> &le; W</span> &nbsp;&nbsp; <span class="comment">// total bed-days &le; available capacity</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>i</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// admit or not</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">b<sub>i</sub></span>
+                is the bed-equivalent demand of patient <em>i</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">C<sub>j</sub></span>
+                is the ward capacity,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">p<sub>i</sub></span>
+                is clinical priority (1&ndash;10), and
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>i</sub></span>
+                is expected length of stay in days.
+            </p>
+
+            <a href="../families/packing.html" class="theory-link">
+                <i class="fas fa-arrow-right"></i> See full Packing &amp; Knapsack theory
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- 3. Try It Yourself -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Assign patients to hospital wards</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-hospital"></i> Bed Management Optimizer</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">20 Patients &middot; 4 Wards</span>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario Selection -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-chips" id="scenarioChips"></div>
+
+                <!-- Patient Table -->
+                <div class="solver-section-label">Patients to Assign</div>
+                <div style="overflow-x:auto;margin-bottom:1rem;max-height:280px;overflow-y:auto;">
+                    <table class="patient-table" id="patientTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Patient / Diagnosis</th>
+                                <th>Beds</th>
+                                <th>Specialty</th>
+                            </tr>
+                        </thead>
+                        <tbody id="patientBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip active" id="solveBtn" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                </button>
+
+                <!-- Visualization -->
+                <div class="solver-section-label">Ward Visualization</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="wardCanvas" width="900" height="460"></canvas>
+                </div>
+                <p class="solver-status" id="solverStatus">Select a scenario and click Solve.</p>
+
+                <!-- Results -->
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Algorithm Comparison</div>
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Wards</th>
+                                    <th>Utilization</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="4" style="text-align:center;color:var(--slate);font-family:'Inter',sans-serif;">Select a scenario to begin</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Assignment Details</div>
+                        <div class="bin-output" id="binOutput">Ward assignments will appear here after solving.</div>
+                    </div>
+                </div>
+
+                <!-- Ward Utilization Bars -->
+                <div class="ward-util-panel" id="wardUtilPanel" style="display:none;">
+                    <div class="solver-section-label" style="margin-bottom:0.5rem;">Ward Occupancy</div>
+                    <div id="wardBars"></div>
+                </div>
+
+                <!-- Business Impact -->
+                <div class="business-panel" id="businessPanel" style="display:none;">
+                    <div class="solver-section-label" style="margin-bottom:0.5rem;">Business Impact</div>
+                    <div class="business-grid" id="businessGrid"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Algorithms -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Heuristic and exact approaches</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>First Fit (FF)</h3>
+                <span class="algo-complexity">O(n&sup2;)</span>
+                <p>
+                    Process patients in arrival order. For each patient, scan wards left to right
+                    and place the patient in the <strong>first ward</strong> of the correct specialty
+                    with enough remaining beds. If no ward fits, an overflow ward is opened.
+                    Simple but sensitive to arrival order.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>First Fit Decreasing (FFD)</h3>
+                <span class="algo-complexity">O(n log n) &nbsp;|&nbsp; Guarantee: &le; 11/9 &middot; OPT + 6/9</span>
+                <p>
+                    Sort patients by bed-equivalents in <strong>descending order</strong>, then apply
+                    First Fit. Isolation patients (2 beds) are placed first, creating a foundation
+                    that single-bed patients fill efficiently. Provable worst-case guarantee established
+                    for general bin packing.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>Best Fit Decreasing (BFD)</h3>
+                <span class="algo-complexity">O(n log n)</span>
+                <p>
+                    Sort patients by bed-equivalents descending. For each patient, place in the ward
+                    with the <strong>least remaining capacity</strong> that can still accommodate them.
+                    Produces tightly packed wards, maximizing utilization and reducing overflow.
+                    Often matches or outperforms FFD in practice (Demeester et al., 2010).
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Exact</div>
+                <h3>Dynamic Programming (Knapsack)</h3>
+                <span class="algo-complexity">O(n &middot; W) &nbsp;|&nbsp; Pseudo-polynomial</span>
+                <p>
+                    For the cardiac triage scenario, DP finds the <strong>optimal subset</strong> of
+                    waitlisted patients to admit given limited bed-days. Builds a table of
+                    subproblems bottom-up, guaranteeing maximum total clinical priority. Used when
+                    the capacity W is bounded (10 bed-days in our scenario).
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Complexity -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why hospital bed management goes beyond the 1D model</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-heartbeat"></i> Beyond Bin Packing</h3>
+                <ul class="complexity-list">
+                    <li><strong>Infection control</strong> &mdash; MRSA, C. diff, and TB patients require negative-pressure isolation rooms; cohorting rules prevent mixing infection types</li>
+                    <li><strong>Acuity matching</strong> &mdash; ICU, step-down, and general beds have different monitoring capabilities; patient acuity must match bed type</li>
+                    <li><strong>Gender segregation</strong> &mdash; Many wards require same-gender room assignments, adding parity constraints</li>
+                    <li><strong>Stochastic arrivals</strong> &mdash; ED admission rates are uncertain and bursty; robust models must handle demand spikes</li>
+                    <li><strong>Discharge uncertainty</strong> &mdash; Length-of-stay is probabilistic; early or late discharges shift available capacity dynamically</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. References -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational works in healthcare bed management</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Bain, C.A. et al.</span> (2010).
+                    <span class="ref-title">&ldquo;Myths of ideal hospital occupancy.&rdquo;</span>
+                    <span class="ref-journal">MJA, 192(1), 42&ndash;43. DOI: 10.5694/j.1326-5377.2010.tb03401.x</span>
+                </li>
+                <li>
+                    <span class="ref-author">Demeester, P. et al.</span> (2010).
+                    <span class="ref-title">&ldquo;A hybrid tabu search algorithm for automatically assigning patients to beds.&rdquo;</span>
+                    <span class="ref-journal">Artificial Intelligence in Medicine, 48(1), 61&ndash;70. DOI: 10.1016/j.artmed.2009.09.001</span>
+                </li>
+                <li>
+                    <span class="ref-author">Hulshof, P.J.H. et al.</span> (2012).
+                    <span class="ref-title">&ldquo;Taxonomic classification of planning decisions in health care.&rdquo;</span>
+                    <span class="ref-journal">Health Systems, 1(2), 129&ndash;175. DOI: 10.1057/hs.2012.18</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 7. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize patient flow?</h3>
+            <p>
+                From bed management to operating room scheduling and staff rostering,
+                mathematical modeling can transform hospital operations.
+                Let&rsquo;s discuss how Operations Research can work for your healthcare system.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. Patient names, diagnoses, and hospital configurations are
+            representative scenarios for educational purposes and do not reflect any specific
+            hospital operation or real patient data.
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+    'use strict';
+
+    // ===============================================================
+    // Canvas Setup
+    // ===============================================================
+    var canvas = document.getElementById('wardCanvas');
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var CW = 900, CH = 460;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + 'px';
+    canvas.style.height = CH + 'px';
+    ctx.scale(dpr, dpr);
+
+    var WARD_COLORS = {
+        medical: '#7aa2f7',
+        surgical: '#64ffda',
+        cardiac: '#ff6b6b',
+        general: '#e0af68'
+    };
+
+    var PATIENT_COLORS = [
+        '#C5A059', '#7aa2f7', '#64ffda', '#ff6b6b',
+        '#bb9af7', '#e0af68', '#9ece6a', '#f7768e',
+        '#73daca', '#b4f9f8', '#c0caf5', '#ff9e64',
+        '#c3e88d', '#82aaff', '#f78c6c', '#c792ea',
+        '#89ddff', '#ffcb6b', '#a9b1d6', '#414868',
+        '#d5d6db', '#565f89', '#c53b53', '#33635c',
+        '#449dab'
+    ];
+
+    // ===============================================================
+    // Scenario Data
+    // ===============================================================
+    var SCENARIOS = {
+        ed_surge: {
+            name: 'Monday Morning ED Surge',
+            difficulty: 'textbook',
+            wardCapacity: 14,
+            description: '20 ED patients, ward capacity 14 beds each',
+            patients: [
+                { id: 'Pt-1',  dx: 'Pneumonia',          beds: 1, specialty: 'medical' },
+                { id: 'Pt-2',  dx: 'COPD exacerbation',  beds: 1, specialty: 'medical' },
+                { id: 'Pt-3',  dx: 'Post-appendectomy',  beds: 1, specialty: 'surgical' },
+                { id: 'Pt-4',  dx: 'Hip fracture',       beds: 1, specialty: 'surgical' },
+                { id: 'Pt-5',  dx: 'C. diff isolation',  beds: 2, specialty: 'medical' },
+                { id: 'Pt-6',  dx: 'Chest pain obs',     beds: 1, specialty: 'cardiac' },
+                { id: 'Pt-7',  dx: 'STEMI post-PCI',     beds: 2, specialty: 'cardiac' },
+                { id: 'Pt-8',  dx: 'GI bleed',           beds: 1, specialty: 'medical' },
+                { id: 'Pt-9',  dx: 'Cellulitis',         beds: 1, specialty: 'general' },
+                { id: 'Pt-10', dx: 'Syncope workup',     beds: 1, specialty: 'general' },
+                { id: 'Pt-11', dx: 'DVT anticoag',       beds: 1, specialty: 'medical' },
+                { id: 'Pt-12', dx: 'Post-lap chole',     beds: 1, specialty: 'surgical' },
+                { id: 'Pt-13', dx: 'MRSA isolation',     beds: 2, specialty: 'medical' },
+                { id: 'Pt-14', dx: 'Heart failure',      beds: 1, specialty: 'cardiac' },
+                { id: 'Pt-15', dx: 'UTI/sepsis',         beds: 1, specialty: 'medical' },
+                { id: 'Pt-16', dx: 'Hernia repair',      beds: 1, specialty: 'surgical' },
+                { id: 'Pt-17', dx: 'Atrial fib',         beds: 1, specialty: 'cardiac' },
+                { id: 'Pt-18', dx: 'Dehydration',        beds: 1, specialty: 'general' },
+                { id: 'Pt-19', dx: 'Back pain',          beds: 1, specialty: 'general' },
+                { id: 'Pt-20', dx: 'TB suspect iso',     beds: 2, specialty: 'medical' }
+            ],
+            mode: 'binpacking'
+        },
+        weekend_overflow: {
+            name: 'Weekend Overflow',
+            difficulty: 'stress',
+            wardCapacity: 12,
+            description: '25 patients incl. 5 isolation cases, ward capacity 12',
+            patients: [
+                { id: 'Pt-1',  dx: 'Pneumonia',          beds: 1, specialty: 'medical' },
+                { id: 'Pt-2',  dx: 'COPD exacerbation',  beds: 1, specialty: 'medical' },
+                { id: 'Pt-3',  dx: 'Diabetic ketoacidosis', beds: 1, specialty: 'medical' },
+                { id: 'Pt-4',  dx: 'C. diff isolation',  beds: 2, specialty: 'medical' },
+                { id: 'Pt-5',  dx: 'MRSA isolation',     beds: 2, specialty: 'medical' },
+                { id: 'Pt-6',  dx: 'TB suspect iso',     beds: 2, specialty: 'medical' },
+                { id: 'Pt-7',  dx: 'Post-appendectomy',  beds: 1, specialty: 'surgical' },
+                { id: 'Pt-8',  dx: 'Hip fracture',       beds: 1, specialty: 'surgical' },
+                { id: 'Pt-9',  dx: 'Post-lap chole',     beds: 1, specialty: 'surgical' },
+                { id: 'Pt-10', dx: 'Hernia repair',      beds: 1, specialty: 'surgical' },
+                { id: 'Pt-11', dx: 'ACL repair',         beds: 1, specialty: 'surgical' },
+                { id: 'Pt-12', dx: 'Chest pain obs',     beds: 1, specialty: 'cardiac' },
+                { id: 'Pt-13', dx: 'STEMI post-PCI',     beds: 2, specialty: 'cardiac' },
+                { id: 'Pt-14', dx: 'Heart failure',      beds: 1, specialty: 'cardiac' },
+                { id: 'Pt-15', dx: 'Atrial fib',         beds: 1, specialty: 'cardiac' },
+                { id: 'Pt-16', dx: 'VT isolation',       beds: 2, specialty: 'cardiac' },
+                { id: 'Pt-17', dx: 'Cellulitis',         beds: 1, specialty: 'general' },
+                { id: 'Pt-18', dx: 'Syncope workup',     beds: 1, specialty: 'general' },
+                { id: 'Pt-19', dx: 'Dehydration',        beds: 1, specialty: 'general' },
+                { id: 'Pt-20', dx: 'Back pain',          beds: 1, specialty: 'general' },
+                { id: 'Pt-21', dx: 'UTI/sepsis',         beds: 1, specialty: 'medical' },
+                { id: 'Pt-22', dx: 'GI bleed',           beds: 1, specialty: 'medical' },
+                { id: 'Pt-23', dx: 'DVT anticoag',       beds: 1, specialty: 'medical' },
+                { id: 'Pt-24', dx: 'Fall injury',        beds: 1, specialty: 'general' },
+                { id: 'Pt-25', dx: 'Asthma exacerbation', beds: 1, specialty: 'medical' }
+            ],
+            mode: 'binpacking'
+        },
+        cardiac_triage: {
+            name: 'Cardiac Ward Triage',
+            difficulty: 'edge',
+            wardCapacity: 10,
+            description: '12 waitlisted cardiac patients, 10 bed-days available (Knapsack)',
+            patients: [
+                { id: 'WL-1',  dx: 'Unstable angina',   beds: 1, specialty: 'cardiac', priority: 9,  los: 4 },
+                { id: 'WL-2',  dx: 'CHF',               beds: 1, specialty: 'cardiac', priority: 8,  los: 5 },
+                { id: 'WL-3',  dx: 'Post-CABG',         beds: 1, specialty: 'cardiac', priority: 7,  los: 7 },
+                { id: 'WL-4',  dx: 'Arrhythmia',        beds: 1, specialty: 'cardiac', priority: 6,  los: 3 },
+                { id: 'WL-5',  dx: 'Valve disease',     beds: 1, specialty: 'cardiac', priority: 5,  los: 4 },
+                { id: 'WL-6',  dx: 'Pre-op eval',       beds: 1, specialty: 'cardiac', priority: 4,  los: 2 },
+                { id: 'WL-7',  dx: 'Post-PCI',          beds: 1, specialty: 'cardiac', priority: 8,  los: 2 },
+                { id: 'WL-8',  dx: 'Pericarditis',      beds: 1, specialty: 'cardiac', priority: 6,  los: 3 },
+                { id: 'WL-9',  dx: 'Endocarditis',      beds: 1, specialty: 'cardiac', priority: 9,  los: 10 },
+                { id: 'WL-10', dx: 'Cardiac rehab',     beds: 1, specialty: 'cardiac', priority: 3,  los: 2 },
+                { id: 'WL-11', dx: 'Myocarditis',       beds: 1, specialty: 'cardiac', priority: 7,  los: 5 },
+                { id: 'WL-12', dx: 'Pulmonary HTN',     beds: 1, specialty: 'cardiac', priority: 5,  los: 6 }
+            ],
+            mode: 'knapsack'
+        }
+    };
+
+    var currentScenario = null;
+    var currentResults = [];
+
+    // ===============================================================
+    // DOM Helpers (no innerHTML)
+    // ===============================================================
+    function clearChildren(el) {
+        while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function createEl(tag, attrs, textContent) {
+        var el = document.createElement(tag);
+        if (attrs) {
+            Object.keys(attrs).forEach(function(k) {
+                if (k === 'className') el.className = attrs[k];
+                else if (k === 'style' && typeof attrs[k] === 'object') {
+                    Object.keys(attrs[k]).forEach(function(s) { el.style[s] = attrs[k][s]; });
+                } else el.setAttribute(k, attrs[k]);
+            });
+        }
+        if (textContent !== undefined) el.textContent = textContent;
+        return el;
+    }
+
+    // ===============================================================
+    // Build Scenario Chips
+    // ===============================================================
+    function buildScenarioChips() {
+        var container = document.getElementById('scenarioChips');
+        clearChildren(container);
+        var scenarios = [
+            { key: 'ed_surge', label: 'Monday ED Surge', diff: 'textbook' },
+            { key: 'weekend_overflow', label: 'Weekend Overflow', diff: 'stress' },
+            { key: 'cardiac_triage', label: 'Cardiac Triage', diff: 'edge' }
+        ];
+        var diffColors = { textbook: '#64ffda', stress: '#e0af68', edge: '#ff6b6b' };
+
+        scenarios.forEach(function(s) {
+            var btn = createEl('button', { className: 'algo-chip' });
+            var dot = createEl('span');
+            dot.style.display = 'inline-block';
+            dot.style.width = '6px';
+            dot.style.height = '6px';
+            dot.style.borderRadius = '50%';
+            dot.style.background = diffColors[s.diff];
+            dot.style.marginRight = '6px';
+            btn.appendChild(dot);
+            btn.appendChild(document.createTextNode(s.label));
+            btn.addEventListener('click', function() { selectScenario(s.key); });
+            container.appendChild(btn);
+        });
+    }
+
+    function selectScenario(key) {
+        currentScenario = SCENARIOS[key];
+        // Update chip styling
+        var chips = document.getElementById('scenarioChips').querySelectorAll('.algo-chip');
+        var keys = ['ed_surge', 'weekend_overflow', 'cardiac_triage'];
+        chips.forEach(function(chip, i) {
+            if (keys[i] === key) chip.classList.add('selected');
+            else chip.classList.remove('selected');
+        });
+
+        renderPatientTable();
+        clearResultsUI();
+        drawEmpty();
+        updateSummary();
+    }
+
+    // ===============================================================
+    // Patient Table
+    // ===============================================================
+    function renderPatientTable() {
+        var tbody = document.getElementById('patientBody');
+        clearChildren(tbody);
+        if (!currentScenario) return;
+
+        var isKnapsack = currentScenario.mode === 'knapsack';
+
+        // Update header for knapsack
+        var thead = document.getElementById('patientTable').querySelector('thead tr');
+        clearChildren(thead);
+        var headers = ['#', 'Patient / Diagnosis', 'Beds', 'Specialty'];
+        if (isKnapsack) headers = ['#', 'Patient / Diagnosis', 'Priority', 'LOS (days)'];
+        headers.forEach(function(h) {
+            var th = createEl('th', null, h);
+            thead.appendChild(th);
+        });
+
+        currentScenario.patients.forEach(function(p, i) {
+            var tr = createEl('tr');
+            var color = PATIENT_COLORS[i % PATIENT_COLORS.length];
+
+            var td1 = createEl('td', null, p.id);
+            td1.style.color = color;
+            td1.style.fontWeight = '500';
+            tr.appendChild(td1);
+
+            tr.appendChild(createEl('td', null, p.dx));
+
+            if (isKnapsack) {
+                tr.appendChild(createEl('td', null, String(p.priority)));
+                tr.appendChild(createEl('td', null, String(p.los) + 'd'));
+            } else {
+                var bedTd = createEl('td', null, String(p.beds));
+                if (p.beds > 1) { bedTd.style.color = '#ff6b6b'; bedTd.style.fontWeight = '600'; }
+                tr.appendChild(bedTd);
+
+                var specTd = createEl('td', null, p.specialty);
+                specTd.style.color = WARD_COLORS[p.specialty] || 'var(--slate-light)';
+                tr.appendChild(specTd);
+            }
+            tbody.appendChild(tr);
+        });
+    }
+
+    function updateSummary() {
+        var el = document.getElementById('configSummary');
+        if (!currentScenario) { el.textContent = 'Select a scenario'; return; }
+        var n = currentScenario.patients.length;
+        if (currentScenario.mode === 'knapsack') {
+            el.textContent = n + ' Waitlisted \u00b7 ' + currentScenario.wardCapacity + ' Bed-Days';
+        } else {
+            el.textContent = n + ' Patients \u00b7 Cap ' + currentScenario.wardCapacity;
+        }
+    }
+
+    // ===============================================================
+    // Bin Packing Algorithms
+    // ===============================================================
+    function groupBySpecialty(patients) {
+        var groups = {};
+        patients.forEach(function(p) {
+            if (!groups[p.specialty]) groups[p.specialty] = [];
+            groups[p.specialty].push(p);
+        });
+        return groups;
+    }
+
+    function firstFit(patients, cap) {
+        var groups = groupBySpecialty(patients);
+        var allWards = [];
+        Object.keys(groups).forEach(function(spec) {
+            var items = groups[spec];
+            var wards = [];
+            var remaining = [];
+            items.forEach(function(p) {
+                var placed = false;
+                for (var w = 0; w < wards.length; w++) {
+                    if (remaining[w] >= p.beds) {
+                        wards[w].push(p);
+                        remaining[w] -= p.beds;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    wards.push([p]);
+                    remaining.push(cap - p.beds);
+                }
+            });
+            wards.forEach(function(ward) {
+                allWards.push({ specialty: spec, patients: ward });
+            });
+        });
+        return allWards;
+    }
+
+    function firstFitDecreasing(patients, cap) {
+        var groups = groupBySpecialty(patients);
+        var allWards = [];
+        Object.keys(groups).forEach(function(spec) {
+            var items = groups[spec].slice().sort(function(a, b) { return b.beds - a.beds; });
+            var wards = [];
+            var remaining = [];
+            items.forEach(function(p) {
+                var placed = false;
+                for (var w = 0; w < wards.length; w++) {
+                    if (remaining[w] >= p.beds) {
+                        wards[w].push(p);
+                        remaining[w] -= p.beds;
+                        placed = true;
+                        break;
+                    }
+                }
+                if (!placed) {
+                    wards.push([p]);
+                    remaining.push(cap - p.beds);
+                }
+            });
+            wards.forEach(function(ward) {
+                allWards.push({ specialty: spec, patients: ward });
+            });
+        });
+        return allWards;
+    }
+
+    function bestFitDecreasing(patients, cap) {
+        var groups = groupBySpecialty(patients);
+        var allWards = [];
+        Object.keys(groups).forEach(function(spec) {
+            var items = groups[spec].slice().sort(function(a, b) { return b.beds - a.beds; });
+            var wards = [];
+            var remaining = [];
+            items.forEach(function(p) {
+                var bestW = -1;
+                var bestRem = cap + 1;
+                for (var w = 0; w < wards.length; w++) {
+                    if (remaining[w] >= p.beds && remaining[w] < bestRem) {
+                        bestW = w;
+                        bestRem = remaining[w];
+                    }
+                }
+                if (bestW >= 0) {
+                    wards[bestW].push(p);
+                    remaining[bestW] -= p.beds;
+                } else {
+                    wards.push([p]);
+                    remaining.push(cap - p.beds);
+                }
+            });
+            wards.forEach(function(ward) {
+                allWards.push({ specialty: spec, patients: ward });
+            });
+        });
+        return allWards;
+    }
+
+    // ===============================================================
+    // Knapsack DP
+    // ===============================================================
+    function knapsackDP(patients, capacity) {
+        var n = patients.length;
+        // dp[i][w] = max priority using first i items with w bed-days
+        var dp = [];
+        for (var i = 0; i <= n; i++) {
+            dp[i] = [];
+            for (var w = 0; w <= capacity; w++) {
+                dp[i][w] = 0;
+            }
+        }
+
+        for (var i = 1; i <= n; i++) {
+            var p = patients[i - 1];
+            for (var w = 0; w <= capacity; w++) {
+                dp[i][w] = dp[i - 1][w];
+                if (p.los <= w) {
+                    var val = dp[i - 1][w - p.los] + p.priority;
+                    if (val > dp[i][w]) dp[i][w] = val;
+                }
+            }
+        }
+
+        // Trace back
+        var selected = [];
+        var w = capacity;
+        for (var i = n; i > 0; i--) {
+            if (dp[i][w] !== dp[i - 1][w]) {
+                selected.push(patients[i - 1]);
+                w -= patients[i - 1].los;
+            }
+        }
+        selected.reverse();
+        return { selected: selected, totalPriority: dp[n][capacity], totalLOS: capacity - w };
+    }
+
+    // ===============================================================
+    // Solve
+    // ===============================================================
+    document.getElementById('solveBtn').addEventListener('click', function() {
+        if (!currentScenario) {
+            document.getElementById('solverStatus').textContent = 'Please select a scenario first.';
+            return;
+        }
+
+        if (currentScenario.mode === 'knapsack') {
+            solveKnapsack();
+        } else {
+            solveBinPacking();
+        }
+    });
+
+    function solveBinPacking() {
+        var patients = currentScenario.patients;
+        var cap = currentScenario.wardCapacity;
+
+        var algos = [
+            { name: 'First Fit', fn: firstFit },
+            { name: 'First Fit Decreasing', fn: firstFitDecreasing },
+            { name: 'Best Fit Decreasing', fn: bestFitDecreasing }
+        ];
+
+        currentResults = [];
+        algos.forEach(function(algo) {
+            var t0 = performance.now();
+            var wards = algo.fn(patients, cap);
+            var elapsed = performance.now() - t0;
+
+            var totalBeds = patients.reduce(function(s, p) { return s + p.beds; }, 0);
+            var totalCap = wards.length * cap;
+            var util = (totalBeds / totalCap) * 100;
+
+            currentResults.push({
+                name: algo.name,
+                wards: wards,
+                numWards: wards.length,
+                utilization: util,
+                time: elapsed,
+                mode: 'binpacking'
+            });
+        });
+
+        currentResults.sort(function(a, b) { return a.numWards - b.numWards || b.utilization - a.utilization; });
+
+        renderResultsTable();
+        showBPResult(currentResults[0]);
+        document.getElementById('solverStatus').textContent =
+            'Solved with ' + currentResults.length + ' algorithms. Click a row to view its assignment.';
+    }
+
+    function solveKnapsack() {
+        var patients = currentScenario.patients;
+        var cap = currentScenario.wardCapacity;
+
+        var t0 = performance.now();
+        var result = knapsackDP(patients, cap);
+        var elapsed = performance.now() - t0;
+
+        currentResults = [{
+            name: 'DP Knapsack',
+            selected: result.selected,
+            totalPriority: result.totalPriority,
+            totalLOS: result.totalLOS,
+            time: elapsed,
+            mode: 'knapsack',
+            capacity: cap
+        }];
+
+        renderKnapsackResults();
+        drawKnapsack(result, cap, patients);
+
+        // Business panel
+        showKnapsackBusiness(result, cap);
+
+        document.getElementById('solverStatus').textContent =
+            'Optimal solution: admit ' + result.selected.length + ' patients, total priority ' + result.totalPriority + ', using ' + result.totalLOS + '/' + cap + ' bed-days.';
+    }
+
+    // ===============================================================
+    // Results Rendering
+    // ===============================================================
+    function clearResultsUI() {
+        var tbody = document.getElementById('resultsBody');
+        clearChildren(tbody);
+        var tr = createEl('tr');
+        var td = createEl('td', null, 'Select a scenario and click Solve');
+        td.setAttribute('colspan', '4');
+        td.style.textAlign = 'center';
+        td.style.color = 'var(--slate)';
+        td.style.fontFamily = "'Inter', sans-serif";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+        document.getElementById('binOutput').textContent = 'Ward assignments will appear here after solving.';
+        document.getElementById('wardUtilPanel').style.display = 'none';
+        document.getElementById('businessPanel').style.display = 'none';
+    }
+
+    function renderResultsTable() {
+        var tbody = document.getElementById('resultsBody');
+        clearChildren(tbody);
+
+        // Update header for bin packing
+        var thead = document.getElementById('resultsTable').querySelector('thead tr');
+        clearChildren(thead);
+        ['Algorithm', 'Wards', 'Utilization', 'Time'].forEach(function(h) {
+            thead.appendChild(createEl('th', null, h));
+        });
+
+        currentResults.forEach(function(r, i) {
+            var tr = createEl('tr');
+
+            var tdName = createEl('td', { className: 'algo-label' }, r.name);
+            tr.appendChild(tdName);
+
+            var tdWards = createEl('td', null, String(r.numWards));
+            if (i === 0) tdWards.className = 'best-val';
+            tr.appendChild(tdWards);
+
+            tr.appendChild(createEl('td', null, r.utilization.toFixed(1) + '%'));
+
+            var timeStr = r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
+            tr.appendChild(createEl('td', null, timeStr));
+
+            tr.addEventListener('click', (function(res) {
+                return function() { showBPResult(res); };
+            })(r));
+
+            tbody.appendChild(tr);
+        });
+    }
+
+    function renderKnapsackResults() {
+        var tbody = document.getElementById('resultsBody');
+        clearChildren(tbody);
+
+        var thead = document.getElementById('resultsTable').querySelector('thead tr');
+        clearChildren(thead);
+        ['Algorithm', 'Admitted', 'Priority', 'Time'].forEach(function(h) {
+            thead.appendChild(createEl('th', null, h));
+        });
+
+        var r = currentResults[0];
+        var tr = createEl('tr');
+        tr.appendChild(createEl('td', { className: 'algo-label' }, r.name));
+
+        var tdAdm = createEl('td', { className: 'best-val' }, String(r.selected.length) + '/' + currentScenario.patients.length);
+        tr.appendChild(tdAdm);
+
+        tr.appendChild(createEl('td', null, String(r.totalPriority)));
+
+        var timeStr = r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
+        tr.appendChild(createEl('td', null, timeStr));
+
+        tbody.appendChild(tr);
+
+        // Show details
+        var output = document.getElementById('binOutput');
+        var lines = ['=== DP Knapsack Optimal Solution ===', ''];
+        lines.push('Admitted (' + r.selected.length + ' patients, ' + r.totalLOS + '/' + r.capacity + ' bed-days):');
+        r.selected.forEach(function(p) {
+            lines.push('  ' + p.id + ': ' + p.dx + ' (priority ' + p.priority + ', LOS ' + p.los + 'd)');
+        });
+        lines.push('');
+        lines.push('Not admitted:');
+        currentScenario.patients.forEach(function(p) {
+            var admitted = r.selected.some(function(s) { return s.id === p.id; });
+            if (!admitted) {
+                lines.push('  ' + p.id + ': ' + p.dx + ' (priority ' + p.priority + ', LOS ' + p.los + 'd)');
+            }
+        });
+        lines.push('');
+        lines.push('Total priority: ' + r.totalPriority + '  |  Bed-days used: ' + r.totalLOS + '/' + r.capacity);
+        output.textContent = lines.join('\n');
+    }
+
+    function showBPResult(r) {
+        drawBins(r.wards, r.name);
+        showWardBars(r.wards);
+        showBusiness(r);
+
+        var cap = currentScenario.wardCapacity;
+        var output = document.getElementById('binOutput');
+        var lines = ['=== ' + r.name + ' ===', ''];
+        r.wards.forEach(function(ward, wi) {
+            var load = ward.patients.reduce(function(s, p) { return s + p.beds; }, 0);
+            var pct = ((load / cap) * 100).toFixed(0);
+            var names = ward.patients.map(function(p) { return p.id + '(' + p.beds + ')'; }).join(', ');
+            lines.push(ward.specialty.charAt(0).toUpperCase() + ward.specialty.slice(1) + ' Ward ' + (wi + 1) + ': [' + names + '] ' + load + '/' + cap + ' (' + pct + '%)');
+        });
+        var totalBeds = currentScenario.patients.reduce(function(s, p) { return s + p.beds; }, 0);
+        lines.push('');
+        lines.push('Total: ' + r.numWards + ' wards  |  Utilization: ' + r.utilization.toFixed(1) + '%  |  Beds used: ' + totalBeds + '/' + (r.numWards * cap));
+        output.textContent = lines.join('\n');
+    }
+
+    // ===============================================================
+    // Ward Utilization Bars
+    // ===============================================================
+    function showWardBars(wards) {
+        var panel = document.getElementById('wardUtilPanel');
+        panel.style.display = 'block';
+        var container = document.getElementById('wardBars');
+        clearChildren(container);
+        var cap = currentScenario.wardCapacity;
+
+        wards.forEach(function(ward, wi) {
+            var load = ward.patients.reduce(function(s, p) { return s + p.beds; }, 0);
+            var pct = (load / cap) * 100;
+
+            var row = createEl('div', { className: 'ward-bar-row' });
+
+            var label = createEl('span', { className: 'ward-bar-label' });
+            label.textContent = ward.specialty.charAt(0).toUpperCase() + ward.specialty.slice(1) + ' ' + (wi + 1);
+            label.style.color = WARD_COLORS[ward.specialty] || 'var(--slate)';
+            row.appendChild(label);
+
+            var track = createEl('div', { className: 'ward-bar-track' });
+            var fill = createEl('div', { className: 'ward-bar-fill' });
+            fill.classList.add(pct > 85 ? 'danger' : pct > 70 ? 'warn' : 'safe');
+            fill.style.width = Math.min(pct, 100) + '%';
+            track.appendChild(fill);
+            row.appendChild(track);
+
+            var pctLabel = createEl('span', { className: 'ward-bar-pct' }, pct.toFixed(0) + '%');
+            row.appendChild(pctLabel);
+
+            container.appendChild(row);
+        });
+    }
+
+    // ===============================================================
+    // Business Impact
+    // ===============================================================
+    function showBusiness(r) {
+        var panel = document.getElementById('businessPanel');
+        panel.style.display = 'block';
+        var grid = document.getElementById('businessGrid');
+        clearChildren(grid);
+
+        var cap = currentScenario.wardCapacity;
+        var totalBeds = currentScenario.patients.reduce(function(s, p) { return s + p.beds; }, 0);
+        var overflowWards = Math.max(0, r.numWards - 4);
+        var boardingCostPerHr = 150;
+        var avgBoardingHrs = overflowWards * 6;
+        var boardingCost = avgBoardingHrs * boardingCostPerHr;
+
+        var metrics = [
+            { val: r.numWards, label: 'Wards Used' },
+            { val: r.utilization.toFixed(1) + '%', label: 'Avg Utilization' },
+            { val: overflowWards, label: 'Overflow Wards' },
+            { val: '\u20AC' + boardingCost.toLocaleString(), label: 'Est. Boarding Cost' }
+        ];
+
+        metrics.forEach(function(m) {
+            var stat = createEl('div', { className: 'biz-stat' });
+            var val = createEl('div', { className: 'biz-val' }, String(m.val));
+            var lbl = createEl('div', { className: 'biz-label' }, m.label);
+            stat.appendChild(val);
+            stat.appendChild(lbl);
+            grid.appendChild(stat);
+        });
+    }
+
+    function showKnapsackBusiness(result, cap) {
+        var panel = document.getElementById('businessPanel');
+        panel.style.display = 'block';
+        var grid = document.getElementById('businessGrid');
+        clearChildren(grid);
+
+        document.getElementById('wardUtilPanel').style.display = 'none';
+
+        var bedDayValue = 800;
+        var revenueGenerated = result.totalLOS * bedDayValue;
+        var efficiencyPct = ((result.totalLOS / cap) * 100).toFixed(0);
+
+        var metrics = [
+            { val: result.selected.length + '/' + currentScenario.patients.length, label: 'Patients Admitted' },
+            { val: String(result.totalPriority), label: 'Total Priority Score' },
+            { val: result.totalLOS + '/' + cap, label: 'Bed-Days Used' },
+            { val: '\u20AC' + revenueGenerated.toLocaleString(), label: 'Revenue @ \u20AC800/day' }
+        ];
+
+        metrics.forEach(function(m) {
+            var stat = createEl('div', { className: 'biz-stat' });
+            stat.appendChild(createEl('div', { className: 'biz-val' }, String(m.val)));
+            stat.appendChild(createEl('div', { className: 'biz-label' }, m.label));
+            grid.appendChild(stat);
+        });
+    }
+
+    // ===============================================================
+    // Canvas Drawing — Bin Packing
+    // ===============================================================
+    function drawEmpty() {
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, CW, CH);
+        ctx.fillStyle = 'rgba(248,249,250,0.4)';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Select a scenario and click Solve to visualize ward assignments', CW / 2, CH / 2);
+    }
+
+    function drawBins(wards, algoName) {
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, CW, CH);
+
+        var cap = currentScenario.wardCapacity;
+        var numWards = wards.length;
+        var padding = 20;
+        var topMargin = 40;
+        var bottomMargin = 55;
+        var binAreaH = CH - topMargin - bottomMargin;
+        var maxBinW = 110;
+        var gap = 12;
+        var binW = Math.min(maxBinW, ((CW - 2 * padding) - (numWards - 1) * gap) / numWards);
+        binW = Math.max(35, binW);
+        var totalW = numWards * binW + (numWards - 1) * gap;
+        var startX = (CW - totalW) / 2;
+
+        // Title
+        ctx.fillStyle = 'rgba(248,249,250,0.6)';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(algoName + '  \u2014  ' + numWards + ' ward' + (numWards !== 1 ? 's' : ''), CW / 2, 22);
+
+        wards.forEach(function(ward, wi) {
+            var bx = startX + wi * (binW + gap);
+            var by = topMargin;
+            var bh = binAreaH;
+
+            var wardColor = WARD_COLORS[ward.specialty] || '#C5A059';
+
+            // Bin outline
+            ctx.strokeStyle = wardColor;
+            ctx.globalAlpha = 0.5;
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(bx, by, binW, bh);
+            ctx.globalAlpha = 1;
+
+            // 85% danger line
+            var dangerY = by + bh * (1 - 0.85);
+            ctx.setLineDash([4, 3]);
+            ctx.strokeStyle = 'rgba(255, 107, 107, 0.3)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(bx, dangerY);
+            ctx.lineTo(bx + binW, dangerY);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Draw patients as stacked blocks
+            var currentY = by + bh;
+            var binLoad = ward.patients.reduce(function(s, p) { return s + p.beds; }, 0);
+
+            ward.patients.forEach(function(p, pi) {
+                var itemH = (p.beds / cap) * bh;
+                currentY -= itemH;
+                var origIdx = currentScenario.patients.indexOf(p);
+                if (origIdx < 0) origIdx = pi;
+                var color = PATIENT_COLORS[origIdx % PATIENT_COLORS.length];
+
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.55;
+                ctx.fillRect(bx + 2, currentY, binW - 4, itemH - 1);
+                ctx.globalAlpha = 1;
+
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(bx + 2, currentY, binW - 4, itemH - 1);
+
+                // Label
+                if (itemH > 14 && binW > 45) {
+                    ctx.fillStyle = '#F8F9FA';
+                    ctx.font = (binW > 70 ? '9' : '7') + 'px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    var labelY = currentY + itemH / 2;
+                    if (binW > 70 && itemH > 24) {
+                        ctx.fillText(p.id, bx + binW / 2, labelY - 5);
+                        ctx.font = '7px JetBrains Mono, monospace';
+                        ctx.fillStyle = color;
+                        ctx.fillText(p.beds + 'b', bx + binW / 2, labelY + 6);
+                    } else {
+                        ctx.fillText(p.id, bx + binW / 2, labelY);
+                    }
+                }
+            });
+
+            ctx.textBaseline = 'alphabetic';
+            ctx.textAlign = 'center';
+
+            // Ward label
+            ctx.fillStyle = wardColor;
+            ctx.font = '9px Inter, sans-serif';
+            var specLabel = ward.specialty.charAt(0).toUpperCase() + ward.specialty.slice(1);
+            ctx.fillText(specLabel, bx + binW / 2, by + bh + 14);
+
+            // Utilization
+            var util = ((binLoad / cap) * 100).toFixed(0);
+            ctx.fillStyle = binLoad >= cap * 0.85 ? '#ff6b6b' :
+                            binLoad >= cap * 0.7 ? 'rgba(197,160,89,0.8)' :
+                            '#64ffda';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillText(util + '%', bx + binW / 2, by + bh + 27);
+            ctx.fillText(binLoad + '/' + cap, bx + binW / 2, by + bh + 40);
+
+            // Empty space
+            var freeH = ((cap - binLoad) / cap) * bh;
+            if (freeH > 2) {
+                ctx.fillStyle = 'rgba(197, 160, 89, 0.04)';
+                ctx.fillRect(bx + 2, by, binW - 4, freeH);
+            }
+        });
+
+        // Legend
+        ctx.font = '8px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        var lx = 10;
+        var ly = CH - 8;
+        ctx.fillStyle = 'rgba(255,107,107,0.5)';
+        ctx.fillText('--- 85% danger threshold', lx, ly);
+    }
+
+    // ===============================================================
+    // Canvas Drawing — Knapsack
+    // ===============================================================
+    function drawKnapsack(result, cap, allPatients) {
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, CW, CH);
+
+        var selected = result.selected;
+        var padding = 40;
+        var topMargin = 50;
+        var barAreaW = CW - 2 * padding;
+        var barH = 28;
+        var gap = 6;
+        var maxY = topMargin;
+
+        // Title
+        ctx.fillStyle = 'rgba(248,249,250,0.6)';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('DP Knapsack \u2014 ' + selected.length + ' patients admitted, priority ' + result.totalPriority, CW / 2, 25);
+
+        // Draw capacity bar (background)
+        var capBarY = topMargin;
+        var capBarH = 20;
+        ctx.fillStyle = 'rgba(197, 160, 89, 0.1)';
+        ctx.fillRect(padding, capBarY, barAreaW, capBarH);
+        ctx.strokeStyle = 'rgba(197, 160, 89, 0.3)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(padding, capBarY, barAreaW, capBarH);
+
+        // Fill with used bed-days
+        var usedPct = result.totalLOS / cap;
+        ctx.fillStyle = 'rgba(100, 255, 218, 0.3)';
+        ctx.fillRect(padding, capBarY, barAreaW * usedPct, capBarH);
+
+        ctx.fillStyle = 'var(--ivory)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Capacity: ' + result.totalLOS + '/' + cap + ' bed-days (' + (usedPct * 100).toFixed(0) + '%)', padding, capBarY - 6);
+
+        // Draw each patient
+        var startY = capBarY + capBarH + 30;
+
+        ctx.fillStyle = 'rgba(248,249,250,0.5)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Admitted:', padding, startY - 8);
+
+        selected.forEach(function(p, i) {
+            var y = startY + i * (barH + gap);
+            var origIdx = allPatients.indexOf(p);
+            var color = PATIENT_COLORS[origIdx % PATIENT_COLORS.length];
+            var w = (p.los / cap) * barAreaW;
+
+            ctx.fillStyle = color;
+            ctx.globalAlpha = 0.6;
+            ctx.fillRect(padding, y, w, barH);
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(padding, y, w, barH);
+
+            // Label
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(p.id + ': ' + p.dx, padding + 6, y + barH / 2);
+
+            // Priority and LOS on right
+            ctx.textAlign = 'right';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillStyle = color;
+            ctx.fillText('P' + p.priority + ' | ' + p.los + 'd', padding + w - 6, y + barH / 2);
+        });
+
+        ctx.textBaseline = 'alphabetic';
+
+        // Not admitted
+        var notAdmitted = allPatients.filter(function(p) {
+            return !selected.some(function(s) { return s.id === p.id; });
+        });
+        var naStartY = startY + selected.length * (barH + gap) + 20;
+        ctx.fillStyle = 'rgba(248,249,250,0.4)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Not admitted:', padding, naStartY - 8);
+
+        notAdmitted.forEach(function(p, i) {
+            var y = naStartY + i * (barH + gap);
+            var origIdx = allPatients.indexOf(p);
+            var color = PATIENT_COLORS[origIdx % PATIENT_COLORS.length];
+
+            ctx.fillStyle = 'rgba(255, 107, 107, 0.15)';
+            ctx.fillRect(padding, y, (p.los / cap) * barAreaW, barH);
+            ctx.strokeStyle = 'rgba(255, 107, 107, 0.3)';
+            ctx.setLineDash([4, 3]);
+            ctx.strokeRect(padding, y, (p.los / cap) * barAreaW, barH);
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = 'rgba(248,249,250,0.5)';
+            ctx.font = '9px Inter, sans-serif';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(p.id + ': ' + p.dx, padding + 6, y + barH / 2);
+
+            ctx.textAlign = 'right';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.fillStyle = 'rgba(255, 107, 107, 0.6)';
+            ctx.fillText('P' + p.priority + ' | ' + p.los + 'd', padding + (p.los / cap) * barAreaW - 6, y + barH / 2);
+        });
+
+        ctx.textBaseline = 'alphabetic';
+    }
+
+    // ===============================================================
+    // Initialize
+    // ===============================================================
+    buildScenarioChips();
+    drawEmpty();
+
+    // ===============================================================
+    // Scroll Animations
+    // ===============================================================
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+            if (e.isIntersecting) e.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
+
+    // ===============================================================
+    // Theme Toggle
+    // ===============================================================
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ===============================================================
+    // Scroll Progress + Scroll to Top
+    // ===============================================================
+    var scrollProgress = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        scrollProgress.style.width = pct + '%';
+
+        if (scrollTop > 400) {
+            scrollTopBtn.classList.add('visible');
+        } else {
+            scrollTopBtn.classList.remove('visible');
+        }
+    });
+
+    scrollTopBtn.addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    // ===============================================================
+    // Command Palette
+    // ===============================================================
+    var SEARCH_DATA = [
+        { title: 'Packing & Cutting', subtitle: 'Bin Packing, Knapsack, CSP', icon: 'fa-box', url: '../families/packing.html', group: 'Families' },
+        { title: 'Scheduling', subtitle: 'Flow Shop, Job Shop, RCPSP', icon: 'fa-industry', url: '../families/scheduling.html', group: 'Families' },
+        { title: 'Routing', subtitle: 'TSP, CVRP, VRPTW', icon: 'fa-route', url: '../families/routing.html', group: 'Families' },
+        { title: 'Bin Packing', subtitle: 'BPP1D', icon: 'fa-boxes', url: '../families/packing.html#bin-packing', group: 'Problems' },
+        { title: '0-1 Knapsack', subtitle: 'KP01', icon: 'fa-suitcase', url: '../families/packing.html#knapsack', group: 'Problems' },
+        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'warehouse-packing.html', group: 'Applications' },
+        { title: 'Hospital Bed Management', subtitle: 'Bin Packing + Knapsack', icon: 'fa-bed', url: 'bed-management.html', group: 'Applications' },
+        { title: 'Cargo Container Loading', subtitle: '0-1 Knapsack', icon: 'fa-ship', url: 'cargo-loading.html', group: 'Applications' },
+        { title: 'Operating Room Scheduling', subtitle: 'Job Shop', icon: 'fa-hospital', url: 'operating-room.html', group: 'Applications' },
+        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'delivery-routing.html', group: 'Applications' },
+        { title: 'Cutting Stock', subtitle: 'Fabric & Metal Rolls', icon: 'fa-cut', url: 'cutting-stock.html', group: 'Applications' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'construction-project.html', group: 'Applications' }
+    ];
+
+    var overlay = document.getElementById('cmdPalette');
+    var cmdInput = document.getElementById('cmdInput');
+    var cmdResults = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() {
+        overlay.classList.add('open');
+        cmdInput.value = '';
+        cmdInput.focus();
+        renderCmdResults('');
+        activeIdx = -1;
+    }
+    function closePalette() {
+        overlay.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function renderCmdResults(query) {
+        clearChildren(cmdResults);
+        query = query.toLowerCase();
+
+        var filtered = SEARCH_DATA.filter(function(item) {
+            if (!query) return true;
+            return item.title.toLowerCase().indexOf(query) >= 0 ||
+                   item.subtitle.toLowerCase().indexOf(query) >= 0 ||
+                   item.group.toLowerCase().indexOf(query) >= 0;
+        });
+
+        if (filtered.length === 0) {
+            var empty = createEl('div', { className: 'cmd-empty' }, 'No results found');
+            cmdResults.appendChild(empty);
+            return;
+        }
+
+        var groups = {};
+        var order = ['Families', 'Problems', 'Applications'];
+        filtered.forEach(function(item) {
+            if (!groups[item.group]) groups[item.group] = [];
+            groups[item.group].push(item);
+        });
+
+        order.forEach(function(grp) {
+            if (!groups[grp]) return;
+            var label = createEl('div', { className: 'cmd-group-label' }, grp);
+            cmdResults.appendChild(label);
+
+            groups[grp].forEach(function(item) {
+                var link = createEl('a', { className: 'cmd-result', href: item.url });
+
+                var icon = createEl('div', { className: 'cmd-icon' });
+                var iconI = createEl('i', { className: 'fas ' + item.icon });
+                icon.appendChild(iconI);
+                link.appendChild(icon);
+
+                var info = createEl('div', { className: 'cmd-info' });
+                info.appendChild(createEl('div', { className: 'cmd-title' }, item.title));
+                info.appendChild(createEl('div', { className: 'cmd-subtitle' }, item.subtitle));
+                link.appendChild(info);
+
+                cmdResults.appendChild(link);
+            });
+        });
+    }
+
+    document.getElementById('navSearchTrigger').addEventListener('click', openPalette);
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) closePalette();
+            else openPalette();
+        }
+        if (e.key === 'Escape' && overlay.classList.contains('open')) {
+            closePalette();
+        }
+    });
+
+    overlay.addEventListener('click', function(e) {
+        if (e.target === overlay) closePalette();
+    });
+
+    cmdInput.addEventListener('input', function() {
+        renderCmdResults(cmdInput.value);
+    });
+
+})();
+</script>
+</body>
+</html>

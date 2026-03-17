@@ -1,0 +1,3314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clinical Trial Planning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive RCPSP clinical trial scheduling demo using Serial SGS (LFT), Parallel SGS, and Genetic Algorithm.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/clinical-trial.html">
+    <meta property="og:title" content="Clinical Trial Planning | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive RCPSP clinical trial scheduling demo using Serial SGS (LFT), Parallel SGS, and Genetic Algorithm.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Clinical Trial Planning | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive RCPSP clinical trial scheduling demo using Serial SGS (LFT), Parallel SGS, and Genetic Algorithm.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* Content Blocks */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* Disclaimer Box */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* Formulation Block */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* Theory Link */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Mapping Table */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+        }
+        .mapping-table td:first-child { color: var(--ivory); font-weight: 500; }
+
+        /* Decision Chain */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        .chain-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            background: var(--midnight);
+            min-width: 160px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .chain-step.active {
+            border-color: var(--gold);
+            background: rgba(197, 160, 89, 0.08);
+            box-shadow: 0 0 20px rgba(197, 160, 89, 0.1);
+        }
+        .chain-step .step-phase {
+            font-size: 0.6rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+        .chain-step .step-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .chain-step .step-detail {
+            font-size: 0.72rem;
+            color: var(--slate);
+            margin-top: 0.2rem;
+        }
+        .chain-arrow {
+            font-size: 1.2rem;
+            color: var(--gold);
+            margin: 0 0.3rem;
+            opacity: 0.5;
+        }
+        @media (max-width: 768px) {
+            .chain-arrow { transform: rotate(90deg); margin: 0.3rem 0; }
+            .decision-chain { flex-direction: column; }
+        }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 140px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+        .schedule-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        /* Complexity Box */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* Algorithm Cards */
+        .algo-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 1.8rem;
+            transition: border-color 0.3s;
+        }
+        .algo-card:hover { border-color: rgba(197, 160, 89, 0.3); }
+        .algo-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ivory);
+            margin-bottom: 0.3rem;
+        }
+        .algo-card .algo-tag {
+            font-size: 0.68rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .algo-card p {
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.8;
+            margin-bottom: 0.8rem;
+        }
+        .algo-card .algo-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0.8rem 0 0;
+        }
+        .algo-card .algo-steps li {
+            padding: 0.3rem 0 0.3rem 1.2rem;
+            position: relative;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+        }
+        .algo-card .algo-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        /* References */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* CTA Panel */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Back Link */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .problem-formulation,
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Particle canvas */
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* Scroll Progress + Scroll-to-Top */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* Nav search trigger */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* Canvas export */
+        .canvas-wrapper { position: relative; }
+        .canvas-export-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            background: rgba(10, 25, 47, 0.85);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            color: var(--gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            transition: all 0.2s;
+            z-index: 10;
+            opacity: 0;
+            backdrop-filter: blur(4px);
+        }
+        .canvas-wrapper:hover .canvas-export-btn { opacity: 1; }
+        .canvas-export-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Utilization bars */
+        .utilization-panel {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .util-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            margin-bottom: 0.4rem;
+        }
+        .util-bar-row:last-child { margin-bottom: 0; }
+        .util-bar-label {
+            font-size: 0.7rem;
+            color: var(--slate);
+            min-width: 80px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .util-bar-track {
+            flex: 1;
+            height: 14px;
+            background: rgba(197, 160, 89, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .util-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+        .util-bar-fill.high { background: linear-gradient(90deg, #64ffda, #50fa7b); }
+        .util-bar-fill.mid { background: linear-gradient(90deg, #e0af68, #C5A059); }
+        .util-bar-fill.low { background: linear-gradient(90deg, #ff6b6b, #f7768e); }
+        .util-bar-pct {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            min-width: 36px;
+            text-align: right;
+        }
+        .feature-panel-title {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .feature-panel-title i { font-size: 0.7rem; }
+
+        /* Business panel */
+        .business-panel {
+            margin-top: 1.5rem;
+            padding: 1.2rem 1.5rem;
+            background: rgba(197, 160, 89, 0.06);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 6px;
+        }
+        .business-panel h5 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+        }
+        .business-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            align-items: center;
+            margin-bottom: 0.6rem;
+        }
+        .business-row label {
+            font-size: 0.78rem;
+            color: var(--slate);
+            white-space: nowrap;
+        }
+        .business-row input {
+            width: 90px;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            color: var(--ivory);
+            padding: 4px 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            text-align: right;
+        }
+        .business-row input:focus { border-color: var(--gold); outline: none; }
+        .business-result {
+            font-size: 0.85rem;
+            color: var(--ivory);
+            font-weight: 500;
+            padding: 0.5rem 0;
+        }
+        .business-result .highlight {
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.95rem;
+        }
+
+        /* Solve animation */
+        @keyframes solvePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(197, 160, 89, 0); }
+        }
+        .solver-btn.solving {
+            animation: solvePulse 1s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .solver-btn.solving i { animation: spin 0.8s linear infinite; }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+        .results-table tbody tr:hover { background: rgba(197, 160, 89, 0.06); }
+        .results-table tbody tr.row-selected {
+            background: rgba(197, 160, 89, 0.1);
+            outline: 1px solid rgba(197, 160, 89, 0.2);
+            outline-offset: -1px;
+        }
+
+        /* Scenario buttons */
+        .scenario-gallery {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+        .scenario-btn {
+            font-size: 0.72rem;
+            padding: 8px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--slate-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .scenario-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .scenario-btn.active {
+            background: rgba(197, 160, 89, 0.12);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; }
+            .business-row { flex-direction: column; align-items: flex-start; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&ShortUpArrow;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Clinical Trial Planning</li>
+        </ol>
+    </div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-flask"></i></div>
+        <h1>Clinical Trial <span>Planning</span></h1>
+        <p class="hero-subtitle">Resource-Constrained Project Scheduling</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            A pharmaceutical company must schedule a Phase III clinical trial &mdash; protocol development,
+            ethics review, patient screening, treatment phases, biomarker analysis &mdash; subject to
+            precedence constraints and limited clinical staff, lab capacity, and data management resources.
+            Each day of delay costs $1&ndash;2M in lost patent-protected revenue, making optimal scheduling
+            critical to the drug development timeline.
+        </p>
+    </div>
+</section>
+
+<!-- 2. Decision Chain -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Healthcare <span>Decision Chain</span></h2>
+            <p>Where clinical trial scheduling fits in the healthcare optimization hierarchy</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step active">
+                <span class="step-phase">Phase 1</span>
+                <span class="step-name">Strategic Planning</span>
+                <span class="step-detail">Clinical Trial Planning</span>
+            </div>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <div class="chain-step">
+                <span class="step-phase">Phase 2</span>
+                <span class="step-name">Staff Planning</span>
+                <span class="step-detail">Nurse Rostering</span>
+            </div>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <div class="chain-step">
+                <span class="step-phase">Phase 3</span>
+                <span class="step-name">Patient Flow</span>
+                <span class="step-detail">Bed Management</span>
+            </div>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <div class="chain-step">
+                <span class="step-phase">Phase 4</span>
+                <span class="step-name">Supply Chain</span>
+                <span class="step-detail">Drug Distribution</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Problem -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Scheduling clinical trial activities under real-world constraints</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Consider a Phase III cardiovascular drug trial. Each activity &mdash; writing the protocol,
+                obtaining ethics approval, screening patients, conducting treatment phases, running biomarker
+                analyses &mdash; has a <strong>duration</strong> (in weeks) and requires specific
+                <strong>resources</strong> (clinical staff teams, laboratory units, data management units).
+                Activities must obey <strong>precedence constraints</strong>: you cannot screen patients
+                before ethics approval, and statistical analysis cannot begin until biomarker data is collected.
+            </p>
+            <p>
+                Resources are <strong>renewable</strong>: 4 clinical staff teams are available each week,
+                3 lab capacity units operate simultaneously, and 2 data management units process information
+                in parallel. Activities that do not share a precedence relationship <em>can</em> run
+                concurrently &mdash; but only if the combined resource demand does not exceed capacity.
+                The objective is to <strong>minimize the trial duration</strong> (makespan), completing
+                all activities as early as possible to reach market before patent expiration.
+            </p>
+
+            <table class="mapping-table">
+                <thead>
+                    <tr><th>Clinical Trial Domain</th><th>OR / RCPSP Concept</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Trial activities (Protocol, Screening, Treatment, ...)</td><td>Activities with durations d<sub>i</sub></td></tr>
+                    <tr><td>Must-finish-before relationships</td><td>Precedence constraints (i, j) &isin; E</td></tr>
+                    <tr><td>Clinical Staff (4 teams)</td><td>Renewable resource R<sub>1</sub> = 4</td></tr>
+                    <tr><td>Lab Capacity (3 units)</td><td>Renewable resource R<sub>2</sub> = 3</td></tr>
+                    <tr><td>Data Management (2 units)</td><td>Renewable resource R<sub>3</sub> = 2</td></tr>
+                    <tr><td>Total trial duration</td><td>Makespan C<sub>max</sub> = S<sub>n+1</sub></td></tr>
+                    <tr><td>Minimize time-to-market</td><td>minimize C<sub>max</sub></td></tr>
+                </tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">RCPSP Formulation (PS | prec | C<sub>max</sub>)</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">S<sub>n+1</sub></span> &nbsp; <span class="comment">// start time of sink = trial duration</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">S<sub>j</sub> &ge; S<sub>i</sub> + d<sub>i</sub></span> &nbsp; <span class="comment">// precedence: j cannot start before i finishes</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i active at t</sub> r<sub>ik</sub> &le; R<sub>k</sub></span> &nbsp; &forall; t, k &nbsp; <span class="comment">// resource capacity per period</span><br>
+                &nbsp;&nbsp;<span class="variable">S<sub>i</sub> &ge; 0</span> &nbsp; <span class="comment">// non-negative start times</span>
+            </div>
+
+            <p>
+                The RCPSP is <strong>strongly NP-hard</strong>, even with just two resource types.
+                For clinical trials with 12+ activities and 3 resource types, the number of feasible
+                schedules grows combinatorially. Real trials rely on heuristic Schedule Generation
+                Schemes (SGS) and metaheuristics like Genetic Algorithms to find near-optimal schedules.
+                RCPSP scheduling can reduce trial duration by <strong>10&ndash;20%</strong>, saving
+                tens of millions in time-to-market costs.
+            </p>
+
+            <a href="../families/scheduling.html" class="theory-link">
+                <i class="fas fa-book"></i> Scheduling Theory &amp; RCPSP Family
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Try It Yourself -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Edit activities, precedences, and resource capacities, then schedule the clinical trial</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-flask"></i> Clinical Trial Scheduler</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">12 Activities &middot; Staff 4 &middot; Lab 3 &middot; Data 2</span>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario Switcher -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-gallery" id="scenarioGallery"></div>
+
+                <!-- Resource Capacities -->
+                <div class="solver-section-label">Resource Capacities</div>
+                <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <div style="display:flex;align-items:center;gap:0.8rem;flex:1;min-width:180px;">
+                        <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-user-md" style="color:var(--gold);margin-right:0.4rem;"></i>Staff:</label>
+                        <input type="range" class="solver-slider" id="staff-slider" min="1" max="10" value="4" style="flex:1;accent-color:var(--gold);">
+                        <span class="size-display" id="staff-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">4</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.8rem;flex:1;min-width:180px;">
+                        <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-microscope" style="color:var(--gold);margin-right:0.4rem;"></i>Lab:</label>
+                        <input type="range" class="solver-slider" id="lab-slider" min="1" max="8" value="3" style="flex:1;accent-color:var(--gold);">
+                        <span class="size-display" id="lab-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">3</span>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.8rem;flex:1;min-width:180px;">
+                        <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-database" style="color:var(--gold);margin-right:0.4rem;"></i>Data Mgmt:</label>
+                        <input type="range" class="solver-slider" id="data-slider" min="1" max="6" value="2" style="flex:1;accent-color:var(--gold);">
+                        <span class="size-display" id="data-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">2</span>
+                    </div>
+                </div>
+
+                <!-- Activity Table -->
+                <div class="solver-section-label">Activities</div>
+                <div style="overflow-x:auto;">
+                    <table class="results-table" id="activity-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Activity Name</th>
+                                <th>Duration (wk)</th>
+                                <th>Staff</th>
+                                <th>Lab</th>
+                                <th>Data</th>
+                                <th>Predecessors</th>
+                                <th style="width:35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Activity Buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.5rem;">
+                    <button class="algo-chip" style="border:1px dashed var(--gold);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Activity</button>
+                    <button class="algo-chip" style="border:1px solid rgba(255,107,107,0.3);background:transparent;"><i class="fas fa-minus" style="margin-right:0.3rem;"></i> Remove Last</button>
+                    <button class="algo-chip" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="algo-chip" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                </div>
+
+                <!-- Algorithm Select -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algo-select">
+                    <span class="algo-chip selected" data-algo="serial-lft">Serial SGS &mdash; LFT <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="parallel">Parallel SGS <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="genetic">Genetic Algorithm <span class="chip-type">(M)</span></span>
+                </div>
+
+                <!-- Solve Button -->
+                <div style="text-align:center;margin:1.2rem 0;">
+                    <button class="solver-btn primary" id="solveBtn"><i class="fas fa-play"></i> Solve &amp; Compare All Algorithms</button>
+                </div>
+
+                <!-- Gantt Chart -->
+                <div class="solver-section-label">Gantt Chart</div>
+                <div class="solver-canvas-wrap canvas-wrapper">
+                    <canvas id="gantt-canvas" width="900" height="420"></canvas>
+                    <button class="canvas-export-btn" id="exportGanttBtn" title="Export as PNG"><i class="fas fa-download"></i></button>
+                </div>
+
+                <!-- Resource Profile -->
+                <div class="solver-section-label" style="margin-top:1.2rem;">Resource Usage Profile</div>
+                <div class="solver-canvas-wrap canvas-wrapper">
+                    <canvas id="resource-canvas" width="900" height="320"></canvas>
+                    <button class="canvas-export-btn" id="exportResBtn" title="Export as PNG"><i class="fas fa-download"></i></button>
+                </div>
+
+                <!-- Results -->
+                <div style="margin-top:1.5rem;">
+                    <div class="solver-section-label">Results Comparison</div>
+                    <table class="results-table" id="results-table">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Makespan (weeks)</th>
+                                <th>Resource Delay</th>
+                                <th>Avg Utilization</th>
+                                <th>Time (ms)</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="schedule-output" id="schedule-output">Select a scenario and click "Solve &amp; Compare All Algorithms" to see results.</div>
+                    <div class="solver-status" id="solver-status"></div>
+                </div>
+
+                <!-- Business Translation Panel -->
+                <div class="business-panel">
+                    <h5><i class="fas fa-chart-line" style="margin-right:0.5rem;"></i> Business Impact Translation</h5>
+                    <div class="business-row">
+                        <label>Cost per week of delay:</label>
+                        <div style="display:flex;align-items:center;gap:0.3rem;">
+                            <span style="color:var(--gold);font-size:0.85rem;">$</span>
+                            <input type="number" id="costPerWeek" value="1500000" min="0" step="100000">
+                        </div>
+                        <label>Trials per year:</label>
+                        <input type="number" id="trialsPerYear" value="3" min="1" max="20">
+                    </div>
+                    <div class="business-result" id="businessResult">
+                        Complete a solve to see business impact analysis.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Algorithms -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Schedule Generation Schemes and metaheuristics for clinical trial scheduling</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="disclaimer-box">
+                <div class="disclaimer-title"><i class="fas fa-lightbulb"></i> Key Insight</div>
+                The RCPSP heuristics build feasible schedules by iteratively selecting an unscheduled
+                activity and assigning it a start time respecting both precedence and resource constraints.
+                The Genetic Algorithm wraps a Serial SGS as a decoder, evolving permutations of activities
+                to explore the solution space more broadly than a single priority rule.
+            </div>
+        </div>
+
+        <div class="algo-cards fade-in">
+            <div class="algo-card">
+                <h4>Serial SGS &mdash; LFT</h4>
+                <span class="algo-tag">Heuristic &middot; Active Schedules</span>
+                <p>
+                    Activities are prioritized by <strong>Latest Finish Time</strong> (ascending):
+                    activities that must finish earliest get scheduled first. The LFT is computed via
+                    a backward pass from the sink node. This ensures critical-path activities are
+                    given priority access to resources.
+                </p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Compute LFT via backward pass from the trial completion milestone</li>
+                    <li data-step="2.">Sort eligible activities by LFT ascending</li>
+                    <li data-step="3.">For each activity: find earliest time t where all predecessors are finished AND staff, lab, data capacity allows it</li>
+                    <li data-step="4.">Schedule the activity at time t, update resource profiles</li>
+                </ol>
+            </div>
+
+            <div class="algo-card">
+                <h4>Parallel SGS</h4>
+                <span class="algo-tag">Heuristic &middot; Non-Delay Schedules</span>
+                <p>
+                    Instead of iterating over activities, the Parallel SGS iterates over
+                    <strong>time points</strong>. At each decision point, it schedules as many
+                    eligible activities as resources allow, then advances time to the next
+                    activity completion event. This avoids unnecessary resource idle time.
+                </p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Start at t = 0. Identify all activities with completed predecessors</li>
+                    <li data-step="2.">Among eligible, schedule those whose resource demand fits (by LFT priority)</li>
+                    <li data-step="3.">Advance t to the next activity completion time</li>
+                    <li data-step="4.">Repeat until all trial activities are scheduled</li>
+                </ol>
+            </div>
+
+            <div class="algo-card">
+                <h4>Genetic Algorithm</h4>
+                <span class="algo-tag">Metaheuristic &middot; Population-Based</span>
+                <p>
+                    A population of activity <strong>permutations</strong> is evolved over 100 generations.
+                    Each permutation is decoded into a feasible schedule using Serial SGS. Crossover
+                    recombines successful orderings; mutation shuffles activity positions. The GA
+                    explores more of the solution space than a single priority rule.
+                </p>
+                <ol class="algo-steps">
+                    <li data-step="1.">Initialize population of 30 random activity permutations</li>
+                    <li data-step="2.">Decode each permutation via Serial SGS, evaluate makespan fitness</li>
+                    <li data-step="3.">Tournament selection, order crossover (OX), swap mutation</li>
+                    <li data-step="4.">Repeat for 100 generations, return best schedule found</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. Real-World Complexity -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why clinical trial scheduling is harder than the textbook model</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-exclamation-triangle"></i> Real-World Complications</h3>
+                <ul class="complexity-list">
+                    <li><strong>Regulatory dependencies</strong> &mdash; FDA/EMA interactions, IRB reviews, and Data Safety Monitoring Board (DSMB) meetings create external milestones the scheduler cannot control</li>
+                    <li><strong>Multi-resource contention</strong> &mdash; Clinical research associates, laboratory equipment, biostatisticians, and CRO partners all compete across multiple concurrent trials</li>
+                    <li><strong>Duration variability</strong> &mdash; Patient recruitment rates are stochastic; enrollment can take 2x longer than planned, especially for rare diseases or competitive indications</li>
+                    <li><strong>Critical path risk</strong> &mdash; Adverse events, protocol amendments, or manufacturing failures can halt the trial, requiring re-scheduling of downstream activities</li>
+                    <li><strong>Multi-site coordination</strong> &mdash; Global trials span 50+ sites across time zones, each with its own regulatory and operational constraints</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. References -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational papers on clinical trial scheduling and pharmaceutical R&amp;D optimization</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">DiMasi, J.A., Grabowski, H.G. &amp; Hansen, R.W.</span> (2016).
+                    <span class="ref-title">"Innovation in the pharmaceutical industry: New estimates of R&amp;D costs."</span>
+                    <span class="ref-journal">Journal of Health Economics, 47, 20&ndash;33. DOI: 10.1016/j.jhealeco.2016.01.012</span>
+                </li>
+                <li>
+                    <span class="ref-author">Petrovic, D., Tanev, D. &amp; Gorgievski, A.</span> (2012).
+                    <span class="ref-title">"Resource-constrained project scheduling for clinical trials."</span>
+                    <span class="ref-journal">International Journal of Project Management, 30(4), 449&ndash;462.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Colvin, M. &amp; Maravelias, C.T.</span> (2008).
+                    <span class="ref-title">"A stochastic programming approach for clinical trial planning."</span>
+                    <span class="ref-journal">Computers &amp; Chemical Engineering, 32(11), 2626&ndash;2642. DOI: 10.1016/j.compchemeng.2007.11.010</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 8. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize clinical trial scheduling?</h3>
+            <p>
+                From Phase I dose escalation to Phase III pivotal trials,
+                resource-constrained scheduling drives drug development efficiency.
+                Let's discuss how mathematical optimization can accelerate your pipeline.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding:2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box" style="max-width:800px; margin:0 auto;">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. Activity durations, resource requirements, and trial
+            structure are simplified for educational purposes and do not represent any specific
+            clinical trial or pharmaceutical company's development program.
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. All rights reserved.</p>
+    </div>
+</footer>
+
+<!-- Back to Top -->
+<a href="#" class="back-link"><i class="fas fa-arrow-up"></i> Top</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+//  RCPSP Clinical Trial Scheduler — Interactive
+// ══════════════════════════════════════════════════
+
+var COLOR_POOL = [
+    { bg: 'rgba(197,160,89,0.85)',  border: 'rgba(197,160,89,1)' },
+    { bg: 'rgba(122,162,247,0.85)', border: 'rgba(122,162,247,1)' },
+    { bg: 'rgba(100,255,218,0.85)', border: 'rgba(100,255,218,1)' },
+    { bg: 'rgba(255,107,107,0.85)', border: 'rgba(255,107,107,1)' },
+    { bg: 'rgba(212,175,55,0.85)',  border: 'rgba(212,175,55,1)' },
+    { bg: 'rgba(168,178,209,0.85)', border: 'rgba(168,178,209,1)' },
+    { bg: 'rgba(187,154,247,0.85)', border: 'rgba(187,154,247,1)' },
+    { bg: 'rgba(255,158,100,0.85)', border: 'rgba(255,158,100,1)' },
+    { bg: 'rgba(158,206,106,0.85)', border: 'rgba(158,206,106,1)' },
+    { bg: 'rgba(240,192,64,0.85)',  border: 'rgba(240,192,64,1)' },
+    { bg: 'rgba(200,149,108,0.85)', border: 'rgba(200,149,108,1)' },
+    { bg: 'rgba(168,200,160,0.85)', border: 'rgba(168,200,160,1)' },
+    { bg: 'rgba(255,200,150,0.85)', border: 'rgba(255,200,150,1)' },
+    { bg: 'rgba(150,200,255,0.85)', border: 'rgba(150,200,255,1)' }
+];
+
+var DUMMY_COLOR = { bg: 'rgba(100,255,218,0.0)', border: 'rgba(100,255,218,0.0)' };
+
+function getActColor(actId) {
+    if (actId === 0 || actId === activities.length - 1) return DUMMY_COLOR;
+    return COLOR_POOL[(actId - 1) % COLOR_POOL.length];
+}
+
+// ── Scenarios ──
+var SCENARIOS = {
+    cardio: {
+        name: 'Cardiovascular Phase III',
+        resources: { staff: 4, lab: 3, data: 2 },
+        activities: [
+            { name: 'Protocol Development', dur: 8, staff: 3, lab: 0, data: 1, preds: [] },
+            { name: 'IRB/Ethics Review', dur: 4, staff: 1, lab: 0, data: 0, preds: [1] },
+            { name: 'Site Selection', dur: 6, staff: 2, lab: 0, data: 1, preds: [1] },
+            { name: 'Patient Screening', dur: 12, staff: 4, lab: 2, data: 1, preds: [2, 3] },
+            { name: 'Baseline Assessments', dur: 6, staff: 3, lab: 2, data: 1, preds: [4] },
+            { name: 'Treatment Phase A', dur: 16, staff: 3, lab: 1, data: 1, preds: [5] },
+            { name: 'Treatment Phase B', dur: 16, staff: 3, lab: 1, data: 1, preds: [5] },
+            { name: 'Biomarker Analysis', dur: 8, staff: 1, lab: 3, data: 1, preds: [6, 7] },
+            { name: 'Safety Monitoring', dur: 10, staff: 2, lab: 1, data: 2, preds: [6, 7] },
+            { name: 'Statistical Analysis', dur: 8, staff: 1, lab: 0, data: 2, preds: [8, 9] },
+            { name: 'Clinical Study Report', dur: 6, staff: 2, lab: 0, data: 2, preds: [10] },
+            { name: 'NDA/BLA Preparation', dur: 10, staff: 3, lab: 0, data: 2, preds: [11] }
+        ]
+    },
+    oncology: {
+        name: 'Oncology Adaptive Trial',
+        resources: { staff: 3, lab: 2, data: 2 },
+        activities: [
+            { name: 'Protocol + SAP', dur: 10, staff: 3, lab: 0, data: 2, preds: [] },
+            { name: 'IRB/Ethics Review', dur: 6, staff: 1, lab: 0, data: 0, preds: [1] },
+            { name: 'Site Activation', dur: 8, staff: 2, lab: 0, data: 1, preds: [1] },
+            { name: 'Patient Screening', dur: 14, staff: 3, lab: 2, data: 1, preds: [2, 3] },
+            { name: 'Baseline + Biopsies', dur: 8, staff: 2, lab: 2, data: 1, preds: [4] },
+            { name: 'Treatment Arm A', dur: 20, staff: 3, lab: 1, data: 1, preds: [5] },
+            { name: 'Treatment Arm B', dur: 20, staff: 3, lab: 1, data: 1, preds: [5] },
+            { name: 'Interim Analysis', dur: 4, staff: 1, lab: 1, data: 2, preds: [6, 7] },
+            { name: 'Adaptive Randomization', dur: 3, staff: 1, lab: 0, data: 2, preds: [8] },
+            { name: 'Biomarker Panel', dur: 10, staff: 1, lab: 2, data: 1, preds: [8] },
+            { name: 'Safety Review', dur: 12, staff: 2, lab: 1, data: 2, preds: [6, 7] },
+            { name: 'Statistical Analysis', dur: 10, staff: 1, lab: 0, data: 2, preds: [10, 11] },
+            { name: 'CSR + Publication', dur: 8, staff: 2, lab: 0, data: 2, preds: [12] },
+            { name: 'Regulatory Submission', dur: 12, staff: 3, lab: 0, data: 2, preds: [13] }
+        ]
+    },
+    rare: {
+        name: 'Rare Disease Accelerated',
+        resources: { staff: 3, lab: 3, data: 1 },
+        activities: [
+            { name: 'Protocol + Orphan Design', dur: 6, staff: 3, lab: 0, data: 1, preds: [] },
+            { name: 'Ethics + FDA Pre-IND', dur: 5, staff: 1, lab: 0, data: 1, preds: [1] },
+            { name: 'Site Selection (Specialty)', dur: 4, staff: 2, lab: 0, data: 0, preds: [1] },
+            { name: 'Patient Identification', dur: 10, staff: 3, lab: 1, data: 1, preds: [2, 3] },
+            { name: 'Baseline + Genotyping', dur: 5, staff: 2, lab: 3, data: 1, preds: [4] },
+            { name: 'Treatment Phase', dur: 14, staff: 3, lab: 2, data: 1, preds: [5] },
+            { name: 'Biomarker + Efficacy', dur: 6, staff: 1, lab: 3, data: 1, preds: [6] },
+            { name: 'Safety Data Review', dur: 4, staff: 2, lab: 1, data: 1, preds: [6] },
+            { name: 'Statistical Analysis', dur: 6, staff: 1, lab: 0, data: 1, preds: [7, 8] },
+            { name: 'Accelerated Filing', dur: 8, staff: 3, lab: 0, data: 1, preds: [9] }
+        ]
+    }
+};
+
+var inputStyleNum = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:50px;outline:none;';
+var inputStyleName = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.78rem;width:130px;outline:none;';
+var inputStylePred = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.78rem;width:70px;outline:none;';
+
+var activities = [];
+var precedences = [];
+var resourceCapacity = { staff: 4, lab: 3, data: 2 };
+var currentResults = [];
+var activeScenario = 'cardio';
+
+// ── Build full activities array with source/sink ──
+function rebuildActivitiesFromDOM() {
+    var rows = document.querySelectorAll('#activityTableBody tr');
+    activities = [{ id: 0, name: 'Source', dur: 0, staff: 0, lab: 0, data: 0 }];
+    for (var i = 0; i < rows.length; i++) {
+        var inputs = rows[i].querySelectorAll('input');
+        activities.push({
+            id: i + 1,
+            name: inputs[0].value || ('Act' + (i + 1)),
+            dur: Math.max(0, parseInt(inputs[1].value) || 1),
+            staff: Math.max(0, parseInt(inputs[2].value) || 0),
+            lab: Math.max(0, parseInt(inputs[3].value) || 0),
+            data: Math.max(0, parseInt(inputs[4].value) || 0)
+        });
+    }
+    var sinkId = activities.length;
+    activities.push({ id: sinkId, name: 'Sink', dur: 0, staff: 0, lab: 0, data: 0 });
+}
+
+function rebuildPrecedencesFromDOM() {
+    var rows = document.querySelectorAll('#activityTableBody tr');
+    var n = activities.length;
+    var realCount = n - 2;
+    var userPrecs = [];
+
+    for (var i = 0; i < rows.length; i++) {
+        var predInput = rows[i].querySelectorAll('input')[5];
+        if (!predInput) continue;
+        var predStr = predInput.value.trim();
+        if (!predStr) continue;
+        var parts = predStr.split(',');
+        for (var p = 0; p < parts.length; p++) {
+            var val = parseInt(parts[p].trim());
+            if (val > 0 && val <= realCount && val !== (i + 1)) {
+                userPrecs.push([val, i + 1]);
+            }
+        }
+    }
+
+    var hasPred = {};
+    var hasSucc = {};
+    for (var j = 0; j < userPrecs.length; j++) {
+        hasPred[userPrecs[j][1]] = true;
+        hasSucc[userPrecs[j][0]] = true;
+    }
+
+    precedences = [];
+    for (var k = 1; k <= realCount; k++) {
+        if (!hasPred[k]) precedences.push([0, k]);
+    }
+    for (var m = 0; m < userPrecs.length; m++) {
+        precedences.push(userPrecs[m]);
+    }
+    for (var q = 1; q <= realCount; q++) {
+        if (!hasSucc[q]) precedences.push([q, n - 1]);
+    }
+}
+
+function rebuildResourcesFromDOM() {
+    resourceCapacity.staff = parseInt(document.getElementById('staff-slider').value) || 4;
+    resourceCapacity.lab = parseInt(document.getElementById('lab-slider').value) || 3;
+    resourceCapacity.data = parseInt(document.getElementById('data-slider').value) || 2;
+}
+
+function rebuildAll() {
+    rebuildActivitiesFromDOM();
+    rebuildPrecedencesFromDOM();
+    rebuildResourcesFromDOM();
+}
+
+// ── Render Activity Table ──
+function renderActivityTable(acts) {
+    var tbody = document.getElementById('activityTableBody');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    for (var i = 0; i < acts.length; i++) {
+        var a = acts[i];
+        var color = COLOR_POOL[i % COLOR_POOL.length];
+        var predStr = a.preds ? a.preds.join(', ') : '';
+        var tr = document.createElement('tr');
+
+        var td0 = document.createElement('td');
+        var dot = document.createElement('span');
+        dot.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:50%;background:' + color.bg + ';margin-right:0.4rem;vertical-align:middle;';
+        td0.appendChild(dot);
+        td0.appendChild(document.createTextNode(String(i + 1)));
+        tr.appendChild(td0);
+
+        var fields = [
+            { val: a.name, style: inputStyleName, type: 'text' },
+            { val: a.dur, style: inputStyleNum, type: 'number' },
+            { val: a.staff, style: inputStyleNum, type: 'number' },
+            { val: a.lab, style: inputStyleNum, type: 'number' },
+            { val: a.data, style: inputStyleNum, type: 'number' },
+            { val: predStr, style: inputStylePred, type: 'text' }
+        ];
+
+        for (var f = 0; f < fields.length; f++) {
+            var td = document.createElement('td');
+            var inp = document.createElement('input');
+            inp.type = fields[f].type;
+            inp.value = fields[f].val;
+            inp.style.cssText = fields[f].style;
+            if (fields[f].type === 'number') {
+                inp.min = '0';
+                inp.max = '50';
+            }
+            td.appendChild(inp);
+            tr.appendChild(td);
+        }
+
+        var tdBtn = document.createElement('td');
+        var rmBtn = document.createElement('button');
+        rmBtn.style.cssText = 'background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;';
+        rmBtn.title = 'Remove';
+        var rmIcon = document.createElement('i');
+        rmIcon.className = 'fas fa-times';
+        rmBtn.appendChild(rmIcon);
+        rmBtn.addEventListener('click', (function(row) { return function() { removeActivityRow(row); }; })(tr));
+        tdBtn.appendChild(rmBtn);
+        tr.appendChild(tdBtn);
+
+        tbody.appendChild(tr);
+    }
+    updateConfigSummary();
+}
+
+function updateConfigSummary() {
+    var actCount = document.querySelectorAll('#activityTableBody tr').length;
+    var s = document.getElementById('staff-slider').value;
+    var l = document.getElementById('lab-slider').value;
+    var d = document.getElementById('data-slider').value;
+    var el = document.getElementById('configSummary');
+    if (el) el.textContent = actCount + ' Activities \u00b7 Staff ' + s + ' \u00b7 Lab ' + l + ' \u00b7 Data ' + d;
+}
+
+function removeActivityRow(row) {
+    if (document.querySelectorAll('#activityTableBody tr').length <= 1) return;
+    row.parentNode.removeChild(row);
+    renumberActivityRows();
+    updateConfigSummary();
+}
+
+function removeLastActivity() {
+    var rows = document.querySelectorAll('#activityTableBody tr');
+    if (rows.length <= 1) return;
+    rows[rows.length - 1].parentNode.removeChild(rows[rows.length - 1]);
+    renumberActivityRows();
+    updateConfigSummary();
+}
+
+function renumberActivityRows() {
+    var rows = document.querySelectorAll('#activityTableBody tr');
+    for (var i = 0; i < rows.length; i++) {
+        var color = COLOR_POOL[i % COLOR_POOL.length];
+        var td0 = rows[i].cells[0];
+        while (td0.firstChild) td0.removeChild(td0.firstChild);
+        var dot = document.createElement('span');
+        dot.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:50%;background:' + color.bg + ';margin-right:0.4rem;vertical-align:middle;';
+        td0.appendChild(dot);
+        td0.appendChild(document.createTextNode(String(i + 1)));
+    }
+}
+
+function addActivity() {
+    var names = ['Monitoring Visit','Data Cleaning','Lab Validation','Safety Report','Adjudication','Biobank Processing','Imaging Analysis','Pharmacovigilance'];
+    var actCount = document.querySelectorAll('#activityTableBody tr').length;
+    var name = names[actCount % names.length];
+    var acts = [{ name: name, dur: 1 + Math.floor(Math.random() * 8), staff: 1 + Math.floor(Math.random() * 3), lab: Math.floor(Math.random() * 3), data: Math.floor(Math.random() * 2), preds: [] }];
+    var tbody = document.getElementById('activityTableBody');
+    var tempDiv = document.createElement('div');
+    renderSingleActivity(acts[0], actCount, tbody);
+    updateConfigSummary();
+}
+
+function renderSingleActivity(a, idx, tbody) {
+    var color = COLOR_POOL[idx % COLOR_POOL.length];
+    var tr = document.createElement('tr');
+
+    var td0 = document.createElement('td');
+    var dot = document.createElement('span');
+    dot.style.cssText = 'display:inline-block;width:10px;height:10px;border-radius:50%;background:' + color.bg + ';margin-right:0.4rem;vertical-align:middle;';
+    td0.appendChild(dot);
+    td0.appendChild(document.createTextNode(String(idx + 1)));
+    tr.appendChild(td0);
+
+    var fields = [
+        { val: a.name, style: inputStyleName, type: 'text' },
+        { val: a.dur, style: inputStyleNum, type: 'number' },
+        { val: a.staff, style: inputStyleNum, type: 'number' },
+        { val: a.lab, style: inputStyleNum, type: 'number' },
+        { val: a.data, style: inputStyleNum, type: 'number' },
+        { val: a.preds ? a.preds.join(', ') : '', style: inputStylePred, type: 'text' }
+    ];
+    for (var f = 0; f < fields.length; f++) {
+        var td = document.createElement('td');
+        var inp = document.createElement('input');
+        inp.type = fields[f].type;
+        inp.value = fields[f].val;
+        inp.style.cssText = fields[f].style;
+        td.appendChild(inp);
+        tr.appendChild(td);
+    }
+
+    var tdBtn = document.createElement('td');
+    var rmBtn = document.createElement('button');
+    rmBtn.style.cssText = 'background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;';
+    var rmIcon = document.createElement('i');
+    rmIcon.className = 'fas fa-times';
+    rmBtn.appendChild(rmIcon);
+    rmBtn.addEventListener('click', (function(row) { return function() { removeActivityRow(row); }; })(tr));
+    tdBtn.appendChild(rmBtn);
+    tr.appendChild(tdBtn);
+
+    tbody.appendChild(tr);
+}
+
+function resetDefaults() {
+    loadScenario(activeScenario);
+}
+
+function randomizeActivities() {
+    var names = ['Protocol','Ethics','Screening','Baseline','Treatment A','Treatment B','Biomarker','Safety','Statistics','CSR','Regulatory','Monitoring','Adjudication','Lab QC','Imaging'];
+    var n = 6 + Math.floor(Math.random() * 8);
+    var acts = [];
+    var shuffled = names.slice().sort(function() { return Math.random() - 0.5; });
+    for (var i = 0; i < n; i++) {
+        var preds = [];
+        if (i > 0) {
+            var numPreds = 1 + Math.floor(Math.random() * Math.min(2, i));
+            for (var p = 0; p < numPreds; p++) {
+                var pred = 1 + Math.floor(Math.random() * i);
+                if (preds.indexOf(pred) === -1) preds.push(pred);
+            }
+        }
+        acts.push({
+            name: shuffled[i % shuffled.length],
+            dur: 2 + Math.floor(Math.random() * 14),
+            staff: 1 + Math.floor(Math.random() * 4),
+            lab: Math.floor(Math.random() * 3),
+            data: Math.floor(Math.random() * 2),
+            preds: preds
+        });
+    }
+    renderActivityTable(acts);
+    var s = 2 + Math.floor(Math.random() * 5);
+    var l = 1 + Math.floor(Math.random() * 4);
+    var d = 1 + Math.floor(Math.random() * 3);
+    document.getElementById('staff-slider').value = s;
+    document.getElementById('staff-display').textContent = s;
+    document.getElementById('lab-slider').value = l;
+    document.getElementById('lab-display').textContent = l;
+    document.getElementById('data-slider').value = d;
+    document.getElementById('data-display').textContent = d;
+    updateConfigSummary();
+}
+
+function loadScenario(key) {
+    var sc = SCENARIOS[key];
+    if (!sc) return;
+    activeScenario = key;
+    document.getElementById('staff-slider').value = sc.resources.staff;
+    document.getElementById('staff-display').textContent = sc.resources.staff;
+    document.getElementById('lab-slider').value = sc.resources.lab;
+    document.getElementById('lab-display').textContent = sc.resources.lab;
+    document.getElementById('data-slider').value = sc.resources.data;
+    document.getElementById('data-display').textContent = sc.resources.data;
+    renderActivityTable(sc.activities);
+    renderScenarioGallery();
+}
+
+function renderScenarioGallery() {
+    var container = document.getElementById('scenarioGallery');
+    while (container.firstChild) container.removeChild(container.firstChild);
+    var keys = ['cardio', 'oncology', 'rare'];
+    for (var i = 0; i < keys.length; i++) {
+        var btn = document.createElement('button');
+        btn.className = 'scenario-btn' + (keys[i] === activeScenario ? ' active' : '');
+        btn.textContent = SCENARIOS[keys[i]].name;
+        btn.addEventListener('click', (function(k) { return function() { loadScenario(k); }; })(keys[i]));
+        container.appendChild(btn);
+    }
+}
+
+// ── Wire up buttons ──
+function wireButtons() {
+    var btns = document.querySelectorAll('.solver-body .algo-chip');
+    for (var i = 0; i < btns.length; i++) {
+        var txt = btns[i].textContent.trim();
+        if (txt.indexOf('Add') === 0) btns[i].addEventListener('click', addActivity);
+        else if (txt.indexOf('Remove') === 0) btns[i].addEventListener('click', removeLastActivity);
+        else if (txt.indexOf('Reset') === 0) btns[i].addEventListener('click', resetDefaults);
+        else if (txt.indexOf('Randomize') === 0) btns[i].addEventListener('click', randomizeActivities);
+    }
+}
+
+// ── Slider events ──
+function wireSliders() {
+    var staffSlider = document.getElementById('staff-slider');
+    var labSlider = document.getElementById('lab-slider');
+    var dataSlider = document.getElementById('data-slider');
+    staffSlider.addEventListener('input', function() { document.getElementById('staff-display').textContent = this.value; updateConfigSummary(); });
+    labSlider.addEventListener('input', function() { document.getElementById('lab-display').textContent = this.value; updateConfigSummary(); });
+    dataSlider.addEventListener('input', function() { document.getElementById('data-display').textContent = this.value; updateConfigSummary(); });
+}
+
+// ── Helpers ──
+function getSuccessors(actId) {
+    var result = [];
+    for (var i = 0; i < precedences.length; i++) {
+        if (precedences[i][0] === actId) result.push(precedences[i][1]);
+    }
+    return result;
+}
+
+function getPredecessors(actId) {
+    var result = [];
+    for (var i = 0; i < precedences.length; i++) {
+        if (precedences[i][1] === actId) result.push(precedences[i][0]);
+    }
+    return result;
+}
+
+function topoSort() {
+    var n = activities.length;
+    var inDeg = [];
+    for (var i = 0; i < n; i++) inDeg[i] = 0;
+    for (var j = 0; j < precedences.length; j++) {
+        var v = precedences[j][1];
+        if (v < n) inDeg[v]++;
+    }
+    var queue = [];
+    for (var k = 0; k < n; k++) {
+        if (inDeg[k] === 0) queue.push(k);
+    }
+    var order = [];
+    while (queue.length > 0) {
+        var u = queue.shift();
+        order.push(u);
+        var succs = getSuccessors(u);
+        for (var s = 0; s < succs.length; s++) {
+            if (succs[s] < n) {
+                inDeg[succs[s]]--;
+                if (inDeg[succs[s]] === 0) queue.push(succs[s]);
+            }
+        }
+    }
+    return order;
+}
+
+function computeEST() {
+    var n = activities.length;
+    var est = [];
+    for (var i = 0; i < n; i++) est[i] = 0;
+    var order = topoSort();
+    for (var j = 0; j < order.length; j++) {
+        var idx = order[j];
+        var preds = getPredecessors(idx);
+        for (var p = 0; p < preds.length; p++) {
+            if (preds[p] < n) {
+                est[idx] = Math.max(est[idx], est[preds[p]] + activities[preds[p]].dur);
+            }
+        }
+    }
+    return est;
+}
+
+function computeLFT() {
+    var n = activities.length;
+    var est = computeEST();
+    var cpLen = est[n - 1];
+    var lft = [];
+    for (var i = 0; i < n; i++) lft[i] = cpLen;
+    var order = topoSort();
+    for (var j = order.length - 1; j >= 0; j--) {
+        var idx = order[j];
+        var succs = getSuccessors(idx);
+        for (var s = 0; s < succs.length; s++) {
+            if (succs[s] < n) {
+                lft[idx] = Math.min(lft[idx], lft[succs[s]] - activities[succs[s]].dur);
+            }
+        }
+    }
+    return lft;
+}
+
+function resourceFeasible(act, t, schedule) {
+    for (var time = t; time < t + act.dur; time++) {
+        var usedStaff = 0, usedLab = 0, usedData = 0;
+        for (var i = 0; i < schedule.length; i++) {
+            var s = schedule[i];
+            var a = activities[s.id];
+            if (s.start <= time && time < s.start + a.dur) {
+                usedStaff += a.staff;
+                usedLab += a.lab;
+                usedData += a.data;
+            }
+        }
+        if (usedStaff + act.staff > resourceCapacity.staff) return false;
+        if (usedLab + act.lab > resourceCapacity.lab) return false;
+        if (usedData + act.data > resourceCapacity.data) return false;
+    }
+    return true;
+}
+
+// ── Serial SGS (LFT priority) ──
+function serialSGS_LFT() {
+    var n = activities.length;
+    var lft = computeLFT();
+    var priorityList = [];
+    for (var i = 0; i < n; i++) priorityList.push(i);
+    priorityList.sort(function(a, b) { return lft[a] - lft[b] || a - b; });
+
+    var schedule = [];
+    var finishTime = [];
+    for (var j = 0; j < n; j++) finishTime[j] = -1;
+
+    for (var k = 0; k < priorityList.length; k++) {
+        var actId = priorityList[k];
+        var act = activities[actId];
+        var earliestStart = 0;
+        var preds = getPredecessors(actId);
+        for (var p = 0; p < preds.length; p++) {
+            if (preds[p] < n) earliestStart = Math.max(earliestStart, finishTime[preds[p]]);
+        }
+        var t = earliestStart;
+        if (act.dur > 0) {
+            while (!resourceFeasible(act, t, schedule)) {
+                t++;
+                if (t > 1000) break;
+            }
+        }
+        schedule.push({ id: actId, start: t });
+        finishTime[actId] = t + act.dur;
+    }
+    return schedule;
+}
+
+// ── Serial SGS with given permutation (for GA decoder) ──
+function serialSGS_Perm(perm) {
+    var n = activities.length;
+    var schedule = [];
+    var finishTime = [];
+    var scheduled = {};
+    for (var i = 0; i < n; i++) finishTime[i] = -1;
+
+    for (var k = 0; k < perm.length; k++) {
+        var actId = perm[k];
+        if (scheduled[actId]) continue;
+        var act = activities[actId];
+        var preds = getPredecessors(actId);
+        var allPredsDone = true;
+        var earliestStart = 0;
+        for (var p = 0; p < preds.length; p++) {
+            if (!scheduled[preds[p]]) { allPredsDone = false; break; }
+            earliestStart = Math.max(earliestStart, finishTime[preds[p]]);
+        }
+        if (!allPredsDone) continue;
+        var t = earliestStart;
+        if (act.dur > 0) {
+            while (!resourceFeasible(act, t, schedule)) {
+                t++;
+                if (t > 1000) break;
+            }
+        }
+        schedule.push({ id: actId, start: t });
+        scheduled[actId] = true;
+        finishTime[actId] = t + act.dur;
+    }
+    return schedule;
+}
+
+// ── Parallel SGS ──
+function parallelSGS() {
+    var n = activities.length;
+    var lft = computeLFT();
+    var schedule = [];
+    var scheduled = {};
+    var finishTime = [];
+    for (var i = 0; i < n; i++) finishTime[i] = -1;
+    var t = 0;
+    var scheduledCount = 0;
+
+    while (scheduledCount < n) {
+        var eligible = [];
+        for (var i = 0; i < n; i++) {
+            if (scheduled[i]) continue;
+            var preds = getPredecessors(i);
+            var ok = true;
+            for (var p = 0; p < preds.length; p++) {
+                if (!scheduled[preds[p]] || finishTime[preds[p]] > t) { ok = false; break; }
+            }
+            if (ok) eligible.push(i);
+        }
+        eligible.sort(function(a, b) { return lft[a] - lft[b] || a - b; });
+
+        var anyScheduled = false;
+        for (var e = 0; e < eligible.length; e++) {
+            var actId = eligible[e];
+            var act = activities[actId];
+            if (act.dur === 0) {
+                schedule.push({ id: actId, start: t });
+                scheduled[actId] = true;
+                finishTime[actId] = t;
+                scheduledCount++;
+                anyScheduled = true;
+            } else if (resourceFeasible(act, t, schedule)) {
+                schedule.push({ id: actId, start: t });
+                scheduled[actId] = true;
+                finishTime[actId] = t + act.dur;
+                scheduledCount++;
+                anyScheduled = true;
+            }
+        }
+
+        if (!anyScheduled) {
+            var nextT = Infinity;
+            for (var s = 0; s < schedule.length; s++) {
+                var ft = schedule[s].start + activities[schedule[s].id].dur;
+                if (ft > t && ft < nextT) nextT = ft;
+            }
+            if (nextT === Infinity) break;
+            t = nextT;
+        }
+    }
+    return schedule;
+}
+
+// ── Genetic Algorithm ──
+function geneticAlgorithm() {
+    var n = activities.length;
+    var POP_SIZE = 30;
+    var GENERATIONS = 100;
+    var MUTATION_RATE = 0.15;
+
+    // Create a precedence-feasible permutation
+    function randomFeasiblePerm() {
+        var order = topoSort();
+        // Shuffle within precedence-feasible bounds
+        for (var i = order.length - 1; i > 0; i--) {
+            var j = Math.floor(Math.random() * (i + 1));
+            // Check if swap is feasible
+            var temp = order[i];
+            order[i] = order[j];
+            order[j] = temp;
+        }
+        return order;
+    }
+
+    function evaluate(perm) {
+        var sched = serialSGS_Perm(perm);
+        var maxFinish = 0;
+        for (var i = 0; i < sched.length; i++) {
+            var ft = sched[i].start + activities[sched[i].id].dur;
+            if (ft > maxFinish) maxFinish = ft;
+        }
+        return { makespan: maxFinish, schedule: sched };
+    }
+
+    // Order Crossover (OX)
+    function crossover(p1, p2) {
+        var len = p1.length;
+        var a = Math.floor(Math.random() * len);
+        var b = Math.floor(Math.random() * len);
+        if (a > b) { var tmp = a; a = b; b = tmp; }
+        var child = [];
+        for (var i = 0; i < len; i++) child[i] = -1;
+        var inChild = {};
+        for (var i = a; i <= b; i++) {
+            child[i] = p1[i];
+            inChild[p1[i]] = true;
+        }
+        var pos = (b + 1) % len;
+        for (var i = 0; i < len; i++) {
+            var gene = p2[(b + 1 + i) % len];
+            if (!inChild[gene]) {
+                child[pos] = gene;
+                inChild[gene] = true;
+                pos = (pos + 1) % len;
+            }
+        }
+        return child;
+    }
+
+    function mutate(perm) {
+        var len = perm.length;
+        var a = Math.floor(Math.random() * len);
+        var b = Math.floor(Math.random() * len);
+        var temp = perm[a];
+        perm[a] = perm[b];
+        perm[b] = temp;
+        return perm;
+    }
+
+    // Initialize population
+    var population = [];
+    for (var i = 0; i < POP_SIZE; i++) {
+        population.push(randomFeasiblePerm());
+    }
+
+    var bestEver = null;
+    var bestMakespan = Infinity;
+
+    for (var gen = 0; gen < GENERATIONS; gen++) {
+        // Evaluate
+        var fitnesses = [];
+        for (var i = 0; i < population.length; i++) {
+            var result = evaluate(population[i]);
+            fitnesses.push(result);
+            if (result.makespan < bestMakespan) {
+                bestMakespan = result.makespan;
+                bestEver = { perm: population[i].slice(), schedule: result.schedule, makespan: result.makespan };
+            }
+        }
+
+        // Tournament selection + crossover
+        var newPop = [];
+        // Elitism: keep best
+        var bestIdx = 0;
+        for (var i = 1; i < fitnesses.length; i++) {
+            if (fitnesses[i].makespan < fitnesses[bestIdx].makespan) bestIdx = i;
+        }
+        newPop.push(population[bestIdx].slice());
+
+        while (newPop.length < POP_SIZE) {
+            // Tournament selection
+            var a = Math.floor(Math.random() * POP_SIZE);
+            var b = Math.floor(Math.random() * POP_SIZE);
+            var p1 = fitnesses[a].makespan <= fitnesses[b].makespan ? population[a] : population[b];
+            a = Math.floor(Math.random() * POP_SIZE);
+            b = Math.floor(Math.random() * POP_SIZE);
+            var p2 = fitnesses[a].makespan <= fitnesses[b].makespan ? population[a] : population[b];
+
+            var child = crossover(p1, p2);
+            if (Math.random() < MUTATION_RATE) child = mutate(child);
+            newPop.push(child);
+        }
+        population = newPop;
+    }
+
+    return bestEver ? bestEver.schedule : serialSGS_LFT();
+}
+
+// ── Resource utilization ──
+function computeUtilization(schedule) {
+    var finishTimes = [];
+    for (var i = 0; i < schedule.length; i++) {
+        finishTimes.push(schedule[i].start + activities[schedule[i].id].dur);
+    }
+    var makespan = Math.max.apply(null, finishTimes);
+    if (makespan === 0) return 0;
+
+    var totalStaff = 0, totalLab = 0, totalData = 0;
+    for (var i = 0; i < schedule.length; i++) {
+        var act = activities[schedule[i].id];
+        totalStaff += act.staff * act.dur;
+        totalLab += act.lab * act.dur;
+        totalData += act.data * act.dur;
+    }
+
+    var maxStaff = resourceCapacity.staff * makespan;
+    var maxLab = resourceCapacity.lab * makespan;
+    var maxData = resourceCapacity.data * makespan;
+    var utilStaff = maxStaff > 0 ? totalStaff / maxStaff : 0;
+    var utilLab = maxLab > 0 ? totalLab / maxLab : 0;
+    var utilData = maxData > 0 ? totalData / maxData : 0;
+    return (utilStaff + utilLab + utilData) / 3;
+}
+
+function computeResourceDelay(schedule) {
+    var est = computeEST();
+    var cpLen = est[activities.length - 1];
+    var finishTimes = [];
+    for (var i = 0; i < schedule.length; i++) {
+        finishTimes.push(schedule[i].start + activities[schedule[i].id].dur);
+    }
+    var makespan = Math.max.apply(null, finishTimes);
+    return makespan - cpLen;
+}
+
+// ── Drawing: Gantt Chart ──
+function drawGantt(schedule) {
+    var canvas = document.getElementById('gantt-canvas');
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    var realActs = [];
+    for (var i = 0; i < activities.length; i++) {
+        if (activities[i].dur > 0) realActs.push(activities[i]);
+    }
+    var dynamicH = Math.max(250, 60 + realActs.length * 34);
+    canvas.height = dynamicH * dpr;
+    canvas.style.height = dynamicH + 'px';
+    ctx.scale(dpr, dpr);
+    var W = canvas.offsetWidth;
+    var H = dynamicH;
+
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, W, H);
+
+    var finishTimes = [];
+    for (var i = 0; i < schedule.length; i++) {
+        finishTimes.push(schedule[i].start + activities[schedule[i].id].dur);
+    }
+    var makespan = Math.max.apply(null, finishTimes.concat([1]));
+
+    var marginLeft = 140;
+    var marginRight = 30;
+    var marginTop = 40;
+    var marginBottom = 40;
+    var chartW = W - marginLeft - marginRight;
+    var chartH = H - marginTop - marginBottom;
+    var barHeight = Math.min(28, (chartH - (realActs.length - 1) * 5) / realActs.length);
+    var barGap = 5;
+
+    ctx.fillStyle = '#C5A059';
+    ctx.font = '11px Inter, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('CLINICAL TRIAL GANTT CHART', marginLeft, 18);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(197,160,89,0.15)';
+    ctx.lineWidth = 1;
+    var step = makespan > 60 ? Math.ceil(makespan / 12) : makespan > 30 ? Math.ceil(makespan / 10) : 2;
+    for (var t = 0; t <= makespan; t += step) {
+        var x = marginLeft + (t / makespan) * chartW;
+        ctx.beginPath();
+        ctx.moveTo(x, marginTop);
+        ctx.lineTo(x, H - marginBottom);
+        ctx.stroke();
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(t.toString(), x, H - marginBottom + 16);
+    }
+
+    ctx.fillStyle = '#8892B0';
+    ctx.font = '10px Inter, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('Week', marginLeft + chartW / 2, H - 5);
+
+    // Draw bars
+    for (var idx = 0; idx < realActs.length; idx++) {
+        var act = realActs[idx];
+        var sEntry = null;
+        for (var s = 0; s < schedule.length; s++) {
+            if (schedule[s].id === act.id) { sEntry = schedule[s]; break; }
+        }
+        if (!sEntry) continue;
+
+        var y = marginTop + idx * (barHeight + barGap);
+        var x = marginLeft + (sEntry.start / makespan) * chartW;
+        var w = (act.dur / makespan) * chartW;
+        var col = getActColor(act.id);
+
+        // Label
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        var label = act.name.length > 18 ? act.name.substring(0, 17) + '\u2026' : act.name;
+        ctx.fillText(label, marginLeft - 10, y + barHeight / 2 + 4);
+
+        // Bar
+        ctx.fillStyle = col.bg;
+        ctx.strokeStyle = col.border;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+            ctx.roundRect(x, y, w, barHeight, 3);
+        } else {
+            ctx.rect(x, y, w, barHeight);
+        }
+        ctx.fill();
+        ctx.stroke();
+
+        // Duration text
+        if (w > 35) {
+            ctx.fillStyle = '#0A192F';
+            ctx.font = 'bold 10px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(act.dur + 'w', x + w / 2, y + barHeight / 2 + 4);
+        }
+    }
+
+    // Precedence arrows
+    ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+    ctx.lineWidth = 1;
+    for (var pr = 0; pr < precedences.length; pr++) {
+        var from = precedences[pr][0];
+        var to = precedences[pr][1];
+        if (from >= activities.length || to >= activities.length) continue;
+        var fromAct = activities[from];
+        var toAct = activities[to];
+        if (fromAct.dur === 0 || toAct.dur === 0) continue;
+
+        var fromEntry = null, toEntry = null;
+        for (var s = 0; s < schedule.length; s++) {
+            if (schedule[s].id === from) fromEntry = schedule[s];
+            if (schedule[s].id === to) toEntry = schedule[s];
+        }
+        if (!fromEntry || !toEntry) continue;
+
+        var fromIdx = -1, toIdx = -1;
+        for (var ri = 0; ri < realActs.length; ri++) {
+            if (realActs[ri].id === from) fromIdx = ri;
+            if (realActs[ri].id === to) toIdx = ri;
+        }
+        if (fromIdx < 0 || toIdx < 0) continue;
+
+        var x1 = marginLeft + ((fromEntry.start + fromAct.dur) / makespan) * chartW;
+        var y1 = marginTop + fromIdx * (barHeight + barGap) + barHeight / 2;
+        var x2 = marginLeft + (toEntry.start / makespan) * chartW;
+        var y2 = marginTop + toIdx * (barHeight + barGap) + barHeight / 2;
+
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+
+        var angle = Math.atan2(y2 - y1, x2 - x1);
+        var arrowLen = 6;
+        ctx.beginPath();
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - arrowLen * Math.cos(angle - 0.4), y2 - arrowLen * Math.sin(angle - 0.4));
+        ctx.moveTo(x2, y2);
+        ctx.lineTo(x2 - arrowLen * Math.cos(angle + 0.4), y2 - arrowLen * Math.sin(angle + 0.4));
+        ctx.stroke();
+    }
+}
+
+// ── Drawing: Resource Profile ──
+function drawResourceProfile(schedule) {
+    var canvas = document.getElementById('resource-canvas');
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    canvas.width = canvas.offsetWidth * dpr;
+    canvas.height = 320 * dpr;
+    ctx.scale(dpr, dpr);
+    var W = canvas.offsetWidth;
+    var H = 320;
+
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, W, H);
+
+    var finishTimes = [];
+    for (var i = 0; i < schedule.length; i++) {
+        finishTimes.push(schedule[i].start + activities[schedule[i].id].dur);
+    }
+    var makespan = Math.max.apply(null, finishTimes.concat([1]));
+
+    var marginLeft = 140;
+    var marginRight = 30;
+    var marginTop = 30;
+    var gap = 10;
+    var chartH = (H - marginTop - 30 - gap * 2) / 3;
+
+    var resources = [
+        { name: 'Clinical Staff', key: 'staff', cap: resourceCapacity.staff, color: 'rgba(122,162,247,0.7)', capColor: 'rgba(255,107,107,0.8)' },
+        { name: 'Lab Capacity', key: 'lab', cap: resourceCapacity.lab, color: 'rgba(100,255,218,0.7)', capColor: 'rgba(255,107,107,0.8)' },
+        { name: 'Data Management', key: 'data', cap: resourceCapacity.data, color: 'rgba(187,154,247,0.7)', capColor: 'rgba(255,107,107,0.8)' }
+    ];
+
+    for (var ri = 0; ri < resources.length; ri++) {
+        var res = resources[ri];
+        var topY = marginTop + ri * (chartH + gap);
+        var chartWid = W - marginLeft - marginRight;
+        var maxVal = Math.max(res.cap + 1, res.cap + 1);
+
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText(res.name.toUpperCase(), marginLeft, topY - 8);
+
+        for (var v = 0; v <= res.cap + 1; v++) {
+            var y = topY + chartH - (v / maxVal) * chartH;
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText(v.toString(), marginLeft - 8, y + 3);
+
+            ctx.strokeStyle = 'rgba(197,160,89,0.06)';
+            ctx.lineWidth = 0.5;
+            ctx.beginPath();
+            ctx.moveTo(marginLeft, y);
+            ctx.lineTo(marginLeft + chartWid, y);
+            ctx.stroke();
+        }
+
+        // Capacity line
+        var capY = topY + chartH - (res.cap / maxVal) * chartH;
+        ctx.strokeStyle = res.capColor;
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(marginLeft, capY);
+        ctx.lineTo(marginLeft + chartWid, capY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.fillStyle = res.capColor;
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Cap = ' + res.cap, marginLeft + chartWid + 3, capY + 3);
+
+        // Stacked bars
+        for (var t = 0; t < makespan; t++) {
+            var bx = marginLeft + (t / makespan) * chartWid;
+            var barW = chartWid / makespan - 1;
+            if (barW < 1) barW = 1;
+
+            var cumulative = 0;
+            for (var s = 0; s < schedule.length; s++) {
+                var act = activities[schedule[s].id];
+                if (schedule[s].start <= t && t < schedule[s].start + act.dur && act[res.key] > 0) {
+                    var usage = act[res.key];
+                    var barH = (usage / maxVal) * chartH;
+                    var by = topY + chartH - ((cumulative + usage) / maxVal) * chartH;
+                    var col = getActColor(schedule[s].id);
+
+                    ctx.fillStyle = col.bg || res.color;
+                    ctx.fillRect(bx, by, barW, barH);
+                    ctx.strokeStyle = col.border || res.color;
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(bx, by, barW, barH);
+
+                    cumulative += usage;
+                }
+            }
+        }
+
+        // Time axis for last resource
+        if (ri === resources.length - 1) {
+            var timeStep = makespan > 60 ? Math.ceil(makespan / 12) : makespan > 30 ? Math.ceil(makespan / 10) : 2;
+            for (var t = 0; t <= makespan; t += timeStep) {
+                var tx = marginLeft + (t / makespan) * chartWid;
+                ctx.fillStyle = '#8892B0';
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(t.toString(), tx, topY + chartH + 14);
+            }
+        }
+    }
+}
+
+// ── Toggle Algorithm Selection ──
+function toggleAlgo(el) {
+    el.classList.toggle('selected');
+}
+
+// Wire algo chip clicks
+function wireAlgoChips() {
+    var chips = document.querySelectorAll('#algo-select .algo-chip');
+    for (var i = 0; i < chips.length; i++) {
+        chips[i].addEventListener('click', function() { this.classList.toggle('selected'); });
+    }
+}
+
+// ── Solve All ──
+function solveAll() {
+    rebuildAll();
+
+    var realCount = activities.length - 2;
+    if (realCount < 1) {
+        document.getElementById('solver-status').textContent = 'Add at least one activity.';
+        return;
+    }
+
+    var order = topoSort();
+    if (order.length < activities.length) {
+        document.getElementById('solver-status').textContent = 'Error: precedence constraints contain a cycle.';
+        return;
+    }
+
+    var btn = document.getElementById('solveBtn');
+    btn.classList.add('solving');
+    var btnIcon = btn.querySelector('i');
+    if (btnIcon) btnIcon.className = 'fas fa-spinner';
+    btn.childNodes[btn.childNodes.length - 1].textContent = ' Solving...';
+
+    setTimeout(function() {
+        var chips = document.querySelectorAll('#algo-select .algo-chip.selected');
+        if (chips.length === 0) {
+            var allChips = document.querySelectorAll('#algo-select .algo-chip');
+            for (var c = 0; c < allChips.length; c++) allChips[c].classList.add('selected');
+            chips = document.querySelectorAll('#algo-select .algo-chip.selected');
+        }
+
+        currentResults = [];
+
+        var algoMap = {
+            'serial-lft': { name: 'Serial SGS (LFT)', fn: serialSGS_LFT },
+            'parallel': { name: 'Parallel SGS', fn: parallelSGS },
+            'genetic': { name: 'Genetic Algorithm', fn: geneticAlgorithm }
+        };
+
+        for (var i = 0; i < chips.length; i++) {
+            var key = chips[i].getAttribute('data-algo');
+            var algo = algoMap[key];
+            if (!algo) continue;
+
+            var t0 = performance.now();
+            var schedule = algo.fn();
+            var elapsed = performance.now() - t0;
+
+            var finishTimes = [];
+            for (var s = 0; s < schedule.length; s++) {
+                finishTimes.push(schedule[s].start + activities[schedule[s].id].dur);
+            }
+            var makespan = Math.max.apply(null, finishTimes);
+            var util = computeUtilization(schedule);
+            var resDelay = computeResourceDelay(schedule);
+
+            currentResults.push({
+                key: key, name: algo.name, schedule: schedule, makespan: makespan,
+                util: util, resDelay: resDelay, time: elapsed
+            });
+        }
+
+        currentResults.sort(function(a, b) { return a.makespan - b.makespan; });
+
+        if (currentResults.length > 0) {
+            drawGantt(currentResults[0].schedule);
+            drawResourceProfile(currentResults[0].schedule);
+        }
+
+        // Results table
+        var tbody = document.getElementById('results-table').querySelector('tbody');
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        for (var r = 0; r < currentResults.length; r++) {
+            var res = currentResults[r];
+            var tr = document.createElement('tr');
+            if (r === 0) tr.className = 'row-selected';
+
+            var td1 = document.createElement('td');
+            td1.className = 'algo-label';
+            td1.textContent = res.name;
+            tr.appendChild(td1);
+
+            var td2 = document.createElement('td');
+            td2.className = r === 0 ? 'best-val' : '';
+            td2.textContent = res.makespan;
+            tr.appendChild(td2);
+
+            var td3 = document.createElement('td');
+            td3.textContent = res.resDelay > 0 ? '+' + res.resDelay + ' wk' : '0 wk';
+            tr.appendChild(td3);
+
+            var td4 = document.createElement('td');
+            td4.textContent = (res.util * 100).toFixed(1) + '%';
+            tr.appendChild(td4);
+
+            var td5 = document.createElement('td');
+            td5.textContent = res.time < 1 ? res.time.toFixed(2) + ' ms' : (res.time / 1000).toFixed(3) + ' s';
+            tr.appendChild(td5);
+
+            (function(result, row) {
+                row.addEventListener('click', function() {
+                    var allRows = tbody.querySelectorAll('tr');
+                    for (var rr = 0; rr < allRows.length; rr++) allRows[rr].className = '';
+                    row.className = 'row-selected';
+                    showResult(result);
+                });
+            })(res, tr);
+
+            tbody.appendChild(tr);
+        }
+
+        if (currentResults.length > 0) showResult(currentResults[0]);
+        updateBusinessPanel();
+        document.getElementById('solver-status').textContent =
+            'Solved with ' + currentResults.length + ' algorithm' + (currentResults.length > 1 ? 's' : '') + '. Click a row to view its schedule.';
+
+        btn.classList.remove('solving');
+        if (btnIcon) btnIcon.className = 'fas fa-play';
+        btn.childNodes[btn.childNodes.length - 1].textContent = ' Solve & Compare All Algorithms';
+    }, 80);
+}
+
+function showResult(r) {
+    drawGantt(r.schedule);
+    drawResourceProfile(r.schedule);
+
+    var lines = [];
+    lines.push('Algorithm: ' + r.name);
+    lines.push('Trial Duration (Makespan): ' + r.makespan + ' weeks');
+    lines.push('Resource Delay: ' + (r.resDelay > 0 ? '+' + r.resDelay : '0') + ' weeks beyond critical path');
+    lines.push('Avg Resource Utilization: ' + (r.util * 100).toFixed(1) + '%');
+    lines.push('');
+    lines.push('Activity Schedule:');
+
+    for (var i = 0; i < r.schedule.length; i++) {
+        var s = r.schedule[i];
+        var act = activities[s.id];
+        if (act.dur === 0) continue;
+        var finish = s.start + act.dur;
+        var pad = act.name;
+        while (pad.length < 24) pad += ' ';
+        lines.push('  ' + pad + ' Start: Wk ' + s.start + '  Finish: Wk ' + finish + '  [Staff:' + act.staff + ' Lab:' + act.lab + ' Data:' + act.data + ']');
+    }
+
+    document.getElementById('schedule-output').textContent = lines.join('\n');
+}
+
+function updateBusinessPanel() {
+    if (currentResults.length === 0) return;
+    var bestMakespan = currentResults[0].makespan;
+    var worstMakespan = currentResults[currentResults.length - 1].makespan;
+    var costPerWeek = parseInt(document.getElementById('costPerWeek').value) || 1500000;
+    var trialsPerYear = parseInt(document.getElementById('trialsPerYear').value) || 3;
+
+    var savings = (worstMakespan - bestMakespan) * costPerWeek;
+    var annualExposure = worstMakespan * costPerWeek * trialsPerYear;
+    var annualSavings = savings * trialsPerYear;
+
+    var el = document.getElementById('businessResult');
+    while (el.firstChild) el.removeChild(el.firstChild);
+
+    var line1 = document.createElement('div');
+    line1.style.marginBottom = '0.4rem';
+    line1.textContent = 'Best schedule: ' + bestMakespan + ' weeks | Worst: ' + worstMakespan + ' weeks | Gap: ' + (worstMakespan - bestMakespan) + ' weeks';
+    el.appendChild(line1);
+
+    var line2 = document.createElement('div');
+    line2.style.marginBottom = '0.4rem';
+    var span2 = document.createElement('span');
+    span2.className = 'highlight';
+    span2.textContent = '$' + formatNum(savings);
+    line2.appendChild(document.createTextNode('Per-trial savings from best algorithm: '));
+    line2.appendChild(span2);
+    el.appendChild(line2);
+
+    var line3 = document.createElement('div');
+    var span3 = document.createElement('span');
+    span3.className = 'highlight';
+    span3.textContent = '$' + formatNum(annualSavings);
+    line3.appendChild(document.createTextNode('Annual savings across ' + trialsPerYear + ' trials: '));
+    line3.appendChild(span3);
+    el.appendChild(line3);
+
+    var line4 = document.createElement('div');
+    line4.style.cssText = 'font-size:0.78rem;color:var(--slate);margin-top:0.3rem;';
+    line4.textContent = 'Annual schedule exposure: $' + formatNum(annualExposure) + ' (gap weeks \u00d7 cost \u00d7 trials/yr)';
+    el.appendChild(line4);
+}
+
+function formatNum(n) {
+    if (n >= 1e9) return (n / 1e9).toFixed(1) + 'B';
+    if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+    if (n >= 1e3) return (n / 1e3).toFixed(0) + 'K';
+    return n.toString();
+}
+
+// ── Canvas Export ──
+function wireCanvasExport() {
+    var ganttBtn = document.getElementById('exportGanttBtn');
+    var resBtn = document.getElementById('exportResBtn');
+    if (ganttBtn) {
+        ganttBtn.addEventListener('click', function() {
+            var canvas = document.getElementById('gantt-canvas');
+            var link = document.createElement('a');
+            link.download = 'clinical-trial-gantt.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+    if (resBtn) {
+        resBtn.addEventListener('click', function() {
+            var canvas = document.getElementById('resource-canvas');
+            var link = document.createElement('a');
+            link.download = 'clinical-trial-resources.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        });
+    }
+}
+
+// ── Business panel live update ──
+function wireBusinessInputs() {
+    var costInput = document.getElementById('costPerWeek');
+    var trialsInput = document.getElementById('trialsPerYear');
+    if (costInput) costInput.addEventListener('input', updateBusinessPanel);
+    if (trialsInput) trialsInput.addEventListener('input', updateBusinessPanel);
+}
+
+// ── Scroll Animations ──
+var observer = new IntersectionObserver(function(entries) {
+    for (var i = 0; i < entries.length; i++) {
+        if (entries[i].isIntersecting) entries[i].target.classList.add('visible');
+    }
+}, { threshold: 0.1 });
+
+var fadeEls = document.querySelectorAll('.fade-in');
+for (var i = 0; i < fadeEls.length; i++) observer.observe(fadeEls[i]);
+
+// ── Initialize ──
+document.getElementById('solveBtn').addEventListener('click', solveAll);
+wireButtons();
+wireSliders();
+wireAlgoChips();
+wireCanvasExport();
+wireBusinessInputs();
+renderScenarioGallery();
+loadScenario('cardio');
+setTimeout(solveAll, 200);
+</script>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── 1. Theme Toggle ──
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ── 2. Command Palette ──
+    var SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: 'RCPSP, Flow Shop, Job Shop', icon: 'fa-industry', url: '../families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'Routing', subtitle: 'TSP, CVRP, VRPTW', icon: 'fa-route', url: '../families/routing.html', group: 'Families', badge: 'Family' },
+        { title: 'Packing & Cutting', subtitle: 'Knapsack, Bin Packing', icon: 'fa-box', url: '../families/packing.html', group: 'Families', badge: 'Family' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'construction-project.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Clinical Trial Planning', subtitle: 'RCPSP \u00b7 Healthcare', icon: 'fa-flask', url: 'clinical-trial.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Operating Room Scheduling', subtitle: 'Job Shop', icon: 'fa-hospital', url: 'operating-room.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'delivery-routing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Ambulance Placement', subtitle: 'p-Median', icon: 'fa-ambulance', url: 'ambulance-placement.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Portfolio Optimization', subtitle: 'Robust', icon: 'fa-chart-pie', url: 'portfolio.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Manufacturing Balancing', subtitle: 'Parallel Machine', icon: 'fa-cogs', url: 'manufacturing-balancing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Steel Production', subtitle: 'No-Wait Flow Shop', icon: 'fa-fire', url: 'steel-production.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Cargo Loading', subtitle: '0-1 Knapsack', icon: 'fa-ship', url: 'cargo-loading.html', group: 'Applications', badge: 'Demo' }
+    ];
+
+    var overlay = document.getElementById('cmdPalette');
+    var input = document.getElementById('cmdInput');
+    var resultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() {
+        overlay.classList.add('open');
+        input.value = '';
+        input.focus();
+        renderCmdResults('');
+        activeIdx = -1;
+    }
+    function closePalette() {
+        overlay.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function fuzzyMatch(query, text) {
+        query = query.toLowerCase();
+        text = text.toLowerCase();
+        if (!query) return true;
+        if (text.indexOf(query) !== -1) return true;
+        var qi = 0;
+        for (var i = 0; i < text.length && qi < query.length; i++) {
+            if (text[i] === query[qi]) qi++;
+        }
+        return qi === query.length;
+    }
+
+    function renderCmdResults(query) {
+        var filtered = [];
+        for (var i = 0; i < SEARCH_DATA.length; i++) {
+            var item = SEARCH_DATA[i];
+            if (fuzzyMatch(query, item.title) || fuzzyMatch(query, item.subtitle) || fuzzyMatch(query, item.group)) {
+                filtered.push(item);
+            }
+        }
+
+        if (filtered.length === 0) {
+            while (resultsDiv.firstChild) resultsDiv.removeChild(resultsDiv.firstChild);
+            var emptyDiv = document.createElement('div');
+            emptyDiv.className = 'cmd-empty';
+            emptyDiv.textContent = 'No results found';
+            resultsDiv.appendChild(emptyDiv);
+            return;
+        }
+
+        var groups = {};
+        var groupOrder = ['Families', 'Applications'];
+        for (var i = 0; i < filtered.length; i++) {
+            var g = filtered[i].group;
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(filtered[i]);
+        }
+
+        while (resultsDiv.firstChild) resultsDiv.removeChild(resultsDiv.firstChild);
+        var idx = 0;
+        for (var gi = 0; gi < groupOrder.length; gi++) {
+            var g = groupOrder[gi];
+            if (!groups[g]) continue;
+            var label = document.createElement('div');
+            label.className = 'cmd-group-label';
+            label.textContent = g;
+            resultsDiv.appendChild(label);
+
+            for (var j = 0; j < groups[g].length; j++) {
+                var item = groups[g][j];
+                var a = document.createElement('a');
+                a.href = item.url;
+                a.className = 'cmd-result';
+                a.setAttribute('data-idx', idx);
+
+                var iconDiv = document.createElement('div');
+                iconDiv.className = 'cmd-icon';
+                var icon = document.createElement('i');
+                icon.className = 'fas ' + item.icon;
+                iconDiv.appendChild(icon);
+                a.appendChild(iconDiv);
+
+                var infoDiv = document.createElement('div');
+                infoDiv.className = 'cmd-info';
+                var titleDiv = document.createElement('div');
+                titleDiv.className = 'cmd-title';
+                titleDiv.textContent = item.title;
+                infoDiv.appendChild(titleDiv);
+                var subDiv = document.createElement('div');
+                subDiv.className = 'cmd-subtitle';
+                subDiv.textContent = item.subtitle;
+                infoDiv.appendChild(subDiv);
+                a.appendChild(infoDiv);
+
+                var badge = document.createElement('span');
+                badge.className = 'cmd-badge';
+                badge.textContent = item.badge;
+                badge.style.cssText = 'background:rgba(197,160,89,0.15);color:var(--gold);';
+                a.appendChild(badge);
+
+                resultsDiv.appendChild(a);
+                idx++;
+            }
+        }
+    }
+
+    if (input) {
+        input.addEventListener('input', function() {
+            renderCmdResults(input.value);
+            activeIdx = -1;
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) closePalette();
+            else openPalette();
+            return;
+        }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+
+        var results = resultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, results.length - 1);
+            for (var i = 0; i < results.length; i++) {
+                results[i].classList.toggle('active', i === activeIdx);
+            }
+            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+            for (var i = 0; i < results.length; i++) {
+                results[i].classList.toggle('active', i === activeIdx);
+            }
+            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) {
+            e.preventDefault();
+            results[activeIdx].click();
+        }
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePalette();
+        });
+    }
+
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) {
+        searchTrigger.addEventListener('click', openPalette);
+    }
+
+    // ── 3. Particle Network Background ──
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+        var CONNECTION_DIST = 120;
+
+        function resizePCanvas() {
+            pCanvas.width = heroEl.offsetWidth;
+            pCanvas.height = heroEl.offsetHeight;
+        }
+        resizePCanvas();
+        window.addEventListener('resize', resizePCanvas);
+
+        function Particle() {
+            this.x = Math.random() * pCanvas.width;
+            this.y = Math.random() * pCanvas.height;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            this.radius = Math.random() * 2 + 1;
+        }
+        Particle.prototype.update = function() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1;
+        };
+        Particle.prototype.draw = function() {
+            pCtx.beginPath();
+            pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)';
+            pCtx.fill();
+        };
+
+        for (var pi = 0; pi < PARTICLE_COUNT; pi++) particles.push(new Particle());
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        pCtx.beginPath();
+                        pCtx.moveTo(particles[i].x, particles[i].y);
+                        pCtx.lineTo(particles[j].x, particles[j].y);
+                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / CONNECTION_DIST)) + ')';
+                        pCtx.lineWidth = 0.6;
+                        pCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── 4. Scroll Progress + Scroll-to-Top ──
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    function onScroll() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (scrollTopBtn) {
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+})();
+</script>
+
+</body>
+</html>
