@@ -454,11 +454,44 @@
             transform: translateX(-50%);
         }
 
-        /* Patient colors */
+        /* Patient colors — dynamically assigned via inline style */
         .color-a { background: #7aa2f7; }
         .color-b { background: #64ffda; }
         .color-c { background: #ff9e64; }
         .color-d { background: #bb9af7; }
+        .color-e { background: #ff6b6b; }
+        .color-f { background: #d4af37; }
+        .color-g { background: #a8b2d1; }
+        .color-h { background: #f0c040; }
+
+        /* Comparison results table */
+        .compare-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 1.5rem;
+            font-size: 0.82rem;
+        }
+        .compare-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            font-size: 0.7rem;
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .compare-table td {
+            padding: 0.5rem 0.8rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+        .compare-table tr.best-row td {
+            color: var(--green);
+            font-weight: 600;
+        }
 
         .legend {
             display: flex;
@@ -2237,7 +2270,7 @@
     <div class="container">
         <div class="section-header fade-in">
             <h2>Try It Yourself</h2>
-            <p>Schedule 4 patients across 3 hospital rooms using dispatching rules</p>
+            <p>Edit patient data, add or remove patients, then solve with all dispatching rules</p>
         </div>
 
         <div class="row justify-content-center">
@@ -2245,74 +2278,83 @@
                 <div class="interactive-panel fade-in">
                     <div class="panel-header">
                         <h3><i class="fas fa-sliders-h" style="color: var(--gold); margin-right: 0.7rem;"></i>Configuration</h3>
-                        <span style="font-size: 0.75rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase;">4 Patients &middot; 3 Rooms</span>
+                        <span id="configSummary" style="font-size: 0.75rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase;">4 Patients &middot; 3 Rooms &middot; Click any cell to edit</span>
                     </div>
                     <div class="panel-body">
 
-                        <!-- Patient Data -->
-                        <table class="patient-table">
+                        <!-- Editable Patient Data Table -->
+                        <div style="overflow-x: auto;">
+                        <table class="patient-table" id="patientTable">
                             <thead>
                                 <tr>
                                     <th>Patient</th>
-                                    <th>Step 1</th>
-                                    <th>Step 2</th>
-                                    <th>Step 3</th>
+                                    <th>Step 1 Room</th>
+                                    <th>Step 1 (min)</th>
+                                    <th>Step 2 Room</th>
+                                    <th>Step 2 (min)</th>
+                                    <th>Step 3 Room</th>
+                                    <th>Step 3 (min)</th>
+                                    <th style="width:40px;"></th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Patient A</td>
-                                    <td>Pre-Op (20 min)</td>
-                                    <td>OR (60 min)</td>
-                                    <td>Recovery (30 min)</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #64ffda;"></span>Patient B</td>
-                                    <td>Pre-Op (15 min)</td>
-                                    <td>OR (45 min)</td>
-                                    <td>Recovery (40 min)</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #ff9e64;"></span>Patient C</td>
-                                    <td>OR (50 min)</td>
-                                    <td>Recovery (25 min)</td>
-                                    <td>Pre-Op (10 min)</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #bb9af7;"></span>Patient D</td>
-                                    <td>Pre-Op (25 min)</td>
-                                    <td>Recovery (20 min)</td>
-                                    <td>OR (55 min)</td>
-                                </tr>
+                            <tbody id="patientTableBody">
+                                <!-- Rows generated by JS -->
                             </tbody>
                         </table>
+                        </div>
 
-                        <!-- Algorithm Selection -->
-                        <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px;">Select Algorithm</div>
-                        <div class="algorithm-chips">
-                            <button class="algo-chip active" data-algo="spt" onclick="selectAlgorithm('spt')">
-                                SPT Dispatching <span class="chip-tag">heuristic</span>
+                        <!-- Action Buttons -->
+                        <div style="display: flex; gap: 0.6rem; flex-wrap: wrap; margin: 1rem 0 1.5rem;">
+                            <button class="algo-chip" onclick="addPatientRow()" style="border: 1px dashed var(--gold); background: transparent;">
+                                <i class="fas fa-plus" style="margin-right: 0.3rem;"></i> Add Patient
                             </button>
-                            <button class="algo-chip" data-algo="lpt" onclick="selectAlgorithm('lpt')">
-                                LPT Dispatching <span class="chip-tag">heuristic</span>
+                            <button class="algo-chip" onclick="removeLastPatient()" style="border: 1px solid rgba(255,107,107,0.3); background: transparent;">
+                                <i class="fas fa-minus" style="margin-right: 0.3rem;"></i> Remove Last
                             </button>
-                            <button class="algo-chip" data-algo="mwr" onclick="selectAlgorithm('mwr')">
-                                MWR Dispatching <span class="chip-tag">heuristic</span>
+                            <button class="algo-chip" onclick="resetDefaults()" style="border: 1px solid rgba(100,255,218,0.3); background: transparent;">
+                                <i class="fas fa-undo" style="margin-right: 0.3rem;"></i> Reset Defaults
+                            </button>
+                            <button class="algo-chip" onclick="randomizePatients()" style="border: 1px solid rgba(187,154,247,0.3); background: transparent;">
+                                <i class="fas fa-random" style="margin-right: 0.3rem;"></i> Randomize
+                            </button>
+                            <button class="algo-chip" onclick="loadPreset('busy')" style="border: 1px solid rgba(255,158,100,0.3); background: transparent;">
+                                <i class="fas fa-hospital" style="margin-right: 0.3rem;"></i> Busy Day (6 Patients)
+                            </button>
+                            <button class="algo-chip" onclick="loadPreset('quick')" style="border: 1px solid rgba(122,162,247,0.3); background: transparent;">
+                                <i class="fas fa-bolt" style="margin-right: 0.3rem;"></i> Quick Procedures
                             </button>
                         </div>
 
-                        <!-- Legend -->
-                        <div class="legend">
-                            <div class="legend-item"><div class="legend-color" style="background: #7aa2f7;"></div>Patient A</div>
-                            <div class="legend-item"><div class="legend-color" style="background: #64ffda;"></div>Patient B</div>
-                            <div class="legend-item"><div class="legend-color" style="background: #ff9e64;"></div>Patient C</div>
-                            <div class="legend-item"><div class="legend-color" style="background: #bb9af7;"></div>Patient D</div>
-                        </div>
+                        <!-- Solve Button -->
+                        <button class="algo-chip active" onclick="solveAndCompare()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
+                            <i class="fas fa-play" style="margin-right: 0.5rem;"></i>Solve &amp; Compare All Algorithms
+                            <span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span>
+                        </button>
+
+                        <!-- Legend (dynamic) -->
+                        <div class="legend" id="legendContainer"></div>
 
                         <!-- Gantt Chart -->
                         <div class="gantt-container">
-                            <div class="gantt-title">Schedule &mdash; Gantt Chart</div>
+                            <div class="gantt-title">Schedule &mdash; Gantt Chart <span id="ganttAlgoLabel" style="color:var(--slate);font-size:0.75rem;"></span></div>
                             <div class="gantt-chart" id="ganttChart"></div>
+                        </div>
+
+                        <!-- Comparison Table -->
+                        <div id="comparisonContainer" style="display:none;">
+                            <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px;">Algorithm Comparison</div>
+                            <table class="compare-table" id="compareTable">
+                                <thead>
+                                    <tr>
+                                        <th>Algorithm</th>
+                                        <th>Makespan (min)</th>
+                                        <th>Avg Completion</th>
+                                        <th>Max Completion</th>
+                                        <th>Time (ms)</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="compareBody"></tbody>
+                            </table>
                         </div>
 
                         <!-- Results -->
@@ -2518,121 +2560,210 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ─────────────────────────────────────────────────────────────
-// Operating Room Scheduling — Giffler-Thompson Implementation
+// Operating Room Scheduling — Interactive Giffler-Thompson
 // ─────────────────────────────────────────────────────────────
 
-// Problem data: 4 patients, 3 rooms
-// Rooms: 0 = Pre-Op, 1 = Operating Room, 2 = Recovery
 const ROOMS = ['Pre-Op', 'Operating Room', 'Recovery'];
 const ROOM_SHORT = ['Pre-Op', 'OR', 'Recovery'];
+const ROOM_IDS = [0, 1, 2];
+const PATIENT_COLORS = ['#7aa2f7','#64ffda','#ff9e64','#bb9af7','#ff6b6b','#d4af37','#a8b2d1','#f0c040'];
+const CSS_CLASSES = ['color-a','color-b','color-c','color-d','color-e','color-f','color-g','color-h'];
 
-const PATIENTS = [
-    { name: 'Patient A', color: '#7aa2f7', cssClass: 'color-a',
-      ops: [{machine: 0, time: 20}, {machine: 1, time: 60}, {machine: 2, time: 30}] },
-    { name: 'Patient B', color: '#64ffda', cssClass: 'color-b',
-      ops: [{machine: 0, time: 15}, {machine: 1, time: 45}, {machine: 2, time: 40}] },
-    { name: 'Patient C', color: '#ff9e64', cssClass: 'color-c',
-      ops: [{machine: 1, time: 50}, {machine: 2, time: 25}, {machine: 0, time: 10}] },
-    { name: 'Patient D', color: '#bb9af7', cssClass: 'color-d',
-      ops: [{machine: 0, time: 25}, {machine: 2, time: 20}, {machine: 1, time: 55}] },
+const DEFAULT_PATIENTS = [
+    { name: 'Patient A', ops: [{machine: 0, time: 20}, {machine: 1, time: 60}, {machine: 2, time: 30}] },
+    { name: 'Patient B', ops: [{machine: 0, time: 15}, {machine: 1, time: 45}, {machine: 2, time: 40}] },
+    { name: 'Patient C', ops: [{machine: 1, time: 50}, {machine: 2, time: 25}, {machine: 0, time: 10}] },
+    { name: 'Patient D', ops: [{machine: 0, time: 25}, {machine: 2, time: 20}, {machine: 1, time: 55}] },
 ];
+
+const PRESETS = {
+    busy: [
+        { name: 'Patient A', ops: [{machine: 0, time: 20}, {machine: 1, time: 60}, {machine: 2, time: 30}] },
+        { name: 'Patient B', ops: [{machine: 0, time: 15}, {machine: 1, time: 45}, {machine: 2, time: 40}] },
+        { name: 'Patient C', ops: [{machine: 1, time: 50}, {machine: 2, time: 25}, {machine: 0, time: 10}] },
+        { name: 'Patient D', ops: [{machine: 0, time: 25}, {machine: 2, time: 20}, {machine: 1, time: 55}] },
+        { name: 'Patient E', ops: [{machine: 1, time: 70}, {machine: 0, time: 15}, {machine: 2, time: 35}] },
+        { name: 'Patient F', ops: [{machine: 0, time: 30}, {machine: 1, time: 40}, {machine: 2, time: 20}] },
+    ],
+    quick: [
+        { name: 'Patient A', ops: [{machine: 0, time: 10}, {machine: 1, time: 25}, {machine: 2, time: 15}] },
+        { name: 'Patient B', ops: [{machine: 0, time: 8},  {machine: 1, time: 20}, {machine: 2, time: 12}] },
+        { name: 'Patient C', ops: [{machine: 0, time: 12}, {machine: 1, time: 30}, {machine: 2, time: 10}] },
+        { name: 'Patient D', ops: [{machine: 1, time: 15}, {machine: 0, time: 5},  {machine: 2, time: 18}] },
+    ],
+};
+
+const ALGO_NAMES = { spt: 'SPT Dispatching', lpt: 'LPT Dispatching', mwr: 'MWR Dispatching' };
+
+// ── Input styles ──
+const nameStyle = "background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;";
+const numStyle  = "background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;";
+const selStyle  = "background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:80px;outline:none;-webkit-appearance:none;";
+
+// ── Read patient data from the editable DOM table ──
+function readPatientsFromTable() {
+    const rows = document.querySelectorAll('#patientTableBody tr');
+    const patients = [];
+    rows.forEach((row, i) => {
+        const nameInput = row.querySelector('input[data-field="name"]');
+        const name = nameInput ? nameInput.value.trim() || ('Patient ' + String.fromCharCode(65 + i)) : ('Patient ' + String.fromCharCode(65 + i));
+        const ops = [];
+        for (let s = 0; s < 3; s++) {
+            const roomSel = row.querySelector(`select[data-step="${s}"]`);
+            const timeInput = row.querySelector(`input[data-step="${s}"]`);
+            const machine = roomSel ? parseInt(roomSel.value) : s;
+            const time = timeInput ? Math.max(1, parseInt(timeInput.value) || 10) : 10;
+            ops.push({ machine, time });
+        }
+        patients.push({ name, ops, color: PATIENT_COLORS[i % PATIENT_COLORS.length], cssClass: CSS_CLASSES[i % CSS_CLASSES.length] });
+    });
+    return patients;
+}
+
+// ── Render the editable table ──
+function renderTable(patients) {
+    const tbody = document.getElementById('patientTableBody');
+    tbody.innerHTML = '';
+    patients.forEach((p, i) => {
+        const color = PATIENT_COLORS[i % PATIENT_COLORS.length];
+        const tr = document.createElement('tr');
+        let html = `<td class="patient-name"><span class="patient-dot" style="background:${color};"></span><input type="text" data-field="name" value="${p.name}" style="${nameStyle}"></td>`;
+        for (let s = 0; s < 3; s++) {
+            const op = p.ops[s] || { machine: s, time: 10 };
+            html += `<td><select data-step="${s}" style="${selStyle}">`;
+            for (let r = 0; r < ROOMS.length; r++) {
+                html += `<option value="${r}"${op.machine === r ? ' selected' : ''} style="background:var(--midnight);color:var(--ivory);">${ROOM_SHORT[r]}</option>`;
+            }
+            html += `</select></td>`;
+            html += `<td><input type="number" data-step="${s}" value="${op.time}" min="1" max="300" step="5" style="${numStyle}"></td>`;
+        }
+        html += `<td><button onclick="removePatientRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;padding:0.25rem;" title="Remove this patient"><i class="fas fa-times"></i></button></td>`;
+        tr.innerHTML = html;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+}
+
+function updateConfigSummary() {
+    const n = document.querySelectorAll('#patientTableBody tr').length;
+    document.getElementById('configSummary').textContent = n + ' Patient' + (n !== 1 ? 's' : '') + ' \u00b7 3 Rooms \u00b7 Click any cell to edit';
+}
+
+function addPatientRow() {
+    const patients = readPatientsFromTable();
+    if (patients.length >= 8) return; // max 8 patients
+    const idx = patients.length;
+    const letter = String.fromCharCode(65 + idx);
+    patients.push({ name: 'Patient ' + letter, ops: [{machine: 0, time: 20}, {machine: 1, time: 40}, {machine: 2, time: 25}] });
+    renderTable(patients);
+    const rows = document.querySelectorAll('#patientTableBody tr');
+    if (rows[idx]) rows[idx].querySelector('input').focus();
+}
+
+function removeLastPatient() {
+    const rows = document.querySelectorAll('#patientTableBody tr');
+    if (rows.length <= 2) return; // keep at least 2
+    rows[rows.length - 1].remove();
+    const patients = readPatientsFromTable();
+    renderTable(patients);
+}
+
+function removePatientRow(btn) {
+    if (document.querySelectorAll('#patientTableBody tr').length <= 2) return;
+    btn.closest('tr').remove();
+    const patients = readPatientsFromTable();
+    renderTable(patients);
+}
+
+function resetDefaults() {
+    renderTable(JSON.parse(JSON.stringify(DEFAULT_PATIENTS)));
+}
+
+function loadPreset(name) {
+    const data = PRESETS[name];
+    if (data) renderTable(JSON.parse(JSON.stringify(data)));
+}
+
+function randomizePatients() {
+    const names = ['Alice','Bob','Carol','Dan','Eve','Frank','Grace','Hank'];
+    const n = 3 + Math.floor(Math.random() * 4); // 3-6 patients
+    const patients = [];
+    for (let i = 0; i < n; i++) {
+        const ops = [];
+        const roomOrder = [0, 1, 2].sort(() => Math.random() - 0.5);
+        for (let s = 0; s < 3; s++) {
+            ops.push({ machine: roomOrder[s], time: 5 + Math.floor(Math.random() * 12) * 5 });
+        }
+        patients.push({ name: names[i], ops });
+    }
+    renderTable(patients);
+}
+
+// ── Update legend dynamically ──
+function updateLegend(patients) {
+    const el = document.getElementById('legendContainer');
+    el.innerHTML = patients.map((p, i) =>
+        `<div class="legend-item"><div class="legend-color" style="background:${p.color};"></div>${p.name}</div>`
+    ).join('');
+}
 
 /**
  * Giffler-Thompson active schedule generation.
- *
+ * @param {Array} patients - array of patient objects with ops
  * @param {string} rule - 'spt', 'lpt', or 'mwr'
  * @returns {object} schedule result
  */
-function gifflerThompson(rule) {
+function gifflerThompson(patients, rule) {
     const t0 = performance.now();
-    const nJobs = PATIENTS.length;
+    const nJobs = patients.length;
     const nMachines = ROOMS.length;
 
-    // Track next operation index for each job
     const nextOp = new Array(nJobs).fill(0);
-    // Track when each job is available (after previous op completes)
     const jobAvail = new Array(nJobs).fill(0);
-    // Track when each machine is available
     const machineAvail = new Array(nMachines).fill(0);
-    // Scheduled operations: {job, opIdx, machine, start, end}
     const scheduled = [];
-
-    const totalOps = PATIENTS.reduce((s, p) => s + p.ops.length, 0);
+    const totalOps = patients.reduce((s, p) => s + p.ops.length, 0);
 
     while (scheduled.length < totalOps) {
-        // Step 1: Identify schedulable operations (whose predecessors are done)
         const schedulable = [];
         for (let j = 0; j < nJobs; j++) {
-            if (nextOp[j] < PATIENTS[j].ops.length) {
-                const op = PATIENTS[j].ops[nextOp[j]];
+            if (nextOp[j] < patients[j].ops.length) {
+                const op = patients[j].ops[nextOp[j]];
                 const est = Math.max(jobAvail[j], machineAvail[op.machine]);
                 const eft = est + op.time;
-                schedulable.push({
-                    job: j,
-                    opIdx: nextOp[j],
-                    machine: op.machine,
-                    time: op.time,
-                    est: est,
-                    eft: eft
-                });
+                schedulable.push({ job: j, opIdx: nextOp[j], machine: op.machine, time: op.time, est, eft });
             }
         }
 
-        // Step 2: Find the operation with earliest completion time (EFT*)
         let minEft = Infinity;
         let starMachine = -1;
         for (const s of schedulable) {
-            if (s.eft < minEft) {
-                minEft = s.eft;
-                starMachine = s.machine;
-            }
+            if (s.eft < minEft) { minEft = s.eft; starMachine = s.machine; }
         }
 
-        // Step 3: Build conflict set — operations on m* that can START before EFT*
-        const conflictSet = schedulable.filter(
-            s => s.machine === starMachine && s.est < minEft
-        );
+        const conflictSet = schedulable.filter(s => s.machine === starMachine && s.est < minEft);
 
-        // Step 4: Apply priority rule to select from conflict set
         let selected;
         if (rule === 'spt') {
-            // Shortest processing time
-            selected = conflictSet.reduce((best, s) =>
-                s.time < best.time ? s : best, conflictSet[0]);
+            selected = conflictSet.reduce((best, s) => s.time < best.time ? s : best, conflictSet[0]);
         } else if (rule === 'lpt') {
-            // Longest processing time
-            selected = conflictSet.reduce((best, s) =>
-                s.time > best.time ? s : best, conflictSet[0]);
+            selected = conflictSet.reduce((best, s) => s.time > best.time ? s : best, conflictSet[0]);
         } else {
-            // MWR: Most Work Remaining for the job
             const workRemaining = (jobIdx) => {
                 let wr = 0;
-                for (let i = nextOp[jobIdx]; i < PATIENTS[jobIdx].ops.length; i++) {
-                    wr += PATIENTS[jobIdx].ops[i].time;
-                }
+                for (let i = nextOp[jobIdx]; i < patients[jobIdx].ops.length; i++) wr += patients[jobIdx].ops[i].time;
                 return wr;
             };
             selected = conflictSet.reduce((best, s) => {
-                const wrS = workRemaining(s.job);
-                const wrB = workRemaining(best.job);
-                return wrS > wrB ? s : best;
+                return workRemaining(s.job) > workRemaining(best.job) ? s : best;
             }, conflictSet[0]);
         }
 
-        // Step 5: Schedule the selected operation at its earliest feasible start
         const startTime = Math.max(jobAvail[selected.job], machineAvail[selected.machine]);
         const endTime = startTime + selected.time;
 
-        scheduled.push({
-            job: selected.job,
-            opIdx: selected.opIdx,
-            machine: selected.machine,
-            start: startTime,
-            end: endTime,
-            time: selected.time
-        });
+        scheduled.push({ job: selected.job, opIdx: selected.opIdx, machine: selected.machine, start: startTime, end: endTime, time: selected.time });
 
-        // Update state
         nextOp[selected.job]++;
         jobAvail[selected.job] = endTime;
         machineAvail[selected.machine] = endTime;
@@ -2641,25 +2772,19 @@ function gifflerThompson(rule) {
     const makespan = Math.max(...scheduled.map(s => s.end));
     const elapsed = performance.now() - t0;
 
-    // Compute per-patient completion times
     const patientCompletion = new Array(nJobs).fill(0);
-    for (const s of scheduled) {
-        patientCompletion[s.job] = Math.max(patientCompletion[s.job], s.end);
-    }
+    for (const s of scheduled) patientCompletion[s.job] = Math.max(patientCompletion[s.job], s.end);
 
-    return { scheduled, makespan, elapsed, patientCompletion };
+    return { scheduled, makespan, elapsed, patientCompletion, rule };
 }
 
 /**
- * Render the Gantt chart and results for the given algorithm.
+ * Render the Gantt chart for a given result.
  */
-function renderSchedule(result) {
-    const { scheduled, makespan, elapsed, patientCompletion } = result;
+function renderGantt(result, patients) {
+    const { scheduled, makespan } = result;
     const ganttEl = document.getElementById('ganttChart');
-    const resultsEl = document.getElementById('resultsGrid');
-    const detailEl = document.getElementById('scheduleDetail');
 
-    // ── Gantt Chart ──
     const pxPerMin = Math.min(5, (ganttEl.parentElement.clientWidth - 160) / makespan);
     const trackWidth = makespan * pxPerMin;
 
@@ -2670,12 +2795,12 @@ function renderSchedule(result) {
         for (const op of ops) {
             const left = op.start * pxPerMin;
             const width = Math.max(op.time * pxPerMin, 2);
-            const label = op.time >= 15 ? PATIENTS[op.job].name.split(' ')[1] : '';
-            blocksHTML += `<div class="gantt-block ${PATIENTS[op.job].cssClass}"
+            const label = op.time >= 15 ? patients[op.job].name.replace('Patient ', '') : '';
+            blocksHTML += `<div class="gantt-block ${patients[op.job].cssClass}"
                 style="left:${left}px; width:${width}px;"
-                title="${PATIENTS[op.job].name}: ${op.start}-${op.end} min">
+                title="${patients[op.job].name}: ${op.start}-${op.end} min">
                 ${label}
-                <span class="block-tooltip">${PATIENTS[op.job].name}<br>${ROOM_SHORT[m]}: ${op.start}&ndash;${op.end} min</span>
+                <span class="block-tooltip">${patients[op.job].name}<br>${ROOM_SHORT[m]}: ${op.start}&ndash;${op.end} min</span>
             </div>`;
         }
         ganttHTML += `<div class="gantt-row">
@@ -2684,21 +2809,27 @@ function renderSchedule(result) {
         </div>`;
     }
 
-    // Timescale
     const tickInterval = makespan <= 100 ? 10 : makespan <= 200 ? 20 : 30;
     let ticksHTML = '';
     for (let t = 0; t <= makespan; t += tickInterval) {
         ticksHTML += `<span class="gantt-tick" style="left:${t * pxPerMin}px;">${t}</span>`;
     }
-    // Always show makespan tick if not already shown
     if (makespan % tickInterval !== 0) {
         ticksHTML += `<span class="gantt-tick" style="left:${makespan * pxPerMin}px; color: var(--gold);">${makespan}</span>`;
     }
     ganttHTML += `<div class="gantt-timescale" style="width:${trackWidth}px;">${ticksHTML}</div>`;
 
     ganttEl.innerHTML = ganttHTML;
+}
 
-    // ── Results Grid ──
+/**
+ * Render results grid and schedule detail for the best result.
+ */
+function renderResults(result, patients) {
+    const { scheduled, makespan, elapsed, patientCompletion } = result;
+    const resultsEl = document.getElementById('resultsGrid');
+    const detailEl = document.getElementById('scheduleDetail');
+
     const avgCompletion = (patientCompletion.reduce((a, b) => a + b, 0) / patientCompletion.length).toFixed(0);
     resultsEl.innerHTML = `
         <div class="result-card">
@@ -2719,33 +2850,78 @@ function renderSchedule(result) {
         </div>
     `;
 
-    // ── Schedule Detail ──
     let detailHTML = '';
     for (let m = 0; m < ROOMS.length; m++) {
         const ops = scheduled.filter(s => s.machine === m).sort((a, b) => a.start - b.start);
         const seq = ops.map(op =>
-            `${PATIENTS[op.job].name.split(' ')[1]}[${op.start}&ndash;${op.end}]`
+            `${patients[op.job].name.replace('Patient ', '')}[${op.start}&ndash;${op.end}]`
         ).join(' &rarr; ');
         detailHTML += `<span class="room-name">${ROOMS[m]}:</span> ${seq}<br>`;
     }
     detailHTML += '<br>';
-    for (let j = 0; j < PATIENTS.length; j++) {
-        detailHTML += `<span class="room-name">${PATIENTS[j].name}:</span> completes at t=${patientCompletion[j]} min<br>`;
+    for (let j = 0; j < patients.length; j++) {
+        detailHTML += `<span class="room-name">${patients[j].name}:</span> completes at t=${patientCompletion[j]} min<br>`;
     }
     detailEl.innerHTML = detailHTML;
 }
 
 /**
- * Handle algorithm chip selection.
+ * Render the algorithm comparison table.
  */
-function selectAlgorithm(algo) {
-    // Update chip UI
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
-    document.querySelector(`.algo-chip[data-algo="${algo}"]`).classList.add('active');
+function renderComparison(allResults, patients) {
+    const container = document.getElementById('comparisonContainer');
+    const tbody = document.getElementById('compareBody');
+    container.style.display = 'block';
 
-    // Run Giffler-Thompson with selected rule
-    const result = gifflerThompson(algo);
-    renderSchedule(result);
+    const bestMakespan = Math.min(...allResults.map(r => r.makespan));
+
+    tbody.innerHTML = allResults.map(r => {
+        const avg = (r.patientCompletion.reduce((a, b) => a + b, 0) / r.patientCompletion.length).toFixed(0);
+        const maxC = Math.max(...r.patientCompletion);
+        const isBest = r.makespan === bestMakespan;
+        return `<tr class="${isBest ? 'best-row' : ''}">
+            <td style="font-family:Inter,sans-serif;${isBest ? 'color:var(--green);' : ''}">${ALGO_NAMES[r.rule]}${isBest ? ' <i class="fas fa-trophy" style="font-size:0.7rem;"></i>' : ''}</td>
+            <td>${r.makespan}</td>
+            <td>${avg}</td>
+            <td>${maxC}</td>
+            <td>${r.elapsed.toFixed(2)}</td>
+        </tr>`;
+    }).join('');
+}
+
+/**
+ * Main solve: run all algorithms, show comparison, render best Gantt.
+ */
+function solveAndCompare() {
+    const spinner = document.getElementById('solveSpinner');
+    spinner.style.display = 'inline';
+
+    setTimeout(() => {
+        const patients = readPatientsFromTable();
+        if (patients.length < 2) { spinner.style.display = 'none'; return; }
+
+        updateLegend(patients);
+
+        const allResults = ['spt', 'lpt', 'mwr'].map(rule => gifflerThompson(patients, rule));
+
+        // Find the best result by makespan, then by avg completion as tiebreaker
+        let best = allResults[0];
+        for (const r of allResults) {
+            if (r.makespan < best.makespan) best = r;
+            else if (r.makespan === best.makespan) {
+                const avgR = r.patientCompletion.reduce((a, b) => a + b, 0);
+                const avgB = best.patientCompletion.reduce((a, b) => a + b, 0);
+                if (avgR < avgB) best = r;
+            }
+        }
+
+        document.getElementById('ganttAlgoLabel').textContent = '(' + ALGO_NAMES[best.rule] + ' \u2014 best makespan)';
+        renderGantt(best, patients);
+        renderResults(best, patients);
+        renderComparison(allResults, patients);
+
+        spinner.style.display = 'none';
+    }, 50);
 }
 
 // ── Navbar scroll effect ──
@@ -2775,7 +2951,8 @@ document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initial render ──
 document.addEventListener('DOMContentLoaded', () => {
-    selectAlgorithm('spt');
+    renderTable(JSON.parse(JSON.stringify(DEFAULT_PATIENTS)));
+    solveAndCompare();
 });
 </script>
 
