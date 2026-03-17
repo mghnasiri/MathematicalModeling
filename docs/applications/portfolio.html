@@ -2203,46 +2203,37 @@
     <div class="container">
         <div class="section-header fade-in">
             <h2>Try It <span>Yourself</span></h2>
-            <p>Adjust parameters and compare optimization methods</p>
+            <p>Edit assets, returns, and covariance &mdash; then compare optimization methods</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-sliders-h"></i> Portfolio Optimizer</h4>
-                <button class="solver-btn primary" onclick="runAllAlgorithms()">
-                    <i class="fas fa-play"></i>&ensp;Optimize
-                </button>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">4 Assets &middot; &lambda; = 2.0</span>
             </div>
             <div class="solver-body">
-                <!-- Asset Returns -->
-                <div class="solver-section-label">Expected Annual Returns (%)</div>
-                <div class="asset-grid">
-                    <div class="asset-item">
-                        <label><i class="fas fa-university"></i>&ensp;Bonds</label>
-                        <input type="number" id="ret-0" value="4" step="0.5" min="0" max="50">
-                    </div>
-                    <div class="asset-item">
-                        <label><i class="fas fa-microchip"></i>&ensp;Tech Stocks</label>
-                        <input type="number" id="ret-1" value="12" step="0.5" min="0" max="50">
-                    </div>
-                    <div class="asset-item">
-                        <label><i class="fas fa-building"></i>&ensp;Real Estate</label>
-                        <input type="number" id="ret-2" value="8" step="0.5" min="0" max="50">
-                    </div>
-                    <div class="asset-item">
-                        <label><i class="fas fa-gem"></i>&ensp;Commodities</label>
-                        <input type="number" id="ret-3" value="6" step="0.5" min="0" max="50">
-                    </div>
+                <!-- Asset Returns Table -->
+                <div class="solver-section-label">Assets &amp; Expected Annual Returns (%)</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="results-table" id="assets-table">
+                        <thead>
+                            <tr><th>Name</th><th>Return (%)</th><th></th></tr>
+                        </thead>
+                        <tbody id="assets-body"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addAsset()">+ Add Asset</button>
+                    <button class="algo-chip" onclick="removeLastAsset()">&minus; Remove Last</button>
                 </div>
 
-                <!-- Covariance Matrix Display -->
+                <!-- Covariance Matrix Table -->
                 <div class="solver-section-label">Covariance Matrix (Annualized)</div>
-                <div class="cov-matrix">
-                    <span class="cov-header">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Bonds&emsp;&emsp;Tech&emsp;&emsp;&ensp;RE&emsp;&emsp;&emsp;Comm</span><br>
-                    Bonds&emsp;&emsp;&ensp;0.0004&emsp; -0.0002&emsp;&ensp;0.0001&emsp;&ensp;0.0001<br>
-                    Tech&emsp;&emsp;&emsp;-0.0002&emsp;&ensp;0.0400&emsp;&ensp;0.0100&emsp;&ensp;0.0050<br>
-                    Real Estate&ensp;0.0001&emsp;&ensp;0.0100&emsp;&ensp;0.0150&emsp;&ensp;0.0030<br>
-                    Commodities&ensp;0.0001&emsp;&ensp;0.0050&emsp;&ensp;0.0030&emsp;&ensp;0.0200
+                <div style="overflow-x:auto;margin-bottom:1rem;">
+                    <table class="results-table" id="cov-table">
+                        <thead id="cov-head"></thead>
+                        <tbody id="cov-body"></tbody>
+                    </table>
                 </div>
 
                 <!-- Risk Aversion Slider -->
@@ -2250,6 +2241,14 @@
                     <label>Risk Aversion (&lambda;):</label>
                     <input type="range" class="solver-slider" id="lambda-slider" min="0.1" max="10" step="0.1" value="2">
                     <span class="size-display" id="lambda-display">2.0</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" style="margin-right:4px;"></i>Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeAll()"><i class="fas fa-random" style="margin-right:4px;"></i>Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('conservative')"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>Conservative (6 Assets)</button>
+                    <button class="algo-chip" onclick="loadPreset('aggressive')"><i class="fas fa-rocket" style="margin-right:4px;"></i>Aggressive (5 Assets)</button>
                 </div>
 
                 <!-- Algorithm Selection -->
@@ -2268,6 +2267,9 @@
                         Mean-Variance QP <span class="chip-type" style="color: var(--green);">exact</span>
                     </div>
                 </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip selected" id="solveBtn" onclick="runAllAlgorithms()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;"><i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms<span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span></button>
 
                 <!-- Visualization -->
                 <div class="solver-row">
@@ -2289,13 +2291,9 @@
                 <div class="solver-section-label">Detailed Results</div>
                 <div style="overflow-x: auto;">
                     <table class="results-table" id="results-table">
-                        <thead>
+                        <thead id="results-head">
                             <tr>
                                 <th>Algorithm</th>
-                                <th>Bonds</th>
-                                <th>Tech</th>
-                                <th>Real Estate</th>
-                                <th>Commodities</th>
                                 <th>E[Return]</th>
                                 <th>Std Dev</th>
                                 <th>Sharpe</th>
@@ -2309,7 +2307,7 @@
 
                 <!-- Weight Detail Output -->
                 <div class="weight-output" id="weight-output">
-                    Click "Optimize" to compute portfolio allocations.
+                    Click "Solve &amp; Compare All Algorithms" to compute portfolio allocations.
                 </div>
 
                 <div class="solver-status" id="solver-status">Ready to optimize.</div>
@@ -2459,59 +2457,278 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// PORTFOLIO OPTIMIZATION ENGINE
+// PORTFOLIO OPTIMIZATION ENGINE — FULLY INTERACTIVE
 // ═══════════════════════════════════════════════════════════════
 
-const ASSET_NAMES = ['Bonds', 'Tech', 'Real Estate', 'Commodities'];
-const ASSET_COLORS = ['#7aa2f7', '#ff6b6b', '#64ffda', '#C5A059'];
-const N = 4;
+const ALL_COLORS = ['#7aa2f7','#ff6b6b','#64ffda','#C5A059','#a78bfa','#e06c75','#56b6c2','#98c379','#d19a66','#c678dd'];
+const ASSET_ICONS = ['fa-university','fa-microchip','fa-building','fa-gem','fa-chart-line','fa-coins','fa-oil-can','fa-leaf','fa-globe','fa-crown'];
+const DEFAULT_NAMES = ['Bonds','Tech Stocks','Real Estate','Commodities','Gold','Energy','Healthcare','Utilities','Emerging Mkts','Crypto'];
 
-// Default covariance matrix (annualized)
-const COV_MATRIX = [
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+const covStyle   = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:68px;outline:none;';
+
+// ── Default data ──
+const DEFAULT_ASSETS = [
+    {name:'Bonds', ret:4},
+    {name:'Tech Stocks', ret:12},
+    {name:'Real Estate', ret:8},
+    {name:'Commodities', ret:6}
+];
+const DEFAULT_COV = [
     [0.0004, -0.0002, 0.0001, 0.0001],
     [-0.0002, 0.0400, 0.0100, 0.0050],
     [0.0001, 0.0100, 0.0150, 0.0030],
     [0.0001, 0.0050, 0.0030, 0.0200]
 ];
 
-// ── Utility: read inputs ──
-function getReturns() {
-    const mu = [];
-    for (let i = 0; i < N; i++) {
-        mu.push(parseFloat(document.getElementById('ret-' + i).value) / 100);
+// ── Presets ──
+const PRESET_CONSERVATIVE = {
+    assets: [
+        {name:'Gov Bonds', ret:3}, {name:'Corp Bonds', ret:5}, {name:'Div Stocks', ret:7},
+        {name:'Real Estate', ret:6}, {name:'Gold', ret:4}, {name:'Cash', ret:2}
+    ],
+    cov: [
+        [0.0003, 0.0001, 0.0001, 0.0001, 0.0000, 0.0000],
+        [0.0001, 0.0010, 0.0004, 0.0002, 0.0001, 0.0000],
+        [0.0001, 0.0004, 0.0120, 0.0050, 0.0010, 0.0000],
+        [0.0001, 0.0002, 0.0050, 0.0150, 0.0005, 0.0000],
+        [0.0000, 0.0001, 0.0010, 0.0005, 0.0100, 0.0000],
+        [0.0000, 0.0000, 0.0000, 0.0000, 0.0000, 0.0001]
+    ],
+    lambda: 5
+};
+const PRESET_AGGRESSIVE = {
+    assets: [
+        {name:'Tech Growth', ret:18}, {name:'Biotech', ret:15}, {name:'Crypto', ret:25},
+        {name:'Emerging Mkts', ret:14}, {name:'Small Cap', ret:16}
+    ],
+    cov: [
+        [0.0500, 0.0200, 0.0250, 0.0180, 0.0220],
+        [0.0200, 0.0600, 0.0150, 0.0120, 0.0180],
+        [0.0250, 0.0150, 0.1200, 0.0200, 0.0300],
+        [0.0180, 0.0120, 0.0200, 0.0400, 0.0250],
+        [0.0220, 0.0180, 0.0300, 0.0250, 0.0450]
+    ],
+    lambda: 1
+};
+
+// ── Table Rendering ──
+function renderAssetsTable(assets) {
+    const tbody = document.getElementById('assets-body');
+    tbody.innerHTML = '';
+    assets.forEach((a, i) => {
+        const icon = ASSET_ICONS[i % ASSET_ICONS.length];
+        const color = ALL_COLORS[i % ALL_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td style="white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + ';margin-right:6px;"></span>' +
+            '<input type="text" value="' + a.name + '" style="' + nameStyle + '"></td>' +
+            '<td><input type="number" value="' + a.ret + '" step="0.5" min="-20" max="100" style="' + inputStyle + '"></td>' +
+            '<td><button onclick="removeAssetRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>';
+        tbody.appendChild(tr);
+    });
+}
+
+function renderCovTable(cov, names) {
+    const n = cov.length;
+    const thead = document.getElementById('cov-head');
+    const tbody = document.getElementById('cov-body');
+    // Header row
+    let hdr = '<tr><th></th>';
+    for (let j = 0; j < n; j++) {
+        const short = names[j].length > 8 ? names[j].substring(0, 7) + '..' : names[j];
+        hdr += '<th style="font-size:0.65rem;">' + short + '</th>';
     }
-    return mu;
+    hdr += '</tr>';
+    thead.innerHTML = hdr;
+    // Body rows
+    tbody.innerHTML = '';
+    for (let i = 0; i < n; i++) {
+        const tr = document.createElement('tr');
+        const short = names[i].length > 8 ? names[i].substring(0, 7) + '..' : names[i];
+        let cells = '<td style="font-size:0.7rem;color:var(--gold);font-weight:500;white-space:nowrap;">' + short + '</td>';
+        for (let j = 0; j < n; j++) {
+            const val = cov[i][j];
+            const bg = (i === j) ? 'background:rgba(197,160,89,0.06);' : '';
+            cells += '<td><input type="number" value="' + val.toFixed(4) + '" step="0.0001" style="' + covStyle + bg + '" data-row="' + i + '" data-col="' + j + '"></td>';
+        }
+        tr.innerHTML = cells;
+        tbody.appendChild(tr);
+    }
+}
+
+function getAssetNames() {
+    const rows = document.querySelectorAll('#assets-body tr');
+    return [...rows].map((row, i) => {
+        const inp = row.querySelector('input[type="text"]');
+        return inp ? inp.value.trim() || ('Asset ' + (i + 1)) : ('Asset ' + (i + 1));
+    });
+}
+
+function getAssetCount() {
+    return document.querySelectorAll('#assets-body tr').length;
+}
+
+// ── Read from DOM ──
+function getReturns() {
+    const rows = document.querySelectorAll('#assets-body tr');
+    return [...rows].map(row => {
+        const inp = row.querySelectorAll('input')[1]; // second input is return
+        return (parseFloat(inp.value) || 0) / 100;
+    });
+}
+
+function getCovMatrix() {
+    const n = getAssetCount();
+    const cov = [];
+    for (let i = 0; i < n; i++) {
+        cov[i] = [];
+        for (let j = 0; j < n; j++) {
+            const inp = document.querySelector('#cov-body input[data-row="' + i + '"][data-col="' + j + '"]');
+            cov[i][j] = inp ? parseFloat(inp.value) || 0 : 0;
+        }
+    }
+    return cov;
 }
 
 function getLambda() {
     return parseFloat(document.getElementById('lambda-slider').value);
 }
 
-// ── Linear Algebra Utilities ──
+function updateSummary() {
+    const n = getAssetCount();
+    const lam = getLambda();
+    document.getElementById('configSummary').textContent = n + ' Assets \u00b7 \u03BB = ' + lam.toFixed(1);
+}
 
-// Matrix-vector multiply: A (n x n) * v (n) => result (n)
+// ── Asset add/remove ──
+function addAsset() {
+    const n = getAssetCount();
+    if (n >= 10) { alert('Maximum 10 assets supported.'); return; }
+    // Read current state
+    const names = getAssetNames();
+    const mu = getReturns();
+    const cov = getCovMatrix();
+    const newName = DEFAULT_NAMES[n % DEFAULT_NAMES.length];
+    const newRet = Math.round((Math.random() * 12 + 2) * 2) / 2;
+    // Expand cov matrix: new asset has default variance and zero covariance
+    const newN = n + 1;
+    const newCov = [];
+    for (let i = 0; i < newN; i++) {
+        newCov[i] = [];
+        for (let j = 0; j < newN; j++) {
+            if (i < n && j < n) newCov[i][j] = cov[i][j];
+            else if (i === j) newCov[i][j] = 0.0100; // default variance
+            else newCov[i][j] = 0.0010; // small positive covariance
+        }
+    }
+    const assets = names.map((nm, i) => ({name: nm, ret: mu[i] * 100}));
+    assets.push({name: newName, ret: newRet});
+    renderAssetsTable(assets);
+    renderCovTable(newCov, assets.map(a => a.name));
+    updateSummary();
+}
+
+function removeLastAsset() {
+    const n = getAssetCount();
+    if (n <= 2) { alert('Need at least 2 assets.'); return; }
+    const names = getAssetNames();
+    const mu = getReturns();
+    const cov = getCovMatrix();
+    const newN = n - 1;
+    const newCov = cov.slice(0, newN).map(row => row.slice(0, newN));
+    const assets = names.slice(0, newN).map((nm, i) => ({name: nm, ret: mu[i] * 100}));
+    renderAssetsTable(assets);
+    renderCovTable(newCov, assets.map(a => a.name));
+    updateSummary();
+}
+
+function removeAssetRow(btn) {
+    const n = getAssetCount();
+    if (n <= 2) { alert('Need at least 2 assets.'); return; }
+    const row = btn.closest('tr');
+    const rows = [...document.querySelectorAll('#assets-body tr')];
+    const idx = rows.indexOf(row);
+    if (idx < 0) return;
+    const names = getAssetNames();
+    const mu = getReturns();
+    const cov = getCovMatrix();
+    // Remove index idx
+    names.splice(idx, 1);
+    mu.splice(idx, 1);
+    cov.splice(idx, 1);
+    cov.forEach(r => r.splice(idx, 1));
+    const assets = names.map((nm, i) => ({name: nm, ret: mu[i] * 100}));
+    renderAssetsTable(assets);
+    renderCovTable(cov, names);
+    updateSummary();
+}
+
+function resetDefaults() {
+    renderAssetsTable(DEFAULT_ASSETS);
+    renderCovTable(DEFAULT_COV, DEFAULT_ASSETS.map(a => a.name));
+    document.getElementById('lambda-slider').value = 2;
+    document.getElementById('lambda-display').textContent = '2.0';
+    updateSummary();
+}
+
+function randomizeAll() {
+    // Randomize returns
+    document.querySelectorAll('#assets-body tr').forEach(row => {
+        const retInput = row.querySelectorAll('input')[1];
+        retInput.value = (Math.random() * 18 + 2).toFixed(1);
+    });
+    // Randomize covariance (keep symmetric positive semi-definite)
+    const n = getAssetCount();
+    const newCov = [];
+    // Generate random factors to ensure PSD
+    const factors = [];
+    for (let i = 0; i < n; i++) {
+        factors[i] = [];
+        for (let k = 0; k < n; k++) {
+            factors[i][k] = (Math.random() - 0.3) * 0.1;
+        }
+    }
+    for (let i = 0; i < n; i++) {
+        newCov[i] = [];
+        for (let j = 0; j < n; j++) {
+            let val = 0;
+            for (let k = 0; k < n; k++) val += factors[i][k] * factors[j][k];
+            if (i === j) val = Math.max(val, 0.0005);
+            newCov[i][j] = val;
+        }
+    }
+    renderCovTable(newCov, getAssetNames());
+}
+
+function loadPreset(type) {
+    const preset = type === 'conservative' ? PRESET_CONSERVATIVE : PRESET_AGGRESSIVE;
+    renderAssetsTable(preset.assets);
+    renderCovTable(preset.cov, preset.assets.map(a => a.name));
+    document.getElementById('lambda-slider').value = preset.lambda;
+    document.getElementById('lambda-display').textContent = preset.lambda.toFixed(1);
+    updateSummary();
+}
+
+// ── Linear Algebra Utilities ──
 function matVecMul(A, v) {
     const n = A.length;
     const result = new Array(n).fill(0);
     for (let i = 0; i < n; i++) {
-        for (let j = 0; j < n; j++) {
-            result[i] += A[i][j] * v[j];
-        }
+        for (let j = 0; j < n; j++) result[i] += A[i][j] * v[j];
     }
     return result;
 }
 
-// Dot product
 function dot(a, b) {
     let s = 0;
     for (let i = 0; i < a.length; i++) s += a[i] * b[i];
     return s;
 }
 
-// Matrix inverse using Gauss-Jordan elimination for n x n
 function matInverse(M) {
     const n = M.length;
-    // Augment with identity
     const aug = [];
     for (let i = 0; i < n; i++) {
         aug[i] = [];
@@ -2519,24 +2736,20 @@ function matInverse(M) {
         for (let j = 0; j < n; j++) aug[i][n + j] = (i === j) ? 1 : 0;
     }
     for (let col = 0; col < n; col++) {
-        // Partial pivot
         let maxRow = col;
         for (let row = col + 1; row < n; row++) {
             if (Math.abs(aug[row][col]) > Math.abs(aug[maxRow][col])) maxRow = row;
         }
         [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]];
-
         const pivot = aug[col][col];
-        if (Math.abs(pivot) < 1e-15) return null; // singular
+        if (Math.abs(pivot) < 1e-15) return null;
         for (let j = 0; j < 2 * n; j++) aug[col][j] /= pivot;
-
         for (let row = 0; row < n; row++) {
             if (row === col) continue;
             const factor = aug[row][col];
             for (let j = 0; j < 2 * n; j++) aug[row][j] -= factor * aug[col][j];
         }
     }
-    // Extract inverse
     const inv = [];
     for (let i = 0; i < n; i++) {
         inv[i] = [];
@@ -2546,133 +2759,82 @@ function matInverse(M) {
 }
 
 // ── Simplex Projection (Duchi et al. 2008) ──
-// Project vector v onto the probability simplex {w : sum(w)=1, w>=0}
 function projectOntoSimplex(v) {
     const n = v.length;
-    const u = v.slice().sort((a, b) => b - a); // sort descending
-    let cumSum = 0;
-    let rho = 0;
+    const u = v.slice().sort((a, b) => b - a);
+    let cumSum = 0, rho = 0;
     for (let j = 0; j < n; j++) {
         cumSum += u[j];
-        if (u[j] + (1 - cumSum) / (j + 1) > 0) {
-            rho = j + 1;
-        }
+        if (u[j] + (1 - cumSum) / (j + 1) > 0) rho = j + 1;
     }
     let cumSumRho = 0;
     for (let j = 0; j < rho; j++) cumSumRho += u[j];
     const theta = (cumSumRho - 1) / rho;
-
-    const w = new Array(n);
-    for (let i = 0; i < n; i++) {
-        w[i] = Math.max(v[i] - theta, 0);
-    }
-    return w;
+    return v.map(x => Math.max(x - theta, 0));
 }
 
 // ── Portfolio metrics ──
-function portfolioReturn(mu, w) {
-    return dot(mu, w);
-}
-
-function portfolioVariance(cov, w) {
-    return dot(w, matVecMul(cov, w));
-}
-
-function portfolioStdDev(cov, w) {
-    return Math.sqrt(Math.max(0, portfolioVariance(cov, w)));
-}
+function portfolioReturn(mu, w) { return dot(mu, w); }
+function portfolioVariance(cov, w) { return dot(w, matVecMul(cov, w)); }
+function portfolioStdDev(cov, w) { return Math.sqrt(Math.max(0, portfolioVariance(cov, w))); }
 
 // ── Algorithm 1: Equal Weight ──
-function equalWeight() {
-    const w = new Array(N).fill(1 / N);
-    return w;
+function equalWeight(mu, cov, lambda) {
+    const n = mu.length;
+    return new Array(n).fill(1 / n);
 }
 
 // ── Algorithm 2: Minimum Variance ──
-// Uses closed-form Sigma^{-1} * 1 / (1^T Sigma^{-1} 1)
-// Then projects onto simplex for non-negativity
-function minVariance() {
-    const inv = matInverse(COV_MATRIX);
-    if (!inv) return equalWeight(); // fallback
-
-    const ones = new Array(N).fill(1);
+function minVariance(mu, cov, lambda) {
+    const n = mu.length;
+    const inv = matInverse(cov);
+    if (!inv) return new Array(n).fill(1 / n);
+    const ones = new Array(n).fill(1);
     const invOnes = matVecMul(inv, ones);
     const denom = dot(ones, invOnes);
-
     const w = invOnes.map(x => x / denom);
-
-    // If any weight is negative, project onto simplex
-    if (w.some(x => x < -1e-10)) {
-        return projectOntoSimplex(w);
-    }
-    // Normalize to ensure sum = 1
+    if (w.some(x => x < -1e-10)) return projectOntoSimplex(w);
     const s = w.reduce((a, b) => a + b, 0);
     return w.map(x => x / s);
 }
 
 // ── Algorithm 3: Max Return ──
-function maxReturn() {
-    const mu = getReturns();
+function maxReturn(mu, cov, lambda) {
+    const n = mu.length;
     let bestIdx = 0;
-    for (let i = 1; i < N; i++) {
+    for (let i = 1; i < n; i++) {
         if (mu[i] > mu[bestIdx]) bestIdx = i;
     }
-    const w = new Array(N).fill(0);
+    const w = new Array(n).fill(0);
     w[bestIdx] = 1;
     return w;
 }
 
 // ── Algorithm 4: Mean-Variance QP via Projected Gradient Descent ──
-// maximize mu^T w - lambda * w^T Sigma w
-// gradient = mu - 2*lambda*Sigma*w
-function meanVarianceQP() {
-    const mu = getReturns();
-    const lambda = getLambda();
-
-    // Initialize with equal weights
-    let w = new Array(N).fill(1 / N);
-
+function meanVarianceQP(mu, cov, lambda) {
+    const n = mu.length;
+    let w = new Array(n).fill(1 / n);
     const maxIter = 2000;
     const tol = 1e-10;
     let stepSize = 0.01;
 
     for (let iter = 0; iter < maxIter; iter++) {
-        // Compute gradient of objective: mu - 2*lambda*Sigma*w
-        const sigmaW = matVecMul(COV_MATRIX, w);
-        const grad = new Array(N);
-        for (let i = 0; i < N; i++) {
-            grad[i] = mu[i] - 2 * lambda * sigmaW[i];
-        }
-
-        // Gradient ascent step
-        const wNew = new Array(N);
-        for (let i = 0; i < N; i++) {
-            wNew[i] = w[i] + stepSize * grad[i];
-        }
-
-        // Project onto simplex
+        const sigmaW = matVecMul(cov, w);
+        const grad = new Array(n);
+        for (let i = 0; i < n; i++) grad[i] = mu[i] - 2 * lambda * sigmaW[i];
+        const wNew = new Array(n);
+        for (let i = 0; i < n; i++) wNew[i] = w[i] + stepSize * grad[i];
         const wProj = projectOntoSimplex(wNew);
-
-        // Check convergence
         let maxDiff = 0;
-        for (let i = 0; i < N; i++) {
-            maxDiff = Math.max(maxDiff, Math.abs(wProj[i] - w[i]));
-        }
-
+        for (let i = 0; i < n; i++) maxDiff = Math.max(maxDiff, Math.abs(wProj[i] - w[i]));
         w = wProj;
-
         if (maxDiff < tol) break;
-
-        // Adaptive step size with backtracking
-        if (iter > 0 && iter % 200 === 0) {
-            stepSize *= 0.8;
-        }
+        if (iter > 0 && iter % 200 === 0) stepSize *= 0.8;
     }
-
     return w;
 }
 
-// ── Run All Selected Algorithms ──
+// ── Algorithm Registry ──
 const ALGORITHMS = {
     equal_weight:     { name: 'Equal Weight (1/n)', fn: equalWeight, type: 'heuristic' },
     min_variance:     { name: 'Min Variance',       fn: minVariance, type: 'heuristic' },
@@ -2682,174 +2844,177 @@ const ALGORITHMS = {
 
 let lastResults = [];
 
-function runAllAlgorithms() {
-    const mu = getReturns();
-    const lambda = getLambda();
-    const selected = getSelectedAlgorithms();
-
-    if (selected.length === 0) {
-        document.getElementById('solver-status').textContent = 'Please select at least one algorithm.';
-        return;
-    }
-
-    lastResults = [];
-
-    for (const key of selected) {
-        const algo = ALGORITHMS[key];
-        const t0 = performance.now();
-        const w = algo.fn();
-        const t1 = performance.now();
-
-        const expRet = portfolioReturn(mu, w);
-        const stdDev = portfolioStdDev(COV_MATRIX, w);
-        const sharpe = stdDev > 1e-10 ? expRet / stdDev : 0;
-
-        lastResults.push({
-            key: key,
-            name: algo.name,
-            type: algo.type,
-            weights: w,
-            expectedReturn: expRet,
-            stdDev: stdDev,
-            sharpe: sharpe,
-            time: t1 - t0
-        });
-    }
-
-    renderResults();
-    drawPieChart();
-    drawBarChart();
-    document.getElementById('solver-status').textContent =
-        'Optimized ' + selected.length + ' algorithm(s) with \u03BB = ' + lambda.toFixed(1) + '.';
-}
-
 function getSelectedAlgorithms() {
-    const chips = document.querySelectorAll('.algo-chip');
+    const chips = document.querySelectorAll('#algo-select .algo-chip');
     const selected = [];
     chips.forEach(c => {
-        if (c.classList.contains('selected')) {
+        if (c.classList.contains('selected') && c.getAttribute('data-algo')) {
             selected.push(c.getAttribute('data-algo'));
         }
     });
     return selected;
 }
 
-// ── Render Results Table ──
-function renderResults() {
-    const tbody = document.getElementById('results-body');
-    tbody.innerHTML = '';
+// ── Run All Selected Algorithms ──
+function runAllAlgorithms() {
+    const mu = getReturns();
+    const cov = getCovMatrix();
+    const lambda = getLambda();
+    const n = mu.length;
+    const names = getAssetNames();
+    const selected = getSelectedAlgorithms();
 
-    // Find best Sharpe
-    let bestSharpe = -Infinity;
-    for (const r of lastResults) {
-        if (r.sharpe > bestSharpe) bestSharpe = r.sharpe;
+    if (selected.length === 0) {
+        document.getElementById('solver-status').textContent = 'Please select at least one algorithm.';
+        return;
+    }
+    if (n < 2) {
+        document.getElementById('solver-status').textContent = 'Need at least 2 assets.';
+        return;
     }
 
-    let outputText = '';
+    const spinner = document.getElementById('solveSpinner');
+    spinner.style.display = 'inline';
 
+    setTimeout(() => {
+        lastResults = [];
+        for (const key of selected) {
+            const algo = ALGORITHMS[key];
+            const t0 = performance.now();
+            const w = algo.fn(mu, cov, lambda);
+            const t1 = performance.now();
+            const expRet = portfolioReturn(mu, w);
+            const stdDev = portfolioStdDev(cov, w);
+            const sharpe = stdDev > 1e-10 ? expRet / stdDev : 0;
+            lastResults.push({
+                key, name: algo.name, type: algo.type, weights: w,
+                expectedReturn: expRet, stdDev, sharpe, time: t1 - t0
+            });
+        }
+
+        renderResultsTable(names);
+        drawPieChart(names);
+        drawBarChart();
+        spinner.style.display = 'none';
+        updateSummary();
+        document.getElementById('solver-status').textContent =
+            'Optimized ' + selected.length + ' algorithm(s) \u00b7 ' + n + ' assets \u00b7 \u03BB = ' + lambda.toFixed(1);
+    }, 30);
+}
+
+// ── Render Results Table (dynamic columns) ──
+function renderResultsTable(names) {
+    const n = names.length;
+
+    // Build dynamic header
+    const thead = document.getElementById('results-head');
+    let hdr = '<tr><th>Algorithm</th>';
+    for (let i = 0; i < n; i++) {
+        const short = names[i].length > 10 ? names[i].substring(0, 9) + '..' : names[i];
+        hdr += '<th>' + short + '</th>';
+    }
+    hdr += '<th>E[Return]</th><th>Std Dev</th><th>Sharpe</th><th>Time</th></tr>';
+    thead.innerHTML = hdr;
+
+    // Build body
+    const tbody = document.getElementById('results-body');
+    tbody.innerHTML = '';
+    let bestSharpe = -Infinity;
+    for (const r of lastResults) { if (r.sharpe > bestSharpe) bestSharpe = r.sharpe; }
+
+    let outputText = '';
     for (const r of lastResults) {
         const tr = document.createElement('tr');
         const isBest = Math.abs(r.sharpe - bestSharpe) < 1e-8 && lastResults.length > 1;
-
-        tr.innerHTML =
-            '<td class="algo-label">' + r.name + '</td>' +
-            '<td>' + (r.weights[0] * 100).toFixed(1) + '%</td>' +
-            '<td>' + (r.weights[1] * 100).toFixed(1) + '%</td>' +
-            '<td>' + (r.weights[2] * 100).toFixed(1) + '%</td>' +
-            '<td>' + (r.weights[3] * 100).toFixed(1) + '%</td>' +
-            '<td>' + (r.expectedReturn * 100).toFixed(2) + '%</td>' +
-            '<td>' + (r.stdDev * 100).toFixed(2) + '%</td>' +
-            '<td class="' + (isBest ? 'best-val' : '') + '">' + r.sharpe.toFixed(3) + '</td>' +
-            '<td>' + r.time.toFixed(2) + ' ms</td>';
-
+        let html = '<td class="algo-label">' + r.name + '</td>';
+        for (let i = 0; i < n; i++) {
+            html += '<td>' + (r.weights[i] * 100).toFixed(1) + '%</td>';
+        }
+        html += '<td>' + (r.expectedReturn * 100).toFixed(2) + '%</td>';
+        html += '<td>' + (r.stdDev * 100).toFixed(2) + '%</td>';
+        html += '<td class="' + (isBest ? 'best-val' : '') + '">' + r.sharpe.toFixed(3) + '</td>';
+        html += '<td>' + r.time.toFixed(2) + ' ms</td>';
+        tr.innerHTML = html;
         tbody.appendChild(tr);
 
         outputText += r.name + ':\n';
-        for (let i = 0; i < N; i++) {
-            outputText += '  ' + ASSET_NAMES[i] + ': ' + (r.weights[i] * 100).toFixed(2) + '%\n';
+        for (let i = 0; i < n; i++) {
+            outputText += '  ' + names[i] + ': ' + (r.weights[i] * 100).toFixed(2) + '%\n';
         }
         outputText += '  E[Return] = ' + (r.expectedReturn * 100).toFixed(2) + '%';
         outputText += '  |  Std Dev = ' + (r.stdDev * 100).toFixed(2) + '%';
         outputText += '  |  Sharpe = ' + r.sharpe.toFixed(4) + '\n\n';
     }
-
     document.getElementById('weight-output').textContent = outputText.trim();
 }
 
 // ── Pie Chart Drawing ──
-function drawPieChart() {
+function drawPieChart(names) {
     const canvas = document.getElementById('pie-canvas');
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
-
     if (lastResults.length === 0) return;
+    if (!names) names = getAssetNames();
+    const n = names.length;
 
-    // Draw pie chart for the last algorithm (typically QP or the best)
-    // Use the one with highest Sharpe ratio
     let best = lastResults[0];
-    for (const r of lastResults) {
-        if (r.sharpe > best.sharpe) best = r;
-    }
+    for (const r of lastResults) { if (r.sharpe > best.sharpe) best = r; }
 
-    const cx = W / 2;
-    const cy = H / 2 - 10;
+    const cx = W / 2, cy = H / 2 - 10;
     const radius = Math.min(W, H) * 0.32;
 
-    // Title
     ctx.fillStyle = '#a8b2d1';
     ctx.font = '12px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText(best.name, cx, 25);
 
-    // Draw slices
     let startAngle = -Math.PI / 2;
-    for (let i = 0; i < N; i++) {
+    for (let i = 0; i < n; i++) {
         const sliceAngle = best.weights[i] * 2 * Math.PI;
-        if (sliceAngle < 0.001) continue;
-
+        if (sliceAngle < 0.001) { startAngle += sliceAngle; continue; }
         ctx.beginPath();
         ctx.moveTo(cx, cy);
         ctx.arc(cx, cy, radius, startAngle, startAngle + sliceAngle);
         ctx.closePath();
-        ctx.fillStyle = ASSET_COLORS[i];
+        ctx.fillStyle = ALL_COLORS[i % ALL_COLORS.length];
         ctx.fill();
-
-        // Outline
         ctx.strokeStyle = '#0A192F';
         ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Label
         if (best.weights[i] > 0.03) {
             const midAngle = startAngle + sliceAngle / 2;
             const labelR = radius * 0.65;
             const lx = cx + Math.cos(midAngle) * labelR;
             const ly = cy + Math.sin(midAngle) * labelR;
-
             ctx.fillStyle = '#0A192F';
             ctx.font = 'bold 11px JetBrains Mono, monospace';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             ctx.fillText((best.weights[i] * 100).toFixed(0) + '%', lx, ly);
         }
-
         startAngle += sliceAngle;
     }
 
-    // Legend
-    const legendY = H - 50;
-    const legendStartX = (W - N * 110) / 2;
-    for (let i = 0; i < N; i++) {
-        const lx = legendStartX + i * 120;
-        ctx.fillStyle = ASSET_COLORS[i];
+    // Legend — wrap to multiple rows if needed
+    const maxPerRow = Math.min(n, 4);
+    const rows = Math.ceil(n / maxPerRow);
+    for (let i = 0; i < n; i++) {
+        const row = Math.floor(i / maxPerRow);
+        const col = i % maxPerRow;
+        const itemsInRow = Math.min(maxPerRow, n - row * maxPerRow);
+        const legendY = H - 20 - (rows - 1 - row) * 22;
+        const legendStartX = (W - itemsInRow * 120) / 2;
+        const lx = legendStartX + col * 120;
+        ctx.fillStyle = ALL_COLORS[i % ALL_COLORS.length];
         ctx.fillRect(lx, legendY, 12, 12);
         ctx.fillStyle = '#a8b2d1';
-        ctx.font = '11px Inter, sans-serif';
+        ctx.font = '10px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
-        ctx.fillText(ASSET_NAMES[i], lx + 18, legendY + 6);
+        const short = names[i].length > 12 ? names[i].substring(0, 11) + '..' : names[i];
+        ctx.fillText(short, lx + 18, legendY + 6);
     }
 }
 
@@ -2857,10 +3022,8 @@ function drawPieChart() {
 function drawBarChart() {
     const canvas = document.getElementById('bar-canvas');
     const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
+    const W = canvas.width, H = canvas.height;
     ctx.clearRect(0, 0, W, H);
-
     if (lastResults.length === 0) return;
 
     const nAlgos = lastResults.length;
@@ -2868,16 +3031,13 @@ function drawBarChart() {
     const chartW = W - margin.left - margin.right;
     const chartH = H - margin.top - margin.bottom;
 
-    // Find max values for scaling
-    let maxRet = 0;
-    let maxStd = 0;
+    let maxRet = 0, maxStd = 0;
     for (const r of lastResults) {
         maxRet = Math.max(maxRet, r.expectedReturn * 100);
         maxStd = Math.max(maxStd, r.stdDev * 100);
     }
-    const maxVal = Math.max(maxRet, maxStd) * 1.2;
+    const maxVal = Math.max(maxRet, maxStd) * 1.2 || 1;
 
-    // Y-axis
     ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
     ctx.lineWidth = 1;
     const nTicks = 5;
@@ -2887,109 +3047,68 @@ function drawBarChart() {
         ctx.moveTo(margin.left, y);
         ctx.lineTo(W - margin.right, y);
         ctx.stroke();
-
-        const val = (i / nTicks) * maxVal;
         ctx.fillStyle = '#8892B0';
         ctx.font = '10px JetBrains Mono, monospace';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText(val.toFixed(1) + '%', margin.left - 8, y);
+        ctx.fillText(((i / nTicks) * maxVal).toFixed(1) + '%', margin.left - 8, y);
     }
 
-    // Bars
     const groupWidth = chartW / nAlgos;
     const barWidth = Math.min(groupWidth * 0.3, 30);
     const gap = barWidth * 0.4;
-
-    const algoColors = {
-        equal_weight: '#7aa2f7',
-        min_variance: '#a78bfa',
-        max_return: '#ff6b6b',
-        mean_variance_qp: '#64ffda'
-    };
+    const algoColors = { equal_weight: '#7aa2f7', min_variance: '#a78bfa', max_return: '#ff6b6b', mean_variance_qp: '#64ffda' };
 
     for (let a = 0; a < nAlgos; a++) {
         const r = lastResults[a];
         const groupX = margin.left + a * groupWidth + groupWidth / 2;
+        const color = algoColors[r.key] || '#C5A059';
 
-        // Return bar
         const retH = (r.expectedReturn * 100 / maxVal) * chartH;
         const retX = groupX - barWidth - gap / 2;
         const retY = margin.top + chartH - retH;
-        ctx.fillStyle = algoColors[r.key] || '#C5A059';
-        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = color; ctx.globalAlpha = 0.9;
         ctx.fillRect(retX, retY, barWidth, retH);
         ctx.globalAlpha = 1;
-
-        // Return value label
-        ctx.fillStyle = '#F8F9FA';
-        ctx.font = '9px JetBrains Mono, monospace';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = '#F8F9FA'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
         ctx.fillText((r.expectedReturn * 100).toFixed(1) + '%', retX + barWidth / 2, retY - 5);
 
-        // Std dev bar
         const stdH = (r.stdDev * 100 / maxVal) * chartH;
         const stdX = groupX + gap / 2;
         const stdY = margin.top + chartH - stdH;
-        ctx.fillStyle = algoColors[r.key] || '#C5A059';
-        ctx.globalAlpha = 0.4;
+        ctx.fillStyle = color; ctx.globalAlpha = 0.4;
         ctx.fillRect(stdX, stdY, barWidth, stdH);
         ctx.globalAlpha = 1;
-
-        // Std dev border
-        ctx.strokeStyle = algoColors[r.key] || '#C5A059';
-        ctx.lineWidth = 1.5;
+        ctx.strokeStyle = color; ctx.lineWidth = 1.5;
         ctx.strokeRect(stdX, stdY, barWidth, stdH);
-
-        // Std dev value label
-        ctx.fillStyle = '#a8b2d1';
-        ctx.font = '9px JetBrains Mono, monospace';
-        ctx.textAlign = 'center';
+        ctx.fillStyle = '#a8b2d1'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
         ctx.fillText((r.stdDev * 100).toFixed(1) + '%', stdX + barWidth / 2, stdY - 5);
 
-        // Algorithm name
         ctx.save();
         ctx.translate(groupX, margin.top + chartH + 12);
         ctx.rotate(Math.PI / 6);
-        ctx.fillStyle = '#a8b2d1';
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'top';
-        const shortName = r.name.length > 16 ? r.name.substring(0, 15) + '...' : r.name;
-        ctx.fillText(shortName, 0, 0);
+        ctx.fillStyle = '#a8b2d1'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left'; ctx.textBaseline = 'top';
+        ctx.fillText(r.name.length > 16 ? r.name.substring(0, 15) + '...' : r.name, 0, 0);
         ctx.restore();
     }
 
-    // Legend
-    ctx.globalAlpha = 0.9;
-    ctx.fillStyle = '#C5A059';
-    ctx.fillRect(W - margin.right - 130, margin.top, 12, 12);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = '#a8b2d1';
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'left';
+    ctx.globalAlpha = 0.9; ctx.fillStyle = '#C5A059'; ctx.fillRect(W - margin.right - 130, margin.top, 12, 12);
+    ctx.globalAlpha = 1; ctx.fillStyle = '#a8b2d1'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left';
     ctx.fillText('E[Return]', W - margin.right - 112, margin.top + 10);
-
-    ctx.globalAlpha = 0.4;
-    ctx.fillStyle = '#C5A059';
-    ctx.fillRect(W - margin.right - 130, margin.top + 20, 12, 12);
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = '#C5A059';
-    ctx.lineWidth = 1.5;
+    ctx.globalAlpha = 0.4; ctx.fillStyle = '#C5A059'; ctx.fillRect(W - margin.right - 130, margin.top + 20, 12, 12);
+    ctx.globalAlpha = 1; ctx.strokeStyle = '#C5A059'; ctx.lineWidth = 1.5;
     ctx.strokeRect(W - margin.right - 130, margin.top + 20, 12, 12);
-    ctx.fillStyle = '#a8b2d1';
-    ctx.fillText('Std Dev', W - margin.right - 112, margin.top + 30);
+    ctx.fillStyle = '#a8b2d1'; ctx.fillText('Std Dev', W - margin.right - 112, margin.top + 30);
 }
 
 // ── Event Listeners ──
-
-// Lambda slider
 document.getElementById('lambda-slider').addEventListener('input', function() {
     document.getElementById('lambda-display').textContent = parseFloat(this.value).toFixed(1);
+    updateSummary();
 });
 
 // Algorithm chip toggle
-document.querySelectorAll('.algo-chip').forEach(chip => {
+document.querySelectorAll('#algo-select .algo-chip').forEach(chip => {
     chip.addEventListener('click', function() {
         this.classList.toggle('selected');
     });
@@ -2998,16 +3117,16 @@ document.querySelectorAll('.algo-chip').forEach(chip => {
 // ── Fade-in animation ──
 const fadeObserver = new IntersectionObserver((entries) => {
     entries.forEach(entry => {
-        if (entry.isIntersecting) {
-            entry.target.classList.add('visible');
-        }
+        if (entry.isIntersecting) entry.target.classList.add('visible');
     });
 }, { threshold: 0.1 });
-
 document.querySelectorAll('.fade-in').forEach(el => fadeObserver.observe(el));
 
-// ── Run on load ──
+// ── Initialize on load ──
 window.addEventListener('DOMContentLoaded', () => {
+    renderAssetsTable(DEFAULT_ASSETS);
+    renderCovTable(DEFAULT_COV, DEFAULT_ASSETS.map(a => a.name));
+    updateSummary();
     runAllAlgorithms();
 });
 </script>

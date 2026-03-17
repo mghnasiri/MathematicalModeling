@@ -2171,7 +2171,7 @@
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-play-circle"></i> Interactive Solver</h4>
-                <span class="help-icon" title="Select an algorithm and number of technicians, then click Solve to route service calls across Quebec City."><i class="fas fa-info-circle"></i></span>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Service Calls &middot; 2 Technicians &middot; Click any cell to edit</span>
             </div>
             <div class="solver-body">
                 <!-- Controls -->
@@ -2180,7 +2180,7 @@
                         <div class="solver-section-label">Configuration</div>
                         <div class="solver-controls">
                             <label>Technicians:</label>
-                            <input type="range" class="solver-slider" id="numTechnicians" min="1" max="3" value="2" oninput="document.getElementById('techDisplay').textContent=this.value">
+                            <input type="range" class="solver-slider" id="numTechnicians" min="1" max="5" value="2" oninput="document.getElementById('techDisplay').textContent=this.value; updateConfigSummary();">
                             <span class="size-display" id="techDisplay">2</span>
                         </div>
                         <div class="solver-controls" style="margin-bottom: 0.5rem;">
@@ -2198,27 +2198,43 @@
                                 Nearest Neighbor TW <span class="chip-type" style="color:var(--blue);">heuristic</span>
                             </div>
                         </div>
-                        <div style="display: flex; gap: 0.5rem;">
-                            <button class="solver-btn primary" onclick="solveProblem()"><i class="fas fa-play"></i>&nbsp; Solve</button>
-                            <button class="solver-btn" onclick="solveAll()">Run All</button>
-                        </div>
                     </div>
                 </div>
 
-                <!-- Service Calls Table -->
+                <!-- Editable Service Calls Table -->
                 <div class="solver-section-label">Service Calls</div>
-                <div class="table-responsive" style="margin-bottom: 1rem;">
+                <div class="table-responsive" style="margin-bottom: 0.5rem;">
                     <table class="schedule-table" id="service-calls-table">
                         <thead>
                             <tr>
                                 <th>#</th>
                                 <th>Location</th>
-                                <th>Time Window</th>
-                                <th>Service</th>
+                                <th>Lat</th>
+                                <th>Lng</th>
+                                <th>Window Start</th>
+                                <th>Window End</th>
+                                <th>Service (min)</th>
+                                <th style="width:35px;"></th>
                             </tr>
                         </thead>
                         <tbody id="service-calls-body"></tbody>
                     </table>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.5rem 0 1.2rem;">
+                    <button class="solver-btn" onclick="addServiceCall()" style="border:1px dashed var(--gold);"><i class="fas fa-plus"></i>&nbsp; Add Call</button>
+                    <button class="solver-btn" onclick="removeLastServiceCall()"><i class="fas fa-minus"></i>&nbsp; Remove Last</button>
+                    <button class="solver-btn" onclick="resetDefaults()" style="border-color:rgba(100,255,218,0.3);"><i class="fas fa-undo"></i>&nbsp; Reset Defaults</button>
+                    <button class="solver-btn" onclick="randomizeServiceCalls()" style="border-color:rgba(187,154,247,0.3);"><i class="fas fa-random"></i>&nbsp; Randomize</button>
+                    <button class="solver-btn" onclick="loadPreset('tight')" style="border-color:rgba(255,107,107,0.3);"><i class="fas fa-clock"></i>&nbsp; Tight Windows</button>
+                    <button class="solver-btn" onclick="loadPreset('large')" style="border-color:rgba(122,162,247,0.3);"><i class="fas fa-expand"></i>&nbsp; 10 Calls</button>
+                </div>
+
+                <!-- Solve Buttons -->
+                <div style="display: flex; gap: 0.5rem; margin-bottom: 1rem;">
+                    <button class="solver-btn primary" id="solveBtn" onclick="solveProblem()"><i class="fas fa-play"></i>&nbsp; Solve</button>
+                    <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-forward"></i>&nbsp; Solve &amp; Compare All Algorithms</button>
                 </div>
 
                 <!-- Canvas -->
@@ -2418,7 +2434,7 @@ const fadeObserver = new IntersectionObserver((entries) => {
 fadeEls.forEach(el => fadeObserver.observe(el));
 
 // ══════════════════════════════════════════════════════════════════
-// VRPTW Solver
+// VRPTW Interactive Solver
 // ══════════════════════════════════════════════════════════════════
 
 // Speed: ~40 km/h average city driving. 1 degree lat ~ 111km, 1 degree lng ~ ~78km at 46.8N
@@ -2429,24 +2445,53 @@ const SPEED_KMH = 40;
 // ── State ──
 let useRoadDist = false;
 let solving = false;
-let distMatrix = null;  // OSRM distance matrix (km), null = use distKm()
+let distMatrix = null;
 
-// Locations: index 0 = depot
-const locations = [
-    { name: "Service Depot (Place Royale)",   lat: 46.8123, lng: -71.2033, tw_start: 480, tw_end: 1020, service: 0 },
-    { name: "Ch\u00e2teau Frontenac",         lat: 46.8122, lng: -71.2050, tw_start: 480, tw_end: 600,  service: 30 },
-    { name: "Universit\u00e9 Laval",          lat: 46.7810, lng: -71.2750, tw_start: 540, tw_end: 720,  service: 45 },
-    { name: "Place Laurier",                  lat: 46.7770, lng: -71.2830, tw_start: 600, tw_end: 840,  service: 20 },
-    { name: "Gare du Palais",                 lat: 46.8165, lng: -71.2142, tw_start: 480, tw_end: 660,  service: 25 },
-    { name: "Vieux-Port",                     lat: 46.8180, lng: -71.2000, tw_start: 780, tw_end: 960,  service: 35 },
-    { name: "Montmorency Falls",              lat: 46.8910, lng: -71.1480, tw_start: 660, tw_end: 900,  service: 40 }
+// ── Default Data ──
+const DEFAULT_DEPOT = { name: "Service Depot (Place Royale)", lat: 46.8123, lng: -71.2033 };
+
+const DEFAULT_CALLS = [
+    { name: "Ch\u00e2teau Frontenac",    lat: 46.8122, lng: -71.2050, tw_start: 480, tw_end: 600,  service: 30 },
+    { name: "Universit\u00e9 Laval",     lat: 46.7810, lng: -71.2750, tw_start: 540, tw_end: 720,  service: 45 },
+    { name: "Place Laurier",             lat: 46.7770, lng: -71.2830, tw_start: 600, tw_end: 840,  service: 20 },
+    { name: "Gare du Palais",            lat: 46.8165, lng: -71.2142, tw_start: 480, tw_end: 660,  service: 25 },
+    { name: "Vieux-Port",               lat: 46.8180, lng: -71.2000, tw_start: 780, tw_end: 960,  service: 35 },
+    { name: "Montmorency Falls",         lat: 46.8910, lng: -71.1480, tw_start: 660, tw_end: 900,  service: 40 }
 ];
 
-const ROUTE_COLORS = ['#C5A059', '#7aa2f7', '#64ffda'];
+const TIGHT_PRESET = [
+    { name: "Ch\u00e2teau Frontenac",    lat: 46.8122, lng: -71.2050, tw_start: 490, tw_end: 540,  service: 25 },
+    { name: "Universit\u00e9 Laval",     lat: 46.7810, lng: -71.2750, tw_start: 540, tw_end: 600,  service: 40 },
+    { name: "Place Laurier",             lat: 46.7770, lng: -71.2830, tw_start: 600, tw_end: 660,  service: 20 },
+    { name: "Gare du Palais",            lat: 46.8165, lng: -71.2142, tw_start: 500, tw_end: 560,  service: 30 },
+    { name: "Vieux-Port",               lat: 46.8180, lng: -71.2000, tw_start: 780, tw_end: 840,  service: 30 },
+    { name: "Montmorency Falls",         lat: 46.8910, lng: -71.1480, tw_start: 700, tw_end: 780,  service: 35 }
+];
+
+const LARGE_PRESET = [
+    { name: "Ch\u00e2teau Frontenac",    lat: 46.8122, lng: -71.2050, tw_start: 480, tw_end: 600,  service: 30 },
+    { name: "Universit\u00e9 Laval",     lat: 46.7810, lng: -71.2750, tw_start: 540, tw_end: 720,  service: 45 },
+    { name: "Place Laurier",             lat: 46.7770, lng: -71.2830, tw_start: 600, tw_end: 840,  service: 20 },
+    { name: "Gare du Palais",            lat: 46.8165, lng: -71.2142, tw_start: 480, tw_end: 660,  service: 25 },
+    { name: "Vieux-Port",               lat: 46.8180, lng: -71.2000, tw_start: 780, tw_end: 960,  service: 35 },
+    { name: "Montmorency Falls",         lat: 46.8910, lng: -71.1480, tw_start: 660, tw_end: 900,  service: 40 },
+    { name: "H\u00f4pital Laval",        lat: 46.7720, lng: -71.3010, tw_start: 500, tw_end: 700,  service: 35 },
+    { name: "Parc des Braves",           lat: 46.8040, lng: -71.2310, tw_start: 540, tw_end: 780,  service: 20 },
+    { name: "Aquarium du Qu\u00e9bec",   lat: 46.8560, lng: -71.2540, tw_start: 600, tw_end: 900,  service: 30 },
+    { name: "Place de la Cit\u00e9",     lat: 46.7850, lng: -71.3100, tw_start: 720, tw_end: 960,  service: 25 }
+];
+
+const ROUTE_COLORS = ['#C5A059', '#7aa2f7', '#64ffda', '#ff9e64', '#bb9af7'];
 const DEPOT_IDX = 0;
-const CUSTOMERS = [1, 2, 3, 4, 5, 6];
-const PLANNING_START = 480;  // 8:00 in minutes
-const PLANNING_END = 1020;   // 17:00 in minutes
+const PLANNING_START = 480;   // 8:00 in minutes
+const PLANNING_END = 1020;    // 17:00 in minutes
+
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+const coordStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:72px;outline:none;';
+
+// ── locations array: rebuilt from DOM each solve ──
+let locations = [];
 
 function minutesToTime(m) {
     const h = Math.floor(m / 60);
@@ -2454,6 +2499,152 @@ function minutesToTime(m) {
     return (h < 10 ? '0' : '') + h + ':' + (min < 10 ? '0' : '') + min;
 }
 
+function timeToMinutes(s) {
+    const parts = s.split(':');
+    return parseInt(parts[0]) * 60 + parseInt(parts[1] || '0');
+}
+
+// ── Build locations from the DOM table ──
+function readLocationsFromTable() {
+    const locs = [{ name: DEFAULT_DEPOT.name, lat: DEFAULT_DEPOT.lat, lng: DEFAULT_DEPOT.lng, tw_start: PLANNING_START, tw_end: PLANNING_END, service: 0 }];
+    const rows = document.querySelectorAll('#service-calls-body tr');
+    rows.forEach((row) => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs.length < 6) return;
+        locs.push({
+            name: inputs[0].value.trim() || 'Location',
+            lat: parseFloat(inputs[1].value) || 46.81,
+            lng: parseFloat(inputs[2].value) || -71.20,
+            tw_start: parseInt(inputs[3].value) || PLANNING_START,
+            tw_end: parseInt(inputs[4].value) || PLANNING_END,
+            service: Math.max(0, parseInt(inputs[5].value) || 15)
+        });
+    });
+    return locs;
+}
+
+// ── Render the editable service calls table ──
+function renderServiceCallsTable(calls) {
+    const tbody = document.getElementById('service-calls-body');
+    tbody.innerHTML = '';
+    calls.forEach((c, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="color:var(--gold);font-weight:600;">${i + 1}</td>
+            <td><input type="text" value="${c.name}" style="${nameStyle}width:130px;"></td>
+            <td><input type="number" value="${c.lat}" step="0.001" style="${coordStyle}"></td>
+            <td><input type="number" value="${c.lng}" step="0.001" style="${coordStyle}"></td>
+            <td><input type="number" value="${c.tw_start}" min="0" max="1440" step="10" style="${inputStyle}"></td>
+            <td><input type="number" value="${c.tw_end}" min="0" max="1440" step="10" style="${inputStyle}"></td>
+            <td><input type="number" value="${c.service}" min="0" max="480" step="5" style="${inputStyle}"></td>
+            <td><button onclick="removeServiceCallRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;padding:0.25rem;" title="Remove this call"><i class="fas fa-times"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+}
+
+function updateConfigSummary() {
+    const nCalls = document.querySelectorAll('#service-calls-body tr').length;
+    const nTech = document.getElementById('numTechnicians').value;
+    const el = document.getElementById('configSummary');
+    if (el) el.textContent = nCalls + ' Service Call' + (nCalls !== 1 ? 's' : '') + ' \u00b7 ' + nTech + ' Technician' + (nTech !== '1' ? 's' : '') + ' \u00b7 Click any cell to edit';
+}
+
+function addServiceCall() {
+    const calls = readCallsFromTable();
+    calls.push({ name: 'New Location', lat: 46.81 + (Math.random() - 0.5) * 0.08, lng: -71.22 + (Math.random() - 0.5) * 0.12, tw_start: 540, tw_end: 840, service: 25 });
+    renderServiceCallsTable(calls);
+    const rows = document.querySelectorAll('#service-calls-body tr');
+    if (rows.length) rows[rows.length - 1].querySelector('input').focus();
+}
+
+function removeLastServiceCall() {
+    const rows = document.querySelectorAll('#service-calls-body tr');
+    if (rows.length <= 1) return;
+    rows[rows.length - 1].remove();
+    reindexTable();
+    updateConfigSummary();
+}
+
+function removeServiceCallRow(btn) {
+    const rows = document.querySelectorAll('#service-calls-body tr');
+    if (rows.length <= 1) return;
+    btn.closest('tr').remove();
+    reindexTable();
+    updateConfigSummary();
+}
+
+function reindexTable() {
+    const rows = document.querySelectorAll('#service-calls-body tr');
+    rows.forEach((row, i) => { row.querySelector('td').textContent = i + 1; });
+}
+
+function readCallsFromTable() {
+    const rows = document.querySelectorAll('#service-calls-body tr');
+    const calls = [];
+    rows.forEach((row) => {
+        const inputs = row.querySelectorAll('input');
+        if (inputs.length < 6) return;
+        calls.push({
+            name: inputs[0].value.trim() || 'Location',
+            lat: parseFloat(inputs[1].value) || 46.81,
+            lng: parseFloat(inputs[2].value) || -71.20,
+            tw_start: parseInt(inputs[3].value) || PLANNING_START,
+            tw_end: parseInt(inputs[4].value) || PLANNING_END,
+            service: Math.max(0, parseInt(inputs[5].value) || 15)
+        });
+    });
+    return calls;
+}
+
+function resetDefaults() {
+    renderServiceCallsTable(JSON.parse(JSON.stringify(DEFAULT_CALLS)));
+    document.getElementById('numTechnicians').value = 2;
+    document.getElementById('techDisplay').textContent = '2';
+    distMatrix = null;
+    updateConfigSummary();
+    drawMap();
+}
+
+function loadPreset(name) {
+    if (name === 'tight') {
+        renderServiceCallsTable(JSON.parse(JSON.stringify(TIGHT_PRESET)));
+    } else if (name === 'large') {
+        renderServiceCallsTable(JSON.parse(JSON.stringify(LARGE_PRESET)));
+        document.getElementById('numTechnicians').value = 3;
+        document.getElementById('techDisplay').textContent = '3';
+    }
+    distMatrix = null;
+    updateConfigSummary();
+    drawMap();
+}
+
+function randomizeServiceCalls() {
+    const names = ['Limoilou','Beauport','Charlesbourg','Sillery','Cap-Rouge','Sainte-Foy','Vanier','Lebourgneuf','Neufch\u00e2tel','Wendake','L\u00e9vis','Loretteville'];
+    const n = 4 + Math.floor(Math.random() * 6); // 4-9 calls
+    const shuffled = names.sort(() => Math.random() - 0.5);
+    const calls = [];
+    for (let i = 0; i < n; i++) {
+        const lat = 46.76 + Math.random() * 0.14;
+        const lng = -71.35 + Math.random() * 0.25;
+        const twStart = PLANNING_START + Math.floor(Math.random() * 5) * 60;
+        const twLen = 60 + Math.floor(Math.random() * 5) * 60;
+        calls.push({
+            name: shuffled[i % shuffled.length],
+            lat: parseFloat(lat.toFixed(4)),
+            lng: parseFloat(lng.toFixed(4)),
+            tw_start: twStart,
+            tw_end: Math.min(PLANNING_END, twStart + twLen),
+            service: 10 + Math.floor(Math.random() * 8) * 5
+        });
+    }
+    renderServiceCallsTable(calls);
+    distMatrix = null;
+    drawMap();
+}
+
+// ── Distance helpers ──
 function euclidKm(i, j) {
     const dlat = (locations[i].lat - locations[j].lat) * KM_PER_DEG_LAT;
     const dlng = (locations[i].lng - locations[j].lng) * KM_PER_DEG_LNG;
@@ -2461,16 +2652,17 @@ function euclidKm(i, j) {
 }
 
 function distKm(i, j) {
-    if (distMatrix) return distMatrix[i][j];
+    if (distMatrix && distMatrix[i] && distMatrix[i][j] !== undefined) return distMatrix[i][j];
     return euclidKm(i, j);
 }
 
 function travelTime(i, j) {
-    return (distKm(i, j) / SPEED_KMH) * 60; // minutes
+    return (distKm(i, j) / SPEED_KMH) * 60;
 }
 
 // ── OSRM: Fetch real road distance matrix ──
 async function buildOSRMDistMatrix() {
+    if (locations.length > 25) { distMatrix = null; useRoadDist = false; return false; }
     const coords = locations.map(l => `${l.lng},${l.lat}`).join(';');
     const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
     try {
@@ -2527,40 +2719,18 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
 
-// Layer groups for markers and routes
 const markersLayer = L.layerGroup().addTo(map);
 const routesLayer = L.layerGroup().addTo(map);
 
-// Fit map bounds to all locations
-const allBounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lng]));
-map.fitBounds(allBounds.pad(0.1));
-
-// Populate service calls table
-function populateServiceCalls() {
-    const tbody = document.getElementById('service-calls-body');
-    tbody.innerHTML = '';
-    locations.forEach((loc, i) => {
-        if (i === 0) return;
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td style="color:var(--gold);">${i}</td>
-            <td style="font-family:'Inter',sans-serif; color:var(--ivory);">${loc.name}</td>
-            <td>${minutesToTime(loc.tw_start)} &ndash; ${minutesToTime(loc.tw_end)}</td>
-            <td>${loc.service} min</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
-
 // ── Leaflet Map Drawing ──
 function drawMap() {
+    locations = readLocationsFromTable();
     markersLayer.clearLayers();
     routesLayer.clearLayers();
 
     locations.forEach((loc, i) => {
         let marker;
         if (i === 0) {
-            // Depot: gold square marker
             const depotIcon = L.divIcon({
                 className: 'depot-marker-icon',
                 html: 'D',
@@ -2570,7 +2740,6 @@ function drawMap() {
             marker = L.marker([loc.lat, loc.lng], { icon: depotIcon });
             marker.bindPopup(`<strong>${loc.name}</strong><br>Depot<br>${minutesToTime(loc.tw_start)} \u2013 ${minutesToTime(loc.tw_end)}`);
         } else {
-            // Customer: numbered circle marker
             const customerIcon = L.divIcon({
                 className: '',
                 html: `<div style="width:18px;height:18px;background:rgba(122,162,247,0.25);border:2px solid #7aa2f7;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#7aa2f7;font-weight:bold;font-size:10px;font-family:'JetBrains Mono',monospace;">${i}</div>`,
@@ -2586,20 +2755,23 @@ function drawMap() {
         }
         marker.addTo(markersLayer);
     });
+
+    if (locations.length > 0) {
+        const allBounds = L.latLngBounds(locations.map(loc => [loc.lat, loc.lng]));
+        map.fitBounds(allBounds.pad(0.1));
+    }
 }
 
 async function drawRoutes(routes, routeDetails) {
     routesLayer.clearLayers();
     markersLayer.clearLayers();
 
-    // Draw route polylines
     for (let ri = 0; ri < routes.length; ri++) {
         const route = routes[ri];
         if (route.length === 0) continue;
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
         const fullRoute = [DEPOT_IDX, ...route, DEPOT_IDX];
 
-        // Try OSRM road geometry, fall back to straight lines
         let latlngs = null;
         if (useRoadDist) {
             latlngs = await getRouteGeometry(fullRoute);
@@ -2615,7 +2787,6 @@ async function drawRoutes(routes, routeDetails) {
         });
         polyline.addTo(routesLayer);
 
-        // Highlight route stops with colored rings
         for (const c of route) {
             L.circleMarker([locations[c].lat, locations[c].lng], {
                 radius: 10,
@@ -2625,9 +2796,8 @@ async function drawRoutes(routes, routeDetails) {
                 opacity: 0.9
             }).addTo(routesLayer);
         }
-    });
+    }
 
-    // Redraw location markers on top
     locations.forEach((loc, i) => {
         let marker;
         if (i === 0) {
@@ -2640,15 +2810,12 @@ async function drawRoutes(routes, routeDetails) {
             marker = L.marker([loc.lat, loc.lng], { icon: depotIcon });
             marker.bindPopup(`<strong>${loc.name}</strong><br>Depot<br>${minutesToTime(loc.tw_start)} \u2013 ${minutesToTime(loc.tw_end)}`);
         } else {
-            // Find which route this customer belongs to and its arrival info
-            let assignedColor = '#7aa2f7';
             let arrivalInfo = '';
             if (routeDetails) {
                 for (let ri = 0; ri < routes.length; ri++) {
                     const rd = routeDetails[ri];
                     for (const stop of rd.stops) {
                         if (stop.idx === i) {
-                            assignedColor = ROUTE_COLORS[ri % ROUTE_COLORS.length];
                             const statusColor = stop.feasible ? '#64ffda' : '#ff6b6b';
                             arrivalInfo = `<br><span style="color:${statusColor}">Arrival: ${minutesToTime(stop.arrival)}</span>` +
                                           `<br>Technician ${ri + 1}`;
@@ -2675,18 +2842,19 @@ async function drawRoutes(routes, routeDetails) {
         marker.addTo(markersLayer);
     });
 
-    // Bring markers to front
     markersLayer.eachLayer(m => m.bringToFront());
 }
 
 // ── Solomon I1 Insertion ──
 function solomonI1(numVehicles) {
+    const CUSTOMERS = [];
+    for (let i = 1; i < locations.length; i++) CUSTOMERS.push(i);
+
     const unvisited = new Set(CUSTOMERS);
     const routes = [];
     const routeDetails = [];
 
     for (let v = 0; v < numVehicles && unvisited.size > 0; v++) {
-        // Seed: farthest unvisited from depot, with earliest deadline as tiebreaker
         let seed = -1, maxDist = -1;
         for (const c of unvisited) {
             const d = distKm(DEPOT_IDX, c);
@@ -2698,12 +2866,10 @@ function solomonI1(numVehicles) {
 
         const route = [seed];
         unvisited.delete(seed);
-        // Arrival times for current route: depot departure -> seed
         let arrivalTimes = [];
         const depotToSeed = travelTime(DEPOT_IDX, seed);
         const arrSeed = Math.max(PLANNING_START + depotToSeed, locations[seed].tw_start);
         if (arrSeed > locations[seed].tw_end) {
-            // Infeasible seed, skip
             unvisited.add(seed);
             continue;
         }
@@ -2715,19 +2881,13 @@ function solomonI1(numVehicles) {
             let bestCust = -1, bestPos = -1, bestCost = Infinity;
 
             for (const u of unvisited) {
-                // Try inserting u at each position in route
                 for (let pos = 0; pos <= route.length; pos++) {
                     const prev = pos === 0 ? DEPOT_IDX : route[pos - 1];
                     const next = pos === route.length ? DEPOT_IDX : route[pos];
-
-                    // Insertion distance cost: d(prev,u) + d(u,next) - d(prev,next)
                     const cost = distKm(prev, u) + distKm(u, next) - distKm(prev, next);
-
-                    // Check TW feasibility of entire route with u inserted
                     const testRoute = [...route];
                     testRoute.splice(pos, 0, u);
                     const testArrivals = computeArrivals(testRoute);
-
                     if (testArrivals !== null && cost < bestCost) {
                         bestCost = cost;
                         bestCust = u;
@@ -2756,11 +2916,9 @@ function solomonI1(numVehicles) {
         }
     }
 
-    // Any remaining unvisited: try to add more routes if possible
     if (unvisited.size > 0) {
         const extraRoute = [];
         const remaining = [...unvisited];
-        // Simple greedy: sort by TW start and try
         remaining.sort((a, b) => locations[a].tw_start - locations[b].tw_start);
         let currentTime = PLANNING_START;
         let currentLoc = DEPOT_IDX;
@@ -2794,7 +2952,6 @@ function solomonI1(numVehicles) {
     return { routes, routeDetails, unvisited: [...unvisited] };
 }
 
-// Compute arrival times for a route. Returns null if infeasible.
 function computeArrivals(route) {
     const arrivals = [];
     let currentTime = PLANNING_START;
@@ -2806,15 +2963,12 @@ function computeArrivals(route) {
         const arrival = currentTime + travel;
         const serviceStart = Math.max(arrival, locations[c].tw_start);
 
-        // Check: can we arrive before window closes?
         if (serviceStart > locations[c].tw_end) return null;
 
-        // Check: can we finish service and return to depot by planning end?
         const departAfterService = serviceStart + locations[c].service;
-        // Only check return feasibility for last customer
         if (i === route.length - 1) {
             const returnTime = departAfterService + travelTime(c, DEPOT_IDX);
-            if (returnTime > PLANNING_END + 30) return null; // small tolerance
+            if (returnTime > PLANNING_END + 30) return null;
         }
 
         arrivals.push(serviceStart);
@@ -2827,6 +2981,9 @@ function computeArrivals(route) {
 
 // ── Nearest Neighbor TW ──
 function nearestNeighborTW(numVehicles) {
+    const CUSTOMERS = [];
+    for (let i = 1; i < locations.length; i++) CUSTOMERS.push(i);
+
     const unvisited = new Set(CUSTOMERS);
     const routes = [];
     const routeDetails = [];
@@ -2845,10 +3002,8 @@ function nearestNeighborTW(numVehicles) {
                 const arrival = currentTime + travel;
                 const serviceStart = Math.max(arrival, locations[c].tw_start);
 
-                // Feasibility: arrive before window closes
                 if (serviceStart > locations[c].tw_end) continue;
 
-                // Feasibility: can return to depot after service
                 const departAfterService = serviceStart + locations[c].service;
                 const returnTime = departAfterService + travelTime(c, DEPOT_IDX);
                 if (returnTime > PLANNING_END + 30) continue;
@@ -2860,7 +3015,7 @@ function nearestNeighborTW(numVehicles) {
                 }
             }
 
-            if (bestCust < 0) break; // no feasible customer
+            if (bestCust < 0) break;
 
             const travel = travelTime(currentLoc, bestCust);
             const arrival = currentTime + travel;
@@ -2885,7 +3040,6 @@ function nearestNeighborTW(numVehicles) {
         }
     }
 
-    // If there are still unvisited, add one more route
     if (unvisited.size > 0) {
         const route = [];
         const stops = [];
@@ -2961,20 +3115,40 @@ const ALGO_MAP = {
 async function solveProblem() {
     if (solving) return;
     solving = true;
-    const solveBtn = document.querySelector('.solver-btn.primary');
+    const solveBtn = document.getElementById('solveBtn');
     const statusEl = document.getElementById('vrptw-status');
-    if (solveBtn) solveBtn.disabled = true;
+
+    // Add spinner
+    if (solveBtn) {
+        solveBtn.disabled = true;
+        solveBtn.classList.add('solving');
+        solveBtn.innerHTML = '<i class="fas fa-spinner"></i>&nbsp; Solving...';
+    }
 
     try {
+        // Rebuild locations from DOM
+        locations = readLocationsFromTable();
+        if (locations.length < 2) {
+            statusEl.textContent = 'Add at least one service call.';
+            return;
+        }
+
+        // Invalidate OSRM matrix (user may have changed data)
+        distMatrix = null;
+        useRoadDist = false;
+
         const algos = getSelectedAlgos();
         if (algos.length === 0) {
             statusEl.textContent = 'Select at least one algorithm.';
             return;
         }
 
-        statusEl.textContent = useRoadDist
-            ? 'Optimizing with real road distances...'
-            : 'Optimizing with Euclidean distances...';
+        statusEl.textContent = 'Optimizing...';
+
+        // Try OSRM for small instances
+        if (locations.length <= 25) {
+            try { await buildOSRMDistMatrix(); } catch(e) { /* Euclidean fallback */ }
+        }
 
         const numTech = parseInt(document.getElementById('numTechnicians').value);
         const results = [];
@@ -3000,7 +3174,6 @@ async function solveProblem() {
 
         results.sort((a, b) => a.distance - b.distance);
 
-        // Populate results table immediately (before async map drawing)
         const tbody = document.getElementById('vrptw-results').querySelector('tbody');
         tbody.innerHTML = '';
         results.forEach((r, i) => {
@@ -3026,7 +3199,6 @@ async function solveProblem() {
 
         updateRouteOutput(results[0]);
 
-        // Draw routes on map (async, may fail if OSRM geometry unavailable)
         try {
             await drawRoutes(results[0].routes, results[0].routeDetails);
         } catch (mapErr) {
@@ -3043,7 +3215,11 @@ async function solveProblem() {
         console.error('solveProblem error:', e);
         statusEl.textContent = 'Error during optimization. Try clicking Solve again.';
     } finally {
-        if (solveBtn) solveBtn.disabled = false;
+        if (solveBtn) {
+            solveBtn.disabled = false;
+            solveBtn.classList.remove('solving');
+            solveBtn.innerHTML = '<i class="fas fa-play"></i>&nbsp; Solve';
+        }
         solving = false;
     }
 }
@@ -3078,7 +3254,8 @@ async function solveAll() {
 }
 
 // ── Initialize ──
-populateServiceCalls();
+renderServiceCallsTable(JSON.parse(JSON.stringify(DEFAULT_CALLS)));
+locations = readLocationsFromTable();
 drawMap();
 
 window.addEventListener('resize', () => {
@@ -3089,7 +3266,8 @@ window.addEventListener('resize', () => {
 async function boot() {
     const statusEl = document.getElementById('vrptw-status');
 
-    // Try loading OSRM distances, fall back to Euclidean silently
+    locations = readLocationsFromTable();
+
     try {
         statusEl.textContent = 'Loading real road distances from OSRM...';
         await buildOSRMDistMatrix();
@@ -3103,11 +3281,9 @@ async function boot() {
         ? 'Road distances loaded. Running algorithms...'
         : 'Using Euclidean distances. Running algorithms...';
 
-    // Auto-solve with all algorithms
     await solveAll();
 }
 
-// Run boot when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
 } else {

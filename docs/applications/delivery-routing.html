@@ -560,6 +560,41 @@
             border-color: var(--gold);
         }
 
+        /* ── Stops Table ── */
+        .stops-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-bottom: 0.5rem;
+        }
+        .stops-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+        }
+        .stops-table tbody td {
+            padding: 0.35rem 0.3rem;
+            border-bottom: 1px solid rgba(136, 146, 176, 0.06);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            font-size: 0.8rem;
+        }
+        .stops-table .stop-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+
         /* ── Complexity Box ── */
         .complexity-box {
             background: var(--midnight);
@@ -2226,40 +2261,57 @@
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-route"></i> Quebec City Route Planner</h4>
-                <span class="help-icon" title="Select a preset, configure capacity, choose algorithms, and click Optimize Routes."><i class="fas fa-question-circle"></i></span>
+                <span id="config-summary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Stops &middot; Capacity 60 kg &middot; Click any cell to edit</span>
             </div>
             <div class="solver-body">
-                <!-- Controls Row -->
-                <div class="solver-row">
-                    <div>
-                        <div class="solver-section-label">Delivery Scenario</div>
-                        <div class="solver-controls">
-                            <button class="solver-btn active" onclick="loadPreset('8')" id="btn-preset-8">Quebec City 8 Stops</button>
-                            <button class="solver-btn" onclick="loadPreset('12')" id="btn-preset-12">Quebec City 12 Stops</button>
-                        </div>
-                        <div class="solver-controls">
-                            <label>Van Capacity (kg):</label>
-                            <input type="range" class="solver-slider" id="capacity-slider" min="30" max="100" value="60" oninput="updateCapacity(this.value)">
-                            <span class="size-display" id="capacity-display">60</span>
-                        </div>
-                        <div class="solver-controls" style="margin-top:0.5rem;">
-                            <button class="solver-btn" onclick="toggleDemandEditor()"><i class="fas fa-edit"></i> Edit Demands</button>
-                        </div>
-                        <div id="demand-editor" style="display:none;">
-                            <div class="demand-grid" id="demand-grid"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Algorithms</div>
-                        <div class="algo-select" id="algo-select">
-                            <span class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">Clarke-Wright <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">Sweep <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">Nearest Neighbor <span class="chip-type">(H)</span></span>
-                        </div>
-                        <div class="solver-controls">
-                            <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-play"></i> Optimize Routes</button>
-                        </div>
-                    </div>
+
+                <!-- Van capacity slider -->
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:0.7rem 1rem;background:rgba(197,160,89,0.06);border:1px solid rgba(197,160,89,0.15);border-radius:6px;">
+                    <span style="color:var(--gold);font-weight:600;font-size:0.85rem;white-space:nowrap;"><i class="fas fa-truck" style="margin-right:0.4rem;"></i>Van Capacity:</span>
+                    <input type="range" class="solver-slider" id="capacity-slider" min="20" max="120" value="60" oninput="document.getElementById('capacity-display').textContent=this.value; updateConfigSummary();" style="flex:1;">
+                    <span id="capacity-display" style="color:var(--ivory);font-family:JetBrains Mono,monospace;font-weight:600;min-width:30px;text-align:center;">60</span>
+                    <span style="color:var(--slate);font-size:0.8rem;">kg</span>
+                </div>
+
+                <!-- Editable stops table -->
+                <div class="solver-section-label">Delivery Stops</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="stops-table" id="stops-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Demand (kg)</th>
+                                <th style="width:35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="stops-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.2rem;">
+                    <button class="solver-btn" onclick="addStop()" style="border:1px dashed var(--gold);"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Stop</button>
+                    <button class="solver-btn" onclick="removeLastStop()"><i class="fas fa-minus" style="margin-right:0.3rem;"></i> Remove Last</button>
+                    <button class="solver-btn" onclick="resetDefaults()" style="border-color:rgba(100,255,218,0.3);"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="solver-btn" onclick="randomizeStops()" style="border-color:rgba(187,154,247,0.3);"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                    <button class="solver-btn" onclick="loadPreset('8')" id="btn-preset-8" style="border-color:rgba(122,162,247,0.3);"><i class="fas fa-map-marker-alt" style="margin-right:0.3rem;"></i> 8 Stops</button>
+                    <button class="solver-btn" onclick="loadPreset('12')" id="btn-preset-12" style="border-color:rgba(122,162,247,0.3);"><i class="fas fa-map-marker-alt" style="margin-right:0.3rem;"></i> 12 Stops</button>
+                </div>
+
+                <!-- Algorithm selection -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algo-select">
+                    <span class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">Clarke-Wright <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">Sweep <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">Nearest Neighbor <span class="chip-type">(H)</span></span>
+                </div>
+
+                <!-- Solve button -->
+                <div style="text-align:center;margin:1.2rem 0;">
+                    <button class="solver-btn primary" id="solve-btn" onclick="solveAll()"><i class="fas fa-play"></i> Solve &amp; Compare All Algorithms</button>
                 </div>
 
                 <!-- Map Canvas -->
@@ -2280,12 +2332,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select a scenario and click Optimize Routes</td></tr>
+                            <tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Configure stops and click Solve &amp; Compare All Algorithms</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="route-output" id="route-output">Routes will appear here after optimization.</div>
-                <p class="solver-status" id="solver-status">Ready. Choose a scenario and click Optimize Routes.</p>
+                <p class="solver-status" id="solver-status">Ready. Edit stops above or choose a preset, then click Solve.</p>
             </div>
         </div>
     </div>
@@ -2380,7 +2432,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// Quebec City Delivery Route Planner — CVRP Solver
+// Quebec City Delivery Route Planner — CVRP Solver (Interactive)
 // ═══════════════════════════════════════════════════════════════
 
 // ── Leaflet Map Initialization ──
@@ -2396,27 +2448,47 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19
 }).addTo(map);
 
-// Layer groups for markers and routes
 const markersLayer = L.layerGroup().addTo(map);
 const routesLayer = L.layerGroup().addTo(map);
 
 // ── State ──
 let useRoadDist = false;
 let solving = false;
+let activeStops = [];
+let dist = [];
+let demands = [];
+let currentResults = [];
 
-// ── Haversine distance (km) — fallback when OSRM is unavailable ──
-function haversine(lat1, lng1, lat2, lng2) {
-    const R = 6371;
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = Math.sin(dLat / 2) ** 2 +
-              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-              Math.sin(dLng / 2) ** 2;
-    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-}
+// ── Styles for editable inputs ──
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const latLngStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:72px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:120px;outline:none;';
 
-// ── Landmark Data ──
-const LANDMARKS = [
+// ── Constants ──
+const STOP_COLORS = [
+    '#ff6b6b', '#64ffda', '#7aa2f7', '#C5A059', '#bb86fc',
+    '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c',
+    '#98c379', '#e5c07b', '#61afef', '#c678dd'
+];
+const ROUTE_COLORS = [
+    '#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc',
+    '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c'
+];
+
+// ── Default Data ──
+const DEFAULT_STOPS = [
+    { name: "Depot: Sainte-Foy DC",    lat: 46.764, lng: -71.282, demand: 0 },
+    { name: "Place Laurier",            lat: 46.781, lng: -71.277, demand: 15 },
+    { name: "Chateau Frontenac",        lat: 46.812, lng: -71.205, demand: 20 },
+    { name: "Vieux-Quebec",             lat: 46.814, lng: -71.208, demand: 25 },
+    { name: "Place de la Cite",         lat: 46.774, lng: -71.306, demand: 8 },
+    { name: "Galeries de la Capitale",  lat: 46.830, lng: -71.270, demand: 18 },
+    { name: "Limoilou",                 lat: 46.830, lng: -71.230, demand: 14 },
+    { name: "Montcalm",                 lat: 46.806, lng: -71.228, demand: 10 },
+    { name: "Sillery",                  lat: 46.775, lng: -71.245, demand: 12 }
+];
+
+const PRESET_12_STOPS = [
     { name: "Depot: Sainte-Foy DC",    lat: 46.764, lng: -71.282, demand: 0 },
     { name: "Place Laurier",            lat: 46.781, lng: -71.277, demand: 15 },
     { name: "Universite Laval",         lat: 46.781, lng: -71.275, demand: 10 },
@@ -2427,29 +2499,154 @@ const LANDMARKS = [
     { name: "Galeries de la Capitale",  lat: 46.830, lng: -71.270, demand: 18 },
     { name: "Beauport",                 lat: 46.857, lng: -71.190, demand: 22 },
     { name: "Limoilou",                 lat: 46.830, lng: -71.230, demand: 14 },
-    { name: "Levis (waterfront)",       lat: 46.812, lng: -71.178, demand: 16 },
     { name: "Montcalm",                 lat: 46.806, lng: -71.228, demand: 10 },
     { name: "Saint-Roch",               lat: 46.816, lng: -71.225, demand: 15 },
     { name: "Sillery",                  lat: 46.775, lng: -71.245, demand: 12 }
 ];
 
-// Preset indices (0 = depot always included)
-const PRESET_8  = [0, 1, 3, 4, 6, 7, 9, 11, 13];        // depot + 8 stops
-const PRESET_12 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11, 12, 13]; // depot + 12 stops
+// ══════════════════════════════════════════════════════════════
+// Editable Table: Render, Read, Add, Remove
+// ══════════════════════════════════════════════════════════════
 
-const ROUTE_COLORS = [
-    '#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc',
-    '#f78166', '#56d6a0', '#e06c9f', '#79c0ff', '#d4a72c'
-];
+function renderStopsTable(stops) {
+    const tbody = document.getElementById('stops-table-body');
+    tbody.innerHTML = '';
+    stops.forEach((s, i) => {
+        const color = STOP_COLORS[i % STOP_COLORS.length];
+        const isDepot = (i === 0);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span class="stop-dot" style="background:${color};"></span>${i}</td>
+            <td><input type="text" value="${s.name}" style="${nameStyle}${isDepot ? 'font-weight:600;' : ''}"></td>
+            <td><input type="number" value="${s.lat}" min="40" max="55" step="0.001" style="${latLngStyle}"></td>
+            <td><input type="number" value="${s.lng}" min="-80" max="-60" step="0.001" style="${latLngStyle}"></td>
+            <td><input type="number" value="${s.demand}" min="0" max="99" step="1" style="${inputStyle}"${isDepot ? ' disabled title="Depot has no demand"' : ''}></td>
+            <td>${isDepot ? '' : '<button onclick="removeStop(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove stop"><i class="fas fa-times"></i></button>'}</td>`;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+}
 
-// ── State ──
-let activeStops = [];   // array of {name, lat, lng, demand, idx}
-let capacity = 60;
-let dist = [];          // distance matrix (km via haversine)
-let demands = [];       // demand array aligned to activeStops
-let currentResults = [];
+function readStopsFromTable() {
+    const rows = document.querySelectorAll('#stops-table-body tr');
+    const stops = [];
+    rows.forEach((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        stops.push({
+            name: inputs[0].value.trim() || ('Stop ' + i),
+            lat: parseFloat(inputs[1].value) || 46.81,
+            lng: parseFloat(inputs[2].value) || -71.22,
+            demand: Math.max(0, parseInt(inputs[3].value) || 0)
+        });
+    });
+    return stops;
+}
 
-// ── Distance Helpers ──
+function updateConfigSummary() {
+    const rows = document.querySelectorAll('#stops-table-body tr');
+    const cap = document.getElementById('capacity-slider').value;
+    const el = document.getElementById('config-summary');
+    if (el) el.textContent = (rows.length - 1) + ' Stops \u00b7 Capacity ' + cap + ' kg \u00b7 Click any cell to edit';
+}
+
+function addStop() {
+    const rows = document.querySelectorAll('#stops-table-body tr');
+    const idx = rows.length;
+    const name = 'Stop ' + idx;
+    // Random location near Quebec City
+    const lat = (46.76 + Math.random() * 0.1).toFixed(3);
+    const lng = (-71.31 + Math.random() * 0.13).toFixed(3);
+    const demand = Math.floor(Math.random() * 20) + 5;
+    const color = STOP_COLORS[idx % STOP_COLORS.length];
+    const tbody = document.getElementById('stops-table-body');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><span class="stop-dot" style="background:${color};"></span>${idx}</td>
+        <td><input type="text" value="${name}" style="${nameStyle}"></td>
+        <td><input type="number" value="${lat}" min="40" max="55" step="0.001" style="${latLngStyle}"></td>
+        <td><input type="number" value="${lng}" min="-80" max="-60" step="0.001" style="${latLngStyle}"></td>
+        <td><input type="number" value="${demand}" min="0" max="99" step="1" style="${inputStyle}"></td>
+        <td><button onclick="removeStop(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove stop"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateConfigSummary();
+}
+
+function removeStop(btn) {
+    const rows = document.querySelectorAll('#stops-table-body tr');
+    if (rows.length <= 2) { alert('Need at least the depot and 1 stop.'); return; }
+    btn.closest('tr').remove();
+    // Re-index row numbers
+    document.querySelectorAll('#stops-table-body tr').forEach((row, i) => {
+        const td = row.querySelector('td');
+        const color = STOP_COLORS[i % STOP_COLORS.length];
+        td.innerHTML = `<span class="stop-dot" style="background:${color};"></span>${i}`;
+    });
+    updateConfigSummary();
+}
+
+function removeLastStop() {
+    const rows = document.querySelectorAll('#stops-table-body tr');
+    if (rows.length <= 2) { alert('Need at least the depot and 1 stop.'); return; }
+    rows[rows.length - 1].remove();
+    updateConfigSummary();
+}
+
+function resetDefaults() {
+    renderStopsTable(DEFAULT_STOPS);
+    document.getElementById('capacity-slider').value = 60;
+    document.getElementById('capacity-display').textContent = '60';
+    refreshMapFromTable();
+    clearResults();
+}
+
+function randomizeStops() {
+    const rows = document.querySelectorAll('#stops-table-body tr');
+    rows.forEach((row, i) => {
+        if (i === 0) return; // skip depot
+        const inputs = row.querySelectorAll('input');
+        inputs[1].value = (46.76 + Math.random() * 0.1).toFixed(3);
+        inputs[2].value = (-71.31 + Math.random() * 0.13).toFixed(3);
+        inputs[3].value = Math.floor(Math.random() * 25) + 5;
+    });
+    updateConfigSummary();
+}
+
+function loadPreset(size) {
+    const stops = size === '12' ? PRESET_12_STOPS : DEFAULT_STOPS;
+    renderStopsTable(JSON.parse(JSON.stringify(stops)));
+    if (size === '12') {
+        document.getElementById('capacity-slider').value = 60;
+        document.getElementById('capacity-display').textContent = '60';
+    } else {
+        document.getElementById('capacity-slider').value = 60;
+        document.getElementById('capacity-display').textContent = '60';
+    }
+    refreshMapFromTable();
+    clearResults();
+}
+
+function refreshMapFromTable() {
+    activeStops = readStopsFromTable();
+    buildDistMatrix();
+    drawStops();
+    const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
+    map.fitBounds(bounds.pad(0.1));
+}
+
+// ══════════════════════════════════════════════════════════════
+// Distance Helpers
+// ══════════════════════════════════════════════════════════════
+
+function haversine(lat1, lng1, lat2, lng2) {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+              Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
 function buildHaversineMatrix() {
     const n = activeStops.length;
     dist = Array.from({ length: n }, () => new Float64Array(n));
@@ -2467,7 +2664,6 @@ function buildDistMatrix() {
     buildHaversineMatrix();
 }
 
-// ── OSRM: Fetch real road distance matrix ──
 async function buildOSRMDistMatrix() {
     const coords = activeStops.map(s => `${s.lng},${s.lat}`).join(';');
     const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
@@ -2495,7 +2691,6 @@ async function buildOSRMDistMatrix() {
     }
 }
 
-// ── OSRM: Get road geometry for a route ──
 async function getRouteGeometry(waypoints) {
     try {
         const coords = waypoints.map(idx => `${activeStops[idx].lng},${activeStops[idx].lat}`).join(';');
@@ -2525,7 +2720,6 @@ function drawStops() {
         const s = activeStops[i];
         let marker;
         if (i === 0) {
-            // Depot marker
             const depotIcon = L.divIcon({
                 className: 'depot-icon',
                 html: 'D',
@@ -2556,7 +2750,6 @@ async function drawRoutes(routes) {
         const color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
         const waypoints = [0, ...route, 0];
 
-        // Try OSRM road geometry, fall back to straight lines
         let latlngs = null;
         if (useRoadDist) {
             latlngs = await getRouteGeometry(waypoints);
@@ -2572,7 +2765,6 @@ async function drawRoutes(routes) {
         });
         polyline.addTo(routesLayer);
 
-        // Highlight route stops with colored rings
         for (const c of route) {
             const st = activeStops[c];
             L.circleMarker([st.lat, st.lng], {
@@ -2585,72 +2777,24 @@ async function drawRoutes(routes) {
         }
     }
 
-    // Re-add markers on top
     markersLayer.eachLayer(m => m.bringToFront());
 }
 
-// ── Preset Loading ──
-function loadPreset(size) {
-    const indices = size === '8' ? PRESET_8 : PRESET_12;
-    activeStops = indices.map(i => {
-        const lm = LANDMARKS[i];
-        return { name: lm.name, lat: lm.lat, lng: lm.lng, demand: lm.demand, idx: i };
-    });
-
-    // Button states
-    document.getElementById('btn-preset-8').classList.toggle('active', size === '8');
-    document.getElementById('btn-preset-12').classList.toggle('active', size === '12');
-
-    buildDistMatrix();
-    drawStops();
-
-    // Fit map bounds to all stops
-    const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
-    map.fitBounds(bounds.pad(0.1));
-
-    buildDemandEditor();
-    clearResults();
-}
-
-function updateCapacity(val) {
-    capacity = parseInt(val);
-    document.getElementById('capacity-display').textContent = val;
-}
-
-function toggleDemandEditor() {
-    const el = document.getElementById('demand-editor');
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-}
-
-function buildDemandEditor() {
-    const grid = document.getElementById('demand-grid');
-    grid.innerHTML = '';
-    for (let i = 1; i < activeStops.length; i++) {
-        const s = activeStops[i];
-        const div = document.createElement('div');
-        div.className = 'demand-item';
-        div.innerHTML = `<label>${s.name}</label><input type="number" min="1" max="99" value="${s.demand}" data-idx="${i}" onchange="updateDemand(${i}, this.value)"> kg`;
-        grid.appendChild(div);
-    }
-}
-
-function updateDemand(idx, val) {
-    activeStops[idx].demand = Math.max(1, parseInt(val) || 1);
-    demands[idx] = activeStops[idx].demand;
-    drawStops();
-}
+// ══════════════════════════════════════════════════════════════
+// Clear & Results
+// ══════════════════════════════════════════════════════════════
 
 function clearResults() {
     currentResults = [];
     const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:\'Inter\',sans-serif;">Select a scenario and click Optimize Routes</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:\'Inter\',sans-serif;">Configure stops and click Solve &amp; Compare All Algorithms</td></tr>';
     document.getElementById('route-output').textContent = 'Routes will appear here after optimization.';
     document.getElementById('solver-status').textContent = 'Ready.';
 }
 
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 // CVRP Algorithms
-// ═══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
 
 function routeDist(route) {
     if (route.length === 0) return 0;
@@ -2668,19 +2812,17 @@ function routeLoad(route) {
     return route.reduce((s, c) => s + demands[c], 0);
 }
 
-// ── Clarke-Wright Savings ──
 function clarkeWright() {
     const n = activeStops.length - 1;
+    const capacity = parseInt(document.getElementById('capacity-slider').value);
     if (n === 0) return [];
 
-    // Compute savings
     const savings = [];
     for (let i = 1; i <= n; i++)
         for (let j = i + 1; j <= n; j++)
             savings.push({ s: dist[0][i] + dist[0][j] - dist[i][j], i, j });
     savings.sort((a, b) => b.s - a.s);
 
-    // Start with individual routes
     const routeOf = new Int32Array(n + 1);
     let routes = [];
     const loads = [];
@@ -2702,7 +2844,6 @@ function clarkeWright() {
 
         if (loads[ri] + loads[rj] > capacity) continue;
 
-        // Merge
         let merged;
         if (rI[rI.length - 1] === i && rJ[0] === j) merged = [...rI, ...rJ];
         else if (rJ[rJ.length - 1] === j && rI[0] === i) merged = [...rJ, ...rI];
@@ -2718,9 +2859,9 @@ function clarkeWright() {
     return routes.filter(r => r !== null);
 }
 
-// ── Sweep Algorithm ──
 function sweep() {
     const n = activeStops.length - 1;
+    const capacity = parseInt(document.getElementById('capacity-slider').value);
     if (n === 0) return [];
 
     const dep = activeStops[0];
@@ -2746,9 +2887,9 @@ function sweep() {
     return routes;
 }
 
-// ── Nearest Neighbor ──
 function nearestNeighbor() {
     const n = activeStops.length - 1;
+    const capacity = parseInt(document.getElementById('capacity-slider').value);
     if (n === 0) return [];
 
     const visited = new Uint8Array(n + 1);
@@ -2775,7 +2916,6 @@ function nearestNeighbor() {
         if (route.length > 0) {
             routes.push(route);
         } else {
-            // Force-add one unvisited customer
             for (let j = 1; j <= n; j++) {
                 if (!visited[j]) {
                     routes.push([j]);
@@ -2802,14 +2942,33 @@ const ALGO_MAP = {
 async function solveAll() {
     if (solving) return;
     solving = true;
-    const solveBtn = document.querySelector('.solver-btn.primary');
+    const solveBtn = document.getElementById('solve-btn');
     const statusEl = document.getElementById('solver-status');
-    if (solveBtn) solveBtn.disabled = true;
+    const origHTML = solveBtn.innerHTML;
+    solveBtn.disabled = true;
+    solveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Solving...';
 
     try {
+        // Read data from table
+        activeStops = readStopsFromTable();
         if (activeStops.length < 2) {
-            statusEl.textContent = 'Load a scenario first.';
+            statusEl.textContent = 'Add at least the depot and one stop.';
             return;
+        }
+
+        // Build distance matrix
+        buildDistMatrix();
+        drawStops();
+        const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
+        map.fitBounds(bounds.pad(0.1));
+
+        // Try OSRM
+        try {
+            statusEl.textContent = 'Fetching road distances from OSRM...';
+            await buildOSRMDistMatrix();
+        } catch (e) {
+            buildHaversineMatrix();
+            useRoadDist = false;
         }
 
         const algos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected')).map(c => c.dataset.algo);
@@ -2821,6 +2980,9 @@ async function solveAll() {
         statusEl.textContent = useRoadDist
             ? 'Optimizing with real road distances...'
             : 'Optimizing with Haversine distances...';
+
+        // Small delay to let spinner render
+        await new Promise(r => setTimeout(r, 30));
 
         currentResults = [];
         for (const key of algos) {
@@ -2836,7 +2998,7 @@ async function solveAll() {
         }
         currentResults.sort((a, b) => a.distance - b.distance);
 
-        // Populate results table immediately (before async map drawing)
+        // Populate results table
         const tbody = document.getElementById('results-table').querySelector('tbody');
         tbody.innerHTML = '';
         currentResults.forEach((r, i) => {
@@ -2853,7 +3015,6 @@ async function solveAll() {
 
         showRouteDetails(currentResults[0]);
 
-        // Draw routes on map (async, may fail if OSRM geometry unavailable)
         try {
             await drawRoutes(currentResults[0].routes);
         } catch (mapErr) {
@@ -2865,9 +3026,10 @@ async function solveAll() {
             `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''} using ${distType}. Click a row to view its routes.`;
     } catch (e) {
         console.error('solveAll error:', e);
-        statusEl.textContent = 'Error during optimization. Try clicking Optimize Routes again.';
+        statusEl.textContent = 'Error during optimization. Check your data and try again.';
     } finally {
-        if (solveBtn) solveBtn.disabled = false;
+        solveBtn.disabled = false;
+        solveBtn.innerHTML = origHTML;
         solving = false;
     }
 }
@@ -2884,7 +3046,7 @@ function showRouteDetails(r) {
     });
 
     const totalKm = r.distance.toFixed(1);
-    const avgLoad = (totalLoad / r.routes.length).toFixed(0);
+    const avgLoad = r.routes.length > 0 ? (totalLoad / r.routes.length).toFixed(0) : 0;
     lines.push('');
     lines.push(`Total: ${totalKm} km  |  ${r.vehicles} van${r.vehicles > 1 ? 's' : ''}  |  Avg load: ${avgLoad} kg`);
 
@@ -2907,17 +3069,23 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
-loadPreset('8');
+renderStopsTable(JSON.parse(JSON.stringify(DEFAULT_STOPS)));
 
 window.addEventListener('resize', () => {
     map.invalidateSize();
 });
 
-// ── Boot: load OSRM distances, auto-solve ──
+// ── Boot: render table, draw map, auto-solve ──
 async function boot() {
     const statusEl = document.getElementById('solver-status');
 
-    // Try loading OSRM distances, fall back to Haversine silently
+    activeStops = readStopsFromTable();
+    buildDistMatrix();
+    drawStops();
+    const bounds = L.latLngBounds(activeStops.map(s => [s.lat, s.lng]));
+    map.fitBounds(bounds.pad(0.1));
+
+    // Try loading OSRM distances
     try {
         statusEl.textContent = 'Loading real road distances from OSRM...';
         await buildOSRMDistMatrix();
@@ -2936,7 +3104,6 @@ async function boot() {
     await solveAll();
 }
 
-// Run boot when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
 } else {

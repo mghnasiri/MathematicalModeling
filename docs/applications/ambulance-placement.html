@@ -498,6 +498,43 @@
             overflow-y: auto;
         }
 
+        /* ── Editable Data Tables ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .data-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.72rem;
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .data-table td {
+            padding: 0.5rem 0.6rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+        .data-table .row-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .data-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
         /* ── Complexity Box ── */
         .complexity-box {
             background: var(--midnight);
@@ -2225,41 +2262,63 @@
     <div class="container">
         <div class="section-header fade-in">
             <h2>Try It <span>Yourself</span></h2>
-            <p>Place ambulance stations across Quebec City</p>
+            <p>Edit demand zones and candidate sites, then solve with all algorithms</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-ambulance"></i> Station Placement Solver</h4>
-                <button class="solver-btn primary" onclick="solve()">
-                    <i class="fas fa-play"></i> &nbsp; Solve
-                </button>
+                <span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Zones &middot; 5 Candidates &middot; p = 3</span>
             </div>
             <div class="solver-body">
-                <!-- Controls Row -->
-                <div class="solver-row">
-                    <div>
-                        <div class="solver-section-label">Number of Stations (p)</div>
-                        <div class="solver-controls">
-                            <label>Stations:</label>
-                            <input type="range" id="p-slider" class="solver-slider" min="2" max="5" value="3" oninput="updateP()">
-                            <span id="p-display" class="size-display">3</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Algorithm</div>
-                        <div class="algo-select">
-                            <div class="algo-chip selected" data-algo="greedy" onclick="selectAlgo(this)">
-                                Greedy Add <span class="chip-type" style="color:var(--blue);">heuristic</span>
-                            </div>
-                            <div class="algo-chip" data-algo="teitz-bart" onclick="selectAlgo(this)">
-                                Teitz-Bart <span class="chip-type" style="color:var(--blue);">heuristic</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Stations (p) slider -->
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-ambulance" style="color:var(--gold);margin-right:0.4rem;"></i>Stations (p):</label>
+                    <input type="range" id="p-slider" min="1" max="8" value="3" oninput="document.getElementById('p-display').textContent=this.value;updateConfigLabel();" style="flex:1;accent-color:var(--gold);">
+                    <span id="p-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">3</span>
                 </div>
 
-                <!-- Canvas -->
+                <!-- Demand Zones Table -->
+                <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Demand Zones</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="data-table" id="zonesTable">
+                        <thead><tr><th>Name</th><th>Lat</th><th>Lng</th><th>Population</th><th style="width:35px;"></th></tr></thead>
+                        <tbody id="zonesBody"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addZone()"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Zone</button>
+                    <button class="algo-chip" onclick="removeLastZone()">&#8722; Remove Last</button>
+                </div>
+
+                <!-- Candidate Sites Table -->
+                <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Candidate Station Sites</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="data-table" id="candidatesTable">
+                        <thead><tr><th>Name</th><th>Lat</th><th>Lng</th><th style="width:35px;"></th></tr></thead>
+                        <tbody id="candidatesBody"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addCandidate()"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Site</button>
+                    <button class="algo-chip" onclick="removeLastCandidate()">&#8722; Remove Last</button>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="resetDefaults()" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeData()" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('dense')" style="border:1px solid rgba(255,107,107,0.3);background:transparent;"><i class="fas fa-city" style="margin-right:0.3rem;"></i> Dense Urban</button>
+                    <button class="algo-chip" onclick="loadPreset('large')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-expand-arrows-alt" style="margin-right:0.3rem;"></i> 12 Zones &middot; 8 Sites</button>
+                </div>
+
+                <!-- Solve button -->
+                <button class="algo-chip selected" onclick="solveAll()" id="solveAllBtn" style="width:100%;padding:0.7rem;font-size:0.95rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                    <span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span>
+                </button>
+
+                <!-- Map -->
                 <div class="solver-canvas-wrap">
                     <div id="map"></div>
                 </div>
@@ -2281,7 +2340,7 @@
                     </table>
                     <div id="assignment-output" class="assignment-output"></div>
                 </div>
-                <div id="solver-status" class="solver-status">Select an algorithm and click Solve.</div>
+                <div id="solver-status" class="solver-status">Edit data above and click Solve &amp; Compare All Algorithms.</div>
             </div>
         </div>
     </div>
@@ -2415,7 +2474,7 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
-// Quebec City Ambulance Station Placement — p-Median Solver
+// Quebec City Ambulance Station Placement — Interactive p-Median Solver
 // ═══════════════════════════════════════════════════════════════
 
 // ── Leaflet Map ──
@@ -2427,24 +2486,24 @@ const map = L.map('map', {
 });
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors | Routing: <a href="https://project-osrm.org">OSRM</a>',
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     maxZoom: 19
 }).addTo(map);
 
 const markersLayer = L.layerGroup().addTo(map);
 const overlayLayer = L.layerGroup().addTo(map);
 
-// ── State ──
-let solving = false;
-let useRoadDist = false;
-let osrmDistMatrix = null;  // OSRM full distance matrix (km)
-
-// Approximate km per degree at Quebec City latitude (~46.8)
+// ── Constants ──
 const KM_PER_DEG_LAT = 111.0;
 const KM_PER_DEG_LNG = 111.0 * Math.cos(46.8 * Math.PI / 180);
+const STATION_COLORS = ['#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc', '#9ece6a', '#ff9e64', '#e06c75'];
+const ZONE_COLORS = ['#a8b2d1','#7aa2f7','#64ffda','#C5A059','#bb86fc','#ff9e64','#9ece6a','#e06c75','#f0c040','#56b6c2','#d19a66','#c678dd'];
 
-// ── Demand Zones ──
-const DEMAND_ZONES = [
+const numInputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:75px;outline:none;';
+const nameInputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:100px;outline:none;';
+
+// ── Default Data ──
+const DEFAULT_ZONES = [
     { name: "Vieux-Qu\u00e9bec",   lat: 46.8130, lng: -71.2070, pop: 5000  },
     { name: "Saint-Roch",          lat: 46.8170, lng: -71.2260, pop: 12000 },
     { name: "Limoilou",            lat: 46.8260, lng: -71.2300, pop: 15000 },
@@ -2454,112 +2513,255 @@ const DEMAND_ZONES = [
     { name: "Cap-Rouge",           lat: 46.7550, lng: -71.3500, pop: 8000  },
     { name: "Montmorency",         lat: 46.8900, lng: -71.1500, pop: 6000  }
 ];
+const DEFAULT_CANDIDATES = [
+    { name: "Vieux-Qu\u00e9bec",   lat: 46.8130, lng: -71.2070 },
+    { name: "Limoilou",            lat: 46.8260, lng: -71.2300 },
+    { name: "Sainte-Foy",          lat: 46.7710, lng: -71.2820 },
+    { name: "Charlesbourg",        lat: 46.8530, lng: -71.2600 },
+    { name: "Beauport",            lat: 46.8620, lng: -71.2000 }
+];
 
-// ── Candidate Sites (subset: indices into DEMAND_ZONES) ──
-// Using 5 candidate sites: Vieux-Quebec, Limoilou, Sainte-Foy, Charlesbourg, Beauport
-const CANDIDATE_INDICES = [0, 2, 3, 4, 5];
+const PRESET_DENSE_ZONES = [
+    { name: "Centre-Ville",  lat: 46.8140, lng: -71.2100, pop: 22000 },
+    { name: "Saint-Sauveur", lat: 46.8185, lng: -71.2320, pop: 18000 },
+    { name: "Saint-Roch",    lat: 46.8170, lng: -71.2260, pop: 25000 },
+    { name: "Vieux-Port",    lat: 46.8100, lng: -71.2000, pop: 15000 },
+    { name: "Montcalm",      lat: 46.8060, lng: -71.2200, pop: 12000 },
+    { name: "Saint-Jean",    lat: 46.8120, lng: -71.2150, pop: 20000 }
+];
+const PRESET_DENSE_CANDIDATES = [
+    { name: "Station Alpha", lat: 46.8150, lng: -71.2050 },
+    { name: "Station Beta",  lat: 46.8170, lng: -71.2300 },
+    { name: "Station Gamma", lat: 46.8100, lng: -71.2180 },
+    { name: "Station Delta", lat: 46.8200, lng: -71.2250 }
+];
+const PRESET_LARGE_ZONES = [
+    { name: "Vieux-Qu\u00e9bec", lat: 46.8130, lng: -71.2070, pop: 5000  },
+    { name: "Saint-Roch",       lat: 46.8170, lng: -71.2260, pop: 12000 },
+    { name: "Limoilou",         lat: 46.8260, lng: -71.2300, pop: 15000 },
+    { name: "Sainte-Foy",       lat: 46.7710, lng: -71.2820, pop: 20000 },
+    { name: "Charlesbourg",     lat: 46.8530, lng: -71.2600, pop: 18000 },
+    { name: "Beauport",         lat: 46.8620, lng: -71.2000, pop: 16000 },
+    { name: "Cap-Rouge",        lat: 46.7550, lng: -71.3500, pop: 8000  },
+    { name: "Montmorency",      lat: 46.8900, lng: -71.1500, pop: 6000  },
+    { name: "Val-B\u00e9lair",  lat: 46.8700, lng: -71.3900, pop: 11000 },
+    { name: "L\u2019Ancienne-Lorette", lat: 46.8000, lng: -71.3500, pop: 9000 },
+    { name: "Saint-\u00c9mile", lat: 46.8600, lng: -71.4200, pop: 7000  },
+    { name: "Lac-Saint-Charles", lat: 46.9100, lng: -71.3500, pop: 4000 }
+];
+const PRESET_LARGE_CANDIDATES = [
+    { name: "Vieux-Qu\u00e9bec", lat: 46.8130, lng: -71.2070 },
+    { name: "Limoilou",          lat: 46.8260, lng: -71.2300 },
+    { name: "Sainte-Foy",       lat: 46.7710, lng: -71.2820 },
+    { name: "Charlesbourg",     lat: 46.8530, lng: -71.2600 },
+    { name: "Beauport",         lat: 46.8620, lng: -71.2000 },
+    { name: "Cap-Rouge",        lat: 46.7550, lng: -71.3500 },
+    { name: "Val-B\u00e9lair",  lat: 46.8700, lng: -71.3900 },
+    { name: "Lac-Saint-Charles", lat: 46.9100, lng: -71.3500 }
+];
 
 // ── State ──
-let pValue = 3;
-let selectedAlgo = 'greedy';
-let currentResult = null;
+let solving = false;
+let bestResultForMap = null;
 
-const STATION_COLORS = ['#64ffda', '#7aa2f7', '#ff6b6b', '#C5A059', '#bb86fc'];
+// ═══════════════════════════════════════════════════════════════
+// Table Rendering & DOM I/O
+// ═══════════════════════════════════════════════════════════════
 
-// ── Distance (km) between two zones (Euclidean fallback) ──
+function renderZonesTable(zones) {
+    const tbody = document.getElementById('zonesBody');
+    tbody.innerHTML = '';
+    zones.forEach((z, i) => {
+        const color = ZONE_COLORS[i % ZONE_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="row-label"><span class="data-dot" style="background:${color};"></span><input type="text" value="${z.name}" style="${nameInputStyle}"></td>
+            <td><input type="number" value="${z.lat}" min="40" max="55" step="0.001" style="${numInputStyle}"></td>
+            <td><input type="number" value="${z.lng}" min="-80" max="-60" step="0.001" style="${numInputStyle}"></td>
+            <td><input type="number" value="${z.pop}" min="100" max="999999" step="500" style="${numInputStyle}"></td>
+            <td><button onclick="removeZoneRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;" title="Remove zone"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateConfigLabel();
+}
+
+function renderCandidatesTable(candidates) {
+    const tbody = document.getElementById('candidatesBody');
+    tbody.innerHTML = '';
+    candidates.forEach((c, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="row-label"><span class="data-dot" style="background:var(--gold);"></span><input type="text" value="${c.name}" style="${nameInputStyle}"></td>
+            <td><input type="number" value="${c.lat}" min="40" max="55" step="0.001" style="${numInputStyle}"></td>
+            <td><input type="number" value="${c.lng}" min="-80" max="-60" step="0.001" style="${numInputStyle}"></td>
+            <td><button onclick="removeCandidateRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;" title="Remove site"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateConfigLabel();
+}
+
+function readZonesFromDOM() {
+    const rows = document.querySelectorAll('#zonesBody tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {
+            name: inputs[0].value.trim() || ('Zone ' + (i+1)),
+            lat: parseFloat(inputs[1].value) || 46.8,
+            lng: parseFloat(inputs[2].value) || -71.2,
+            pop: Math.max(100, parseInt(inputs[3].value) || 1000)
+        };
+    });
+}
+
+function readCandidatesFromDOM() {
+    const rows = document.querySelectorAll('#candidatesBody tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {
+            name: inputs[0].value.trim() || ('Site ' + (i+1)),
+            lat: parseFloat(inputs[1].value) || 46.8,
+            lng: parseFloat(inputs[2].value) || -71.2
+        };
+    });
+}
+
+function updateConfigLabel() {
+    const nz = document.querySelectorAll('#zonesBody tr').length;
+    const nc = document.querySelectorAll('#candidatesBody tr').length;
+    const p = document.getElementById('p-slider').value;
+    document.getElementById('configLabel').textContent = nz + ' Zones \u00b7 ' + nc + ' Candidates \u00b7 p = ' + p + ' \u00b7 Click any cell to edit';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Add / Remove / Reset / Randomize / Presets
+// ═══════════════════════════════════════════════════════════════
+
+const ZONE_NAMES = ['Quartier Nord','Quartier Sud','Quartier Est','Quartier Ouest','Centre','Plateau','Riviere','Colline','Vallee','Parc','Berge','Foret'];
+
+function addZone() {
+    const zones = readZonesFromDOM();
+    const name = ZONE_NAMES[zones.length % ZONE_NAMES.length];
+    const lat = 46.75 + Math.random() * 0.15;
+    const lng = -71.40 + Math.random() * 0.25;
+    const pop = Math.round((3000 + Math.random() * 20000) / 500) * 500;
+    zones.push({ name, lat: parseFloat(lat.toFixed(4)), lng: parseFloat(lng.toFixed(4)), pop });
+    renderZonesTable(zones);
+}
+
+function removeLastZone() {
+    const rows = document.querySelectorAll('#zonesBody tr');
+    if (rows.length <= 2) { alert('Need at least 2 demand zones.'); return; }
+    rows[rows.length-1].remove();
+    updateConfigLabel();
+}
+
+function removeZoneRow(btn) {
+    if (document.querySelectorAll('#zonesBody tr').length <= 2) { alert('Need at least 2 demand zones.'); return; }
+    btn.closest('tr').remove();
+    updateConfigLabel();
+}
+
+function addCandidate() {
+    const cands = readCandidatesFromDOM();
+    const name = 'Site ' + (cands.length + 1);
+    const lat = 46.75 + Math.random() * 0.15;
+    const lng = -71.40 + Math.random() * 0.25;
+    cands.push({ name, lat: parseFloat(lat.toFixed(4)), lng: parseFloat(lng.toFixed(4)) });
+    renderCandidatesTable(cands);
+}
+
+function removeLastCandidate() {
+    const rows = document.querySelectorAll('#candidatesBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 candidate site.'); return; }
+    rows[rows.length-1].remove();
+    updateConfigLabel();
+}
+
+function removeCandidateRow(btn) {
+    if (document.querySelectorAll('#candidatesBody tr').length <= 1) { alert('Need at least 1 candidate site.'); return; }
+    btn.closest('tr').remove();
+    updateConfigLabel();
+}
+
+function resetDefaults() {
+    renderZonesTable(DEFAULT_ZONES);
+    renderCandidatesTable(DEFAULT_CANDIDATES);
+    document.getElementById('p-slider').value = 3;
+    document.getElementById('p-display').textContent = '3';
+    updateConfigLabel();
+    drawInitialState();
+}
+
+function randomizeData() {
+    // Randomize populations and nudge coordinates
+    document.querySelectorAll('#zonesBody tr').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        inputs[1].value = (parseFloat(inputs[1].value) + (Math.random() - 0.5) * 0.03).toFixed(4);
+        inputs[2].value = (parseFloat(inputs[2].value) + (Math.random() - 0.5) * 0.05).toFixed(4);
+        inputs[3].value = Math.round((2000 + Math.random() * 22000) / 500) * 500;
+    });
+    document.querySelectorAll('#candidatesBody tr').forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        inputs[1].value = (parseFloat(inputs[1].value) + (Math.random() - 0.5) * 0.03).toFixed(4);
+        inputs[2].value = (parseFloat(inputs[2].value) + (Math.random() - 0.5) * 0.05).toFixed(4);
+    });
+    drawInitialState();
+}
+
+function loadPreset(type) {
+    if (type === 'dense') {
+        renderZonesTable(PRESET_DENSE_ZONES);
+        renderCandidatesTable(PRESET_DENSE_CANDIDATES);
+        document.getElementById('p-slider').value = 2;
+        document.getElementById('p-display').textContent = '2';
+    } else if (type === 'large') {
+        renderZonesTable(PRESET_LARGE_ZONES);
+        renderCandidatesTable(PRESET_LARGE_CANDIDATES);
+        document.getElementById('p-slider').value = 4;
+        document.getElementById('p-display').textContent = '4';
+    }
+    updateConfigLabel();
+    drawInitialState();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Distance & Solver Core
+// ═══════════════════════════════════════════════════════════════
+
 function euclidKm(a, b) {
     const dlat = (a.lat - b.lat) * KM_PER_DEG_LAT;
     const dlng = (a.lng - b.lng) * KM_PER_DEG_LNG;
     return Math.sqrt(dlat * dlat + dlng * dlng);
 }
 
-function distKm(a, b) {
-    return euclidKm(a, b);
-}
-
-// ── OSRM: Fetch real road distance matrix ──
-async function buildOSRMDistMatrix() {
-    const coords = DEMAND_ZONES.map(z => `${z.lng},${z.lat}`).join(';');
-    const url = `https://router.project-osrm.org/table/v1/driving/${coords}?annotations=distance`;
-    try {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 8000);
-        const resp = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        if (data.code !== 'Ok') throw new Error(`OSRM: ${data.code}`);
-        const n = DEMAND_ZONES.length;
-        osrmDistMatrix = Array.from({ length: n }, () => new Float64Array(n));
-        for (let i = 0; i < n; i++)
-            for (let j = 0; j < n; j++)
-                osrmDistMatrix[i][j] = data.distances[i][j] / 1000;
-        useRoadDist = true;
-        return true;
-    } catch (e) {
-        console.warn('OSRM table API unavailable, using Euclidean:', e.message);
-        osrmDistMatrix = null;
-        useRoadDist = false;
-        return false;
-    }
-}
-
-// ── OSRM: Get road geometry between two points ──
-async function getRouteGeometry(fromIdx, toIdx) {
-    try {
-        const a = DEMAND_ZONES[fromIdx], b = DEMAND_ZONES[toIdx];
-        const coords = `${a.lng},${a.lat};${b.lng},${b.lat}`;
-        const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 5000);
-        const resp = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
-        if (!resp.ok) return null;
-        const data = await resp.json();
-        if (data.code !== 'Ok' || !data.routes || !data.routes.length) return null;
-        return data.routes[0].geometry.coordinates.map(c => [c[1], c[0]]);
-    } catch (e) {
-        return null;
-    }
-}
-
-// ── Build full distance matrix (demand zones x candidate sites) ──
-function buildDistMatrix() {
-    const n = DEMAND_ZONES.length;
-    const m = CANDIDATE_INDICES.length;
+function buildDistMatrix(zones, candidates) {
+    const n = zones.length;
+    const m = candidates.length;
     const D = [];
     for (let j = 0; j < n; j++) {
         D[j] = [];
         for (let ci = 0; ci < m; ci++) {
-            if (useRoadDist && osrmDistMatrix) {
-                D[j][ci] = osrmDistMatrix[j][CANDIDATE_INDICES[ci]];
-            } else {
-                D[j][ci] = euclidKm(DEMAND_ZONES[j], DEMAND_ZONES[CANDIDATE_INDICES[ci]]);
-            }
+            D[j][ci] = euclidKm(zones[j], candidates[ci]);
         }
     }
     return D;
 }
 
-// ── Compute total weighted distance for a set of open candidates ──
-function totalWeightedDist(openSet, D) {
+function totalWeightedDist(openSet, D, zones) {
     let total = 0;
-    const n = DEMAND_ZONES.length;
-    for (let j = 0; j < n; j++) {
+    for (let j = 0; j < zones.length; j++) {
         let minDist = Infinity;
         for (const ci of openSet) {
             if (D[j][ci] < minDist) minDist = D[j][ci];
         }
-        total += DEMAND_ZONES[j].pop * minDist;
+        total += zones[j].pop * minDist;
     }
     return total;
 }
 
-// ── Assign each demand zone to its nearest open station ──
-function assignZones(openSet, D) {
-    const n = DEMAND_ZONES.length;
+function assignZones(openSet, D, zones) {
     const assignments = [];
-    for (let j = 0; j < n; j++) {
+    for (let j = 0; j < zones.length; j++) {
         let minDist = Infinity;
         let bestStation = -1;
         for (const ci of openSet) {
@@ -2574,39 +2776,33 @@ function assignZones(openSet, D) {
 }
 
 // ── Greedy Add Algorithm ──
-function greedyAdd(p, D) {
-    const m = CANDIDATE_INDICES.length;
+function greedyAdd(p, D, zones, m) {
     const openSet = [];
     const closed = new Set();
     for (let i = 0; i < m; i++) closed.add(i);
+    const pClamped = Math.min(p, m);
 
-    for (let k = 0; k < p; k++) {
+    for (let k = 0; k < pClamped; k++) {
         let bestCandidate = -1;
         let bestCost = Infinity;
-
         for (const ci of closed) {
             const trial = [...openSet, ci];
-            const cost = totalWeightedDist(trial, D);
+            const cost = totalWeightedDist(trial, D, zones);
             if (cost < bestCost) {
                 bestCost = cost;
                 bestCandidate = ci;
             }
         }
-
         openSet.push(bestCandidate);
         closed.delete(bestCandidate);
     }
-
     return openSet;
 }
 
 // ── Teitz-Bart Interchange Algorithm ──
-function teitzBart(p, D) {
-    // Start from greedy solution
-    let openSet = greedyAdd(p, D);
-    let bestCost = totalWeightedDist(openSet, D);
-    const m = CANDIDATE_INDICES.length;
-
+function teitzBart(p, D, zones, m) {
+    let openSet = greedyAdd(p, D, zones, m);
+    let bestCost = totalWeightedDist(openSet, D, zones);
     let improved = true;
     let iterations = 0;
     const maxIterations = 100;
@@ -2614,48 +2810,42 @@ function teitzBart(p, D) {
     while (improved && iterations < maxIterations) {
         improved = false;
         iterations++;
-
         for (let oi = 0; oi < openSet.length; oi++) {
-            const openFacility = openSet[oi];
-
             for (let ci = 0; ci < m; ci++) {
-                // Skip if already open
                 if (openSet.includes(ci)) continue;
-
-                // Try swapping openFacility with ci
                 const trial = [...openSet];
                 trial[oi] = ci;
-                const cost = totalWeightedDist(trial, D);
-
+                const cost = totalWeightedDist(trial, D, zones);
                 if (cost < bestCost - 1e-10) {
                     bestCost = cost;
                     openSet = trial;
                     improved = true;
-                    break; // restart inner loops after improvement
+                    break;
                 }
             }
-            if (improved) break; // restart outer loop
+            if (improved) break;
         }
     }
-
     return openSet;
 }
 
-// ══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 // Leaflet Map Drawing
-// ══════════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════════
 
 function drawInitialState() {
     markersLayer.clearLayers();
     overlayLayer.clearLayers();
 
-    const maxPop = Math.max(...DEMAND_ZONES.map(z => z.pop));
+    const zones = readZonesFromDOM();
+    const candidates = readCandidatesFromDOM();
+    if (zones.length === 0) return;
 
-    // Draw demand zones as circles
-    for (let j = 0; j < DEMAND_ZONES.length; j++) {
-        const z = DEMAND_ZONES[j];
+    const maxPop = Math.max(...zones.map(z => z.pop));
+
+    for (let j = 0; j < zones.length; j++) {
+        const z = zones[j];
         const radius = 300 + (z.pop / maxPop) * 800;
-
         L.circle([z.lat, z.lng], {
             radius: radius,
             color: 'rgba(168, 178, 209, 0.4)',
@@ -2664,205 +2854,208 @@ function drawInitialState() {
             weight: 1.5
         }).bindPopup(`<strong>${z.name}</strong><br>Population: ${z.pop.toLocaleString()}`).addTo(markersLayer);
 
-        // Inner dot
         L.circleMarker([z.lat, z.lng], {
-            radius: 4,
-            color: '#a8b2d1',
-            fillColor: '#a8b2d1',
-            fillOpacity: 1,
-            weight: 0
+            radius: 4, color: '#a8b2d1', fillColor: '#a8b2d1', fillOpacity: 1, weight: 0
         }).addTo(markersLayer);
     }
 
-    // Mark candidate sites
-    for (const ci of CANDIDATE_INDICES) {
-        const z = DEMAND_ZONES[ci];
-        L.circleMarker([z.lat, z.lng], {
+    for (const c of candidates) {
+        L.circleMarker([c.lat, c.lng], {
             radius: 5,
             color: 'rgba(197, 160, 89, 0.8)',
             fillColor: 'rgba(197, 160, 89, 0.6)',
             fillOpacity: 1,
             weight: 1
-        }).bindPopup(`<strong>${z.name}</strong><br>Candidate Station Site`).addTo(markersLayer);
+        }).bindPopup(`<strong>${c.name}</strong><br>Candidate Station Site`).addTo(markersLayer);
     }
 
-    // Fit bounds
-    const bounds = L.latLngBounds(DEMAND_ZONES.map(z => [z.lat, z.lng]));
-    map.fitBounds(bounds.pad(0.15));
+    const allPoints = [...zones, ...candidates].map(p => [p.lat, p.lng]);
+    if (allPoints.length > 0) {
+        map.fitBounds(L.latLngBounds(allPoints).pad(0.15));
+    }
 }
 
-async function drawSolution(openSet, assignments, D) {
+function drawSolution(openSet, assignments, zones, candidates) {
     markersLayer.clearLayers();
     overlayLayer.clearLayers();
 
-    const maxPop = Math.max(...DEMAND_ZONES.map(z => z.pop));
+    if (zones.length === 0) return;
+    const maxPop = Math.max(...zones.map(z => z.pop));
 
-    // Build color mapping
     const stationColorMap = {};
     openSet.forEach((ci, idx) => {
         stationColorMap[ci] = STATION_COLORS[idx % STATION_COLORS.length];
     });
 
-    // Draw assignment lines (try OSRM road geometry, fall back to straight lines)
+    // Assignment lines
     for (const a of assignments) {
-        const zone = DEMAND_ZONES[a.zone];
-        const stationIdx = CANDIDATE_INDICES[a.station];
-        const station = DEMAND_ZONES[stationIdx];
+        const zone = zones[a.zone];
+        const station = candidates[a.station];
         const color = stationColorMap[a.station];
-
-        let latlngs = null;
-        if (useRoadDist && a.zone !== stationIdx) {
-            latlngs = await getRouteGeometry(a.zone, stationIdx);
-        }
-        if (!latlngs) {
-            latlngs = [[zone.lat, zone.lng], [station.lat, station.lng]];
-        }
-
-        L.polyline(latlngs, {
-            color: color,
-            weight: 2,
-            opacity: 0.4,
-            dashArray: '6, 6'
+        L.polyline([[zone.lat, zone.lng], [station.lat, station.lng]], {
+            color: color, weight: 2, opacity: 0.4, dashArray: '6, 6'
         }).addTo(overlayLayer);
     }
 
-    // Draw demand zones colored by assigned station
-    for (let j = 0; j < DEMAND_ZONES.length; j++) {
-        const z = DEMAND_ZONES[j];
+    // Demand zones colored by station
+    for (let j = 0; j < zones.length; j++) {
+        const z = zones[j];
         const radius = 300 + (z.pop / maxPop) * 800;
         const a = assignments.find(a => a.zone === j);
         const color = stationColorMap[a.station];
 
         L.circle([z.lat, z.lng], {
-            radius: radius,
-            color: color,
-            fillColor: color,
-            fillOpacity: 0.15,
-            weight: 1.5,
-            opacity: 0.5
-        }).bindPopup(`<strong>${z.name}</strong><br>Pop: ${z.pop.toLocaleString()}<br>Assigned to: ${DEMAND_ZONES[CANDIDATE_INDICES[a.station]].name}<br>Distance: ${a.dist.toFixed(2)} km`).addTo(markersLayer);
+            radius: radius, color: color, fillColor: color,
+            fillOpacity: 0.15, weight: 1.5, opacity: 0.5
+        }).bindPopup(`<strong>${z.name}</strong><br>Pop: ${z.pop.toLocaleString()}<br>Assigned to: ${candidates[a.station].name}<br>Distance: ${a.dist.toFixed(2)} km`).addTo(markersLayer);
 
-        // Inner dot
         L.circleMarker([z.lat, z.lng], {
-            radius: 4,
-            color: color,
-            fillColor: color,
-            fillOpacity: 1,
-            weight: 0
+            radius: 4, color: color, fillColor: color, fillOpacity: 1, weight: 0
         }).addTo(markersLayer);
     }
 
-    // Draw open stations as prominent markers
+    // Open station markers
     for (const ci of openSet) {
-        const z = DEMAND_ZONES[CANDIDATE_INDICES[ci]];
+        const c = candidates[ci];
         const color = stationColorMap[ci];
-
         const stationIcon = L.divIcon({
             className: '',
             html: `<div style="width:24px;height:24px;background:${color};border:3px solid #fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:bold;color:#0A192F;">+</div>`,
-            iconSize: [24, 24],
-            iconAnchor: [12, 12]
+            iconSize: [24, 24], iconAnchor: [12, 12]
         });
-
-        L.marker([z.lat, z.lng], { icon: stationIcon })
-            .bindPopup(`<strong>STATION: ${z.name}</strong>`)
+        L.marker([c.lat, c.lng], { icon: stationIcon })
+            .bindPopup(`<strong>STATION: ${c.name}</strong>`)
             .addTo(markersLayer);
+    }
+
+    // Fit bounds
+    const allPoints = [...zones, ...candidates].map(p => [p.lat, p.lng]);
+    if (allPoints.length > 0) {
+        map.fitBounds(L.latLngBounds(allPoints).pad(0.15));
     }
 }
 
-// ── UI Controls ──
-function updateP() {
-    pValue = parseInt(document.getElementById('p-slider').value);
-    document.getElementById('p-display').textContent = pValue;
-}
+// ═══════════════════════════════════════════════════════════════
+// Solve All Algorithms
+// ═══════════════════════════════════════════════════════════════
 
-function selectAlgo(el) {
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('selected'));
-    el.classList.add('selected');
-    selectedAlgo = el.dataset.algo;
-}
-
-// ── Solver ──
-async function solve() {
+async function solveAll() {
     if (solving) return;
     solving = true;
-    const solveBtn = document.querySelector('.solver-btn.primary');
+
+    const spinner = document.getElementById('solveSpinner');
+    const solveBtn = document.getElementById('solveAllBtn');
     const statusEl = document.getElementById('solver-status');
-    if (solveBtn) solveBtn.disabled = true;
+    spinner.style.display = 'inline';
+    solveBtn.disabled = true;
 
     try {
-        statusEl.textContent = useRoadDist
-            ? 'Optimizing with real road distances...'
-            : 'Optimizing with Euclidean distances...';
+        const zones = readZonesFromDOM();
+        const candidates = readCandidatesFromDOM();
+        const p = Math.min(parseInt(document.getElementById('p-slider').value) || 3, candidates.length);
 
-        const D = buildDistMatrix();
-        const t0 = performance.now();
+        if (zones.length < 2) { statusEl.textContent = 'Need at least 2 demand zones.'; return; }
+        if (candidates.length < 1) { statusEl.textContent = 'Need at least 1 candidate site.'; return; }
+        if (p < 1) { statusEl.textContent = 'p must be at least 1.'; return; }
 
-        let openSet;
-        let algoName;
+        statusEl.textContent = 'Optimizing with Euclidean distances...';
 
-        if (selectedAlgo === 'greedy') {
-            openSet = greedyAdd(pValue, D);
-            algoName = 'Greedy Add';
-        } else {
-            openSet = teitzBart(pValue, D);
-            algoName = 'Teitz-Bart Interchange';
-        }
+        // Allow UI to update
+        await new Promise(r => setTimeout(r, 20));
 
-        const elapsed = performance.now() - t0;
-        const cost = totalWeightedDist(openSet, D);
-        const assignments = assignZones(openSet, D);
+        const D = buildDistMatrix(zones, candidates);
+        const totalPop = zones.reduce((s, z) => s + z.pop, 0);
+        const results = [];
 
-        // Compute average response distance (weighted)
-        const totalPop = DEMAND_ZONES.reduce((s, z) => s + z.pop, 0);
-        const avgDist = cost / totalPop;
+        // Greedy Add
+        const t0g = performance.now();
+        const greedyOpen = greedyAdd(p, D, zones, candidates.length);
+        const greedyTime = performance.now() - t0g;
+        const greedyCost = totalWeightedDist(greedyOpen, D, zones);
+        const greedyAssign = assignZones(greedyOpen, D, zones);
+        results.push({
+            name: 'Greedy Add',
+            openSet: greedyOpen,
+            cost: greedyCost,
+            avgDist: greedyCost / totalPop,
+            stations: greedyOpen.map(ci => candidates[ci].name),
+            time: greedyTime,
+            assignments: greedyAssign
+        });
 
-        // Station names
-        const stationNames = openSet.map(ci => DEMAND_ZONES[CANDIDATE_INDICES[ci]].name);
+        // Teitz-Bart Interchange
+        const t0t = performance.now();
+        const tbOpen = teitzBart(p, D, zones, candidates.length);
+        const tbTime = performance.now() - t0t;
+        const tbCost = totalWeightedDist(tbOpen, D, zones);
+        const tbAssign = assignZones(tbOpen, D, zones);
+        results.push({
+            name: 'Teitz-Bart Interchange',
+            openSet: tbOpen,
+            cost: tbCost,
+            avgDist: tbCost / totalPop,
+            stations: tbOpen.map(ci => candidates[ci].name),
+            time: tbTime,
+            assignments: tbAssign
+        });
 
-        // Populate results table immediately (before async map drawing)
+        // Sort by cost (best first)
+        results.sort((a, b) => a.cost - b.cost);
+        const bestCost = results[0].cost;
+
+        // Show results
         const resultsContainer = document.getElementById('results-container');
         resultsContainer.style.display = 'block';
 
         const tbody = document.getElementById('results-body');
-        tbody.innerHTML = `
-            <tr>
-                <td class="algo-label">${algoName}</td>
-                <td class="best-val">${cost.toFixed(0)}</td>
-                <td>${avgDist.toFixed(2)} km</td>
-                <td>${stationNames.join(', ')}</td>
-                <td>${elapsed.toFixed(1)} ms</td>
-            </tr>
-        `;
-
-        // Zone assignments output
-        const output = document.getElementById('assignment-output');
-        let html = '<strong style="color:var(--gold); font-family:Inter,sans-serif; font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;">Zone Assignments</strong><br>';
-        for (const a of assignments) {
-            const zoneName = DEMAND_ZONES[a.zone].name;
-            const stationName = DEMAND_ZONES[CANDIDATE_INDICES[a.station]].name;
-            const pop = DEMAND_ZONES[a.zone].pop;
-            html += `${zoneName} (pop: ${pop.toLocaleString()}) \u2192 ${stationName} [${a.dist.toFixed(2)} km]<br>`;
-        }
-        output.innerHTML = html;
-
-        // Draw solution on map (async, may fail if OSRM geometry unavailable)
-        try {
-            await drawSolution(openSet, assignments, D);
-        } catch (mapErr) {
-            console.warn('Solution drawing failed, results still shown:', mapErr);
+        tbody.innerHTML = '';
+        for (const r of results) {
+            const isBest = Math.abs(r.cost - bestCost) < 0.01;
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${isBest ? 'best-val' : ''}">${r.cost.toFixed(0)}</td>
+                <td>${r.avgDist.toFixed(2)} km</td>
+                <td>${r.stations.join(', ')}</td>
+                <td>${r.time.toFixed(1)} ms</td>
+            `;
+            tr.style.cursor = 'pointer';
+            tr.title = 'Click to show this solution on the map';
+            tr.addEventListener('click', () => {
+                drawSolution(r.openSet, r.assignments, zones, candidates);
+                showAssignments(r, zones, candidates);
+            });
+            tbody.appendChild(tr);
         }
 
-        const distType = useRoadDist ? 'road distances (OSRM)' : 'Euclidean (straight-line) distances';
+        // Show best solution assignments and map
+        const best = results[0];
+        showAssignments(best, zones, candidates);
+        drawSolution(best.openSet, best.assignments, zones, candidates);
+
         statusEl.textContent =
-            `${algoName} completed in ${elapsed.toFixed(1)} ms using ${distType}. Total weighted distance: ${cost.toFixed(0)} (pop\u00b7km).`;
+            `Both algorithms compared. Best: ${best.name} with total weighted distance ${best.cost.toFixed(0)} (pop\u00b7km). Click a row to view its solution on the map.`;
+
     } catch (e) {
         console.error('solve error:', e);
-        statusEl.textContent = 'Error during optimization. Try clicking Solve again.';
+        statusEl.textContent = 'Error during optimization: ' + e.message;
     } finally {
-        if (solveBtn) solveBtn.disabled = false;
+        spinner.style.display = 'none';
+        solveBtn.disabled = false;
         solving = false;
     }
+}
+
+function showAssignments(result, zones, candidates) {
+    const output = document.getElementById('assignment-output');
+    let html = '<strong style="color:var(--gold); font-family:Inter,sans-serif; font-size:0.72rem; text-transform:uppercase; letter-spacing:1.5px;">' + result.name + ' \u2014 Zone Assignments</strong><br>';
+    for (const a of result.assignments) {
+        const zoneName = zones[a.zone].name;
+        const stationName = candidates[a.station].name;
+        const pop = zones[a.zone].pop;
+        html += `${zoneName} (pop: ${pop.toLocaleString()}) \u2192 ${stationName} [${a.dist.toFixed(2)} km]<br>`;
+    }
+    output.innerHTML = html;
 }
 
 // ── Scroll Animation ──
@@ -2871,36 +3064,20 @@ const observer = new IntersectionObserver((entries) => {
 }, { threshold: 0.1 });
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-// ── Initial Draw ──
+// ── Initial Setup ──
+renderZonesTable(DEFAULT_ZONES);
+renderCandidatesTable(DEFAULT_CANDIDATES);
 drawInitialState();
 
-window.addEventListener('resize', () => {
-    map.invalidateSize();
-});
+window.addEventListener('resize', () => { map.invalidateSize(); });
 
-// ── Boot: load OSRM distances, auto-solve ──
+// ── Boot: auto-solve ──
 async function boot() {
     const statusEl = document.getElementById('solver-status');
-
-    // Try loading OSRM distances, fall back to Euclidean silently
-    try {
-        statusEl.textContent = 'Loading real road distances from OSRM...';
-        await buildOSRMDistMatrix();
-    } catch (e) {
-        console.warn('OSRM load failed, using Euclidean:', e);
-        osrmDistMatrix = null;
-        useRoadDist = false;
-    }
-
-    statusEl.textContent = useRoadDist
-        ? 'Road distances loaded. Running algorithm...'
-        : 'Using Euclidean distances. Running algorithm...';
-
-    // Auto-solve
-    await solve();
+    statusEl.textContent = 'Running initial solve...';
+    await solveAll();
 }
 
-// Run boot when DOM is ready
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', boot);
 } else {
