@@ -2156,37 +2156,53 @@
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-cut"></i> Roll Cutting Optimizer</h4>
-                <span style="color:var(--slate); font-size:0.75rem;" title="Configure roll length and orders, choose an algorithm, and click Optimize Cutting."><i class="fas fa-question-circle"></i></span>
+                <span id="configSummary" style="font-size:0.75rem; color:var(--slate); letter-spacing:1px; text-transform:uppercase;">L=100 &middot; 4 Types &middot; 14 Items</span>
             </div>
             <div class="solver-body">
-                <!-- Controls Row -->
-                <div class="solver-row">
-                    <div>
-                        <div class="solver-section-label">Stock Roll</div>
-                        <div class="solver-controls">
-                            <label>Roll Length (L):</label>
-                            <input type="number" class="solver-input" id="roll-length-input" value="100" min="10" max="500" style="width:80px;">
-                            <span style="font-size:0.78rem; color:var(--slate);">units</span>
-                        </div>
-
-                        <div class="solver-section-label" style="margin-top:1rem;">Order Types</div>
-                        <div class="order-grid" id="order-grid"></div>
-                        <div class="solver-controls" style="margin-top:0.8rem;">
-                            <button class="solver-btn" onclick="addOrderType()"><i class="fas fa-plus"></i> Add Type</button>
-                            <button class="solver-btn" onclick="resetOrders()"><i class="fas fa-undo"></i> Reset</button>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Algorithms</div>
-                        <div class="algo-select" id="algo-select">
-                            <span class="algo-chip selected" data-algo="greedy" onclick="toggleAlgo(this)">Greedy Largest-First <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="ffd" onclick="toggleAlgo(this)">FFD-Based <span class="chip-type">(H)</span></span>
-                        </div>
-                        <div class="solver-controls" style="margin-top:1.5rem;">
-                            <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-play"></i> Optimize Cutting</button>
-                        </div>
-                    </div>
+                <!-- Stock Roll Length -->
+                <div class="solver-section-label">Stock Roll</div>
+                <div class="solver-controls" style="margin-bottom:1rem;">
+                    <label>Roll Length (L):</label>
+                    <input type="number" class="solver-input" id="roll-length-input" value="100" min="10" max="500" style="width:80px;" oninput="updateConfigSummary()">
+                    <span style="font-size:0.78rem; color:var(--slate);">units</span>
                 </div>
+
+                <!-- Order Types Table -->
+                <div class="solver-section-label">Order Types</div>
+                <div style="overflow-x:auto; margin-bottom:0.5rem;">
+                    <table class="results-table" id="orders-table" style="margin-bottom:0;">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th style="text-align:left;">Name</th>
+                                <th>Length</th>
+                                <th>Demand</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="orders-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Table Action Buttons -->
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.2rem;">
+                    <button class="solver-btn" onclick="addOrderType()"><i class="fas fa-plus"></i> Add Type</button>
+                    <button class="solver-btn" onclick="removeLastOrder()"><i class="fas fa-minus"></i> Remove Last</button>
+                </div>
+
+                <!-- Preset / Config Buttons -->
+                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-bottom:1.2rem;">
+                    <button class="solver-btn" onclick="resetDefaults()"><i class="fas fa-undo"></i> Reset Defaults</button>
+                    <button class="solver-btn" onclick="randomizeOrders()"><i class="fas fa-random"></i> Randomize</button>
+                    <button class="solver-btn" onclick="loadPreset('pipe')"><i class="fas fa-water"></i> Pipe Cutting</button>
+                    <button class="solver-btn" onclick="loadPreset('fabric')"><i class="fas fa-ruler-horizontal"></i> Fabric Rolls</button>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="solver-btn primary" onclick="solveAll()" style="width:100%; padding:0.7rem; font-size:1rem; margin-bottom:1.2rem;">
+                    <i class="fas fa-play"></i> Solve &amp; Compare All Algorithms
+                    <span id="solveSpinner" style="display:none; margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span>
+                </button>
 
                 <!-- Visualization Canvas -->
                 <div class="solver-canvas-wrap">
@@ -2208,7 +2224,7 @@
                         </thead>
                         <tbody></tbody>
                     </table>
-                    <p class="solver-status" id="solver-status">Configure orders and click Optimize Cutting to begin.</p>
+                    <p class="solver-status" id="solver-status">Configure orders and click Solve &amp; Compare All Algorithms to begin.</p>
                     <div class="pattern-output" id="pattern-output" style="display:none;"></div>
                 </div>
             </div>
@@ -2359,61 +2375,138 @@ const PIECE_COLORS = [
 const WASTE_COLOR = 'rgba(136, 146, 176, 0.15)';
 const WASTE_STRIPE = 'rgba(136, 146, 176, 0.25)';
 
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+
 // ── State ──
-let orders = [];
 let currentResults = [];
 let nextTypeChar = 65; // 'A'
 
 // ── Default Orders ──
-function getDefaultOrders() {
-    return [
-        { name: 'Type A', length: 45, demand: 3, color: PIECE_COLORS[0] },
-        { name: 'Type B', length: 36, demand: 2, color: PIECE_COLORS[1] },
-        { name: 'Type C', length: 31, demand: 4, color: PIECE_COLORS[2] },
-        { name: 'Type D', length: 14, demand: 5, color: PIECE_COLORS[3] },
-    ];
-}
+const DEFAULT_ORDERS = [
+    { name: 'Type A', length: 45, demand: 3 },
+    { name: 'Type B', length: 36, demand: 2 },
+    { name: 'Type C', length: 31, demand: 4 },
+    { name: 'Type D', length: 14, demand: 5 },
+];
 
-function resetOrders() {
-    orders = getDefaultOrders();
-    nextTypeChar = 65 + orders.length;
-    document.getElementById('roll-length-input').value = 100;
-    renderOrderGrid();
-    clearResults();
-}
+const PRESET_PIPE = [
+    { name: 'Pipe 6m', length: 60, demand: 4 },
+    { name: 'Pipe 4m', length: 40, demand: 6 },
+    { name: 'Pipe 2.5m', length: 25, demand: 8 },
+    { name: 'Pipe 1m', length: 10, demand: 12 },
+];
 
-function addOrderType() {
-    const letter = String.fromCharCode(nextTypeChar);
-    nextTypeChar++;
-    const colorIdx = orders.length % PIECE_COLORS.length;
-    orders.push({ name: 'Type ' + letter, length: 20, demand: 2, color: PIECE_COLORS[colorIdx] });
-    renderOrderGrid();
-}
+const PRESET_FABRIC = [
+    { name: 'Panel L', length: 80, demand: 2 },
+    { name: 'Panel M', length: 55, demand: 3 },
+    { name: 'Panel S', length: 35, demand: 5 },
+    { name: 'Strip', length: 20, demand: 7 },
+    { name: 'Trim', length: 8, demand: 10 },
+];
 
-function renderOrderGrid() {
-    const grid = document.getElementById('order-grid');
-    grid.innerHTML = '';
+// ── Table Rendering ──
+function renderOrdersTable(orders) {
+    const tbody = document.getElementById('orders-body');
+    tbody.innerHTML = '';
     orders.forEach((o, i) => {
-        const div = document.createElement('div');
-        div.className = 'order-item';
-        div.innerHTML = `
-            <span class="order-color" style="background:${o.color};"></span>
-            <label>${o.name}</label>
-            <label style="color:var(--slate);font-size:0.7rem;">Len:</label>
-            <input type="number" value="${o.length}" min="1" max="500"
-                   onchange="orders[${i}].length=parseInt(this.value)||1">
-            <label style="color:var(--slate);font-size:0.7rem;">Qty:</label>
-            <input type="number" value="${o.demand}" min="0" max="100"
-                   onchange="orders[${i}].demand=parseInt(this.value)||0">
-            <button onclick="removeOrder(${i})" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:0.75rem;padding:2px 6px;" title="Remove">&times;</button>
-        `;
-        grid.appendChild(div);
+        const color = PIECE_COLORS[i % PIECE_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td style="width:20px;"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:' + color + ';"></span></td>' +
+            '<td><input type="text" value="' + o.name + '" style="' + nameStyle + '" oninput="updateConfigSummary()"></td>' +
+            '<td><input type="number" value="' + o.length + '" min="1" max="500" step="1" style="' + inputStyle + '" oninput="updateConfigSummary()"></td>' +
+            '<td><input type="number" value="' + o.demand + '" min="0" max="100" step="1" style="' + inputStyle + '" oninput="updateConfigSummary()"></td>' +
+            '<td><button onclick="removeOrderRow(this)" style="background:transparent;border:none;color:#ff6b6b;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>';
+        tbody.appendChild(tr);
+    });
+    nextTypeChar = 65 + orders.length;
+    updateConfigSummary();
+}
+
+// ── Read Orders from DOM ──
+function readOrders() {
+    const rows = document.querySelectorAll('#orders-body tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {
+            name: inputs[0].value.trim() || ('Type ' + String.fromCharCode(65 + i)),
+            length: Math.max(1, parseInt(inputs[1].value) || 1),
+            demand: Math.max(0, parseInt(inputs[2].value) || 0),
+            color: PIECE_COLORS[i % PIECE_COLORS.length]
+        };
     });
 }
 
-function removeOrder(idx) {
-    orders.splice(idx, 1);
-    renderOrderGrid();
+// ── Update Config Summary ──
+function updateConfigSummary() {
+    const rollLen = parseInt(document.getElementById('roll-length-input').value) || 100;
+    const orders = readOrders();
+    const totalItems = orders.reduce((s, o) => s + o.demand, 0);
+    document.getElementById('configSummary').textContent =
+        'L=' + rollLen + ' \u00b7 ' + orders.length + ' Types \u00b7 ' + totalItems + ' Items';
+}
+
+// ── Actions ──
+function addOrderType() {
+    const letter = String.fromCharCode(nextTypeChar);
+    nextTypeChar++;
+    const idx = document.querySelectorAll('#orders-body tr').length;
+    const color = PIECE_COLORS[idx % PIECE_COLORS.length];
+    const tbody = document.getElementById('orders-body');
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+        '<td style="width:20px;"><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:' + color + ';"></span></td>' +
+        '<td><input type="text" value="Type ' + letter + '" style="' + nameStyle + '" oninput="updateConfigSummary()"></td>' +
+        '<td><input type="number" value="20" min="1" max="500" step="1" style="' + inputStyle + '" oninput="updateConfigSummary()"></td>' +
+        '<td><input type="number" value="2" min="0" max="100" step="1" style="' + inputStyle + '" oninput="updateConfigSummary()"></td>' +
+        '<td><button onclick="removeOrderRow(this)" style="background:transparent;border:none;color:#ff6b6b;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>';
+    tbody.appendChild(tr);
+    updateConfigSummary();
+}
+
+function removeLastOrder() {
+    const rows = document.querySelectorAll('#orders-body tr');
+    if (rows.length <= 1) return;
+    rows[rows.length - 1].remove();
+    updateConfigSummary();
+}
+
+function removeOrderRow(btn) {
+    if (document.querySelectorAll('#orders-body tr').length <= 1) return;
+    btn.closest('tr').remove();
+    updateConfigSummary();
+}
+
+function resetDefaults() {
+    document.getElementById('roll-length-input').value = 100;
+    renderOrdersTable(DEFAULT_ORDERS);
+    clearResults();
+}
+
+function randomizeOrders() {
+    const numTypes = 3 + Math.floor(Math.random() * 5); // 3-7 types
+    const rollLen = [80, 100, 120, 150, 200][Math.floor(Math.random() * 5)];
+    document.getElementById('roll-length-input').value = rollLen;
+    const orders = [];
+    for (let i = 0; i < numTypes; i++) {
+        const len = 5 + Math.floor(Math.random() * (rollLen * 0.7));
+        const dem = 1 + Math.floor(Math.random() * 10);
+        orders.push({ name: 'Type ' + String.fromCharCode(65 + i), length: len, demand: dem });
+    }
+    renderOrdersTable(orders);
+    clearResults();
+}
+
+function loadPreset(name) {
+    if (name === 'pipe') {
+        document.getElementById('roll-length-input').value = 100;
+        renderOrdersTable(PRESET_PIPE);
+    } else if (name === 'fabric') {
+        document.getElementById('roll-length-input').value = 150;
+        renderOrdersTable(PRESET_FABRIC);
+    }
+    clearResults();
 }
 
 function clearResults() {
@@ -2421,13 +2514,8 @@ function clearResults() {
     const tbody = document.getElementById('results-table').querySelector('tbody');
     tbody.innerHTML = '';
     document.getElementById('pattern-output').style.display = 'none';
-    document.getElementById('solver-status').textContent = 'Configure orders and click Optimize Cutting to begin.';
+    document.getElementById('solver-status').textContent = 'Configure orders and click Solve & Compare All Algorithms to begin.';
     drawEmpty();
-}
-
-// ── Algorithm Toggle ──
-function toggleAlgo(el) {
-    el.classList.toggle('selected');
 }
 
 // ── Expand demands into individual items ──
@@ -2446,7 +2534,7 @@ function solveGreedy(rollLength, orders) {
     const items = expandItems(orders);
     items.sort((a, b) => b.length - a.length);
 
-    const rolls = []; // each roll: { pieces: [...], remaining: number }
+    const rolls = [];
 
     items.forEach(item => {
         let placed = false;
@@ -2466,7 +2554,7 @@ function solveGreedy(rollLength, orders) {
     return rolls;
 }
 
-// ── FFD-Based (same placement, pattern aggregation) ──
+// ── FFD-Based (Best Fit Decreasing with pattern aggregation) ──
 function solveFFD(rollLength, orders) {
     const items = expandItems(orders);
     items.sort((a, b) => b.length - a.length);
@@ -2474,7 +2562,6 @@ function solveFFD(rollLength, orders) {
     const rolls = [];
 
     items.forEach(item => {
-        // Best Fit Decreasing: find roll with least remaining space that still fits
         let bestIdx = -1;
         let bestRemaining = rollLength + 1;
         for (let r = 0; r < rolls.length; r++) {
@@ -2511,74 +2598,75 @@ function buildPatterns(rolls, rollLength) {
 
 // ── Solve All ──
 function solveAll() {
+    const spinner = document.getElementById('solveSpinner');
+    spinner.style.display = 'inline';
+
     const rollLength = parseInt(document.getElementById('roll-length-input').value) || 100;
+    const orders = readOrders();
 
     // Validate
     const validOrders = orders.filter(o => o.demand > 0 && o.length > 0);
     if (validOrders.length === 0) {
         document.getElementById('solver-status').textContent = 'No valid orders to cut. Add items with length > 0 and demand > 0.';
+        spinner.style.display = 'none';
         return;
     }
     for (const o of validOrders) {
         if (o.length > rollLength) {
             document.getElementById('solver-status').textContent = `${o.name} (length=${o.length}) exceeds roll length (${rollLength}). Increase roll length or reduce item length.`;
+            spinner.style.display = 'none';
             return;
         }
     }
 
-    const selectedAlgos = [];
-    document.querySelectorAll('#algo-select .algo-chip.selected').forEach(chip => {
-        selectedAlgos.push(chip.dataset.algo);
-    });
-    if (selectedAlgos.length === 0) {
-        document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
-        return;
-    }
-
+    // Run all algorithms
     const algorithms = {
         greedy: { name: 'Greedy Largest-First', fn: solveGreedy },
-        ffd: { name: 'FFD-Based', fn: solveFFD },
+        ffd: { name: 'FFD-Based (BFD)', fn: solveFFD },
     };
 
-    currentResults = [];
-    for (const key of selectedAlgos) {
-        const algo = algorithms[key];
-        if (!algo) continue;
-        const t0 = performance.now();
-        const rolls = algo.fn(rollLength, validOrders);
-        const elapsed = performance.now() - t0;
-        const totalWaste = rolls.reduce((s, r) => s + r.remaining, 0);
-        const totalCapacity = rolls.length * rollLength;
-        const wastePct = ((totalWaste / totalCapacity) * 100).toFixed(1);
-        const patterns = buildPatterns(rolls, rollLength);
+    setTimeout(function() {
+        currentResults = [];
+        for (const key of Object.keys(algorithms)) {
+            const algo = algorithms[key];
+            const t0 = performance.now();
+            const rolls = algo.fn(rollLength, validOrders);
+            const elapsed = performance.now() - t0;
+            const totalWaste = rolls.reduce((s, r) => s + r.remaining, 0);
+            const totalCapacity = rolls.length * rollLength;
+            const wastePct = ((totalWaste / totalCapacity) * 100).toFixed(1);
+            const patterns = buildPatterns(rolls, rollLength);
 
-        currentResults.push({
-            key, name: algo.name, rolls, rollCount: rolls.length,
-            totalWaste, wastePct, patterns, time: elapsed, rollLength
+            currentResults.push({
+                key, name: algo.name, rolls, rollCount: rolls.length,
+                totalWaste, wastePct, patterns, time: elapsed, rollLength
+            });
+        }
+
+        currentResults.sort((a, b) => a.rollCount - b.rollCount || a.totalWaste - b.totalWaste);
+
+        // Update results table
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 ? 'best-val' : ''}">${r.rollCount}</td>
+                <td>${r.totalWaste} units</td>
+                <td>${r.wastePct}%</td>
+                <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+            `;
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => showResult(r));
+            tbody.appendChild(tr);
         });
-    }
 
-    currentResults.sort((a, b) => a.rollCount - b.rollCount || a.totalWaste - b.totalWaste);
-
-    // Update results table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">${r.rollCount}</td>
-            <td>${r.totalWaste} units</td>
-            <td>${r.wastePct}%</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r));
-        tbody.appendChild(tr);
-    });
-
-    showResult(currentResults[0]);
-    document.getElementById('solver-status').textContent =
-        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its cutting plan.`;
+        showResult(currentResults[0]);
+        document.getElementById('solver-status').textContent =
+            `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its cutting plan.`;
+        spinner.style.display = 'none';
+    }, 30);
 }
 
 function showResult(r) {
@@ -2617,7 +2705,6 @@ function showResult(r) {
 function getCanvas() {
     const c = document.getElementById('cutting-canvas');
     const ctx = c.getContext('2d');
-    // Handle high-DPI
     const rect = c.getBoundingClientRect();
     const dpr = window.devicePixelRatio || 1;
     c.width = rect.width * dpr;
@@ -2633,10 +2720,11 @@ function drawEmpty() {
     ctx.fillStyle = '#8892B0';
     ctx.font = '14px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('Configure orders and click Optimize Cutting to see results.', w / 2, h / 2);
+    ctx.fillText('Configure orders and click Solve & Compare All Algorithms to see results.', w / 2, h / 2);
 }
 
 function drawRolls(rolls, rollLength) {
+    const orders = readOrders();
     const { ctx, w, h } = getCanvas();
     ctx.fillStyle = '#112240';
     ctx.fillRect(0, 0, w, h);
@@ -2656,23 +2744,19 @@ function drawRolls(rolls, rollLength) {
 
     const scale = availW / rollLength;
 
-    // Draw each roll
     displayRolls.forEach((roll, ri) => {
         const y = startY + ri * (barHeight + gap);
         const x0 = padding.left;
 
-        // Roll label
         ctx.fillStyle = '#8892B0';
         ctx.font = '11px JetBrains Mono, monospace';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText(`Roll ${ri + 1}`, x0 - 8, y + barHeight / 2);
 
-        // Full roll background (waste)
         ctx.fillStyle = WASTE_COLOR;
         ctx.fillRect(x0, y, availW, barHeight);
 
-        // Waste stripes
         ctx.save();
         ctx.beginPath();
         ctx.rect(x0, y, availW, barHeight);
@@ -2687,23 +2771,19 @@ function drawRolls(rolls, rollLength) {
         }
         ctx.restore();
 
-        // Draw pieces
         let px = x0;
-        roll.pieces.forEach((piece, pi) => {
+        roll.pieces.forEach((piece) => {
             const pw = piece.length * scale;
 
-            // Piece fill
             ctx.fillStyle = piece.color;
             ctx.globalAlpha = 0.85;
             ctx.fillRect(px, y, pw, barHeight);
             ctx.globalAlpha = 1.0;
 
-            // Piece border
             ctx.strokeStyle = 'rgba(248, 249, 250, 0.3)';
             ctx.lineWidth = 1;
             ctx.strokeRect(px + 0.5, y + 0.5, pw - 1, barHeight - 1);
 
-            // Piece label (if wide enough)
             if (pw > 28) {
                 ctx.fillStyle = '#0A192F';
                 ctx.font = `${Math.min(11, barHeight * 0.45)}px JetBrains Mono, monospace`;
@@ -2715,7 +2795,6 @@ function drawRolls(rolls, rollLength) {
             px += pw;
         });
 
-        // Waste label on remaining area
         const wasteW = roll.remaining * scale;
         if (wasteW > 30) {
             ctx.fillStyle = '#8892B0';
@@ -2725,12 +2804,10 @@ function drawRolls(rolls, rollLength) {
             ctx.fillText(`waste: ${roll.remaining}`, px + wasteW / 2, y + barHeight / 2);
         }
 
-        // Roll outline
         ctx.strokeStyle = 'rgba(197, 160, 89, 0.25)';
         ctx.lineWidth = 1;
         ctx.strokeRect(x0, y, availW, barHeight);
 
-        // Utilization bar on right
         const used = rollLength - roll.remaining;
         const utilPct = used / rollLength;
         const utilBarW = 4;
@@ -2761,8 +2838,7 @@ function drawRolls(rolls, rollLength) {
     rolls.forEach(r => r.pieces.forEach(p => seenTypes.add(p.typeIdx)));
     const activeOrders = orders.filter((_, i) => seenTypes.has(i));
 
-    activeOrders.forEach((o, i) => {
-        const idx = orders.indexOf(o);
+    activeOrders.forEach((o) => {
         ctx.fillStyle = o.color;
         ctx.globalAlpha = 0.85;
         ctx.fillRect(legendX, legendY - 5, 12, 10);
@@ -2773,7 +2849,6 @@ function drawRolls(rolls, rollLength) {
         legendX += ctx.measureText(label).width + 32;
     });
 
-    // Waste legend
     ctx.fillStyle = WASTE_COLOR;
     ctx.fillRect(legendX, legendY - 5, 12, 10);
     ctx.save();
@@ -2800,7 +2875,8 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
-resetOrders();
+renderOrdersTable(DEFAULT_ORDERS);
+drawEmpty();
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

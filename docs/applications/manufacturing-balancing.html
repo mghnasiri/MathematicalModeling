@@ -2225,7 +2225,7 @@
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-industry"></i> Line Balancing Solver</h4>
-                <button class="solver-btn" onclick="resetPreset()">Reset</button>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Jobs &middot; 3 Lines</span>
             </div>
             <div class="solver-body">
 
@@ -2233,16 +2233,39 @@
                 <div class="solver-section-label">Configuration</div>
                 <div class="solver-controls">
                     <label>Assembly Lines:</label>
-                    <input type="range" id="machine-slider" class="solver-slider" min="2" max="4" value="3" oninput="updateMachineCount(this.value)">
+                    <input type="range" id="machine-slider" class="solver-slider" min="2" max="6" value="3" oninput="updateMachineCount(this.value)">
                     <span class="size-display" id="machine-display">3</span>
                 </div>
 
-                <!-- Job Editor -->
+                <!-- Job Editor Table -->
                 <div class="solver-section-label">Production Jobs (processing time in hours)</div>
-                <div class="job-grid" id="job-grid"></div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="results-table" id="jobs-table">
+                        <thead>
+                            <tr>
+                                <th>Job Name</th>
+                                <th>Time (h)</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody id="jobsBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Add / Remove / Preset Buttons -->
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:0.5rem;">
+                    <button class="algo-chip" onclick="addJob()">+ Add Job</button>
+                    <button class="algo-chip" onclick="removeLastJob()">&minus; Remove Last</button>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" style="margin-right:4px;"></i>Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeJobs()"><i class="fas fa-random" style="margin-right:4px;"></i>Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('heavy')"><i class="fas fa-weight-hanging" style="margin-right:4px;"></i>Heavy Jobs</button>
+                    <button class="algo-chip" onclick="loadPreset('many')"><i class="fas fa-th" style="margin-right:4px;"></i>12 Mixed Jobs</button>
+                </div>
 
                 <!-- Algorithm Selection -->
-                <div class="solver-section-label" style="margin-top: 1.2rem;">Algorithms</div>
+                <div class="solver-section-label">Algorithms</div>
                 <div class="algo-select" id="algo-select">
                     <div class="algo-chip selected" data-algo="lpt" onclick="toggleAlgo(this)">
                         LPT <span class="chip-type" style="color: var(--blue);">heuristic</span>
@@ -2258,7 +2281,8 @@
                 <!-- Solve Button -->
                 <div style="text-align: center; margin: 1.5rem 0;">
                     <button class="solver-btn primary" onclick="solveAll()">
-                        <i class="fas fa-play" style="margin-right: 0.5rem;"></i> Solve
+                        <i class="fas fa-play" style="margin-right: 0.5rem;"></i> Solve &amp; Compare All Algorithms
+                        <span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span>
                     </button>
                 </div>
 
@@ -2285,7 +2309,7 @@
                 </div>
 
                 <!-- Schedule Output -->
-                <div class="schedule-output" id="schedule-output">Load a scenario and click Solve to see results.</div>
+                <div class="schedule-output" id="schedule-output">Edit jobs above and click Solve to see results.</div>
                 <div class="solver-status" id="solver-status"></div>
             </div>
         </div>
@@ -2444,7 +2468,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ── Data ──
+// ── Constants ──
 const DEFAULT_JOBS = [
     { name: 'Order A', time: 12 },
     { name: 'Order B', time: 8 },
@@ -2456,50 +2480,148 @@ const DEFAULT_JOBS = [
     { name: 'Order H', time: 7 }
 ];
 
+const PRESET_HEAVY = [
+    { name: 'Engine', time: 25 },
+    { name: 'Chassis', time: 22 },
+    { name: 'Body', time: 20 },
+    { name: 'Interior', time: 18 },
+    { name: 'Wiring', time: 15 },
+    { name: 'Paint', time: 12 }
+];
+
+const PRESET_MANY = [
+    { name: 'Task A', time: 14 },
+    { name: 'Task B', time: 7 },
+    { name: 'Task C', time: 11 },
+    { name: 'Task D', time: 3 },
+    { name: 'Task E', time: 19 },
+    { name: 'Task F', time: 8 },
+    { name: 'Task G', time: 5 },
+    { name: 'Task H', time: 16 },
+    { name: 'Task I', time: 10 },
+    { name: 'Task J', time: 6 },
+    { name: 'Task K', time: 13 },
+    { name: 'Task L', time: 9 }
+];
+
 const JOB_COLORS = [
     '#C5A059', '#7aa2f7', '#64ffda', '#ff6b6b',
     '#bb9af7', '#e0af68', '#9ece6a', '#f7768e',
     '#73daca', '#b4f9f8', '#2ac3de', '#ff9e64'
 ];
 
-let jobs = JSON.parse(JSON.stringify(DEFAULT_JOBS));
+const JOB_NAMES = ['Order A','Order B','Order C','Order D','Order E','Order F','Order G','Order H',
+                   'Order I','Order J','Order K','Order L','Order M','Order N','Order O','Order P'];
+
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+
 let numMachines = 3;
 let currentResults = [];
 
-// ── UI Setup ──
-function buildJobGrid() {
-    const grid = document.getElementById('job-grid');
-    grid.innerHTML = '';
-    jobs.forEach((job, i) => {
-        const div = document.createElement('div');
-        div.className = 'job-item';
-        div.innerHTML = `
-            <label>${job.name}</label>
-            <input type="number" min="1" max="99" value="${job.time}"
-                   onchange="jobs[${i}].time = parseInt(this.value) || 1">
-        `;
-        grid.appendChild(div);
+// ── Table Rendering ──
+function renderJobsTable(jobList) {
+    const tbody = document.getElementById('jobsBody');
+    tbody.innerHTML = '';
+    jobList.forEach((job, i) => {
+        const color = JOB_COLORS[i % JOB_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span><input type="text" value="${job.name}" style="${nameStyle}"></td>
+            <td><input type="number" value="${job.time}" min="1" max="999" step="1" style="${inputStyle}"></td>
+            <td><button onclick="removeJobRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
     });
+    updateSummary();
+}
+
+// ── Read Jobs from DOM ──
+function readJobs() {
+    const rows = document.querySelectorAll('#jobsBody tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {
+            name: inputs[0].value.trim() || ('Job ' + (i + 1)),
+            time: Math.max(1, parseInt(inputs[1].value) || 1)
+        };
+    });
+}
+
+// ── Summary Update ──
+function updateSummary() {
+    const nj = document.querySelectorAll('#jobsBody tr').length;
+    document.getElementById('configSummary').textContent = nj + ' Jobs \u00b7 ' + numMachines + ' Lines \u00b7 Click any cell to edit';
+}
+
+// ── Actions ──
+function addJob() {
+    const idx = document.querySelectorAll('#jobsBody tr').length;
+    const name = JOB_NAMES[idx % JOB_NAMES.length];
+    const time = Math.floor(Math.random() * 18) + 3;
+    const color = JOB_COLORS[idx % JOB_COLORS.length];
+    const tbody = document.getElementById('jobsBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td style="white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${color};margin-right:6px;vertical-align:middle;"></span><input type="text" value="${name}" style="${nameStyle}"></td>
+        <td><input type="number" value="${time}" min="1" max="999" step="1" style="${inputStyle}"></td>
+        <td><button onclick="removeJobRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateSummary();
+}
+
+function removeLastJob() {
+    const rows = document.querySelectorAll('#jobsBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 job.'); return; }
+    rows[rows.length - 1].remove();
+    updateSummary();
+}
+
+function removeJobRow(btn) {
+    if (document.querySelectorAll('#jobsBody tr').length <= 1) { alert('Need at least 1 job.'); return; }
+    btn.closest('tr').remove();
+    updateSummary();
 }
 
 function updateMachineCount(val) {
     numMachines = parseInt(val);
     document.getElementById('machine-display').textContent = val;
+    updateSummary();
 }
 
-function resetPreset() {
-    jobs = JSON.parse(JSON.stringify(DEFAULT_JOBS));
+function resetDefaults() {
+    renderJobsTable(DEFAULT_JOBS);
     numMachines = 3;
     document.getElementById('machine-slider').value = 3;
     document.getElementById('machine-display').textContent = '3';
-    buildJobGrid();
+    clearResults();
+}
+
+function randomizeJobs() {
+    document.querySelectorAll('#jobsBody tr').forEach(row => {
+        const numInput = row.querySelector('input[type="number"]');
+        numInput.value = Math.floor(Math.random() * 25) + 2;
+    });
+}
+
+function loadPreset(type) {
+    if (type === 'heavy') {
+        renderJobsTable(PRESET_HEAVY);
+        numMachines = 3;
+        document.getElementById('machine-slider').value = 3;
+        document.getElementById('machine-display').textContent = '3';
+    } else if (type === 'many') {
+        renderJobsTable(PRESET_MANY);
+        numMachines = 4;
+        document.getElementById('machine-slider').value = 4;
+        document.getElementById('machine-display').textContent = '4';
+    }
     clearResults();
 }
 
 function clearResults() {
     const tbody = document.getElementById('results-table').querySelector('tbody');
     tbody.innerHTML = '';
-    document.getElementById('schedule-output').textContent = 'Load a scenario and click Solve to see results.';
+    document.getElementById('schedule-output').textContent = 'Edit jobs above and click Solve to see results.';
     document.getElementById('solver-status').textContent = '';
     currentResults = [];
     drawEmptyGantt();
@@ -2513,11 +2635,8 @@ function toggleAlgo(el) { el.classList.toggle('selected'); }
 function solveLPT(jobTimes, m) {
     const indexed = jobTimes.map((t, i) => ({ idx: i, time: t }));
     indexed.sort((a, b) => b.time - a.time);
-
     const machines = Array.from({ length: m }, () => ({ jobs: [], load: 0 }));
-
     for (const job of indexed) {
-        // Find machine with minimum load
         let minIdx = 0;
         for (let i = 1; i < m; i++) {
             if (machines[i].load < machines[minIdx].load) minIdx = i;
@@ -2525,14 +2644,12 @@ function solveLPT(jobTimes, m) {
         machines[minIdx].jobs.push(job.idx);
         machines[minIdx].load += job.time;
     }
-
     return machines;
 }
 
 // List Scheduling: Original order, assign to least loaded
 function solveList(jobTimes, m) {
     const machines = Array.from({ length: m }, () => ({ jobs: [], load: 0 }));
-
     for (let j = 0; j < jobTimes.length; j++) {
         let minIdx = 0;
         for (let i = 1; i < m; i++) {
@@ -2541,25 +2658,16 @@ function solveList(jobTimes, m) {
         machines[minIdx].jobs.push(j);
         machines[minIdx].load += jobTimes[j];
     }
-
     return machines;
 }
 
 // MULTIFIT: Binary search on target makespan using FFD
 function solveMultifit(jobTimes, m) {
-    const n = jobTimes.length;
-
-    // FFD subroutine: try to fit all jobs into m bins of given capacity
-    // Returns { success: bool, machines: [...] }
     function ffd(capacity) {
-        // Sort job indices by processing time descending
         const sorted = jobTimes.map((t, i) => ({ idx: i, time: t }));
         sorted.sort((a, b) => b.time - a.time);
-
         const machines = Array.from({ length: m }, () => ({ jobs: [], load: 0 }));
-
         for (const job of sorted) {
-            // Find first machine where this job fits
             let placed = false;
             for (let i = 0; i < m; i++) {
                 if (machines[i].load + job.time <= capacity + 1e-9) {
@@ -2569,22 +2677,17 @@ function solveMultifit(jobTimes, m) {
                     break;
                 }
             }
-            if (!placed) {
-                return { success: false, machines: null };
-            }
+            if (!placed) return { success: false, machines: null };
         }
-
         return { success: true, machines: machines };
     }
 
-    // Binary search bounds
     const maxJob = Math.max(...jobTimes);
     const totalSum = jobTimes.reduce((a, b) => a + b, 0);
     let low = Math.max(maxJob, totalSum / m);
     let high = totalSum;
     let bestSchedule = null;
 
-    // 10 iterations of binary search
     for (let iter = 0; iter < 10; iter++) {
         const mid = (low + high) / 2;
         const result = ffd(mid);
@@ -2596,11 +2699,7 @@ function solveMultifit(jobTimes, m) {
         }
     }
 
-    // Fallback: if no successful fit found (shouldn't happen since high = totalSum works for 1+ machines)
-    if (!bestSchedule) {
-        bestSchedule = solveLPT(jobTimes, m);
-    }
-
+    if (!bestSchedule) bestSchedule = solveLPT(jobTimes, m);
     return bestSchedule;
 }
 
@@ -2612,6 +2711,8 @@ const ALGO_MAP = {
 };
 
 function solveAll() {
+    // Read jobs from DOM
+    const jobs = readJobs();
     const jobTimes = jobs.map(j => j.time);
     if (jobTimes.length === 0) {
         document.getElementById('solver-status').textContent = 'No jobs to schedule.';
@@ -2624,51 +2725,60 @@ function solveAll() {
         return;
     }
 
-    currentResults = [];
-    const totalProcessing = jobTimes.reduce((a, b) => a + b, 0);
+    // Show spinner
+    const spinner = document.getElementById('solveSpinner');
+    spinner.style.display = 'inline';
 
-    for (const key of algos) {
-        const algo = ALGO_MAP[key];
-        const t0 = performance.now();
-        const machines = algo.fn(jobTimes, numMachines);
-        const elapsed = performance.now() - t0;
+    setTimeout(() => {
+        currentResults = [];
+        const totalProcessing = jobTimes.reduce((a, b) => a + b, 0);
 
-        const makespan = Math.max(...machines.map(m => m.load));
-        const minLoad = Math.min(...machines.map(m => m.load));
-        const imbalance = makespan - minLoad;
-        const utilization = (totalProcessing / (makespan * numMachines) * 100);
+        for (const key of algos) {
+            const algo = ALGO_MAP[key];
+            const t0 = performance.now();
+            const machines = algo.fn(jobTimes, numMachines);
+            const elapsed = performance.now() - t0;
 
-        currentResults.push({
-            key, name: algo.name, machines, makespan, imbalance,
-            utilization, time: elapsed
+            const makespan = Math.max(...machines.map(m => m.load));
+            const minLoad = Math.min(...machines.map(m => m.load));
+            const imbalance = makespan - minLoad;
+            const utilization = (totalProcessing / (makespan * numMachines) * 100);
+
+            currentResults.push({
+                key, name: algo.name, machines, makespan, imbalance,
+                utilization, time: elapsed, jobs: jobs
+            });
+        }
+
+        currentResults.sort((a, b) => a.makespan - b.makespan);
+
+        // Update results table
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 ? 'best-val' : ''}">${r.makespan}</td>
+                <td>${r.imbalance}</td>
+                <td>${r.utilization.toFixed(1)}%</td>
+                <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+            `;
+            tr.addEventListener('click', () => showResult(r));
+            tbody.appendChild(tr);
         });
-    }
 
-    currentResults.sort((a, b) => a.makespan - b.makespan);
+        showResult(currentResults[0]);
+        document.getElementById('solver-status').textContent =
+            `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its schedule.`;
 
-    // Update results table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">${r.makespan}</td>
-            <td>${r.imbalance}</td>
-            <td>${r.utilization.toFixed(1)}%</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r));
-        tbody.appendChild(tr);
-    });
-
-    showResult(currentResults[0]);
-    document.getElementById('solver-status').textContent =
-        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its schedule.`;
+        spinner.style.display = 'none';
+    }, 60);
 }
 
 function showResult(r) {
-    drawGantt(r.machines, r.makespan);
+    const jobs = r.jobs;
+    drawGantt(r.machines, r.makespan, jobs);
 
     const lines = [`Algorithm: ${r.name}`, ''];
     r.machines.forEach((machine, mi) => {
@@ -2701,7 +2811,7 @@ function drawEmptyGantt() {
     ctx.fillText('Click "Solve" to generate a schedule', w / 2, h / 2);
 }
 
-function drawGantt(machines, makespan) {
+function drawGantt(machines, makespan, jobs) {
     const canvas = document.getElementById('gantt-canvas');
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
@@ -2817,7 +2927,7 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
-buildJobGrid();
+renderJobsTable(DEFAULT_JOBS);
 drawEmptyGantt();
 </script>
 

@@ -560,6 +560,41 @@
             border-color: var(--gold);
         }
 
+        /* ── Stops Table ── */
+        .stops-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+            margin-bottom: 0.5rem;
+        }
+        .stops-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.5rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+        }
+        .stops-table tbody td {
+            padding: 0.35rem 0.3rem;
+            border-bottom: 1px solid rgba(136, 146, 176, 0.06);
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            font-size: 0.8rem;
+        }
+        .stops-table .stop-dot {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 0.4rem;
+            vertical-align: middle;
+        }
+
         /* ── Complexity Box ── */
         .complexity-box {
             background: var(--midnight);
@@ -2226,40 +2261,57 @@
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-route"></i> Quebec City Route Planner</h4>
-                <span class="help-icon" title="Select a preset, configure capacity, choose algorithms, and click Optimize Routes."><i class="fas fa-question-circle"></i></span>
+                <span id="config-summary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Stops &middot; Capacity 60 kg &middot; Click any cell to edit</span>
             </div>
             <div class="solver-body">
-                <!-- Controls Row -->
-                <div class="solver-row">
-                    <div>
-                        <div class="solver-section-label">Delivery Scenario</div>
-                        <div class="solver-controls">
-                            <button class="solver-btn active" onclick="loadPreset('8')" id="btn-preset-8">Quebec City 8 Stops</button>
-                            <button class="solver-btn" onclick="loadPreset('12')" id="btn-preset-12">Quebec City 12 Stops</button>
-                        </div>
-                        <div class="solver-controls">
-                            <label>Van Capacity (kg):</label>
-                            <input type="range" class="solver-slider" id="capacity-slider" min="30" max="100" value="60" oninput="updateCapacity(this.value)">
-                            <span class="size-display" id="capacity-display">60</span>
-                        </div>
-                        <div class="solver-controls" style="margin-top:0.5rem;">
-                            <button class="solver-btn" onclick="toggleDemandEditor()"><i class="fas fa-edit"></i> Edit Demands</button>
-                        </div>
-                        <div id="demand-editor" style="display:none;">
-                            <div class="demand-grid" id="demand-grid"></div>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Algorithms</div>
-                        <div class="algo-select" id="algo-select">
-                            <span class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">Clarke-Wright <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">Sweep <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">Nearest Neighbor <span class="chip-type">(H)</span></span>
-                        </div>
-                        <div class="solver-controls">
-                            <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-play"></i> Optimize Routes</button>
-                        </div>
-                    </div>
+
+                <!-- Van capacity slider -->
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;padding:0.7rem 1rem;background:rgba(197,160,89,0.06);border:1px solid rgba(197,160,89,0.15);border-radius:6px;">
+                    <span style="color:var(--gold);font-weight:600;font-size:0.85rem;white-space:nowrap;"><i class="fas fa-truck" style="margin-right:0.4rem;"></i>Van Capacity:</span>
+                    <input type="range" class="solver-slider" id="capacity-slider" min="20" max="120" value="60" oninput="document.getElementById('capacity-display').textContent=this.value; updateConfigSummary();" style="flex:1;">
+                    <span id="capacity-display" style="color:var(--ivory);font-family:JetBrains Mono,monospace;font-weight:600;min-width:30px;text-align:center;">60</span>
+                    <span style="color:var(--slate);font-size:0.8rem;">kg</span>
+                </div>
+
+                <!-- Editable stops table -->
+                <div class="solver-section-label">Delivery Stops</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="stops-table" id="stops-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Latitude</th>
+                                <th>Longitude</th>
+                                <th>Demand (kg)</th>
+                                <th style="width:35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="stops-table-body"></tbody>
+                    </table>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.2rem;">
+                    <button class="solver-btn" onclick="addStop()" style="border:1px dashed var(--gold);"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Stop</button>
+                    <button class="solver-btn" onclick="removeLastStop()"><i class="fas fa-minus" style="margin-right:0.3rem;"></i> Remove Last</button>
+                    <button class="solver-btn" onclick="resetDefaults()" style="border-color:rgba(100,255,218,0.3);"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="solver-btn" onclick="randomizeStops()" style="border-color:rgba(187,154,247,0.3);"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                    <button class="solver-btn" onclick="loadPreset('8')" id="btn-preset-8" style="border-color:rgba(122,162,247,0.3);"><i class="fas fa-map-marker-alt" style="margin-right:0.3rem;"></i> 8 Stops</button>
+                    <button class="solver-btn" onclick="loadPreset('12')" id="btn-preset-12" style="border-color:rgba(122,162,247,0.3);"><i class="fas fa-map-marker-alt" style="margin-right:0.3rem;"></i> 12 Stops</button>
+                </div>
+
+                <!-- Algorithm selection -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algo-select">
+                    <span class="algo-chip selected" data-algo="cw" onclick="toggleAlgo(this)">Clarke-Wright <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="sweep" onclick="toggleAlgo(this)">Sweep <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="nn" onclick="toggleAlgo(this)">Nearest Neighbor <span class="chip-type">(H)</span></span>
+                </div>
+
+                <!-- Solve button -->
+                <div style="text-align:center;margin:1.2rem 0;">
+                    <button class="solver-btn primary" id="solve-btn" onclick="solveAll()"><i class="fas fa-play"></i> Solve &amp; Compare All Algorithms</button>
                 </div>
 
                 <!-- Map Canvas -->
@@ -2280,12 +2332,12 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select a scenario and click Optimize Routes</td></tr>
+                            <tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Configure stops and click Solve &amp; Compare All Algorithms</td></tr>
                         </tbody>
                     </table>
                 </div>
                 <div class="route-output" id="route-output">Routes will appear here after optimization.</div>
-                <p class="solver-status" id="solver-status">Ready. Choose a scenario and click Optimize Routes.</p>
+                <p class="solver-status" id="solver-status">Ready. Edit stops above or choose a preset, then click Solve.</p>
             </div>
         </div>
     </div>

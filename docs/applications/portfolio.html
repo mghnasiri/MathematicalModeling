@@ -2203,46 +2203,37 @@
     <div class="container">
         <div class="section-header fade-in">
             <h2>Try It <span>Yourself</span></h2>
-            <p>Adjust parameters and compare optimization methods</p>
+            <p>Edit assets, returns, and covariance &mdash; then compare optimization methods</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-sliders-h"></i> Portfolio Optimizer</h4>
-                <button class="solver-btn primary" onclick="runAllAlgorithms()">
-                    <i class="fas fa-play"></i>&ensp;Optimize
-                </button>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">4 Assets &middot; &lambda; = 2.0</span>
             </div>
             <div class="solver-body">
-                <!-- Asset Returns -->
-                <div class="solver-section-label">Expected Annual Returns (%)</div>
-                <div class="asset-grid">
-                    <div class="asset-item">
-                        <label><i class="fas fa-university"></i>&ensp;Bonds</label>
-                        <input type="number" id="ret-0" value="4" step="0.5" min="0" max="50">
-                    </div>
-                    <div class="asset-item">
-                        <label><i class="fas fa-microchip"></i>&ensp;Tech Stocks</label>
-                        <input type="number" id="ret-1" value="12" step="0.5" min="0" max="50">
-                    </div>
-                    <div class="asset-item">
-                        <label><i class="fas fa-building"></i>&ensp;Real Estate</label>
-                        <input type="number" id="ret-2" value="8" step="0.5" min="0" max="50">
-                    </div>
-                    <div class="asset-item">
-                        <label><i class="fas fa-gem"></i>&ensp;Commodities</label>
-                        <input type="number" id="ret-3" value="6" step="0.5" min="0" max="50">
-                    </div>
+                <!-- Asset Returns Table -->
+                <div class="solver-section-label">Assets &amp; Expected Annual Returns (%)</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="results-table" id="assets-table">
+                        <thead>
+                            <tr><th>Name</th><th>Return (%)</th><th></th></tr>
+                        </thead>
+                        <tbody id="assets-body"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addAsset()">+ Add Asset</button>
+                    <button class="algo-chip" onclick="removeLastAsset()">&minus; Remove Last</button>
                 </div>
 
-                <!-- Covariance Matrix Display -->
+                <!-- Covariance Matrix Table -->
                 <div class="solver-section-label">Covariance Matrix (Annualized)</div>
-                <div class="cov-matrix">
-                    <span class="cov-header">&emsp;&emsp;&emsp;&emsp;&emsp;&emsp;Bonds&emsp;&emsp;Tech&emsp;&emsp;&ensp;RE&emsp;&emsp;&emsp;Comm</span><br>
-                    Bonds&emsp;&emsp;&ensp;0.0004&emsp; -0.0002&emsp;&ensp;0.0001&emsp;&ensp;0.0001<br>
-                    Tech&emsp;&emsp;&emsp;-0.0002&emsp;&ensp;0.0400&emsp;&ensp;0.0100&emsp;&ensp;0.0050<br>
-                    Real Estate&ensp;0.0001&emsp;&ensp;0.0100&emsp;&ensp;0.0150&emsp;&ensp;0.0030<br>
-                    Commodities&ensp;0.0001&emsp;&ensp;0.0050&emsp;&ensp;0.0030&emsp;&ensp;0.0200
+                <div style="overflow-x:auto;margin-bottom:1rem;">
+                    <table class="results-table" id="cov-table">
+                        <thead id="cov-head"></thead>
+                        <tbody id="cov-body"></tbody>
+                    </table>
                 </div>
 
                 <!-- Risk Aversion Slider -->
@@ -2250,6 +2241,14 @@
                     <label>Risk Aversion (&lambda;):</label>
                     <input type="range" class="solver-slider" id="lambda-slider" min="0.1" max="10" step="0.1" value="2">
                     <span class="size-display" id="lambda-display">2.0</span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" style="margin-right:4px;"></i>Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeAll()"><i class="fas fa-random" style="margin-right:4px;"></i>Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('conservative')"><i class="fas fa-shield-alt" style="margin-right:4px;"></i>Conservative (6 Assets)</button>
+                    <button class="algo-chip" onclick="loadPreset('aggressive')"><i class="fas fa-rocket" style="margin-right:4px;"></i>Aggressive (5 Assets)</button>
                 </div>
 
                 <!-- Algorithm Selection -->
@@ -2268,6 +2267,9 @@
                         Mean-Variance QP <span class="chip-type" style="color: var(--green);">exact</span>
                     </div>
                 </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip selected" onclick="runAllAlgorithms()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;"><i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms<span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span></button>
 
                 <!-- Visualization -->
                 <div class="solver-row">
@@ -2289,13 +2291,9 @@
                 <div class="solver-section-label">Detailed Results</div>
                 <div style="overflow-x: auto;">
                     <table class="results-table" id="results-table">
-                        <thead>
+                        <thead id="results-head">
                             <tr>
                                 <th>Algorithm</th>
-                                <th>Bonds</th>
-                                <th>Tech</th>
-                                <th>Real Estate</th>
-                                <th>Commodities</th>
                                 <th>E[Return]</th>
                                 <th>Std Dev</th>
                                 <th>Sharpe</th>
@@ -2309,7 +2307,7 @@
 
                 <!-- Weight Detail Output -->
                 <div class="weight-output" id="weight-output">
-                    Click "Optimize" to compute portfolio allocations.
+                    Click "Solve &amp; Compare All Algorithms" to compute portfolio allocations.
                 </div>
 
                 <div class="solver-status" id="solver-status">Ready to optimize.</div>

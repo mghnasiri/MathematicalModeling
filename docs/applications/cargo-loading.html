@@ -2243,20 +2243,45 @@
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-box-open"></i> Container Loading Optimizer</h4>
-                <button class="solver-btn" onclick="resetItems()">Reset</button>
+                <span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Items &middot; 50t Capacity &middot; Click any cell to edit</span>
             </div>
             <div class="solver-body">
-                <!-- Cargo Items Editor -->
-                <div class="solver-section-label">Cargo Manifest</div>
-                <div class="cargo-grid" id="cargo-grid"></div>
-
+                <!-- Capacity input -->
                 <div class="capacity-input-wrap">
                     <label><i class="fas fa-weight-hanging" style="color:var(--gold); margin-right:0.3rem;"></i> Container Capacity (tons):</label>
-                    <input type="number" id="capacity-input" value="50" min="1" max="9999">
+                    <input type="number" id="capacity-input" value="50" min="1" max="9999" oninput="updateConfigLabel()">
+                </div>
+
+                <!-- Editable Cargo Table -->
+                <div class="solver-section-label" style="margin-top:1rem;">Cargo Manifest</div>
+                <div style="overflow-x:auto;">
+                    <table class="results-table" id="cargo-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Cargo Name</th>
+                                <th>Value ($k)</th>
+                                <th>Weight (t)</th>
+                                <th>Density</th>
+                                <th style="width:35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="cargoTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.5rem;">
+                    <button class="algo-chip" onclick="addItem()" style="border:1px dashed var(--gold);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Item</button>
+                    <button class="algo-chip" onclick="removeLastItem()" style="border:1px solid rgba(255,107,107,0.3);background:transparent;"><i class="fas fa-minus" style="margin-right:0.3rem;"></i> Remove Last</button>
+                    <button class="algo-chip" onclick="resetDefaults()" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeItems()" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('heavy')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-truck-loading" style="margin-right:0.3rem;"></i> Heavy Cargo</button>
+                    <button class="algo-chip" onclick="loadPreset('many')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-boxes" style="margin-right:0.3rem;"></i> 10 Items</button>
                 </div>
 
                 <!-- Algorithm Selection -->
-                <div style="margin-top:1.5rem;">
+                <div>
                     <div class="solver-section-label">Algorithm</div>
                     <div class="algo-select" id="algo-select">
                         <div class="algo-chip selected" data-algo="dp" onclick="toggleAlgo(this)">
@@ -2273,8 +2298,8 @@
 
                 <!-- Solve Button -->
                 <div style="text-align:center; margin:1.5rem 0;">
-                    <button class="solver-btn primary" onclick="solveAll()">
-                        <i class="fas fa-play"></i> &nbsp; Optimize Loading
+                    <button class="solver-btn primary" id="solveBtn" onclick="solveAll()">
+                        <i class="fas fa-play"></i> &nbsp; Solve &amp; Compare All Algorithms
                     </button>
                 </div>
 
@@ -2298,12 +2323,14 @@
                                 <th>Time</th>
                             </tr>
                         </thead>
-                        <tbody></tbody>
+                        <tbody>
+                            <tr><td colspan="6" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Select algorithms and click Solve</td></tr>
+                        </tbody>
                     </table>
                 </div>
 
                 <!-- Detail Output -->
-                <div class="solution-output" id="solution-output">Select algorithms and click "Optimize Loading" to solve.</div>
+                <div class="solution-output" id="solution-output">Select algorithms and click "Solve &amp; Compare All Algorithms" to solve.</div>
                 <div class="solver-status" id="solver-status"></div>
             </div>
         </div>
@@ -2474,58 +2501,87 @@ const DEFAULT_ITEMS = [
 ];
 const DEFAULT_CAPACITY = 50;
 
+const HEAVY_PRESET = [
+    { name: 'Steel Coils',  value: 300, weight: 40 },
+    { name: 'Generators',   value: 250, weight: 35 },
+    { name: 'Engines',      value: 400, weight: 30 },
+    { name: 'Turbines',     value: 500, weight: 45 },
+    { name: 'Compressors',  value: 180, weight: 20 },
+    { name: 'Pumps',        value: 100, weight: 15 },
+    { name: 'Pipe Fittings',value: 70,  weight: 10 },
+    { name: 'Transformers', value: 350, weight: 38 }
+];
+
+const MANY_PRESET = [
+    { name: 'Laptops',     value: 220, weight: 8  },
+    { name: 'Monitors',    value: 90,  weight: 14 },
+    { name: 'Printers',    value: 60,  weight: 18 },
+    { name: 'Servers',     value: 300, weight: 25 },
+    { name: 'Cables',      value: 30,  weight: 5  },
+    { name: 'Batteries',   value: 110, weight: 12 },
+    { name: 'Tools',       value: 85,  weight: 16 },
+    { name: 'Phones',      value: 180, weight: 4  },
+    { name: 'Tablets',     value: 150, weight: 6  },
+    { name: 'Speakers',    value: 45,  weight: 10 }
+];
+
+const CARGO_NAMES = ['Machinery','Electronics','Textiles','Auto Parts','Chemicals','Furniture',
+    'Steel Coils','Generators','Engines','Turbines','Compressors','Pumps','Pipe Fittings',
+    'Laptops','Monitors','Printers','Servers','Cables','Batteries','Tools'];
+
 const ITEM_COLORS = [
     '#C5A059', '#7aa2f7', '#64ffda', '#ff6b6b', '#bb9af7', '#e0af68',
     '#9ece6a', '#f7768e', '#73daca', '#b4f9f8', '#ff9e64', '#c0caf5'
 ];
 
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+
 let currentResults = [];
 
-// ── Build cargo item editor ──
-function buildCargoGrid() {
-    const grid = document.getElementById('cargo-grid');
-    grid.innerHTML = '';
-    DEFAULT_ITEMS.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'cargo-item';
-        div.innerHTML = `
-            <label><i class="fas fa-cube" style="color:${ITEM_COLORS[i % ITEM_COLORS.length]}; margin-right:0.3rem;"></i>${item.name}</label>
-            <div class="item-inputs">
-                <div class="input-group-mini">
-                    <span class="input-label">Value ($k)</span>
-                    <input type="number" class="item-value" value="${item.value}" min="0" max="99999" data-idx="${i}">
-                </div>
-                <div class="input-group-mini">
-                    <span class="input-label">Weight (t)</span>
-                    <input type="number" class="item-weight" value="${item.weight}" min="1" max="9999" data-idx="${i}">
-                </div>
-            </div>
-        `;
-        grid.appendChild(div);
+// ── Render editable table ──
+function renderTable(items) {
+    const tbody = document.getElementById('cargoTableBody');
+    tbody.innerHTML = '';
+    items.forEach((item, i) => {
+        const color = ITEM_COLORS[i % ITEM_COLORS.length];
+        const density = item.weight > 0 ? (item.value / item.weight).toFixed(1) : '—';
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="white-space:nowrap;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:0.4rem;vertical-align:middle;"></span><span style="color:var(--slate);font-family:JetBrains Mono;font-size:0.8rem;">${i+1}</span></td>
+            <td><input type="text" value="${item.name}" style="${nameStyle}" oninput="updateConfigLabel()"></td>
+            <td><input type="number" value="${item.value}" min="0" max="99999" step="1" style="${inputStyle}" oninput="updateDensity(this)"></td>
+            <td><input type="number" value="${item.weight}" min="1" max="9999" step="1" style="${inputStyle}" oninput="updateDensity(this)"></td>
+            <td class="density-cell" style="color:var(--slate);font-family:JetBrains Mono,monospace;font-size:0.82rem;">${density}</td>
+            <td><button onclick="removeItem(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
     });
+    updateConfigLabel();
 }
 
-function resetItems() {
-    document.getElementById('capacity-input').value = DEFAULT_CAPACITY;
-    buildCargoGrid();
-    currentResults = [];
-    document.getElementById('results-table').querySelector('tbody').innerHTML = '';
-    document.getElementById('solution-output').textContent = 'Select algorithms and click "Optimize Loading" to solve.';
-    document.getElementById('solver-status').textContent = '';
-    drawEmpty();
+// ── Update density display when value/weight changes ──
+function updateDensity(inp) {
+    const row = inp.closest('tr');
+    const inputs = row.querySelectorAll('input[type="number"]');
+    const val = parseFloat(inputs[0].value) || 0;
+    const wt = parseFloat(inputs[1].value) || 1;
+    row.querySelector('.density-cell').textContent = wt > 0 ? (val / wt).toFixed(1) : '—';
+    updateConfigLabel();
 }
 
+// ── Read items from DOM ──
 function getItems() {
-    const vals = document.querySelectorAll('.item-value');
-    const wts = document.querySelectorAll('.item-weight');
+    const rows = document.querySelectorAll('#cargoTableBody tr');
     const items = [];
-    for (let i = 0; i < vals.length; i++) {
+    rows.forEach((row, i) => {
+        const nameInp = row.querySelector('input[type="text"]');
+        const numInps = row.querySelectorAll('input[type="number"]');
         items.push({
-            name: DEFAULT_ITEMS[i].name,
-            value: Math.max(0, parseInt(vals[i].value) || 0),
-            weight: Math.max(1, parseInt(wts[i].value) || 1)
+            name: (nameInp ? nameInp.value.trim() : '') || ('Item ' + (i+1)),
+            value: Math.max(0, parseInt(numInps[0].value) || 0),
+            weight: Math.max(1, parseInt(numInps[1].value) || 1)
         });
-    }
+    });
     return items;
 }
 
@@ -2533,24 +2589,107 @@ function getCapacity() {
     return Math.max(1, parseInt(document.getElementById('capacity-input').value) || 1);
 }
 
+function updateConfigLabel() {
+    const n = document.querySelectorAll('#cargoTableBody tr').length;
+    const cap = document.getElementById('capacity-input').value;
+    const label = document.getElementById('configLabel');
+    if (label) label.textContent = n + ' Items \u00b7 ' + cap + 't Capacity \u00b7 Click any cell to edit';
+}
+
+// ── Table actions ──
+function addItem() {
+    const rows = document.querySelectorAll('#cargoTableBody tr');
+    const idx = rows.length;
+    const name = CARGO_NAMES[idx % CARGO_NAMES.length];
+    const val = Math.floor(Math.random() * 200) + 30;
+    const wt = Math.floor(Math.random() * 25) + 5;
+    const color = ITEM_COLORS[idx % ITEM_COLORS.length];
+    const density = (val / wt).toFixed(1);
+    const tbody = document.getElementById('cargoTableBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td style="white-space:nowrap;"><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color};margin-right:0.4rem;vertical-align:middle;"></span><span style="color:var(--slate);font-family:JetBrains Mono;font-size:0.8rem;">${idx+1}</span></td>
+        <td><input type="text" value="${name}" style="${nameStyle}" oninput="updateConfigLabel()"></td>
+        <td><input type="number" value="${val}" min="0" max="99999" step="1" style="${inputStyle}" oninput="updateDensity(this)"></td>
+        <td><input type="number" value="${wt}" min="1" max="9999" step="1" style="${inputStyle}" oninput="updateDensity(this)"></td>
+        <td class="density-cell" style="color:var(--slate);font-family:JetBrains Mono,monospace;font-size:0.82rem;">${density}</td>
+        <td><button onclick="removeItem(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateConfigLabel();
+}
+
+function removeItem(btn) {
+    const rows = document.querySelectorAll('#cargoTableBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 item.'); return; }
+    btn.closest('tr').remove();
+    renumberRows();
+    updateConfigLabel();
+}
+
+function removeLastItem() {
+    const rows = document.querySelectorAll('#cargoTableBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 item.'); return; }
+    rows[rows.length - 1].remove();
+    updateConfigLabel();
+}
+
+function renumberRows() {
+    const rows = document.querySelectorAll('#cargoTableBody tr');
+    rows.forEach((row, i) => {
+        const numSpan = row.querySelector('td:first-child span:last-child');
+        if (numSpan) numSpan.textContent = i + 1;
+        const dot = row.querySelector('td:first-child span:first-child');
+        if (dot) dot.style.background = ITEM_COLORS[i % ITEM_COLORS.length];
+    });
+}
+
+function resetDefaults() {
+    document.getElementById('capacity-input').value = DEFAULT_CAPACITY;
+    renderTable(DEFAULT_ITEMS);
+    currentResults = [];
+    document.getElementById('results-table').querySelector('tbody').innerHTML =
+        '<tr><td colspan="6" style="text-align:center; color:var(--slate); font-family:Inter,sans-serif;">Select algorithms and click Solve</td></tr>';
+    document.getElementById('solution-output').textContent = 'Select algorithms and click "Solve & Compare All Algorithms" to solve.';
+    document.getElementById('solver-status').textContent = '';
+    drawEmpty();
+}
+
+function randomizeItems() {
+    const rows = document.querySelectorAll('#cargoTableBody tr');
+    rows.forEach(row => {
+        const numInps = row.querySelectorAll('input[type="number"]');
+        numInps[0].value = Math.floor(Math.random() * 300) + 20;
+        numInps[1].value = Math.floor(Math.random() * 35) + 3;
+        updateDensity(numInps[0]);
+    });
+}
+
+function loadPreset(type) {
+    if (type === 'heavy') {
+        renderTable(HEAVY_PRESET);
+        document.getElementById('capacity-input').value = 80;
+    } else if (type === 'many') {
+        renderTable(MANY_PRESET);
+        document.getElementById('capacity-input').value = 50;
+    }
+    updateConfigLabel();
+}
+
 // ── Algorithm: Dynamic Programming ──
 function solveDP(items, capacity) {
     const n = items.length;
     const W = capacity;
 
-    // dp[i][w] = max value using items 0..i-1 with capacity w
-    // Use integer weights directly
     const dp = [];
     for (let i = 0; i <= n; i++) {
         dp[i] = new Float64Array(W + 1);
     }
 
-    // Fill table bottom-up
     for (let i = 1; i <= n; i++) {
         const wi = items[i - 1].weight;
         const vi = items[i - 1].value;
         for (let w = 0; w <= W; w++) {
-            dp[i][w] = dp[i - 1][w]; // skip item i
+            dp[i][w] = dp[i - 1][w];
             if (wi <= w) {
                 const take = dp[i - 1][w - wi] + vi;
                 if (take > dp[i][w]) {
@@ -2560,7 +2699,6 @@ function solveDP(items, capacity) {
         }
     }
 
-    // Backtrack to find selected items
     const selected = [];
     let w = W;
     for (let i = n; i >= 1; i--) {
@@ -2581,11 +2719,9 @@ function solveDP(items, capacity) {
 function solveBnB(items, capacity) {
     const n = items.length;
 
-    // Sort items by value density descending, keep original indices
     const indexed = items.map((it, i) => ({ ...it, origIdx: i }));
     indexed.sort((a, b) => (b.value / b.weight) - (a.value / a.weight));
 
-    // Compute upper bound using LP relaxation (fractional knapsack)
     function upperBound(level, currentValue, currentWeight) {
         let bound = currentValue;
         let remainCap = capacity - currentWeight;
@@ -2594,7 +2730,6 @@ function solveBnB(items, capacity) {
                 bound += indexed[i].value;
                 remainCap -= indexed[i].weight;
             } else {
-                // Add fractional part of this item
                 bound += (indexed[i].value / indexed[i].weight) * remainCap;
                 break;
             }
@@ -2602,7 +2737,6 @@ function solveBnB(items, capacity) {
         return bound;
     }
 
-    // Initialize best with greedy solution
     let bestValue = 0;
     let bestSelected = [];
     {
@@ -2618,10 +2752,9 @@ function solveBnB(items, capacity) {
         bestSelected = gSel.slice();
     }
 
-    // DFS with pruning
     const stack = [{ level: 0, value: 0, weight: 0, taken: [] }];
     let iterations = 0;
-    const MAX_ITER = 500000; // safety limit for browser
+    const MAX_ITER = 500000;
 
     while (stack.length > 0 && iterations < MAX_ITER) {
         iterations++;
@@ -2635,13 +2768,11 @@ function solveBnB(items, capacity) {
             continue;
         }
 
-        // Prune: check if upper bound can beat best
         const ub = upperBound(node.level, node.value, node.weight);
         if (ub <= bestValue) continue;
 
         const item = indexed[node.level];
 
-        // Branch: skip this item (push first so take is explored first via stack)
         stack.push({
             level: node.level + 1,
             value: node.value,
@@ -2649,7 +2780,6 @@ function solveBnB(items, capacity) {
             taken: node.taken.slice()
         });
 
-        // Branch: take this item (if feasible)
         if (node.weight + item.weight <= capacity) {
             const newTaken = node.taken.slice();
             newTaken.push(item.origIdx);
@@ -2725,46 +2855,57 @@ function solveAll() {
         return;
     }
 
-    currentResults = [];
-    for (const key of algos) {
-        const algo = ALGO_MAP[key];
-        const t0 = performance.now();
-        const result = algo.fn(items, capacity);
-        const elapsed = performance.now() - t0;
-        currentResults.push({
-            key,
-            name: algo.name,
-            selected: result.selected,
-            totalValue: result.totalValue,
-            totalWeight: result.totalWeight,
-            utilization: ((result.totalWeight / capacity) * 100).toFixed(1),
-            itemCount: result.selected.length,
-            time: elapsed
+    // Show spinner
+    const btn = document.getElementById('solveBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin" style="margin-right:0.5rem;"></i>Solving\u2026';
+    btn.disabled = true;
+
+    setTimeout(() => {
+        currentResults = [];
+        for (const key of algos) {
+            const algo = ALGO_MAP[key];
+            const t0 = performance.now();
+            const result = algo.fn(items, capacity);
+            const elapsed = performance.now() - t0;
+            currentResults.push({
+                key,
+                name: algo.name,
+                selected: result.selected,
+                totalValue: result.totalValue,
+                totalWeight: result.totalWeight,
+                utilization: ((result.totalWeight / capacity) * 100).toFixed(1),
+                itemCount: result.selected.length,
+                time: elapsed
+            });
+        }
+
+        currentResults.sort((a, b) => b.totalValue - a.totalValue);
+
+        // Update results table
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 ? 'best-val' : ''}">$${r.totalValue}k</td>
+                <td>${r.totalWeight}t</td>
+                <td>${r.utilization}%</td>
+                <td>${r.itemCount}</td>
+                <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+            `;
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', () => showResult(r, items, capacity));
+            tbody.appendChild(tr);
         });
-    }
 
-    currentResults.sort((a, b) => b.totalValue - a.totalValue);
+        showResult(currentResults[0], items, capacity);
+        document.getElementById('solver-status').textContent =
+            `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view details.`;
 
-    // Update results table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">$${r.totalValue}k</td>
-            <td>${r.totalWeight}t</td>
-            <td>${r.utilization}%</td>
-            <td>${r.itemCount}</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r, items, capacity));
-        tbody.appendChild(tr);
-    });
-
-    showResult(currentResults[0], items, capacity);
-    document.getElementById('solver-status').textContent =
-        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view details.`;
+        btn.innerHTML = '<i class="fas fa-play"></i> \u00a0 Solve & Compare All Algorithms';
+        btn.disabled = false;
+    }, 80);
 }
 
 function showResult(r, items, capacity) {
@@ -2807,7 +2948,6 @@ function drawEmpty() {
     ctx.fillStyle = '#112240';
     ctx.fillRect(0, 0, W, H);
 
-    // Draw empty container
     const barX = 60;
     const barY = 80;
     const barW = W - 120;
@@ -2830,7 +2970,6 @@ function drawEmpty() {
     const cap = getCapacity();
     ctx.fillText(cap + 't', barX + barW, barY + barH + 20);
 
-    // Item legend
     const items = getItems();
     const legendY = barY + barH + 50;
     ctx.font = '11px Inter, sans-serif';
@@ -2862,12 +3001,10 @@ function drawContainer(items, capacity, selected) {
     const barW = W - 120;
     const barH = 90;
 
-    // Container outline
     ctx.strokeStyle = 'rgba(197, 160, 89, 0.4)';
     ctx.lineWidth = 2;
     ctx.strokeRect(barX, barY, barW, barH);
 
-    // Draw selected items stacked horizontally
     let offsetX = barX;
     const totalWeight = selected.reduce((s, idx) => s + items[idx].weight, 0);
 
@@ -2876,18 +3013,15 @@ function drawContainer(items, capacity, selected) {
         const segW = (it.weight / capacity) * barW;
         const color = ITEM_COLORS[idx % ITEM_COLORS.length];
 
-        // Filled segment
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.35;
         ctx.fillRect(offsetX, barY, segW, barH);
         ctx.globalAlpha = 1.0;
 
-        // Border
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.5;
         ctx.strokeRect(offsetX, barY, segW, barH);
 
-        // Item label inside
         if (segW > 35) {
             ctx.fillStyle = '#F8F9FA';
             ctx.font = 'bold 11px Inter, sans-serif';
@@ -2902,7 +3036,6 @@ function drawContainer(items, capacity, selected) {
         offsetX += segW;
     });
 
-    // Remaining capacity (dashed)
     const remainW = barX + barW - offsetX;
     if (remainW > 2) {
         ctx.setLineDash([4, 4]);
@@ -2921,7 +3054,6 @@ function drawContainer(items, capacity, selected) {
         }
     }
 
-    // Capacity axis labels
     ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
     ctx.font = '11px Inter, sans-serif';
     ctx.textAlign = 'left';
@@ -2929,7 +3061,6 @@ function drawContainer(items, capacity, selected) {
     ctx.textAlign = 'right';
     ctx.fillText(capacity + 't', barX + barW, barY + barH + 20);
 
-    // Weight marker
     if (totalWeight < capacity) {
         const markerX = barX + (totalWeight / capacity) * barW;
         ctx.strokeStyle = 'var(--green)';
@@ -2945,7 +3076,6 @@ function drawContainer(items, capacity, selected) {
         ctx.fillText(`${totalWeight}t`, markerX, barY - 10);
     }
 
-    // Summary text
     const totalValue = selected.reduce((s, idx) => s + items[idx].value, 0);
     const util = ((totalWeight / capacity) * 100).toFixed(1);
     ctx.fillStyle = '#F8F9FA';
@@ -2956,7 +3086,6 @@ function drawContainer(items, capacity, selected) {
         W / 2, barY + barH + 48
     );
 
-    // Item legend below
     const legendY = barY + barH + 72;
     ctx.font = '11px Inter, sans-serif';
     ctx.textAlign = 'left';
@@ -2988,8 +3117,10 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
-buildCargoGrid();
-drawEmpty();
+document.addEventListener('DOMContentLoaded', () => {
+    renderTable(DEFAULT_ITEMS);
+    drawEmpty();
+});
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->

@@ -498,6 +498,43 @@
             overflow-y: auto;
         }
 
+        /* ── Editable Data Tables ── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+        .data-table th {
+            font-weight: 600;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            font-size: 0.72rem;
+            padding: 0.7rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .data-table td {
+            padding: 0.5rem 0.6rem;
+            color: var(--slate-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+        }
+        .data-table .row-label {
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .data-dot {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+            margin-right: 0.5rem;
+            vertical-align: middle;
+        }
+
         /* ── Complexity Box ── */
         .complexity-box {
             background: var(--midnight);
@@ -2225,41 +2262,63 @@
     <div class="container">
         <div class="section-header fade-in">
             <h2>Try It <span>Yourself</span></h2>
-            <p>Place ambulance stations across Quebec City</p>
+            <p>Edit demand zones and candidate sites, then solve with all algorithms</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-ambulance"></i> Station Placement Solver</h4>
-                <button class="solver-btn primary" onclick="solve()">
-                    <i class="fas fa-play"></i> &nbsp; Solve
-                </button>
+                <span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Zones &middot; 5 Candidates &middot; p = 3</span>
             </div>
             <div class="solver-body">
-                <!-- Controls Row -->
-                <div class="solver-row">
-                    <div>
-                        <div class="solver-section-label">Number of Stations (p)</div>
-                        <div class="solver-controls">
-                            <label>Stations:</label>
-                            <input type="range" id="p-slider" class="solver-slider" min="2" max="5" value="3" oninput="updateP()">
-                            <span id="p-display" class="size-display">3</span>
-                        </div>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Algorithm</div>
-                        <div class="algo-select">
-                            <div class="algo-chip selected" data-algo="greedy" onclick="selectAlgo(this)">
-                                Greedy Add <span class="chip-type" style="color:var(--blue);">heuristic</span>
-                            </div>
-                            <div class="algo-chip" data-algo="teitz-bart" onclick="selectAlgo(this)">
-                                Teitz-Bart <span class="chip-type" style="color:var(--blue);">heuristic</span>
-                            </div>
-                        </div>
-                    </div>
+                <!-- Stations (p) slider -->
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-ambulance" style="color:var(--gold);margin-right:0.4rem;"></i>Stations (p):</label>
+                    <input type="range" id="p-slider" min="1" max="8" value="3" oninput="document.getElementById('p-display').textContent=this.value;updateConfigLabel();" style="flex:1;accent-color:var(--gold);">
+                    <span id="p-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">3</span>
                 </div>
 
-                <!-- Canvas -->
+                <!-- Demand Zones Table -->
+                <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Demand Zones</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="data-table" id="zonesTable">
+                        <thead><tr><th>Name</th><th>Lat</th><th>Lng</th><th>Population</th><th style="width:35px;"></th></tr></thead>
+                        <tbody id="zonesBody"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addZone()"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Zone</button>
+                    <button class="algo-chip" onclick="removeLastZone()">&#8722; Remove Last</button>
+                </div>
+
+                <!-- Candidate Sites Table -->
+                <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Candidate Station Sites</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="data-table" id="candidatesTable">
+                        <thead><tr><th>Name</th><th>Lat</th><th>Lng</th><th style="width:35px;"></th></tr></thead>
+                        <tbody id="candidatesBody"></tbody>
+                    </table>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addCandidate()"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Site</button>
+                    <button class="algo-chip" onclick="removeLastCandidate()">&#8722; Remove Last</button>
+                </div>
+
+                <!-- Action buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="resetDefaults()" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeData()" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('dense')" style="border:1px solid rgba(255,107,107,0.3);background:transparent;"><i class="fas fa-city" style="margin-right:0.3rem;"></i> Dense Urban</button>
+                    <button class="algo-chip" onclick="loadPreset('large')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-expand-arrows-alt" style="margin-right:0.3rem;"></i> 12 Zones &middot; 8 Sites</button>
+                </div>
+
+                <!-- Solve button -->
+                <button class="algo-chip selected" onclick="solveAll()" id="solveAllBtn" style="width:100%;padding:0.7rem;font-size:0.95rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                    <span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span>
+                </button>
+
+                <!-- Map -->
                 <div class="solver-canvas-wrap">
                     <div id="map"></div>
                 </div>
@@ -2281,7 +2340,7 @@
                     </table>
                     <div id="assignment-output" class="assignment-output"></div>
                 </div>
-                <div id="solver-status" class="solver-status">Select an algorithm and click Solve.</div>
+                <div id="solver-status" class="solver-status">Edit data above and click Solve &amp; Compare All Algorithms.</div>
             </div>
         </div>
     </div>

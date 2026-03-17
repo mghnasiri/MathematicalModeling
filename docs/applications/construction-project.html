@@ -2230,47 +2230,92 @@
     <div class="container">
         <div class="section-header fade-in">
             <h2>Try It <span>Yourself</span></h2>
-            <p>Schedule construction activities with precedence and resource constraints</p>
+            <p>Edit activities, precedences, and resource capacities, then schedule the project</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
                 <h4><i class="fas fa-calendar-alt"></i> Construction Project Scheduler</h4>
-                <span class="help-icon" title="Configure resources, choose an algorithm, and click Schedule Project."><i class="fas fa-question-circle" style="color:var(--slate);"></i></span>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Activities &middot; 9 Precedences &middot; Workers 5 &middot; Cranes 2</span>
             </div>
             <div class="solver-body">
-                <!-- Controls Row -->
-                <div class="solver-row">
-                    <div>
-                        <div class="solver-section-label">Resource Capacities</div>
-                        <div class="solver-controls">
-                            <label>Workers:</label>
-                            <input type="range" class="solver-slider" id="workers-slider" min="3" max="10" value="5" oninput="updateWorkers(this.value)">
-                            <span class="size-display" id="workers-display">5</span>
-                        </div>
-                        <div class="solver-controls">
-                            <label>Cranes:</label>
-                            <input type="range" class="solver-slider" id="cranes-slider" min="1" max="5" value="2" oninput="updateCranes(this.value)">
-                            <span class="size-display" id="cranes-display">2</span>
-                        </div>
-                        <div class="solver-controls" style="margin-top:0.5rem;">
-                            <button class="solver-btn" onclick="toggleActivityEditor()"><i class="fas fa-edit"></i> Edit Activities</button>
-                        </div>
-                        <div id="activity-editor" style="display:none;">
-                            <div class="activity-grid" id="activity-grid"></div>
-                        </div>
+                <!-- Resource Capacities -->
+                <div class="solver-section-label">Resource Capacities</div>
+                <div style="display:flex;flex-wrap:wrap;gap:1.5rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <div style="display:flex;align-items:center;gap:0.8rem;flex:1;min-width:200px;">
+                        <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-hard-hat" style="color:var(--gold);margin-right:0.4rem;"></i>Workers:</label>
+                        <input type="range" class="solver-slider" id="workers-slider" min="1" max="15" value="5" oninput="document.getElementById('workers-display').textContent=this.value;updateConfigSummary();" style="flex:1;accent-color:var(--gold);">
+                        <span class="size-display" id="workers-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">5</span>
                     </div>
-                    <div>
-                        <div class="solver-section-label">Algorithms</div>
-                        <div class="algo-select" id="algo-select">
-                            <span class="algo-chip selected" data-algo="serial-lft" onclick="toggleAlgo(this)">Serial SGS - LFT <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="serial-est" onclick="toggleAlgo(this)">Serial SGS - EST <span class="chip-type">(H)</span></span>
-                            <span class="algo-chip selected" data-algo="parallel" onclick="toggleAlgo(this)">Parallel SGS <span class="chip-type">(H)</span></span>
-                        </div>
-                        <div class="solver-controls">
-                            <button class="solver-btn primary" onclick="solveAll()"><i class="fas fa-play"></i> Schedule Project</button>
-                        </div>
+                    <div style="display:flex;align-items:center;gap:0.8rem;flex:1;min-width:200px;">
+                        <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-crane" style="color:var(--gold);margin-right:0.4rem;"></i>Cranes:</label>
+                        <input type="range" class="solver-slider" id="cranes-slider" min="1" max="8" value="2" oninput="document.getElementById('cranes-display').textContent=this.value;updateConfigSummary();" style="flex:1;accent-color:var(--gold);">
+                        <span class="size-display" id="cranes-display" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">2</span>
                     </div>
+                </div>
+
+                <!-- Editable Activity Table -->
+                <div class="solver-section-label">Activities</div>
+                <div style="overflow-x:auto;">
+                    <table class="results-table" id="activity-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Duration (days)</th>
+                                <th>Workers</th>
+                                <th>Cranes</th>
+                                <th style="width:35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="activityTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Activity Action Buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.5rem;">
+                    <button class="algo-chip" onclick="addActivity()" style="border:1px dashed var(--gold);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Activity</button>
+                    <button class="algo-chip" onclick="removeLastActivity()" style="border:1px solid rgba(255,107,107,0.3);background:transparent;"><i class="fas fa-minus" style="margin-right:0.3rem;"></i> Remove Last</button>
+                    <button class="algo-chip" onclick="resetDefaults()" style="border:1px solid rgba(100,255,218,0.3);background:transparent;"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset Defaults</button>
+                    <button class="algo-chip" onclick="randomizeActivities()" style="border:1px solid rgba(187,154,247,0.3);background:transparent;"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                    <button class="algo-chip" onclick="loadPreset('house')" style="border:1px solid rgba(122,162,247,0.3);background:transparent;"><i class="fas fa-home" style="margin-right:0.3rem;"></i> House Build</button>
+                    <button class="algo-chip" onclick="loadPreset('bridge')" style="border:1px solid rgba(212,175,55,0.3);background:transparent;"><i class="fas fa-archway" style="margin-right:0.3rem;"></i> Bridge Project</button>
+                </div>
+
+                <!-- Editable Precedence Table -->
+                <div class="solver-section-label">Precedence Constraints (Predecessor &rarr; Successor)</div>
+                <div style="overflow-x:auto;">
+                    <table class="results-table" id="precedence-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Predecessor</th>
+                                <th>&rarr;</th>
+                                <th>Successor</th>
+                                <th style="width:35px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="precedenceTableBody"></tbody>
+                    </table>
+                </div>
+
+                <!-- Precedence Action Buttons -->
+                <div style="display:flex;gap:0.6rem;flex-wrap:wrap;margin:0.8rem 0 1.5rem;">
+                    <button class="algo-chip" onclick="addPrecedence()" style="border:1px dashed var(--gold);background:transparent;"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Precedence</button>
+                    <button class="algo-chip" onclick="removeLastPrecedence()" style="border:1px solid rgba(255,107,107,0.3);background:transparent;"><i class="fas fa-minus" style="margin-right:0.3rem;"></i> Remove Last</button>
+                </div>
+
+                <!-- Algorithms -->
+                <div class="solver-section-label">Algorithms</div>
+                <div class="algo-select" id="algo-select" style="margin-bottom:1rem;">
+                    <span class="algo-chip selected" data-algo="serial-lft" onclick="toggleAlgo(this)">Serial SGS - LFT <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="serial-est" onclick="toggleAlgo(this)">Serial SGS - EST <span class="chip-type">(H)</span></span>
+                    <span class="algo-chip selected" data-algo="parallel" onclick="toggleAlgo(this)">Parallel SGS <span class="chip-type">(H)</span></span>
+                </div>
+
+                <!-- Solve Button -->
+                <div style="text-align:center;margin:1.2rem 0;">
+                    <button class="solver-btn primary" id="solveBtn" onclick="solveAll()"><i class="fas fa-play"></i> Solve &amp; Compare All Algorithms</button>
                 </div>
 
                 <!-- Gantt Chart Canvas -->
@@ -2300,7 +2345,7 @@
                         </thead>
                         <tbody></tbody>
                     </table>
-                    <div class="schedule-output" id="schedule-output">Select an algorithm and click "Schedule Project" to see results.</div>
+                    <div class="schedule-output" id="schedule-output">Edit activities and precedences above, then click "Solve &amp; Compare All Algorithms" to see results.</div>
                     <div class="solver-status" id="solver-status"></div>
                 </div>
             </div>
