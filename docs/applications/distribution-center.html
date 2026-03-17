@@ -2165,28 +2165,49 @@
 <div class="formula-block">UFLP &mdash; NP-hard; greedy heuristics with local search</div>
 </div></div></div></div></section>
 
-<section id="interactive"><div class="container"><div class="section-header fade-in"><h2>Try It Yourself</h2><p>Select distribution centers for 10 farming regions</p></div>
+<section id="interactive"><div class="container"><div class="section-header fade-in"><h2>Try It Yourself</h2><p>Design your own distribution network &mdash; edit centers and regions, then solve</p></div>
 <div class="row justify-content-center"><div class="col-lg-11"><div class="interactive-panel fade-in">
-<div class="panel-header"><h3><i class="fas fa-sliders-h" style="color:var(--gold);margin-right:0.7rem;"></i>Configuration</h3><span style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">5 Centers &middot; 10 Regions</span></div>
+<div class="panel-header"><h3><i class="fas fa-sliders-h" style="color:var(--gold);margin-right:0.7rem;"></i>Configuration</h3><span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">5 Centers &middot; 10 Regions</span></div>
 <div class="panel-body">
-<table class="patient-table"><thead><tr><th>Center</th><th>Location</th><th>Fixed Cost ($K)</th></tr></thead>
-<tbody>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span>C1</td><td>North Hub</td><td>150</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span>C2</td><td>South Hub</td><td>120</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span>C3</td><td>East Hub</td><td>180</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span>C4</td><td>West Hub</td><td>100</td></tr>
-<tr><td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span>C5</td><td>Central Hub</td><td>200</td></tr>
-</tbody></table>
 
-<div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Select Algorithm</div>
-<div class="algorithm-chips">
-<button class="algo-chip active" data-algo="add" onclick="selectAlgorithm('add')">Greedy Add <span class="chip-tag">heuristic</span></button>
-<button class="algo-chip" data-algo="drop" onclick="selectAlgorithm('drop')">Greedy Drop <span class="chip-tag">heuristic</span></button>
+<div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Transport Cost Multiplier</div>
+<div style="display:flex;align-items:center;gap:0.7rem;margin-bottom:1.2rem;">
+<input type="range" id="transportCost" min="1" max="10" step="0.5" value="2" style="flex:1;">
+<span id="transportCostVal" style="color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.85rem;min-width:35px;">2.0</span>
 </div>
+
+<div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Candidate Centers</div>
+<div style="overflow-x:auto;margin-bottom:0.5rem;">
+<table class="patient-table" id="centersTable"><thead><tr><th>Name</th><th>X</th><th>Y</th><th>Fixed Cost ($K)</th><th></th></tr></thead>
+<tbody id="centersBody"></tbody></table>
+</div>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+<button class="algo-chip" onclick="addCenter()">+ Add Center</button>
+<button class="algo-chip" onclick="removeCenter()">− Remove Last</button>
+</div>
+
+<div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Farming Regions</div>
+<div style="overflow-x:auto;margin-bottom:0.5rem;">
+<table class="patient-table" id="regionsTable"><thead><tr><th>Name</th><th>X</th><th>Y</th><th></th></tr></thead>
+<tbody id="regionsBody"></tbody></table>
+</div>
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+<button class="algo-chip" onclick="addRegion()">+ Add Region</button>
+<button class="algo-chip" onclick="removeRegion()">− Remove Last</button>
+</div>
+
+<div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+<button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" style="margin-right:4px;"></i>Reset Defaults</button>
+<button class="algo-chip" onclick="randomizeAll()"><i class="fas fa-random" style="margin-right:4px;"></i>Randomize</button>
+<button class="algo-chip" onclick="loadPreset('expensive')"><i class="fas fa-dollar-sign" style="margin-right:4px;"></i>Expensive Centers</button>
+<button class="algo-chip" onclick="loadPreset('large')"><i class="fas fa-expand-arrows-alt" style="margin-right:4px;"></i>8 Centers &middot; 20 Regions</button>
+</div>
+
+<button class="algo-chip active" onclick="runSolver()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;"><i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms<span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin"></i></span></button>
 
 <div class="gantt-container">
 <div class="gantt-title">Facility Location Map</div>
-<canvas id="chartCanvas" width="500" height="400" style="width:100%;max-width:500px;"></canvas>
+<canvas id="chartCanvas" width="600" height="450" style="width:100%;max-width:600px;"></canvas>
 </div>
 
 <div class="results-grid" id="resultsGrid"></div>
@@ -2254,118 +2275,356 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-const CENTERS=[
-    {id:'C1',name:'North Hub',x:40,y:80,fixed:150},
-    {id:'C2',name:'South Hub',x:50,y:20,fixed:120},
-    {id:'C3',name:'East Hub',x:85,y:55,fixed:180},
-    {id:'C4',name:'West Hub',x:15,y:50,fixed:100},
-    {id:'C5',name:'Central Hub',x:50,y:50,fixed:200},
+/* ── Data & Constants ── */
+const REGION_COLORS = ['#f0c040','#d4a054','#7cc67c','#e8d44d','#c8956c','#a8c8a0','#e06c75','#61afef','#c678dd','#56b6c2','#98c379','#d19a66','#be5046','#e5c07b','#abb2bf','#c678dd','#56b6c2','#e06c75','#61afef','#f0c040'];
+const HUB_NAMES = ['North Hub','South Hub','East Hub','West Hub','Central Hub','River Hub','Hill Hub','Port Hub','Junction','Depot'];
+
+const DEFAULT_CENTERS = [
+    {name:'North Hub',x:40,y:80,fixed:150},{name:'South Hub',x:50,y:20,fixed:120},
+    {name:'East Hub',x:85,y:55,fixed:180},{name:'West Hub',x:15,y:50,fixed:100},
+    {name:'Central Hub',x:50,y:50,fixed:200},
 ];
-const REGIONS=[
-    {id:'R1',x:30,y:90,color:'#f0c040'},{id:'R2',x:60,y:85,color:'#d4a054'},
-    {id:'R3',x:20,y:65,color:'#7cc67c'},{id:'R4',x:75,y:70,color:'#e8d44d'},
-    {id:'R5',x:90,y:40,color:'#c8956c'},{id:'R6',x:10,y:35,color:'#a8c8a0'},
-    {id:'R7',x:45,y:30,color:'#f0c040'},{id:'R8',x:70,y:15,color:'#d4a054'},
-    {id:'R9',x:30,y:15,color:'#7cc67c'},{id:'R10',x:55,y:55,color:'#e8d44d'},
+const DEFAULT_REGIONS = [
+    {name:'R1',x:30,y:90},{name:'R2',x:60,y:85},{name:'R3',x:20,y:65},{name:'R4',x:75,y:70},
+    {name:'R5',x:90,y:40},{name:'R6',x:10,y:35},{name:'R7',x:45,y:30},{name:'R8',x:70,y:15},
+    {name:'R9',x:30,y:15},{name:'R10',x:55,y:55},
 ];
 
-function dist(a,b){return Math.sqrt((a.x-b.x)**2+(a.y-b.y)**2);}
+const PRESET_EXPENSIVE = [
+    {name:'Alpha',x:25,y:75,fixed:400},{name:'Beta',x:70,y:80,fixed:350},
+    {name:'Gamma',x:50,y:40,fixed:500},{name:'Delta',x:80,y:20,fixed:280},
+    {name:'Epsilon',x:15,y:30,fixed:450},
+];
+const PRESET_LARGE_CENTERS = [
+    {name:'Hub A',x:20,y:85,fixed:100},{name:'Hub B',x:60,y:90,fixed:130},{name:'Hub C',x:90,y:70,fixed:160},
+    {name:'Hub D',x:10,y:50,fixed:90},{name:'Hub E',x:50,y:50,fixed:200},{name:'Hub F',x:85,y:30,fixed:140},
+    {name:'Hub G',x:30,y:20,fixed:110},{name:'Hub H',x:70,y:10,fixed:170},
+];
+const PRESET_LARGE_REGIONS = [
+    {name:'R1',x:15,y:95},{name:'R2',x:35,y:88},{name:'R3',x:55,y:82},{name:'R4',x:75,y:78},
+    {name:'R5',x:95,y:65},{name:'R6',x:5,y:55},{name:'R7',x:25,y:48},{name:'R8',x:45,y:42},
+    {name:'R9',x:65,y:38},{name:'R10',x:88,y:25},{name:'R11',x:10,y:30},{name:'R12',x:38,y:22},
+    {name:'R13',x:58,y:15},{name:'R14',x:78,y:8},{name:'R15',x:20,y:72},{name:'R16',x:42,y:65},
+    {name:'R17',x:68,y:55},{name:'R18',x:92,y:48},{name:'R19',x:50,y:70},{name:'R20',x:30,y:58},
+];
 
-function totalCost(openSet){
-    let cost=0;
-    for(const i of openSet)cost+=CENTERS[i].fixed;
-    const assign=[];
-    for(const r of REGIONS){
-        let minD=Infinity,bestC=-1;
-        for(const i of openSet){const d=dist(r,CENTERS[i]);if(d<minD){minD=d;bestC=i;}}
-        cost+=minD*2; // transport cost = 2 * distance
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:80px;outline:none;';
+
+/* ── Table Rendering ── */
+function renderCentersTable(centers) {
+    const tbody = document.getElementById('centersBody');
+    tbody.innerHTML = '';
+    centers.forEach((c, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span><input type="text" value="${c.name}" style="${nameStyle}"></td>
+            <td><input type="number" value="${c.x}" min="0" max="100" step="1" style="${inputStyle}"></td>
+            <td><input type="number" value="${c.y}" min="0" max="100" step="1" style="${inputStyle}"></td>
+            <td><input type="number" value="${c.fixed}" min="1" max="9999" step="10" style="${inputStyle}"></td>
+            <td><button onclick="removeCenterRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateSummary();
+}
+
+function renderRegionsTable(regions) {
+    const tbody = document.getElementById('regionsBody');
+    tbody.innerHTML = '';
+    regions.forEach((r, i) => {
+        const color = REGION_COLORS[i % REGION_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="patient-name"><span class="patient-dot" style="background:${color};"></span><input type="text" value="${r.name}" style="${nameStyle}"></td>
+            <td><input type="number" value="${r.x}" min="0" max="100" step="1" style="${inputStyle}"></td>
+            <td><input type="number" value="${r.y}" min="0" max="100" step="1" style="${inputStyle}"></td>
+            <td><button onclick="removeRegionRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateSummary();
+}
+
+/* ── Read from DOM ── */
+function readCenters() {
+    const rows = document.querySelectorAll('#centersBody tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {name:inputs[0].value.trim()||('C'+(i+1)), x:Math.max(0,Math.min(100,parseInt(inputs[1].value)||0)), y:Math.max(0,Math.min(100,parseInt(inputs[2].value)||0)), fixed:Math.max(1,parseInt(inputs[3].value)||100)};
+    });
+}
+
+function readRegions() {
+    const rows = document.querySelectorAll('#regionsBody tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {name:inputs[0].value.trim()||('R'+(i+1)), x:Math.max(0,Math.min(100,parseInt(inputs[1].value)||0)), y:Math.max(0,Math.min(100,parseInt(inputs[2].value)||0)), color:REGION_COLORS[i%REGION_COLORS.length]};
+    });
+}
+
+function updateSummary() {
+    const nc = document.querySelectorAll('#centersBody tr').length;
+    const nr = document.querySelectorAll('#regionsBody tr').length;
+    document.getElementById('configSummary').textContent = nc + ' Centers \u00b7 ' + nr + ' Regions \u00b7 Click any cell to edit';
+}
+
+/* ── Actions ── */
+function addCenter() {
+    const idx = document.querySelectorAll('#centersBody tr').length;
+    const name = HUB_NAMES[idx % HUB_NAMES.length];
+    const x = Math.floor(Math.random()*80)+10, y = Math.floor(Math.random()*80)+10;
+    const fixed = Math.floor(Math.random()*200)+50;
+    const tbody = document.getElementById('centersBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="patient-name"><span class="patient-dot" style="background:#C5A059;"></span><input type="text" value="${name}" style="${nameStyle}"></td>
+        <td><input type="number" value="${x}" min="0" max="100" step="1" style="${inputStyle}"></td>
+        <td><input type="number" value="${y}" min="0" max="100" step="1" style="${inputStyle}"></td>
+        <td><input type="number" value="${fixed}" min="1" max="9999" step="10" style="${inputStyle}"></td>
+        <td><button onclick="removeCenterRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateSummary();
+}
+
+function removeCenter() {
+    const rows = document.querySelectorAll('#centersBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 center.'); return; }
+    rows[rows.length-1].remove();
+    updateSummary();
+}
+
+function removeCenterRow(btn) {
+    if (document.querySelectorAll('#centersBody tr').length <= 1) { alert('Need at least 1 center.'); return; }
+    btn.closest('tr').remove();
+    updateSummary();
+}
+
+function addRegion() {
+    const idx = document.querySelectorAll('#regionsBody tr').length;
+    const name = 'R' + (idx+1);
+    const x = Math.floor(Math.random()*90)+5, y = Math.floor(Math.random()*90)+5;
+    const color = REGION_COLORS[idx % REGION_COLORS.length];
+    const tbody = document.getElementById('regionsBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td class="patient-name"><span class="patient-dot" style="background:${color};"></span><input type="text" value="${name}" style="${nameStyle}"></td>
+        <td><input type="number" value="${x}" min="0" max="100" step="1" style="${inputStyle}"></td>
+        <td><input type="number" value="${y}" min="0" max="100" step="1" style="${inputStyle}"></td>
+        <td><button onclick="removeRegionRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateSummary();
+}
+
+function removeRegion() {
+    const rows = document.querySelectorAll('#regionsBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 region.'); return; }
+    rows[rows.length-1].remove();
+    updateSummary();
+}
+
+function removeRegionRow(btn) {
+    if (document.querySelectorAll('#regionsBody tr').length <= 1) { alert('Need at least 1 region.'); return; }
+    btn.closest('tr').remove();
+    updateSummary();
+}
+
+function resetDefaults() {
+    renderCentersTable(DEFAULT_CENTERS);
+    renderRegionsTable(DEFAULT_REGIONS);
+    document.getElementById('transportCost').value = 2;
+    document.getElementById('transportCostVal').textContent = '2.0';
+}
+
+function randomizeAll() {
+    document.querySelectorAll('#centersBody tr').forEach(row => {
+        const inputs = row.querySelectorAll('input[type="number"]');
+        inputs[0].value = Math.floor(Math.random()*80)+10;
+        inputs[1].value = Math.floor(Math.random()*80)+10;
+        inputs[2].value = Math.floor(Math.random()*250)+50;
+    });
+    document.querySelectorAll('#regionsBody tr').forEach(row => {
+        const inputs = row.querySelectorAll('input[type="number"]');
+        inputs[0].value = Math.floor(Math.random()*90)+5;
+        inputs[1].value = Math.floor(Math.random()*90)+5;
+    });
+}
+
+function loadPreset(type) {
+    if (type === 'expensive') {
+        renderCentersTable(PRESET_EXPENSIVE);
+        renderRegionsTable(DEFAULT_REGIONS);
+        document.getElementById('transportCost').value = 3;
+        document.getElementById('transportCostVal').textContent = '3.0';
+    } else if (type === 'large') {
+        renderCentersTable(PRESET_LARGE_CENTERS);
+        renderRegionsTable(PRESET_LARGE_REGIONS);
+        document.getElementById('transportCost').value = 2;
+        document.getElementById('transportCostVal').textContent = '2.0';
+    }
+}
+
+/* ── Solver Algorithms ── */
+function dist(a, b) { return Math.sqrt((a.x-b.x)**2 + (a.y-b.y)**2); }
+
+function computeCost(centers, regions, openSet, tcMult) {
+    let cost = 0;
+    for (const i of openSet) cost += centers[i].fixed;
+    const assign = [];
+    for (const r of regions) {
+        let minD = Infinity, bestC = -1;
+        for (const i of openSet) { const d = dist(r, centers[i]); if (d < minD) { minD = d; bestC = i; } }
+        cost += minD * tcMult;
         assign.push(bestC);
     }
-    return {cost,assign};
+    return {cost, assign};
 }
 
-function solveGreedyAdd(){
-    const t0=performance.now();
-    const open=new Set();
-    let bestCost=Infinity,bestAssign=[];
-    while(open.size<CENTERS.length){
-        let bestI=-1,bestNewCost=Infinity,bestNewAssign=[];
-        for(let i=0;i<CENTERS.length;i++){
-            if(open.has(i))continue;
-            const trial=new Set(open);trial.add(i);
-            const{cost,assign}=totalCost(trial);
-            if(cost<bestNewCost){bestNewCost=cost;bestI=i;bestNewAssign=assign;}
+function solveGreedyAdd(centers, regions, tcMult) {
+    const t0 = performance.now();
+    const open = new Set();
+    let bestCost = Infinity, bestAssign = [];
+    while (open.size < centers.length) {
+        let bestI = -1, bestNewCost = Infinity, bestNewAssign = [];
+        for (let i = 0; i < centers.length; i++) {
+            if (open.has(i)) continue;
+            const trial = new Set(open); trial.add(i);
+            const {cost, assign} = computeCost(centers, regions, trial, tcMult);
+            if (cost < bestNewCost) { bestNewCost = cost; bestI = i; bestNewAssign = assign; }
         }
-        if(bestNewCost>=bestCost)break;
-        open.add(bestI);bestCost=bestNewCost;bestAssign=bestNewAssign;
+        if (bestNewCost >= bestCost) break;
+        open.add(bestI); bestCost = bestNewCost; bestAssign = bestNewAssign;
     }
-    const avgDist=REGIONS.reduce((s,r,i)=>s+dist(r,CENTERS[bestAssign[i]]),0)/REGIONS.length;
-    return {open:[...open],assign:bestAssign,cost:bestCost,avgDist,elapsed:performance.now()-t0,method:'Greedy Add'};
+    const avgDist = regions.reduce((s,r,i) => s + dist(r, centers[bestAssign[i]]), 0) / regions.length;
+    return {open:[...open], assign:bestAssign, cost:bestCost, avgDist, elapsed:performance.now()-t0, method:'Greedy Add'};
 }
 
-function solveGreedyDrop(){
-    const t0=performance.now();
-    const open=new Set(CENTERS.map((_,i)=>i));
-    let{cost:bestCost,assign:bestAssign}=totalCost(open);
-    while(open.size>1){
-        let bestI=-1,bestNewCost=Infinity,bestNewAssign=[];
-        for(const i of open){
-            const trial=new Set(open);trial.delete(i);
-            const{cost,assign}=totalCost(trial);
-            if(cost<bestNewCost){bestNewCost=cost;bestI=i;bestNewAssign=assign;}
+function solveGreedyDrop(centers, regions, tcMult) {
+    const t0 = performance.now();
+    const open = new Set(centers.map((_,i) => i));
+    let {cost: bestCost, assign: bestAssign} = computeCost(centers, regions, open, tcMult);
+    while (open.size > 1) {
+        let bestI = -1, bestNewCost = Infinity, bestNewAssign = [];
+        for (const i of open) {
+            const trial = new Set(open); trial.delete(i);
+            const {cost, assign} = computeCost(centers, regions, trial, tcMult);
+            if (cost < bestNewCost) { bestNewCost = cost; bestI = i; bestNewAssign = assign; }
         }
-        if(bestNewCost>=bestCost)break;
-        open.delete(bestI);bestCost=bestNewCost;bestAssign=bestNewAssign;
+        if (bestNewCost >= bestCost) break;
+        open.delete(bestI); bestCost = bestNewCost; bestAssign = bestNewAssign;
     }
-    const avgDist=REGIONS.reduce((s,r,i)=>s+dist(r,CENTERS[bestAssign[i]]),0)/REGIONS.length;
-    return {open:[...open],assign:bestAssign,cost:bestCost,avgDist,elapsed:performance.now()-t0,method:'Greedy Drop'};
+    const avgDist = regions.reduce((s,r,i) => s + dist(r, centers[bestAssign[i]]), 0) / regions.length;
+    return {open:[...open], assign:bestAssign, cost:bestCost, avgDist, elapsed:performance.now()-t0, method:'Greedy Drop'};
 }
 
-function renderChart(data){
-    const canvas=document.getElementById('chartCanvas');const ctx=canvas.getContext('2d');
-    const W=canvas.width,H=canvas.height;ctx.clearRect(0,0,W,H);
-    const pad=40,scale=3.8;
-    function tx(x){return pad+x*scale;}function ty(y){return H-pad-y*scale;}
+/* ── Chart Rendering ── */
+function renderChart(data, centers, regions) {
+    const canvas = document.getElementById('chartCanvas');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    ctx.clearRect(0, 0, W, H);
+    const pad = 40;
+    const allX = [...centers.map(c=>c.x), ...regions.map(r=>r.x)];
+    const allY = [...centers.map(c=>c.y), ...regions.map(r=>r.y)];
+    const minX = Math.min(...allX)-5, maxX = Math.max(...allX)+5;
+    const minY = Math.min(...allY)-5, maxY = Math.max(...allY)+5;
+    const rangeX = Math.max(maxX-minX, 1), rangeY = Math.max(maxY-minY, 1);
+    const scaleX = (W-2*pad)/rangeX, scaleY = (H-2*pad)/rangeY;
+    function tx(x) { return pad + (x-minX)*scaleX; }
+    function ty(y) { return H - pad - (y-minY)*scaleY; }
+
     // Assignment lines
-    REGIONS.forEach((r,i)=>{
-        const c=CENTERS[data.assign[i]];
-        ctx.strokeStyle='#C5A05940';ctx.lineWidth=1.5;
-        ctx.beginPath();ctx.moveTo(tx(r.x),ty(r.y));ctx.lineTo(tx(c.x),ty(c.y));ctx.stroke();
+    regions.forEach((r, i) => {
+        const c = centers[data.assign[i]];
+        ctx.strokeStyle = '#C5A05940'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(tx(r.x), ty(r.y)); ctx.lineTo(tx(c.x), ty(c.y)); ctx.stroke();
     });
     // Centers
-    for(let i=0;i<CENTERS.length;i++){
-        const c=CENTERS[i];const isOpen=data.open.includes(i);
-        if(isOpen){ctx.fillStyle='#C5A059';ctx.font='bold 20px serif';ctx.textAlign='center';ctx.fillText('\u2605',tx(c.x),ty(c.y)+6);}
-        else{ctx.fillStyle='#333';ctx.beginPath();ctx.arc(tx(c.x),ty(c.y),8,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#555';ctx.lineWidth=1;ctx.stroke();}
-        ctx.fillStyle=isOpen?'#C5A059':'#555';ctx.font='bold 9px Inter';ctx.textAlign='center';ctx.fillText(c.id,tx(c.x),ty(c.y)+(isOpen?18:18));
-    }
+    centers.forEach((c, i) => {
+        const isOpen = data.open.includes(i);
+        if (isOpen) {
+            ctx.fillStyle = '#C5A059'; ctx.font = 'bold 20px serif'; ctx.textAlign = 'center';
+            ctx.fillText('\u2605', tx(c.x), ty(c.y)+6);
+        } else {
+            ctx.fillStyle = '#333'; ctx.beginPath(); ctx.arc(tx(c.x), ty(c.y), 8, 0, Math.PI*2); ctx.fill();
+            ctx.strokeStyle = '#555'; ctx.lineWidth = 1; ctx.stroke();
+        }
+        ctx.fillStyle = isOpen ? '#C5A059' : '#555'; ctx.font = 'bold 9px Inter'; ctx.textAlign = 'center';
+        ctx.fillText(c.name.length > 8 ? c.name.slice(0,8) : c.name, tx(c.x), ty(c.y)+18);
+    });
     // Regions
-    for(const r of REGIONS){ctx.fillStyle=r.color;ctx.beginPath();ctx.arc(tx(r.x),ty(r.y),6,0,Math.PI*2);ctx.fill();ctx.fillStyle='#fff';ctx.font='bold 7px JetBrains Mono';ctx.textAlign='center';ctx.fillText(r.id.slice(1),tx(r.x),ty(r.y)+3);}
+    regions.forEach((r, i) => {
+        const color = r.color || REGION_COLORS[i % REGION_COLORS.length];
+        ctx.fillStyle = color; ctx.beginPath(); ctx.arc(tx(r.x), ty(r.y), 6, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.font = 'bold 7px JetBrains Mono'; ctx.textAlign = 'center';
+        ctx.fillText(r.name.replace(/^R/,''), tx(r.x), ty(r.y)+3);
+    });
 }
 
-function renderResults(data){
-    document.getElementById('resultsGrid').innerHTML=`
-        <div class="result-card"><div class="result-value">$${data.cost.toFixed(0)}K</div><div class="result-label">Total Cost</div></div>
-        <div class="result-card"><div class="result-value">${data.open.length}</div><div class="result-label">Facilities Opened</div></div>
-        <div class="result-card"><div class="result-value">${data.avgDist.toFixed(1)}</div><div class="result-label">Avg Distance</div></div>
-        <div class="result-card"><div class="result-value">${data.elapsed.toFixed(2)}</div><div class="result-label">Time (ms)</div></div>`;
-    let detail=`<span class="room-name">Method:</span> ${data.method}<br><span class="room-name">Open:</span> ${data.open.map(i=>CENTERS[i].id).join(', ')}<br><br>`;
-    REGIONS.forEach((r,i)=>{detail+=`<span class="room-name">${r.id}</span> &rarr; ${CENTERS[data.assign[i]].id} (dist=${dist(r,CENTERS[data.assign[i]]).toFixed(1)})<br>`;});
-    document.getElementById('scheduleDetail').innerHTML=detail;
-    renderChart(data);
+/* ── Results Rendering ── */
+function renderResults(addData, dropData, centers, regions) {
+    const best = addData.cost <= dropData.cost ? addData : dropData;
+
+    document.getElementById('resultsGrid').innerHTML = `
+        <div class="result-card"><div class="result-value">$${best.cost.toFixed(0)}K</div><div class="result-label">Best Total Cost</div></div>
+        <div class="result-card"><div class="result-value">${best.open.length}</div><div class="result-label">Facilities Opened</div></div>
+        <div class="result-card"><div class="result-value">${best.avgDist.toFixed(1)}</div><div class="result-label">Avg Distance</div></div>
+        <div class="result-card"><div class="result-value">${best.method}</div><div class="result-label">Best Method</div></div>`;
+
+    let detail = '';
+    [addData, dropData].forEach(d => {
+        const isBest = d === best;
+        detail += `<span class="room-name" style="${isBest?'color:var(--green);':''}">` +
+            `${d.method}${isBest?' \u2713':''}</span>: $${d.cost.toFixed(0)}K, ` +
+            `${d.open.length} open (${d.open.map(i=>centers[i].name).join(', ')}), ` +
+            `avg dist=${d.avgDist.toFixed(1)}, ${d.elapsed.toFixed(2)}ms<br>`;
+    });
+    const savings = addData.cost !== dropData.cost ? Math.abs((1 - Math.min(addData.cost,dropData.cost)/Math.max(addData.cost,dropData.cost))*100).toFixed(1) : '0.0';
+    if (addData.cost !== dropData.cost) {
+        detail += `<br><em style="color:var(--green);">${best.method} saves ${savings}% vs ${best===addData?'Greedy Drop':'Greedy Add'}</em><br>`;
+    } else {
+        detail += `<br><em style="color:var(--green);">Both methods find the same solution</em><br>`;
+    }
+    detail += `<br><span class="room-name">Assignments (${best.method}):</span><br>`;
+    regions.forEach((r, i) => {
+        detail += `&nbsp;&nbsp;${r.name} \u2192 ${centers[best.assign[i]].name} (dist=${dist(r, centers[best.assign[i]]).toFixed(1)})<br>`;
+    });
+    document.getElementById('scheduleDetail').innerHTML = detail;
+    renderChart(best, centers, regions);
 }
 
-function selectAlgorithm(algo){
-    document.querySelectorAll('.algo-chip').forEach(c=>c.classList.remove('active'));
-    document.querySelector(`.algo-chip[data-algo="${algo}"]`).classList.add('active');
-    renderResults(algo==='add'?solveGreedyAdd():solveGreedyDrop());
+/* ── Main Solve ── */
+function runSolver() {
+    const centers = readCenters();
+    const regions = readRegions();
+    if (centers.length < 1) { alert('Need at least 1 center.'); return; }
+    if (regions.length < 1) { alert('Need at least 1 region.'); return; }
+    const tcMult = parseFloat(document.getElementById('transportCost').value) || 2;
+
+    const spinner = document.getElementById('solveSpinner');
+    spinner.style.display = 'inline';
+
+    setTimeout(() => {
+        const addResult = solveGreedyAdd(centers, regions, tcMult);
+        const dropResult = solveGreedyDrop(centers, regions, tcMult);
+        renderResults(addResult, dropResult, centers, regions);
+        spinner.style.display = 'none';
+    }, 50);
 }
 
-window.addEventListener('scroll',()=>{document.querySelector('.navbar').classList.toggle('scrolled',window.scrollY>50);});
-document.querySelectorAll('a[href^="#"]').forEach(a=>{a.addEventListener('click',e=>{const href=a.getAttribute('href');if(href==='#')return;e.preventDefault();const t=document.querySelector(href);if(t)t.scrollIntoView({behavior:'smooth',block:'start'});});});
-const observer=new IntersectionObserver((entries)=>{entries.forEach(entry=>{if(entry.isIntersecting)entry.target.classList.add('visible');});},{threshold:0.1});
-document.querySelectorAll('.fade-in').forEach(el=>observer.observe(el));
-document.addEventListener('DOMContentLoaded',()=>{selectAlgorithm('add');});
+/* ── Transport cost slider ── */
+document.getElementById('transportCost').addEventListener('input', function() {
+    document.getElementById('transportCostVal').textContent = parseFloat(this.value).toFixed(1);
+});
+
+/* ── Init ── */
+window.addEventListener('scroll', () => { document.querySelector('.navbar').classList.toggle('scrolled', window.scrollY > 50); });
+document.querySelectorAll('a[href^="#"]').forEach(a => { a.addEventListener('click', e => { const href = a.getAttribute('href'); if (href === '#') return; e.preventDefault(); const t = document.querySelector(href); if (t) t.scrollIntoView({behavior:'smooth', block:'start'}); }); });
+const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.classList.add('visible'); }); }, {threshold: 0.1});
+document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
+document.addEventListener('DOMContentLoaded', () => {
+    renderCentersTable(DEFAULT_CENTERS);
+    renderRegionsTable(DEFAULT_REGIONS);
+    runSolver();
+});
 </script>
 
 <!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
