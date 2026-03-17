@@ -11,7 +11,7 @@ Built as a learning and research companion for OR practitioners and researchers.
 ```
 Operations Research Problems
 │
-├── 1. Scheduling  ◄── Phase 1 (Active)
+├── 1. Scheduling
 │   ├── Single Machine Scheduling
 │   ├── Parallel Machine Scheduling
 │   ├── Flow Shop Scheduling (FSP / PFSP)
@@ -29,37 +29,41 @@ Operations Research Problems
 │   ├── Bin Packing (1D, 2D, 3D)
 │   └── Cutting Stock
 │
-├── 4. Location & Layout
+├── 4. Assignment & Matching
+│   ├── Linear Assignment (LAP)
+│   ├── Quadratic Assignment (QAP)
+│   └── Graph Matching
+│
+├── 5. Location & Covering
 │   ├── Facility Location (UFL, CFL)
 │   ├── p-Median / p-Center
 │   ├── Hub Location
-│   └── Quadratic Assignment (QAP)
+│   ├── Set Covering / Set Partitioning
+│   └── Set Packing
 │
-├── 5. Network Optimization
-│   ├── Shortest Path / SPPRC
+├── 6. Network Flow & Design
+│   ├── Shortest Path (Dijkstra, Bellman-Ford)
 │   ├── Max Flow / Min Cut
-│   ├── Min Cost Flow
+│   ├── Minimum Spanning Tree
 │   └── Network Design
 │
-├── 6. Assignment & Matching
-│   ├── Linear Assignment (LAP)
-│   ├── Generalized Assignment (GAP)
-│   └── Bipartite / Weighted Matching
+├── 7. Inventory & Lot Sizing
+│   ├── EOQ Models
+│   ├── Lot Sizing (Silver-Meal, Wagner-Whitin)
+│   ├── Capacitated Lot Sizing
+│   ├── Multi-Echelon Inventory
+│   └── Safety Stock
 │
-├── 7. Set & Covering
-│   ├── Set Covering / Set Partitioning
-│   ├── Graph Coloring
-│   └── Maximum Clique / Independent Set
+├── 8. Integrated Structural
+│   ├── Location-Routing (LRP)
+│   ├── Inventory-Routing (IRP)
+│   └── Assembly Line Balancing (SALBP)
 │
-├── 8. Supply Chain & Inventory
-│   ├── Lot Sizing (CLSP, DLSP)
-│   ├── Inventory Routing
-│   └── Supply Chain Network Design
-│
-└── 9. Stochastic & Robust Optimization
-    ├── Two-Stage Stochastic Programming
+└── 9. Uncertainty Modeling
+    ├── Stochastic Programming
     ├── Robust Optimization
-    └── Chance-Constrained Programming
+    ├── Chance-Constrained Programming
+    └── Distributionally Robust Optimization (DRO)
 ```
 
 ---
@@ -135,10 +139,10 @@ cd MathematicalModeling
 pip install -r requirements.txt
 
 # Run a specific algorithm
-python problems/scheduling/job_shop/heuristics/dispatching_rules.py
+python problems/1_scheduling/job_shop/heuristics/dispatching_rules.py
 
 # Run tests against benchmarks
-pytest problems/scheduling/job_shop/tests/
+pytest problems/1_scheduling/job_shop/tests/
 ```
 
 ---

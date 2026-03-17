@@ -25,7 +25,7 @@ MathematicalModeling/
 │   ├── metaheuristics/     # (placeholder for generic metaheuristic frameworks)
 │   └── visualization/      # (placeholder for visualization tools)
 └── problems/
-    └── scheduling/
+    └── 1_scheduling/
         ├── flow_shop/      # FULLY IMPLEMENTED
         │   ├── instance.py             # FlowShopInstance, FlowShopSolution dataclasses
         │   ├── benchmark_runner.py     # CLI for evaluating algorithms on Taillard instances
@@ -120,7 +120,7 @@ MathematicalModeling/
             │   └── genetic_algorithm.py # Activity-list GA (Hartmann 1998)
             └── tests/
                 └── test_rcpsp.py        # 35 tests, 7 test classes
-    └── routing/
+    └── 2_routing/
         ├── tsp/              # FULLY IMPLEMENTED (8 Python files, 55-test suite)
         │   ├── instance.py              # TSPInstance, TSPSolution, benchmark instances
         │   ├── exact/
@@ -155,7 +155,7 @@ MathematicalModeling/
             │   └── genetic_algorithm.py # Giant-tour encoding, TW-aware split
             └── tests/
                 └── test_vrptw.py        # 31 tests, 8 test classes
-    └── packing/
+    └── 3_packing_cutting/
         ├── knapsack/         # FULLY IMPLEMENTED (5 Python files, 37-test suite)
         │   ├── instance.py              # KnapsackInstance, KnapsackSolution, validation
         │   ├── exact/
@@ -181,7 +181,16 @@ MathematicalModeling/
             │   └── greedy_csp.py        # Greedy largest-first, FFD-based
             └── tests/
                 └── test_cutting_stock.py # 21 tests, 6 test classes
-    └── location_network/
+    └── 4_assignment_matching/
+        └── assignment/       # FULLY IMPLEMENTED (3 Python files, 17-test suite)
+            ├── instance.py              # AssignmentInstance, cost matrix
+            ├── exact/
+            │   └── hungarian.py         # Hungarian (Kuhn-Munkres) O(n^3)
+            ├── heuristics/
+            │   └── greedy_assignment.py # Greedy min-cost assignment O(n^2)
+            └── tests/
+                └── test_assignment.py   # 17 tests, 6 test classes
+    └── 5_location_covering/
         ├── facility_location/ # FULLY IMPLEMENTED (3 Python files, 16-test suite)
         │   ├── instance.py              # FacilityLocationInstance, validation
         │   ├── heuristics/
@@ -190,12 +199,13 @@ MathematicalModeling/
         │   │   └── simulated_annealing.py # Toggle/swap with Boltzmann acceptance
         │   └── tests/
         │       └── test_facility_location.py # 16 tests, 6 test classes
-        ├── p_median/         # FULLY IMPLEMENTED (2 Python files, 13-test suite)
-        │   ├── instance.py              # PMedianInstance, validation
-        │   ├── heuristics/
-        │   │   └── greedy_pmedian.py    # Greedy, Teitz-Bart interchange
-        │   └── tests/
-        │       └── test_p_median.py     # 13 tests, 5 test classes
+        └── p_median/         # FULLY IMPLEMENTED (2 Python files, 13-test suite)
+            ├── instance.py              # PMedianInstance, validation
+            ├── heuristics/
+            │   └── greedy_pmedian.py    # Greedy, Teitz-Bart interchange
+            └── tests/
+                └── test_p_median.py     # 13 tests, 5 test classes
+    └── 6_network_flow_design/
         ├── shortest_path/    # FULLY IMPLEMENTED (3 Python files, 21-test suite)
         │   ├── instance.py              # ShortestPathInstance, edge/matrix creation
         │   ├── exact/
@@ -209,21 +219,13 @@ MathematicalModeling/
         │   │   └── edmonds_karp.py      # Edmonds-Karp O(VE^2), min-cut extraction
         │   └── tests/
         │       └── test_max_flow.py     # 16 tests, 5 test classes
-        ├── min_spanning_tree/ # FULLY IMPLEMENTED (2 Python files, 16-test suite)
-        │   ├── instance.py              # MSTInstance, undirected graph, validation
-        │   ├── exact/
-        │   │   └── mst_algorithms.py    # Kruskal O(E log E), Prim O(E log V)
-        │   └── tests/
-        │       └── test_mst.py          # 16 tests, 5 test classes
-        └── assignment/       # FULLY IMPLEMENTED (3 Python files, 17-test suite)
-            ├── instance.py              # AssignmentInstance, cost matrix
+        └── min_spanning_tree/ # FULLY IMPLEMENTED (2 Python files, 16-test suite)
+            ├── instance.py              # MSTInstance, undirected graph, validation
             ├── exact/
-            │   └── hungarian.py         # Hungarian (Kuhn-Munkres) O(n^3)
-            ├── heuristics/
-            │   └── greedy_assignment.py # Greedy min-cost assignment O(n^2)
+            │   └── mst_algorithms.py    # Kruskal O(E log E), Prim O(E log V)
             └── tests/
-                └── test_assignment.py   # 17 tests, 6 test classes
-    └── stochastic_robust/
+                └── test_mst.py          # 16 tests, 5 test classes
+    └── 9_uncertainty_modeling/
         ├── newsvendor/           # FULLY IMPLEMENTED (3 Python files, 13-test suite)
         │   ├── instance.py              # NewsvendorInstance, critical fractile
         │   ├── exact/
@@ -305,7 +307,7 @@ MathematicalModeling/
         ├── max_clique/           # FULLY IMPLEMENTED (Bron-Kerbosch)
         ├── set_packing/          # FULLY IMPLEMENTED
         └── job_sequencing/       # FULLY IMPLEMENTED
-    └── supply_chain/
+    └── 7_inventory_lotsizing/
         ├── eoq/                  # FULLY IMPLEMENTED (classic, backorder, discounts)
         ├── lot_sizing/           # FULLY IMPLEMENTED (Silver-Meal, Wagner-Whitin)
         ├── wagner_whitin/        # FULLY IMPLEMENTED (exact DP)
@@ -327,112 +329,109 @@ MathematicalModeling/
 pip install -r requirements.txt
 
 # Run all scheduling tests (341 tests)
-python -m pytest problems/scheduling/ -v
+python -m pytest problems/1_scheduling/ -v
 
 # Run all flow shop tests (130 tests)
-python -m pytest problems/scheduling/flow_shop/tests/ -v
+python -m pytest problems/1_scheduling/flow_shop/tests/ -v
 
 # Run parallel machine tests (43 tests)
-python -m pytest problems/scheduling/parallel_machine/tests/ -v
+python -m pytest problems/1_scheduling/parallel_machine/tests/ -v
 
 # Run single machine tests (55 tests)
-python -m pytest problems/scheduling/single_machine/tests/ -v
+python -m pytest problems/1_scheduling/single_machine/tests/ -v
 
 # Run job shop tests (41 tests)
-python -m pytest problems/scheduling/job_shop/tests/ -v
+python -m pytest problems/1_scheduling/job_shop/tests/ -v
 
 # Run flexible job shop tests (37 tests)
-python -m pytest problems/scheduling/flexible_job_shop/tests/ -v
+python -m pytest problems/1_scheduling/flexible_job_shop/tests/ -v
 
 # Run RCPSP tests (35 tests)
-python -m pytest problems/scheduling/rcpsp/tests/ -v
+python -m pytest problems/1_scheduling/rcpsp/tests/ -v
 
 # Run specific test class
-python -m pytest problems/scheduling/flow_shop/tests/test_flow_shop.py::TestNEH -v
+python -m pytest problems/1_scheduling/flow_shop/tests/test_flow_shop.py::TestNEH -v
 
 # Run benchmarks (example: 20 jobs, 5 machines)
-python problems/scheduling/flow_shop/benchmark_runner.py --class 20_5 --all
+python problems/1_scheduling/flow_shop/benchmark_runner.py --class 20_5 --all
 
 # Run all routing tests (127 tests)
-python -m pytest problems/routing/ -v
+python -m pytest problems/2_routing/ -v
 
 # Run TSP tests (55 tests)
-python -m pytest problems/routing/tsp/tests/ -v
+python -m pytest problems/2_routing/tsp/tests/ -v
 
 # Run CVRP tests (41 tests)
-python -m pytest problems/routing/cvrp/tests/ -v
+python -m pytest problems/2_routing/cvrp/tests/ -v
 
 # Run VRPTW tests (31 tests)
-python -m pytest problems/routing/vrptw/tests/ -v
+python -m pytest problems/2_routing/vrptw/tests/ -v
 
 # Run all packing tests (87 tests)
-python -m pytest problems/packing/ -v
+python -m pytest problems/3_packing_cutting/ -v
 
 # Run knapsack tests (37 tests)
-python -m pytest problems/packing/knapsack/tests/ -v
+python -m pytest problems/3_packing_cutting/knapsack/tests/ -v
 
 # Run bin packing tests (29 tests)
-python -m pytest problems/packing/bin_packing/tests/ -v
+python -m pytest problems/3_packing_cutting/bin_packing/tests/ -v
 
 # Run cutting stock tests (21 tests)
-python -m pytest problems/packing/cutting_stock/tests/ -v
-
-# Run all location/network tests (99 tests)
-python -m pytest problems/location_network/ -v
+python -m pytest problems/3_packing_cutting/cutting_stock/tests/ -v
 
 # Run facility location tests (16 tests)
-python -m pytest problems/location_network/facility_location/tests/ -v
+python -m pytest problems/5_location_covering/facility_location/tests/ -v
 
 # Run p-median tests (13 tests)
-python -m pytest problems/location_network/p_median/tests/ -v
+python -m pytest problems/5_location_covering/p_median/tests/ -v
 
 # Run shortest path tests (21 tests)
-python -m pytest problems/location_network/shortest_path/tests/ -v
+python -m pytest problems/6_network_flow_design/shortest_path/tests/ -v
 
 # Run max flow tests (16 tests)
-python -m pytest problems/location_network/max_flow/tests/ -v
+python -m pytest problems/6_network_flow_design/max_flow/tests/ -v
 
 # Run MST tests (16 tests)
-python -m pytest problems/location_network/min_spanning_tree/tests/ -v
+python -m pytest problems/6_network_flow_design/min_spanning_tree/tests/ -v
 
 # Run assignment tests (17 tests)
-python -m pytest problems/location_network/assignment/tests/ -v
+python -m pytest problems/4_assignment_matching/assignment/tests/ -v
 
 # Run all stochastic/robust tests (110 tests)
-python -m pytest problems/stochastic_robust/ -v
+python -m pytest problems/9_uncertainty_modeling/ -v
 
 # Run newsvendor tests (13 tests)
-python -m pytest problems/stochastic_robust/newsvendor/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/newsvendor/tests/ -v
 
 # Run two-stage SP tests (10 tests)
-python -m pytest problems/stochastic_robust/two_stage_sp/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/two_stage_sp/tests/ -v
 
 # Run robust shortest path tests (13 tests)
-python -m pytest problems/stochastic_robust/robust_shortest_path/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/robust_shortest_path/tests/ -v
 
 # Run stochastic knapsack tests (11 tests)
-python -m pytest problems/stochastic_robust/stochastic_knapsack/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/stochastic_knapsack/tests/ -v
 
 # Run chance-constrained FL tests (11 tests)
-python -m pytest problems/stochastic_robust/chance_constrained_fl/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/chance_constrained_fl/tests/ -v
 
 # Run robust portfolio tests (14 tests)
-python -m pytest problems/stochastic_robust/robust_portfolio/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/robust_portfolio/tests/ -v
 
 # Run stochastic VRP tests (13 tests)
-python -m pytest problems/stochastic_robust/stochastic_vrp/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/stochastic_vrp/tests/ -v
 
 # Run robust scheduling tests (13 tests)
-python -m pytest problems/stochastic_robust/robust_scheduling/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/robust_scheduling/tests/ -v
 
 # Run DRO tests (12 tests)
-python -m pytest problems/stochastic_robust/dro/tests/ -v
+python -m pytest problems/9_uncertainty_modeling/dro/tests/ -v
 
 # Run all combinatorial tests
 python -m pytest problems/combinatorial/ -v
 
 # Run all supply chain tests
-python -m pytest problems/supply_chain/ -v
+python -m pytest problems/7_inventory_lotsizing/ -v
 
 # Run all continuous optimization tests
 python -m pytest problems/continuous/ -v
@@ -1081,7 +1080,7 @@ Each problem folder should contain:
 
 ## Adding New Problems
 
-Follow the pattern established by `problems/scheduling/flow_shop/`:
+Follow the pattern established by `problems/1_scheduling/flow_shop/`:
 
 1. Create the problem directory under appropriate family
 2. Implement `instance.py` with dataclass-based Instance and Solution

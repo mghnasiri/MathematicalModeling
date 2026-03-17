@@ -1,77 +1,68 @@
 # Problem Taxonomy — Full Classification
 
-## Scheduling Problems (Phase 1)
+## Family 1 · Scheduling
+**Path**: `problems/1_scheduling/`
 
 ### 1. Single Machine Scheduling
-**Path**: `problems/scheduling/single_machine/`
+**Path**: `problems/1_scheduling/single_machine/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
-| Total completion | $1 \mid\mid \sum C_j$ | P | SPT |
-| Weighted completion | $1 \mid\mid \sum w_j C_j$ | P | WSPT |
-| Maximum lateness | $1 \mid\mid L_{\max}$ | P | EDD |
-| Number of tardy jobs | $1 \mid\mid \sum U_j$ | P | Moore's |
-| Total tardiness | $1 \mid\mid \sum T_j$ | NP-hard | DP |
-| Weighted tardiness | $1 \mid\mid \sum w_j T_j$ | NP-hard (strongly) | B&B, SA |
-| With release dates | $1 \mid r_j \mid \sum C_j$ | NP-hard | B&B |
-| With setups (= TSP) | $1 \mid s_{jk} \mid C_{\max}$ | NP-hard | TSP methods |
+| Total completion | 1 \|\| ΣCj | P | SPT |
+| Weighted completion | 1 \|\| ΣwjCj | P | WSPT |
+| Maximum lateness | 1 \|\| Lmax | P | EDD |
+| Number of tardy jobs | 1 \|\| ΣUj | P | Moore's |
+| Total tardiness | 1 \|\| ΣTj | NP-hard | DP |
+| Weighted tardiness | 1 \|\| ΣwjTj | NP-hard (strongly) | B&B, SA |
 
 ### 2. Parallel Machine Scheduling
-**Path**: `problems/scheduling/parallel_machine/`
+**Path**: `problems/1_scheduling/parallel_machine/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
-| Identical, makespan | $P_m \mid\mid C_{\max}$ | NP-hard | LPT (4/3) |
-| Preemptive makespan | $P_m \mid pmtn \mid C_{\max}$ | P | McNaughton |
-| Total completion | $P_m \mid\mid \sum C_j$ | P | SPT |
-| Uniform machines | $Q_m \mid\mid C_{\max}$ | NP-hard | |
-| Unrelated machines | $R_m \mid\mid C_{\max}$ | NP-hard (strongly) | LP rounding |
+| Identical, makespan | Pm \|\| Cmax | NP-hard | LPT (4/3) |
+| Uniform machines | Qm \|\| Cmax | NP-hard | |
+| Unrelated machines | Rm \|\| Cmax | NP-hard (strongly) | LP rounding |
 
 ### 3. Flow Shop Scheduling
-**Path**: `problems/scheduling/flow_shop/`
+**Path**: `problems/1_scheduling/flow_shop/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
-| 2-machine makespan | $F_2 \mid\mid C_{\max}$ | P | Johnson's rule |
-| m-machine makespan | $F_m \mid\mid C_{\max}$ | NP-hard ($m \geq 3$) | NEH, IG |
-| Permutation flow shop | $F_m \mid prmu \mid C_{\max}$ | NP-hard ($m \geq 3$) | NEH, IG |
-| Blocking flow shop | $F_m \mid block \mid C_{\max}$ | NP-hard ($m \geq 3$) | |
-| No-wait flow shop | $F_m \mid no\text{-}wait \mid C_{\max}$ | NP-hard ($m \geq 3$) | TSP reduction |
+| 2-machine makespan | F2 \|\| Cmax | P | Johnson's rule |
+| m-machine makespan | Fm \| prmu \| Cmax | NP-hard (m >= 3) | NEH, IG |
+| Blocking flow shop | Fm \| block \| Cmax | NP-hard (m >= 3) | |
+| No-wait flow shop | Fm \| no-wait \| Cmax | NP-hard (m >= 3) | TSP reduction |
 
 ### 4. Job Shop Scheduling
-**Path**: `problems/scheduling/job_shop/`
+**Path**: `problems/1_scheduling/job_shop/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
-| Makespan | $J_m \mid\mid C_{\max}$ | NP-hard ($m \geq 2$) | Tabu search, CP |
-| 2-job case | $J_m \mid n=2 \mid C_{\max}$ | P | Jackson's rule |
-| With recirculation | $J_m \mid rcrc \mid C_{\max}$ | NP-hard | |
+| Makespan | Jm \|\| Cmax | NP-hard (m >= 2) | Tabu search, CP |
 
 ### 5. Flexible Job Shop Scheduling
-**Path**: `problems/scheduling/flexible_job_shop/`
+**Path**: `problems/1_scheduling/flexible_job_shop/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | Total flexibility | T-FJSP | NP-hard | Integrated TS, GA |
 | Partial flexibility | P-FJSP | NP-hard | Hierarchical TS |
-| Multi-objective | MO-FJSP | NP-hard | NSGA-II |
 
 ### 6. Resource-Constrained Project Scheduling
-**Path**: `problems/scheduling/rcpsp/`
+**Path**: `problems/1_scheduling/rcpsp/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | Basic | RCPSP | NP-hard (strongly) | GA + SGS |
-| Multi-mode | MRCPSP | NP-hard | |
-| Gen. precedence | RCPSP/max | NP-hard | |
-| Multi-skill | MS-RCPSP | NP-hard | |
 
 ---
 
-## Routing Problems (Phase 2)
+## Family 2 · Routing
+**Path**: `problems/2_routing/`
 
 ### 7. Traveling Salesman Problem
-**Path**: `problems/routing/tsp/`
+**Path**: `problems/2_routing/tsp/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
@@ -79,14 +70,14 @@
 | Asymmetric TSP | ATSP | NP-hard | B&B |
 
 ### 8. Capacitated Vehicle Routing
-**Path**: `problems/routing/cvrp/`
+**Path**: `problems/2_routing/cvrp/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | CVRP | CVRP | NP-hard | Clarke-Wright, Sweep |
 
 ### 9. VRP with Time Windows
-**Path**: `problems/routing/vrptw/`
+**Path**: `problems/2_routing/vrptw/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
@@ -94,27 +85,25 @@
 
 ---
 
-## Packing & Cutting Problems (Phase 3)
+## Family 3 · Packing & Cutting
+**Path**: `problems/3_packing_cutting/`
 
 ### 10. 0-1 Knapsack
-**Path**: `problems/packing/knapsack/`
+**Path**: `problems/3_packing_cutting/knapsack/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | 0-1 Knapsack | KP01 | NP-hard (weakly) | DP O(nW), B&B |
-| Fractional Knapsack | — | P | Greedy (ratio sort) |
-| Bounded Knapsack | BKP | NP-hard | DP |
 
 ### 11. 1D Bin Packing
-**Path**: `problems/packing/bin_packing/`
+**Path**: `problems/3_packing_cutting/bin_packing/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | 1D Bin Packing | BPP1D | NP-hard (strongly) | FFD (11/9 approx) |
-| 2D Bin Packing | BPP2D | NP-hard | — |
 
 ### 12. 1D Cutting Stock
-**Path**: `problems/packing/cutting_stock/`
+**Path**: `problems/3_packing_cutting/cutting_stock/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
@@ -122,61 +111,140 @@
 
 ---
 
-## Location & Network Problems (Phase 4)
+## Family 4 · Assignment & Matching
+**Path**: `problems/4_assignment_matching/`
 
-### 13. Facility Location
-**Path**: `problems/location_network/facility_location/`
+### 13. Linear Assignment
+**Path**: `problems/4_assignment_matching/assignment/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Square LAP | LAP | P | Hungarian O(n^3) |
+
+### 14. Quadratic Assignment
+**Path**: `problems/4_assignment_matching/quadratic_assignment/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| QAP | QAP | NP-hard | SA, TS |
+
+---
+
+## Family 5 · Location & Covering
+**Path**: `problems/5_location_covering/`
+
+### 15. Facility Location
+**Path**: `problems/5_location_covering/facility_location/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | Uncapacitated | UFLP | NP-hard | Greedy add/drop, SA |
 | Capacitated | CFLP | NP-hard | — |
 
-### 14. p-Median
-**Path**: `problems/location_network/p_median/`
+### 16. p-Median
+**Path**: `problems/5_location_covering/p_median/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | p-Median | PMP | NP-hard | Greedy, Teitz-Bart |
-| p-Center | PCP | NP-hard | — |
 
-### 15. Shortest Path
-**Path**: `problems/location_network/shortest_path/`
+### 17. Set Covering
+**Path**: `problems/5_location_covering/set_covering/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Set Covering | SCP | NP-hard | Greedy (ln n approx) |
+
+### 18. Set Packing
+**Path**: `problems/5_location_covering/set_packing/`
+
+| Variant | Notation | Complexity | Key Algorithm |
+|---------|----------|------------|--------------|
+| Set Packing | SPP | NP-hard | Greedy |
+
+---
+
+## Family 6 · Network Flow & Design
+**Path**: `problems/6_network_flow_design/`
+
+### 19. Shortest Path
+**Path**: `problems/6_network_flow_design/shortest_path/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | Non-negative SSSP | SPP | P | Dijkstra O((V+E) log V) |
 | General SSSP | SPP | P | Bellman-Ford O(VE) |
-| All-pairs | APSP | P | Floyd-Warshall O(V^3) |
 
-### 16. Maximum Flow
-**Path**: `problems/location_network/max_flow/`
+### 20. Maximum Flow
+**Path**: `problems/6_network_flow_design/max_flow/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | Max Flow / Min Cut | Max-Flow | P | Edmonds-Karp O(VE^2) |
-| Min Cost Flow | MCFP | P | — |
 
-### 17. Minimum Spanning Tree
-**Path**: `problems/location_network/min_spanning_tree/`
+### 21. Minimum Spanning Tree
+**Path**: `problems/6_network_flow_design/min_spanning_tree/`
 
 | Variant | Notation | Complexity | Key Algorithm |
 |---------|----------|------------|--------------|
 | MST | MST | P | Kruskal O(E log E), Prim O(E log V) |
-| Steiner Tree | STP | NP-hard | — |
-
-### 18. Linear Assignment
-**Path**: `problems/location_network/assignment/`
-
-| Variant | Notation | Complexity | Key Algorithm |
-|---------|----------|------------|--------------|
-| Square LAP | LAP | P | Hungarian O(n^3) |
-| Bottleneck AP | BAP | P | — |
-| Quadratic AP | QAP | NP-hard | — |
 
 ---
 
-## Future Phases (Planned)
+## Family 7 · Inventory & Lot Sizing
+**Path**: `problems/7_inventory_lotsizing/`
 
-### Phase 5: Stochastic & Robust
-- Two-Stage SP, Robust Optimization, Chance-Constrained
+### 22. EOQ Models
+**Path**: `problems/7_inventory_lotsizing/eoq/`
+
+### 23. Lot Sizing
+**Path**: `problems/7_inventory_lotsizing/lot_sizing/`
+
+### 24. Wagner-Whitin
+**Path**: `problems/7_inventory_lotsizing/wagner_whitin/`
+
+### 25. Capacitated Lot Sizing
+**Path**: `problems/7_inventory_lotsizing/capacitated_lot_sizing/`
+
+### 26. Multi-Echelon Inventory
+**Path**: `problems/7_inventory_lotsizing/multi_echelon_inventory/`
+
+### 27. Safety Stock
+**Path**: `problems/7_inventory_lotsizing/safety_stock/`
+
+---
+
+## Family 8 · Integrated Structural
+**Path**: `problems/8_integrated_structural/`
+
+### 28. Location-Routing Problem (LRP)
+Combined facility location and vehicle routing.
+
+### 29. Inventory-Routing Problem (IRP)
+Combined inventory replenishment and delivery routing.
+
+### 30. Assembly Line Balancing (SALBP)
+Combined task assignment and scheduling with cycle time constraints.
+
+---
+
+## Family 9 · Uncertainty Modeling
+**Path**: `problems/9_uncertainty_modeling/`
+
+Paradigms for optimization under uncertainty, applied across all problem families.
+
+- Stochastic Programming (Two-Stage SP, SAA)
+- Robust Optimization (min-max, min-max regret)
+- Chance-Constrained Programming
+- Distributionally Robust Optimization (DRO)
+
+### Implemented problems
+- Newsvendor
+- Two-Stage SP
+- Robust Shortest Path
+- Stochastic Knapsack
+- Chance-Constrained Facility Location
+- Robust Portfolio
+- Stochastic VRP
+- Robust Scheduling
+- DRO
