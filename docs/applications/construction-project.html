@@ -2518,53 +2518,358 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 // ══════════════════════════════════════════════════
-//  RCPSP Construction Project Scheduler
+//  RCPSP Construction Project Scheduler — Interactive
 // ══════════════════════════════════════════════════
 
-// ── Activity Data ──
-const ACTIVITY_COLORS = [
-    'rgba(100,255,218,0.0)',  // 0: source (invisible)
-    'rgba(197,160,89,0.85)',  // 1: foundation
-    'rgba(122,162,247,0.85)', // 2: plumbing
-    'rgba(100,255,218,0.85)', // 3: framing
-    'rgba(255,107,107,0.85)', // 4: electrical
-    'rgba(212,175,55,0.85)',  // 5: roofing
-    'rgba(168,178,209,0.85)', // 6: finishing
-    'rgba(100,255,218,0.0)'   // 7: sink (invisible)
+// ── Color palettes ──
+const COLOR_POOL = [
+    { bg: 'rgba(197,160,89,0.85)',  border: 'rgba(197,160,89,1)' },
+    { bg: 'rgba(122,162,247,0.85)', border: 'rgba(122,162,247,1)' },
+    { bg: 'rgba(100,255,218,0.85)', border: 'rgba(100,255,218,1)' },
+    { bg: 'rgba(255,107,107,0.85)', border: 'rgba(255,107,107,1)' },
+    { bg: 'rgba(212,175,55,0.85)',  border: 'rgba(212,175,55,1)' },
+    { bg: 'rgba(168,178,209,0.85)', border: 'rgba(168,178,209,1)' },
+    { bg: 'rgba(187,154,247,0.85)', border: 'rgba(187,154,247,1)' },
+    { bg: 'rgba(255,158,100,0.85)', border: 'rgba(255,158,100,1)' },
+    { bg: 'rgba(158,206,106,0.85)', border: 'rgba(158,206,106,1)' },
+    { bg: 'rgba(240,192,64,0.85)',  border: 'rgba(240,192,64,1)' },
+    { bg: 'rgba(200,149,108,0.85)', border: 'rgba(200,149,108,1)' },
+    { bg: 'rgba(168,200,160,0.85)', border: 'rgba(168,200,160,1)' },
 ];
 
-const ACTIVITY_BORDER_COLORS = [
-    'rgba(100,255,218,0.0)',
-    'rgba(197,160,89,1)',
-    'rgba(122,162,247,1)',
-    'rgba(100,255,218,1)',
-    'rgba(255,107,107,1)',
-    'rgba(212,175,55,1)',
-    'rgba(168,178,209,1)',
-    'rgba(100,255,218,0.0)'
+const DUMMY_COLOR = { bg: 'rgba(100,255,218,0.0)', border: 'rgba(100,255,218,0.0)' };
+
+function getActColor(actId) {
+    if (actId === 0 || actId === activities.length - 1) return DUMMY_COLOR;
+    return COLOR_POOL[(actId - 1) % COLOR_POOL.length];
+}
+
+// ── Default Data ──
+const DEFAULT_ACTIVITIES = [
+    { name: 'Foundation',  dur: 4, workers: 3, cranes: 1 },
+    { name: 'Plumbing',    dur: 2, workers: 2, cranes: 0 },
+    { name: 'Framing',     dur: 3, workers: 4, cranes: 1 },
+    { name: 'Electrical',  dur: 2, workers: 2, cranes: 0 },
+    { name: 'Roofing',     dur: 3, workers: 3, cranes: 2 },
+    { name: 'Finishing',   dur: 2, workers: 2, cranes: 0 },
 ];
 
-let activities = [
-    { id: 0, name: 'Source',      dur: 0, workers: 0, cranes: 0 },
-    { id: 1, name: 'Foundation',  dur: 4, workers: 3, cranes: 1 },
-    { id: 2, name: 'Plumbing',    dur: 2, workers: 2, cranes: 0 },
-    { id: 3, name: 'Framing',     dur: 3, workers: 4, cranes: 1 },
-    { id: 4, name: 'Electrical',  dur: 2, workers: 2, cranes: 0 },
-    { id: 5, name: 'Roofing',     dur: 3, workers: 3, cranes: 2 },
-    { id: 6, name: 'Finishing',   dur: 2, workers: 2, cranes: 0 },
-    { id: 7, name: 'Sink',        dur: 0, workers: 0, cranes: 0 }
-];
-
-// Precedence: [predecessor, successor]
-const precedences = [
-    [0, 1], [0, 2],
+const DEFAULT_PRECEDENCES = [
     [1, 3], [2, 3], [2, 4],
     [3, 5], [4, 6],
-    [5, 7], [6, 7]
 ];
 
+const inputStyleNum = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const inputStyleName = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:95px;outline:none;';
+
+// ── State (rebuilt from DOM each time) ──
+let activities = [];
+let precedences = [];
 let resourceCapacity = { workers: 5, cranes: 2 };
 let currentResults = [];
+
+// ── Build full activities array with source/sink ──
+function rebuildActivitiesFromDOM() {
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    activities = [{ id: 0, name: 'Source', dur: 0, workers: 0, cranes: 0 }];
+    rows.forEach((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        activities.push({
+            id: i + 1,
+            name: inputs[0].value || ('Act' + (i + 1)),
+            dur: Math.max(0, parseInt(inputs[1].value) || 1),
+            workers: Math.max(0, parseInt(inputs[2].value) || 0),
+            cranes: Math.max(0, parseInt(inputs[3].value) || 0),
+        });
+    });
+    const sinkId = activities.length;
+    activities.push({ id: sinkId, name: 'Sink', dur: 0, workers: 0, cranes: 0 });
+}
+
+function rebuildPrecedencesFromDOM() {
+    const rows = document.querySelectorAll('#precedenceTableBody tr');
+    const n = activities.length;
+    const realCount = n - 2; // exclude source/sink
+    const userPrecs = [];
+    rows.forEach(row => {
+        const selects = row.querySelectorAll('select');
+        const from = parseInt(selects[0].value);
+        const to = parseInt(selects[1].value);
+        if (from > 0 && to > 0 && from < n - 1 && to < n - 1 && from !== to) {
+            userPrecs.push([from, to]);
+        }
+    });
+
+    // Build full precedences including source->all with no predecessors, all with no successors->sink
+    const hasPred = new Set(userPrecs.map(p => p[1]));
+    const hasSucc = new Set(userPrecs.map(p => p[0]));
+    precedences = [];
+    // Source -> activities with no user-defined predecessor
+    for (let i = 1; i <= realCount; i++) {
+        if (!hasPred.has(i)) precedences.push([0, i]);
+    }
+    // User precedences
+    userPrecs.forEach(p => precedences.push(p));
+    // Activities with no user-defined successor -> Sink
+    for (let i = 1; i <= realCount; i++) {
+        if (!hasSucc.has(i)) precedences.push([i, n - 1]);
+    }
+}
+
+function rebuildResourcesFromDOM() {
+    resourceCapacity.workers = parseInt(document.getElementById('workers-slider').value) || 5;
+    resourceCapacity.cranes = parseInt(document.getElementById('cranes-slider').value) || 2;
+}
+
+function rebuildAll() {
+    rebuildActivitiesFromDOM();
+    rebuildPrecedencesFromDOM();
+    rebuildResourcesFromDOM();
+}
+
+// ── Render Activity Table ──
+function renderActivityTable(acts) {
+    const tbody = document.getElementById('activityTableBody');
+    tbody.innerHTML = '';
+    acts.forEach((a, i) => {
+        const color = COLOR_POOL[i % COLOR_POOL.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color.bg};margin-right:0.4rem;vertical-align:middle;"></span>${i + 1}</td>
+            <td><input type="text" value="${a.name}" style="${inputStyleName}"></td>
+            <td><input type="number" value="${a.dur}" min="1" max="50" style="${inputStyleNum}"></td>
+            <td><input type="number" value="${a.workers}" min="0" max="20" style="${inputStyleNum}"></td>
+            <td><input type="number" value="${a.cranes}" min="0" max="10" style="${inputStyleNum}"></td>
+            <td><button onclick="removeActivityRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+}
+
+// ── Render Precedence Table ──
+function renderPrecedenceTable(precs) {
+    const tbody = document.getElementById('precedenceTableBody');
+    tbody.innerHTML = '';
+    precs.forEach((p, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td>${i + 1}</td>
+            <td>${buildActivitySelect(p[0])}</td>
+            <td style="color:var(--gold);font-size:1.1rem;text-align:center;">&rarr;</td>
+            <td>${buildActivitySelect(p[1])}</td>
+            <td><button onclick="removePrecedenceRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+}
+
+function buildActivitySelect(selectedVal) {
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    let html = `<select style="${inputStyleNum}width:110px;font-family:Inter,sans-serif;">`;
+    rows.forEach((row, i) => {
+        const nameInput = row.querySelector('input[type="text"]');
+        const name = nameInput ? nameInput.value : ('Act' + (i + 1));
+        const id = i + 1;
+        html += `<option value="${id}" ${id === selectedVal ? 'selected' : ''}>${id}. ${name}</option>`;
+    });
+    html += '</select>';
+    return html;
+}
+
+function refreshPrecedenceSelects() {
+    // Re-read current precedences from DOM and re-render
+    const rows = document.querySelectorAll('#precedenceTableBody tr');
+    const precs = [];
+    rows.forEach(row => {
+        const selects = row.querySelectorAll('select');
+        precs.push([parseInt(selects[0].value) || 1, parseInt(selects[1].value) || 2]);
+    });
+    renderPrecedenceTable(precs);
+}
+
+// ── Config Summary ──
+function updateConfigSummary() {
+    const actCount = document.querySelectorAll('#activityTableBody tr').length;
+    const precCount = document.querySelectorAll('#precedenceTableBody tr').length;
+    const w = document.getElementById('workers-slider').value;
+    const c = document.getElementById('cranes-slider').value;
+    const el = document.getElementById('configSummary');
+    if (el) el.textContent = `${actCount} Activities \u00b7 ${precCount} Precedences \u00b7 Workers ${w} \u00b7 Cranes ${c}`;
+}
+
+// ── Add / Remove Activities ──
+function addActivity() {
+    const names = ['Excavation','Concrete','Steel Work','Cladding','Painting','HVAC','Insulation','Flooring','Glazing','Landscaping','Inspection','Drywall'];
+    const actCount = document.querySelectorAll('#activityTableBody tr').length;
+    const name = names[actCount % names.length];
+    const tbody = document.getElementById('activityTableBody');
+    const i = actCount;
+    const color = COLOR_POOL[i % COLOR_POOL.length];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color.bg};margin-right:0.4rem;vertical-align:middle;"></span>${i + 1}</td>
+        <td><input type="text" value="${name}" style="${inputStyleName}"></td>
+        <td><input type="number" value="${1 + Math.floor(Math.random() * 5)}" min="1" max="50" style="${inputStyleNum}"></td>
+        <td><input type="number" value="${1 + Math.floor(Math.random() * 4)}" min="0" max="20" style="${inputStyleNum}"></td>
+        <td><input type="number" value="${Math.floor(Math.random() * 2)}" min="0" max="10" style="${inputStyleNum}"></td>
+        <td><button onclick="removeActivityRow(this)" style="background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>
+    `;
+    tbody.appendChild(tr);
+    refreshPrecedenceSelects();
+    updateConfigSummary();
+}
+
+function removeActivityRow(btn) {
+    if (document.querySelectorAll('#activityTableBody tr').length <= 1) return;
+    btn.closest('tr').remove();
+    // Re-number rows
+    renumberActivityRows();
+    refreshPrecedenceSelects();
+    updateConfigSummary();
+}
+
+function removeLastActivity() {
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    if (rows.length <= 1) return;
+    rows[rows.length - 1].remove();
+    renumberActivityRows();
+    refreshPrecedenceSelects();
+    updateConfigSummary();
+}
+
+function renumberActivityRows() {
+    const rows = document.querySelectorAll('#activityTableBody tr');
+    rows.forEach((row, i) => {
+        const color = COLOR_POOL[i % COLOR_POOL.length];
+        row.cells[0].innerHTML = `<span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${color.bg};margin-right:0.4rem;vertical-align:middle;"></span>${i + 1}`;
+    });
+}
+
+// ── Add / Remove Precedences ──
+function addPrecedence() {
+    const actCount = document.querySelectorAll('#activityTableBody tr').length;
+    if (actCount < 2) return;
+    const rows = document.querySelectorAll('#precedenceTableBody tr');
+    const precs = [];
+    rows.forEach(row => {
+        const selects = row.querySelectorAll('select');
+        precs.push([parseInt(selects[0].value) || 1, parseInt(selects[1].value) || 2]);
+    });
+    precs.push([1, Math.min(2, actCount)]);
+    renderPrecedenceTable(precs);
+}
+
+function removePrecedenceRow(btn) {
+    btn.closest('tr').remove();
+    // Re-number
+    const rows = document.querySelectorAll('#precedenceTableBody tr');
+    rows.forEach((row, i) => { row.cells[0].textContent = i + 1; });
+    updateConfigSummary();
+}
+
+function removeLastPrecedence() {
+    const rows = document.querySelectorAll('#precedenceTableBody tr');
+    if (rows.length === 0) return;
+    rows[rows.length - 1].remove();
+    const remaining = document.querySelectorAll('#precedenceTableBody tr');
+    remaining.forEach((row, i) => { row.cells[0].textContent = i + 1; });
+    updateConfigSummary();
+}
+
+// ── Reset / Randomize / Presets ──
+function resetDefaults() {
+    document.getElementById('workers-slider').value = 5;
+    document.getElementById('workers-display').textContent = '5';
+    document.getElementById('cranes-slider').value = 2;
+    document.getElementById('cranes-display').textContent = '2';
+    renderActivityTable(JSON.parse(JSON.stringify(DEFAULT_ACTIVITIES)));
+    renderPrecedenceTable(JSON.parse(JSON.stringify(DEFAULT_PRECEDENCES)));
+}
+
+function randomizeActivities() {
+    const names = ['Excavation','Foundation','Plumbing','Framing','Electrical','Roofing','HVAC','Drywall','Painting','Flooring','Finishing','Inspection','Concrete','Steel Work','Glazing','Cladding','Insulation','Landscaping'];
+    const n = 4 + Math.floor(Math.random() * 8);
+    const acts = [];
+    const shuffled = names.slice().sort(() => Math.random() - 0.5);
+    for (let i = 0; i < n; i++) {
+        acts.push({
+            name: shuffled[i % shuffled.length],
+            dur: 1 + Math.floor(Math.random() * 7),
+            workers: 1 + Math.floor(Math.random() * 5),
+            cranes: Math.floor(Math.random() * 3),
+        });
+    }
+    renderActivityTable(acts);
+    // Random precedences: create a plausible DAG
+    const precs = [];
+    const maxPrecs = Math.floor(n * 1.2);
+    for (let k = 0; k < maxPrecs; k++) {
+        const from = 1 + Math.floor(Math.random() * (n - 1));
+        const to = from + 1 + Math.floor(Math.random() * (n - from));
+        if (to <= n && from !== to) {
+            const exists = precs.some(p => p[0] === from && p[1] === to);
+            if (!exists) precs.push([from, to]);
+        }
+    }
+    renderPrecedenceTable(precs);
+    // Randomize resource caps
+    const w = 3 + Math.floor(Math.random() * 8);
+    const c = 1 + Math.floor(Math.random() * 4);
+    document.getElementById('workers-slider').value = w;
+    document.getElementById('workers-display').textContent = w;
+    document.getElementById('cranes-slider').value = c;
+    document.getElementById('cranes-display').textContent = c;
+    updateConfigSummary();
+}
+
+function loadPreset(name) {
+    if (name === 'house') {
+        renderActivityTable([
+            { name: 'Site Prep',    dur: 2, workers: 2, cranes: 0 },
+            { name: 'Foundation',   dur: 5, workers: 4, cranes: 1 },
+            { name: 'Framing',      dur: 4, workers: 5, cranes: 2 },
+            { name: 'Plumbing',     dur: 3, workers: 2, cranes: 0 },
+            { name: 'Electrical',   dur: 3, workers: 2, cranes: 0 },
+            { name: 'Roofing',      dur: 3, workers: 3, cranes: 1 },
+            { name: 'HVAC',         dur: 2, workers: 2, cranes: 0 },
+            { name: 'Insulation',   dur: 2, workers: 2, cranes: 0 },
+            { name: 'Drywall',      dur: 3, workers: 3, cranes: 0 },
+            { name: 'Painting',     dur: 2, workers: 2, cranes: 0 },
+            { name: 'Flooring',     dur: 2, workers: 2, cranes: 0 },
+            { name: 'Landscaping',  dur: 3, workers: 3, cranes: 0 },
+        ]);
+        renderPrecedenceTable([
+            [1, 2], [2, 3], [3, 4], [3, 5], [3, 6],
+            [4, 7], [5, 7], [6, 8], [7, 8], [8, 9],
+            [9, 10], [9, 11], [6, 12],
+        ]);
+        document.getElementById('workers-slider').value = 6;
+        document.getElementById('workers-display').textContent = '6';
+        document.getElementById('cranes-slider').value = 2;
+        document.getElementById('cranes-display').textContent = '2';
+    } else if (name === 'bridge') {
+        renderActivityTable([
+            { name: 'Survey',       dur: 2, workers: 2, cranes: 0 },
+            { name: 'Piling',       dur: 6, workers: 4, cranes: 2 },
+            { name: 'Abutments',    dur: 4, workers: 5, cranes: 2 },
+            { name: 'Deck Beams',   dur: 3, workers: 3, cranes: 2 },
+            { name: 'Deck Slab',    dur: 4, workers: 4, cranes: 1 },
+            { name: 'Railings',     dur: 2, workers: 2, cranes: 0 },
+            { name: 'Paving',       dur: 3, workers: 3, cranes: 0 },
+            { name: 'Lighting',     dur: 2, workers: 2, cranes: 1 },
+        ]);
+        renderPrecedenceTable([
+            [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [5, 7], [6, 8], [7, 8],
+        ]);
+        document.getElementById('workers-slider').value = 7;
+        document.getElementById('workers-display').textContent = '7';
+        document.getElementById('cranes-slider').value = 3;
+        document.getElementById('cranes-display').textContent = '3';
+    }
+    updateConfigSummary();
+}
 
 // ── Helpers ──
 function getSuccessors(actId) {
@@ -2577,10 +2882,11 @@ function getPredecessors(actId) {
 
 // Topological sort (Kahn's algorithm)
 function topoSort() {
-    const inDeg = new Array(activities.length).fill(0);
-    precedences.forEach(([u, v]) => inDeg[v]++);
+    const n = activities.length;
+    const inDeg = new Array(n).fill(0);
+    precedences.forEach(([u, v]) => { if (v < n) inDeg[v]++; });
     const queue = [];
-    for (let i = 0; i < activities.length; i++) {
+    for (let i = 0; i < n; i++) {
         if (inDeg[i] === 0) queue.push(i);
     }
     const order = [];
@@ -2588,8 +2894,10 @@ function topoSort() {
         const u = queue.shift();
         order.push(u);
         getSuccessors(u).forEach(v => {
-            inDeg[v]--;
-            if (inDeg[v] === 0) queue.push(v);
+            if (v < n) {
+                inDeg[v]--;
+                if (inDeg[v] === 0) queue.push(v);
+            }
         });
     }
     return order;
@@ -2602,7 +2910,7 @@ function computeEST() {
     const order = topoSort();
     order.forEach(i => {
         getPredecessors(i).forEach(pred => {
-            est[i] = Math.max(est[i], est[pred] + activities[pred].dur);
+            if (pred < n) est[i] = Math.max(est[i], est[pred] + activities[pred].dur);
         });
     });
     return est;
@@ -2612,20 +2920,19 @@ function computeEST() {
 function computeLFT() {
     const n = activities.length;
     const est = computeEST();
-    // Critical path length = EST of sink
     const cpLen = est[n - 1];
     const lft = new Array(n).fill(cpLen);
     const order = topoSort().reverse();
     order.forEach(i => {
         getSuccessors(i).forEach(succ => {
-            lft[i] = Math.min(lft[i], lft[succ] - activities[succ].dur);
+            if (succ < n) lft[i] = Math.min(lft[i], lft[succ] - activities[succ].dur);
         });
     });
     return lft;
 }
 
-// Check if resource constraints are satisfied for scheduling activity act starting at time t
-function resourceFeasible(act, t, schedule, makespan) {
+// Check if resource constraints are satisfied
+function resourceFeasible(act, t, schedule) {
     for (let time = t; time < t + act.dur; time++) {
         let usedWorkers = 0;
         let usedCranes = 0;
@@ -2647,34 +2954,29 @@ function serialSGS(priorityRule) {
     const est = computeEST();
     const lft = computeLFT();
 
-    // Build priority list based on rule
     let priorityList = [...Array(n).keys()];
     if (priorityRule === 'lft') {
         priorityList.sort((a, b) => lft[a] - lft[b] || a - b);
     } else {
-        // EST rule
         priorityList.sort((a, b) => est[a] - est[b] || a - b);
     }
 
-    const schedule = []; // { id, start }
+    const schedule = [];
     const scheduled = new Set();
     const finishTime = new Array(n).fill(-1);
 
     priorityList.forEach(actId => {
         const act = activities[actId];
-
-        // Earliest precedence-feasible start
         let earliestStart = 0;
         getPredecessors(actId).forEach(pred => {
-            earliestStart = Math.max(earliestStart, finishTime[pred]);
+            if (pred < n) earliestStart = Math.max(earliestStart, finishTime[pred]);
         });
 
-        // Find earliest resource-feasible start >= earliestStart
         let t = earliestStart;
         if (act.dur > 0) {
-            while (!resourceFeasible(act, t, schedule, 0)) {
+            while (!resourceFeasible(act, t, schedule)) {
                 t++;
-                if (t > 200) break; // safety
+                if (t > 500) break;
             }
         }
 
@@ -2697,7 +2999,6 @@ function parallelSGS() {
     let t = 0;
 
     while (scheduled.size < n) {
-        // Find eligible activities: all predecessors finished, not yet scheduled
         const eligible = [];
         for (let i = 0; i < n; i++) {
             if (scheduled.has(i)) continue;
@@ -2706,20 +3007,17 @@ function parallelSGS() {
             if (allPredsDone) eligible.push(i);
         }
 
-        // Sort eligible by LFT (ascending)
         eligible.sort((a, b) => lft[a] - lft[b] || a - b);
 
-        // Schedule as many as resources allow
         let anyScheduled = false;
         eligible.forEach(actId => {
             const act = activities[actId];
             if (act.dur === 0) {
-                // Dummy activities schedule immediately
                 schedule.push({ id: actId, start: t });
                 scheduled.add(actId);
                 finishTime[actId] = t;
                 anyScheduled = true;
-            } else if (resourceFeasible(act, t, schedule, 0)) {
+            } else if (resourceFeasible(act, t, schedule)) {
                 schedule.push({ id: actId, start: t });
                 scheduled.add(actId);
                 finishTime[actId] = t + act.dur;
@@ -2728,13 +3026,12 @@ function parallelSGS() {
         });
 
         if (!anyScheduled) {
-            // Advance to next completion event
             let nextT = Infinity;
             schedule.forEach(s => {
                 const ft = s.start + activities[s.id].dur;
                 if (ft > t && ft < nextT) nextT = ft;
             });
-            if (nextT === Infinity) break; // safety
+            if (nextT === Infinity) break;
             t = nextT;
         }
     }
@@ -2749,33 +3046,16 @@ function findCriticalPath(schedule) {
     schedule.forEach(s => {
         finishTime[s.id] = s.start + activities[s.id].dur;
     });
-
     const makespan = Math.max(...finishTime);
-    // Backward trace: an activity is critical if it's on a longest path
-    // Simple approach: activity is critical if its total float is 0
-    const est = new Array(n).fill(0);
-    const order = topoSort();
-    order.forEach(i => {
-        const s = schedule.find(s => s.id === i);
-        est[i] = s ? s.start : 0;
-    });
 
-    // Compute latest start (backward from makespan)
+    const order = topoSort();
     const lst = new Array(n).fill(makespan);
     const reverseOrder = order.slice().reverse();
     reverseOrder.forEach(i => {
         const succs = getSuccessors(i);
-        succs.forEach(j => {
-            lst[i] = Math.min(lst[i], lst[j] - activities[j].dur);
-        });
-        lst[i] = Math.min(lst[i], lst[i]); // identity
-    });
-    // Adjust: lst[i] should be latest time i can start and still meet makespan
-    reverseOrder.forEach(i => {
-        const succs = getSuccessors(i);
         if (succs.length > 0) {
             let minSuccLst = Infinity;
-            succs.forEach(j => { minSuccLst = Math.min(minSuccLst, lst[j]); });
+            succs.forEach(j => { if (j < n) minSuccLst = Math.min(minSuccLst, lst[j]); });
             lst[i] = Math.min(lst[i], minSuccLst - activities[i].dur);
         } else {
             lst[i] = makespan - activities[i].dur;
@@ -2821,16 +3101,17 @@ function drawGantt(schedule) {
     const ctx = canvas.getContext('2d');
     const dpr = window.devicePixelRatio || 1;
     canvas.width = canvas.offsetWidth * dpr;
-    canvas.height = 300 * dpr;
+    const realActs = activities.filter(a => a.dur > 0);
+    const dynamicH = Math.max(200, 60 + realActs.length * 36);
+    canvas.height = dynamicH * dpr;
+    canvas.style.height = dynamicH + 'px';
     ctx.scale(dpr, dpr);
     const W = canvas.offsetWidth;
-    const H = 300;
+    const H = dynamicH;
 
     ctx.fillStyle = '#112240';
     ctx.fillRect(0, 0, W, H);
 
-    // Only real activities (1-6)
-    const realActs = activities.filter(a => a.dur > 0);
     const finishTimes = schedule.map(s => s.start + activities[s.id].dur);
     const makespan = Math.max(...finishTimes, 1);
 
@@ -2843,35 +3124,31 @@ function drawGantt(schedule) {
     const barHeight = Math.min(30, (chartH - (realActs.length - 1) * 6) / realActs.length);
     const barGap = 6;
 
-    // Title
     ctx.fillStyle = '#C5A059';
     ctx.font = '11px Inter, sans-serif';
     ctx.textAlign = 'left';
     ctx.fillText('GANTT CHART', marginLeft, 18);
 
-    // Time axis
     ctx.strokeStyle = 'rgba(197,160,89,0.2)';
     ctx.lineWidth = 1;
-    for (let t = 0; t <= makespan; t++) {
+    const step = makespan > 30 ? Math.ceil(makespan / 15) : 1;
+    for (let t = 0; t <= makespan; t += step) {
         const x = marginLeft + (t / makespan) * chartW;
         ctx.beginPath();
         ctx.moveTo(x, marginTop);
         ctx.lineTo(x, H - marginBottom);
         ctx.stroke();
-
         ctx.fillStyle = '#8892B0';
         ctx.font = '10px JetBrains Mono, monospace';
         ctx.textAlign = 'center';
         ctx.fillText(t.toString(), x, H - marginBottom + 16);
     }
 
-    // Day label
     ctx.fillStyle = '#8892B0';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Day', marginLeft + chartW / 2, H - 5);
 
-    // Activity bars
     realActs.forEach((act, idx) => {
         const sEntry = schedule.find(s => s.id === act.id);
         if (!sEntry) return;
@@ -2879,23 +3156,22 @@ function drawGantt(schedule) {
         const y = marginTop + idx * (barHeight + barGap);
         const x = marginLeft + (sEntry.start / makespan) * chartW;
         const w = (act.dur / makespan) * chartW;
+        const col = getActColor(act.id);
 
-        // Activity label
         ctx.fillStyle = '#a8b2d1';
         ctx.font = '11px Inter, sans-serif';
         ctx.textAlign = 'right';
-        ctx.fillText(act.name, marginLeft - 10, y + barHeight / 2 + 4);
+        const label = act.name.length > 12 ? act.name.substring(0, 11) + '\u2026' : act.name;
+        ctx.fillText(label, marginLeft - 10, y + barHeight / 2 + 4);
 
-        // Bar
-        ctx.fillStyle = ACTIVITY_COLORS[act.id];
-        ctx.strokeStyle = ACTIVITY_BORDER_COLORS[act.id];
+        ctx.fillStyle = col.bg;
+        ctx.strokeStyle = col.border;
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.roundRect(x, y, w, barHeight, 3);
         ctx.fill();
         ctx.stroke();
 
-        // Duration text on bar
         if (w > 30) {
             ctx.fillStyle = '#0A192F';
             ctx.font = 'bold 10px JetBrains Mono, monospace';
@@ -2904,10 +3180,11 @@ function drawGantt(schedule) {
         }
     });
 
-    // Draw precedence arrows
+    // Precedence arrows
     ctx.strokeStyle = 'rgba(197,160,89,0.35)';
     ctx.lineWidth = 1;
     precedences.forEach(([from, to]) => {
+        if (from >= activities.length || to >= activities.length) return;
         const fromAct = activities[from];
         const toAct = activities[to];
         if (fromAct.dur === 0 || toAct.dur === 0) return;
@@ -2918,6 +3195,7 @@ function drawGantt(schedule) {
 
         const fromIdx = realActs.findIndex(a => a.id === from);
         const toIdx = realActs.findIndex(a => a.id === to);
+        if (fromIdx < 0 || toIdx < 0) return;
 
         const x1 = marginLeft + ((fromEntry.start + fromAct.dur) / makespan) * chartW;
         const y1 = marginTop + fromIdx * (barHeight + barGap) + barHeight / 2;
@@ -2929,7 +3207,6 @@ function drawGantt(schedule) {
         ctx.lineTo(x2, y2);
         ctx.stroke();
 
-        // Arrowhead
         const angle = Math.atan2(y2 - y1, x2 - x1);
         const arrowLen = 6;
         ctx.beginPath();
@@ -2964,7 +3241,6 @@ function drawResourceProfile(schedule) {
     const gap = 15;
     const chartH = (H - marginTop - 30 - gap) / 2;
 
-    // Draw two resource charts: Workers and Cranes
     const resources = [
         { name: 'Workers', key: 'workers', cap: resourceCapacity.workers, color: 'rgba(122,162,247,0.7)', capColor: 'rgba(255,107,107,0.8)' },
         { name: 'Cranes', key: 'cranes', cap: resourceCapacity.cranes, color: 'rgba(100,255,218,0.7)', capColor: 'rgba(255,107,107,0.8)' }
@@ -2975,13 +3251,11 @@ function drawResourceProfile(schedule) {
         const chartW = W - marginLeft - marginRight;
         const maxVal = Math.max(res.cap + 1, res.cap + 1);
 
-        // Label
         ctx.fillStyle = '#C5A059';
         ctx.font = '10px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(res.name.toUpperCase(), marginLeft, topY - 8);
 
-        // Y-axis labels
         for (let v = 0; v <= res.cap + 1; v++) {
             const y = topY + chartH - (v / maxVal) * chartH;
             ctx.fillStyle = '#8892B0';
@@ -2997,7 +3271,6 @@ function drawResourceProfile(schedule) {
             ctx.stroke();
         }
 
-        // Capacity line
         const capY = topY + chartH - (res.cap / maxVal) * chartH;
         ctx.strokeStyle = res.capColor;
         ctx.lineWidth = 1.5;
@@ -3008,18 +3281,15 @@ function drawResourceProfile(schedule) {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Capacity label
         ctx.fillStyle = res.capColor;
         ctx.font = '9px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.fillText(`Cap = ${res.cap}`, marginLeft + chartW + 3, capY + 3);
 
-        // Stacked bars per time period
         for (let t = 0; t < makespan; t++) {
             const x = marginLeft + (t / makespan) * chartW;
             const barW = chartW / makespan - 1;
 
-            // Gather activities active at time t
             let cumulative = 0;
             schedule.forEach(s => {
                 const act = activities[s.id];
@@ -3027,12 +3297,11 @@ function drawResourceProfile(schedule) {
                     const usage = act[res.key];
                     const barH = (usage / maxVal) * chartH;
                     const y = topY + chartH - ((cumulative + usage) / maxVal) * chartH;
+                    const col = getActColor(s.id);
 
-                    ctx.fillStyle = ACTIVITY_COLORS[s.id] || res.color;
+                    ctx.fillStyle = col.bg || res.color;
                     ctx.fillRect(x, y, barW, barH);
-
-                    // Border
-                    ctx.strokeStyle = ACTIVITY_BORDER_COLORS[s.id] || res.color;
+                    ctx.strokeStyle = col.border || res.color;
                     ctx.lineWidth = 0.5;
                     ctx.strokeRect(x, y, barW, barH);
 
@@ -3041,9 +3310,9 @@ function drawResourceProfile(schedule) {
             });
         }
 
-        // Time axis (only for bottom chart)
         if (ri === resources.length - 1) {
-            for (let t = 0; t <= makespan; t++) {
+            const step = makespan > 30 ? Math.ceil(makespan / 15) : 1;
+            for (let t = 0; t <= makespan; t += step) {
                 const x = marginLeft + (t / makespan) * chartW;
                 ctx.fillStyle = '#8892B0';
                 ctx.font = '9px JetBrains Mono, monospace';
@@ -3054,67 +3323,106 @@ function drawResourceProfile(schedule) {
     });
 }
 
+// ── Toggle Algorithm Selection ──
+function toggleAlgo(el) {
+    el.classList.toggle('selected');
+}
+
 // ── Solve All Selected Algorithms ──
 function solveAll() {
-    const chips = document.querySelectorAll('.algo-chip.selected');
-    if (chips.length === 0) {
-        document.getElementById('solver-status').textContent = 'Please select at least one algorithm.';
+    // Read data from DOM
+    rebuildAll();
+
+    // Validate
+    const realCount = activities.length - 2;
+    if (realCount < 1) {
+        document.getElementById('solver-status').textContent = 'Add at least one activity.';
         return;
     }
 
-    currentResults = [];
+    // Check for cycles
+    const order = topoSort();
+    if (order.length < activities.length) {
+        document.getElementById('solver-status').textContent = 'Error: precedence constraints contain a cycle. Remove circular dependencies.';
+        return;
+    }
 
-    const algoMap = {
-        'serial-lft': { name: 'Serial SGS - LFT', fn: () => serialSGS('lft') },
-        'serial-est': { name: 'Serial SGS - EST', fn: () => serialSGS('est') },
-        'parallel':   { name: 'Parallel SGS',     fn: () => parallelSGS() }
-    };
+    const btn = document.getElementById('solveBtn');
+    btn.classList.add('solving');
+    btn.innerHTML = '<i class="fas fa-spinner"></i> Solving...';
 
-    chips.forEach(chip => {
-        const key = chip.dataset.algo;
-        const algo = algoMap[key];
-        if (!algo) return;
+    setTimeout(() => {
+        const chips = document.querySelectorAll('#algo-select .algo-chip.selected');
+        if (chips.length === 0) {
+            // Select all if none selected
+            document.querySelectorAll('#algo-select .algo-chip').forEach(c => c.classList.add('selected'));
+        }
 
-        const t0 = performance.now();
-        const schedule = algo.fn();
-        const elapsed = performance.now() - t0;
+        const selectedChips = document.querySelectorAll('#algo-select .algo-chip.selected');
+        currentResults = [];
 
-        const finishTimes = schedule.map(s => s.start + activities[s.id].dur);
-        const makespan = Math.max(...finishTimes);
-        const critPath = findCriticalPath(schedule);
-        const util = computeUtilization(schedule);
+        const algoMap = {
+            'serial-lft': { name: 'Serial SGS - LFT', fn: () => serialSGS('lft') },
+            'serial-est': { name: 'Serial SGS - EST', fn: () => serialSGS('est') },
+            'parallel':   { name: 'Parallel SGS',     fn: () => parallelSGS() }
+        };
 
-        currentResults.push({
-            key, name: algo.name, schedule, makespan,
-            critPath, util, time: elapsed
+        selectedChips.forEach(chip => {
+            const key = chip.dataset.algo;
+            const algo = algoMap[key];
+            if (!algo) return;
+
+            const t0 = performance.now();
+            const schedule = algo.fn();
+            const elapsed = performance.now() - t0;
+
+            const finishTimes = schedule.map(s => s.start + activities[s.id].dur);
+            const makespan = Math.max(...finishTimes);
+            const critPath = findCriticalPath(schedule);
+            const util = computeUtilization(schedule);
+
+            currentResults.push({
+                key, name: algo.name, schedule, makespan,
+                critPath, util, time: elapsed
+            });
         });
-    });
 
-    currentResults.sort((a, b) => a.makespan - b.makespan);
+        currentResults.sort((a, b) => a.makespan - b.makespan);
 
-    // Draw best
-    drawGantt(currentResults[0].schedule);
-    drawResourceProfile(currentResults[0].schedule);
+        // Draw best
+        if (currentResults.length > 0) {
+            drawGantt(currentResults[0].schedule);
+            drawResourceProfile(currentResults[0].schedule);
+        }
 
-    // Update table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">${r.makespan}</td>
-            <td>${r.critPath.join(' → ') || '—'}</td>
-            <td>${(r.util * 100).toFixed(1)}%</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r));
-        tbody.appendChild(tr);
-    });
+        // Update results table
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            if (i === 0) tr.classList.add('row-selected');
+            tr.innerHTML = `
+                <td class="algo-label">${r.name}</td>
+                <td class="${i === 0 ? 'best-val' : ''}">${r.makespan}</td>
+                <td>${r.critPath.join(' \u2192 ') || '\u2014'}</td>
+                <td>${(r.util * 100).toFixed(1)}%</td>
+                <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
+            `;
+            tr.addEventListener('click', () => {
+                tbody.querySelectorAll('tr').forEach(row => row.classList.remove('row-selected'));
+                tr.classList.add('row-selected');
+                showResult(r);
+            });
+            tbody.appendChild(tr);
+        });
 
-    showResult(currentResults[0]);
-    document.getElementById('solver-status').textContent =
-        `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its schedule.`;
+        if (currentResults.length > 0) showResult(currentResults[0]);
+        document.getElementById('solver-status').textContent =
+            `Solved with ${currentResults.length} algorithm${currentResults.length > 1 ? 's' : ''}. Click a row to view its schedule.`;
+
+        btn.classList.remove('solving');
+        btn.innerHTML = '<i class="fas fa-play"></i> Solve &amp; Compare All Algorithms';
+    }, 80);
 }
 
 function showResult(r) {
@@ -3124,7 +3432,7 @@ function showResult(r) {
     const lines = [];
     lines.push(`Algorithm: ${r.name}`);
     lines.push(`Project Duration (Makespan): ${r.makespan} days`);
-    lines.push(`Critical Path: ${r.critPath.join(' → ') || '—'}`);
+    lines.push(`Critical Path: ${r.critPath.join(' \u2192 ') || '\u2014'}`);
     lines.push(`Avg Resource Utilization: ${(r.util * 100).toFixed(1)}%`);
     lines.push('');
     lines.push('Activity Schedule:');
@@ -3133,59 +3441,10 @@ function showResult(r) {
         const act = activities[s.id];
         if (act.dur === 0) return;
         const finish = s.start + act.dur;
-        lines.push(`  ${act.name.padEnd(12)} Start: Day ${s.start}  Finish: Day ${finish}  [Workers: ${act.workers}, Cranes: ${act.cranes}]`);
+        lines.push(`  ${act.name.padEnd(14)} Start: Day ${s.start}  Finish: Day ${finish}  [Workers: ${act.workers}, Cranes: ${act.cranes}]`);
     });
 
     document.getElementById('schedule-output').textContent = lines.join('\n');
-}
-
-// ── UI Controls ──
-function updateWorkers(val) {
-    resourceCapacity.workers = parseInt(val);
-    document.getElementById('workers-display').textContent = val;
-}
-
-function updateCranes(val) {
-    resourceCapacity.cranes = parseInt(val);
-    document.getElementById('cranes-display').textContent = val;
-}
-
-function toggleAlgo(el) {
-    el.classList.toggle('selected');
-}
-
-function toggleActivityEditor() {
-    const editor = document.getElementById('activity-editor');
-    const visible = editor.style.display !== 'none';
-    editor.style.display = visible ? 'none' : 'block';
-    if (!visible) buildActivityEditor();
-}
-
-function buildActivityEditor() {
-    const grid = document.getElementById('activity-grid');
-    grid.innerHTML = '';
-    activities.forEach(act => {
-        if (act.dur === 0) return; // skip source/sink
-        const item = document.createElement('div');
-        item.className = 'activity-item';
-        item.innerHTML = `
-            <label>${act.name}</label>
-            <span style="font-size:0.7rem;color:var(--slate);">Dur:</span>
-            <input type="number" value="${act.dur}" min="1" max="20"
-                   onchange="updateActivity(${act.id}, 'dur', this.value)">
-            <span style="font-size:0.7rem;color:var(--slate);">W:</span>
-            <input type="number" value="${act.workers}" min="0" max="10"
-                   onchange="updateActivity(${act.id}, 'workers', this.value)">
-            <span style="font-size:0.7rem;color:var(--slate);">C:</span>
-            <input type="number" value="${act.cranes}" min="0" max="5"
-                   onchange="updateActivity(${act.id}, 'cranes', this.value)">
-        `;
-        grid.appendChild(item);
-    });
-}
-
-function updateActivity(id, field, value) {
-    activities[id][field] = parseInt(value);
 }
 
 // ── Scroll Animations ──
@@ -3195,6 +3454,8 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
+renderActivityTable(JSON.parse(JSON.stringify(DEFAULT_ACTIVITIES)));
+renderPrecedenceTable(JSON.parse(JSON.stringify(DEFAULT_PRECEDENCES)));
 solveAll();
 </script>
 

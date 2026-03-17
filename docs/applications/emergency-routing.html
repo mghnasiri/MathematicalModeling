@@ -2363,9 +2363,9 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// ── Graph Data: Quebec City Emergency Network ──
+// ── Default Data: Quebec City Emergency Network ──
 
-const NODES = [
+const DEFAULT_NODES = [
     { id: 0, name: "Hopital Laval",       lat: 46.7810, lng: -71.2750 },
     { id: 1, name: "Gare du Palais",      lat: 46.8165, lng: -71.2142 },
     { id: 2, name: "Place Royale",        lat: 46.8123, lng: -71.2033 },
@@ -2376,7 +2376,7 @@ const NODES = [
     { id: 7, name: "Beauport",            lat: 46.8620, lng: -71.2000 }
 ];
 
-const EDGES = [
+const DEFAULT_EDGES = [
     { from: 0, to: 1, weight: 8 },
     { from: 0, to: 4, weight: 3 },
     { from: 0, to: 5, weight: 2 },
@@ -2393,6 +2393,240 @@ const EDGES = [
     { from: 6, to: 7, weight: 8 },
     { from: 7, to: 6, weight: 8 }
 ];
+
+const DENSE_NODES = [
+    { id: 0, name: "Hopital Laval",       lat: 46.7810, lng: -71.2750 },
+    { id: 1, name: "Gare du Palais",      lat: 46.8165, lng: -71.2142 },
+    { id: 2, name: "Place Royale",        lat: 46.8123, lng: -71.2033 },
+    { id: 3, name: "Chateau Frontenac",   lat: 46.8122, lng: -71.2050 },
+    { id: 4, name: "Universite Laval",    lat: 46.7830, lng: -71.2720 },
+    { id: 5, name: "Place Laurier",       lat: 46.7770, lng: -71.2830 },
+    { id: 6, name: "Vieux-Port",          lat: 46.8180, lng: -71.2000 },
+    { id: 7, name: "Beauport",            lat: 46.8620, lng: -71.2000 },
+    { id: 8, name: "Charlesbourg",        lat: 46.8550, lng: -71.2600 },
+    { id: 9, name: "Ste-Foy",             lat: 46.7700, lng: -71.3000 }
+];
+
+const DENSE_EDGES = [
+    { from: 0, to: 1, weight: 8 }, { from: 0, to: 4, weight: 3 }, { from: 0, to: 5, weight: 2 },
+    { from: 1, to: 2, weight: 4 }, { from: 1, to: 6, weight: 5 }, { from: 1, to: 7, weight: 10 },
+    { from: 1, to: 8, weight: 7 }, { from: 2, to: 3, weight: 1 }, { from: 2, to: 6, weight: 3 },
+    { from: 3, to: 6, weight: 4 }, { from: 4, to: 1, weight: 6 }, { from: 4, to: 5, weight: 2 },
+    { from: 4, to: 8, weight: 9 }, { from: 5, to: 1, weight: 7 }, { from: 5, to: 4, weight: 2 },
+    { from: 5, to: 9, weight: 3 }, { from: 6, to: 7, weight: 8 }, { from: 7, to: 6, weight: 8 },
+    { from: 7, to: 8, weight: 5 }, { from: 8, to: 0, weight: 11 }, { from: 8, to: 7, weight: 5 },
+    { from: 9, to: 0, weight: 4 }, { from: 9, to: 5, weight: 3 }, { from: 0, to: 8, weight: 12 }
+];
+
+const SPARSE_NODES = [
+    { id: 0, name: "Station A", lat: 46.7810, lng: -71.2750 },
+    { id: 1, name: "Station B", lat: 46.8165, lng: -71.2142 },
+    { id: 2, name: "Station C", lat: 46.8123, lng: -71.2033 },
+    { id: 3, name: "Station D", lat: 46.8400, lng: -71.2400 },
+    { id: 4, name: "Station E", lat: 46.8620, lng: -71.2000 }
+];
+
+const SPARSE_EDGES = [
+    { from: 0, to: 1, weight: 5 },
+    { from: 1, to: 2, weight: 3 },
+    { from: 2, to: 4, weight: 7 },
+    { from: 0, to: 3, weight: 12 },
+    { from: 3, to: 4, weight: 4 },
+    { from: 1, to: 3, weight: 6 }
+];
+
+// ── Input Styles ──
+const numStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const coordStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:80px;outline:none;';
+const nameStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:120px;outline:none;';
+const rmBtnStyle = 'background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;';
+
+// ── Render Node Table ──
+function renderNodeTable(nodes) {
+    const tbody = document.getElementById('nodeTableBody');
+    tbody.innerHTML = '';
+    nodes.forEach((n, i) => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--gold);font-weight:600;">${i}</td>
+            <td><input type="text" value="${n.name}" style="${nameStyle}"></td>
+            <td><input type="number" value="${n.lat}" step="0.0001" style="${coordStyle}"></td>
+            <td><input type="number" value="${n.lng}" step="0.0001" style="${coordStyle}"></td>
+            <td><button onclick="removeNode(this)" style="${rmBtnStyle}" title="Remove node"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+    rebuildSourceDestSelects();
+}
+
+// ── Render Edge Table ──
+function renderEdgeTable(edges) {
+    const tbody = document.getElementById('edgeTableBody');
+    tbody.innerHTML = '';
+    edges.forEach(e => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><input type="number" value="${e.from}" min="0" step="1" style="${numStyle}"></td>
+            <td><input type="number" value="${e.to}" min="0" step="1" style="${numStyle}"></td>
+            <td><input type="number" value="${e.weight}" min="1" step="1" style="${numStyle}"></td>
+            <td><button onclick="removeEdge(this)" style="${rmBtnStyle}" title="Remove edge"><i class="fas fa-times"></i></button></td>`;
+        tbody.appendChild(tr);
+    });
+    updateConfigSummary();
+}
+
+// ── Read Data from DOM ──
+function readNodesFromDOM() {
+    const rows = document.querySelectorAll('#nodeTableBody tr');
+    const nodes = [];
+    rows.forEach((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        nodes.push({
+            id: i,
+            name: inputs[0].value.trim() || ('Node ' + i),
+            lat: parseFloat(inputs[1].value) || 46.8,
+            lng: parseFloat(inputs[2].value) || -71.2
+        });
+    });
+    return nodes;
+}
+
+function readEdgesFromDOM() {
+    const rows = document.querySelectorAll('#edgeTableBody tr');
+    const edges = [];
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        edges.push({
+            from: parseInt(inputs[0].value) || 0,
+            to: parseInt(inputs[1].value) || 0,
+            weight: Math.max(1, parseInt(inputs[2].value) || 1)
+        });
+    });
+    return edges;
+}
+
+// ── Config Summary ──
+function updateConfigSummary() {
+    const nNodes = document.querySelectorAll('#nodeTableBody tr').length;
+    const nEdges = document.querySelectorAll('#edgeTableBody tr').length;
+    const label = document.getElementById('configSummary');
+    if (label) label.textContent = nNodes + ' Nodes \u00b7 ' + nEdges + ' Edges \u00b7 Click any cell to edit';
+}
+
+// ── Rebuild Source/Dest Selects ──
+function rebuildSourceDestSelects() {
+    const nodes = readNodesFromDOM();
+    const srcSelect = document.getElementById('source-select');
+    const dstSelect = document.getElementById('dest-select');
+    const oldSrc = srcSelect.value;
+    const oldDst = dstSelect.value;
+    srcSelect.innerHTML = '';
+    dstSelect.innerHTML = '';
+    nodes.forEach((n, i) => {
+        const optSrc = document.createElement('option');
+        optSrc.value = i;
+        optSrc.textContent = i + ' \u2014 ' + n.name;
+        srcSelect.appendChild(optSrc);
+        const optDst = document.createElement('option');
+        optDst.value = i;
+        optDst.textContent = i + ' \u2014 ' + n.name;
+        dstSelect.appendChild(optDst);
+    });
+    // Restore previous selection if still valid
+    if (oldSrc < nodes.length) srcSelect.value = oldSrc;
+    if (oldDst < nodes.length) dstSelect.value = oldDst;
+    else if (nodes.length > 1) dstSelect.value = nodes.length - 1;
+}
+
+// ── Add / Remove Nodes ──
+function addNode() {
+    const rows = document.querySelectorAll('#nodeTableBody tr');
+    const idx = rows.length;
+    const lat = (46.77 + Math.random() * 0.1).toFixed(4);
+    const lng = (-71.30 + Math.random() * 0.1).toFixed(4);
+    const tbody = document.getElementById('nodeTableBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+        <td style="font-family:'JetBrains Mono',monospace;font-size:0.82rem;color:var(--gold);font-weight:600;">${idx}</td>
+        <td><input type="text" value="New Location ${idx}" style="${nameStyle}"></td>
+        <td><input type="number" value="${lat}" step="0.0001" style="${coordStyle}"></td>
+        <td><input type="number" value="${lng}" step="0.0001" style="${coordStyle}"></td>
+        <td><button onclick="removeNode(this)" style="${rmBtnStyle}" title="Remove node"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateConfigSummary();
+    rebuildSourceDestSelects();
+}
+
+function removeNode(btn) {
+    const rows = document.querySelectorAll('#nodeTableBody tr');
+    if (rows.length <= 2) { alert('Need at least 2 nodes.'); return; }
+    btn.closest('tr').remove();
+    // Re-index IDs
+    document.querySelectorAll('#nodeTableBody tr').forEach((row, i) => {
+        row.querySelector('td').textContent = i;
+    });
+    updateConfigSummary();
+    rebuildSourceDestSelects();
+}
+
+function removeLastNode() {
+    const rows = document.querySelectorAll('#nodeTableBody tr');
+    if (rows.length <= 2) { alert('Need at least 2 nodes.'); return; }
+    rows[rows.length - 1].remove();
+    updateConfigSummary();
+    rebuildSourceDestSelects();
+}
+
+// ── Add / Remove Edges ──
+function addEdge() {
+    const nNodes = document.querySelectorAll('#nodeTableBody tr').length;
+    const tbody = document.getElementById('edgeTableBody');
+    const tr = document.createElement('tr');
+    const u = 0, v = Math.min(1, nNodes - 1);
+    tr.innerHTML = `
+        <td><input type="number" value="${u}" min="0" step="1" style="${numStyle}"></td>
+        <td><input type="number" value="${v}" min="0" step="1" style="${numStyle}"></td>
+        <td><input type="number" value="5" min="1" step="1" style="${numStyle}"></td>
+        <td><button onclick="removeEdge(this)" style="${rmBtnStyle}" title="Remove edge"><i class="fas fa-times"></i></button></td>`;
+    tbody.appendChild(tr);
+    updateConfigSummary();
+}
+
+function removeEdge(btn) {
+    btn.closest('tr').remove();
+    updateConfigSummary();
+}
+
+function removeLastEdge() {
+    const rows = document.querySelectorAll('#edgeTableBody tr');
+    if (rows.length === 0) return;
+    rows[rows.length - 1].remove();
+    updateConfigSummary();
+}
+
+// ── Preset / Randomize ──
+function resetDefaults() {
+    renderNodeTable(DEFAULT_NODES);
+    renderEdgeTable(DEFAULT_EDGES);
+}
+
+function randomizeWeights() {
+    const rows = document.querySelectorAll('#edgeTableBody tr');
+    rows.forEach(row => {
+        const inputs = row.querySelectorAll('input');
+        inputs[2].value = Math.floor(Math.random() * 14) + 1;
+    });
+}
+
+function loadPreset(name) {
+    if (name === 'dense') {
+        renderNodeTable(DENSE_NODES);
+        renderEdgeTable(DENSE_EDGES);
+    } else if (name === 'sparse') {
+        renderNodeTable(SPARSE_NODES);
+        renderEdgeTable(SPARSE_EDGES);
+    }
+}
 
 // ── Leaflet Map Initialization ──
 const map = L.map('map', {
@@ -2416,9 +2650,9 @@ const pathLayer = L.layerGroup().addTo(map);
 let solving = false;
 
 // ── OSRM: Get road geometry between two nodes ──
-async function getRouteGeometry(nodeIndices) {
+async function getRouteGeometry(nodeIndices, nodes) {
     try {
-        const coords = nodeIndices.map(idx => `${NODES[idx].lng},${NODES[idx].lat}`).join(';');
+        const coords = nodeIndices.map(idx => `${nodes[idx].lng},${nodes[idx].lat}`).join(';');
         const url = `https://router.project-osrm.org/route/v1/driving/${coords}?overview=full&geometries=geojson`;
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 5000);
@@ -2433,15 +2667,15 @@ async function getRouteGeometry(nodeIndices) {
     }
 }
 
-// Fit map to all nodes
-const allBounds = L.latLngBounds(NODES.map(n => [n.lat, n.lng]));
-map.fitBounds(allBounds.pad(0.15));
-
-// ── Adjacency list ──
-function buildAdj() {
+// ── Adjacency list from live data ──
+function buildAdj(nodes, edges) {
     const adj = {};
-    for (const n of NODES) adj[n.id] = [];
-    for (const e of EDGES) adj[e.from].push({ to: e.to, w: e.weight });
+    for (let i = 0; i < nodes.length; i++) adj[i] = [];
+    for (const e of edges) {
+        if (e.from < nodes.length && e.to < nodes.length) {
+            adj[e.from].push({ to: e.to, w: e.weight });
+        }
+    }
     return adj;
 }
 
@@ -2486,9 +2720,9 @@ class MinHeap {
     }
 }
 
-function dijkstra(source, target) {
-    const adj = buildAdj();
-    const V = NODES.length;
+function dijkstra(source, target, nodes, edges) {
+    const adj = buildAdj(nodes, edges);
+    const V = nodes.length;
     const dist = new Array(V).fill(Infinity);
     const pred = new Array(V).fill(-1);
     const visited = new Array(V).fill(false);
@@ -2506,7 +2740,7 @@ function dijkstra(source, target) {
 
         if (u === target) break;
 
-        for (const edge of adj[u]) {
+        for (const edge of (adj[u] || [])) {
             const v = edge.to;
             const newDist = dist[u] + edge.w;
             if (newDist < dist[v]) {
@@ -2536,8 +2770,8 @@ function dijkstra(source, target) {
 }
 
 // ── Bellman-Ford (with negative cycle detection) ──
-function bellmanFord(source, target) {
-    const V = NODES.length;
+function bellmanFord(source, target, nodes, edges) {
+    const V = nodes.length;
     const dist = new Array(V).fill(Infinity);
     const pred = new Array(V).fill(-1);
     const visitedSet = new Set();
@@ -2547,8 +2781,8 @@ function bellmanFord(source, target) {
     // V-1 relaxation passes
     for (let i = 0; i < V - 1; i++) {
         let updated = false;
-        for (const e of EDGES) {
-            if (dist[e.from] < Infinity && dist[e.from] + e.weight < dist[e.to]) {
+        for (const e of edges) {
+            if (e.from < V && e.to < V && dist[e.from] < Infinity && dist[e.from] + e.weight < dist[e.to]) {
                 dist[e.to] = dist[e.from] + e.weight;
                 pred[e.to] = e.from;
                 updated = true;
@@ -2561,8 +2795,8 @@ function bellmanFord(source, target) {
 
     // V-th pass: negative cycle detection
     let hasNegativeCycle = false;
-    for (const e of EDGES) {
-        if (dist[e.from] < Infinity && dist[e.from] + e.weight < dist[e.to]) {
+    for (const e of edges) {
+        if (e.from < V && e.to < V && dist[e.from] < Infinity && dist[e.from] + e.weight < dist[e.to]) {
             hasNegativeCycle = true;
             break;
         }
@@ -2620,14 +2854,23 @@ function makeNodeIcon(color, label, size) {
     });
 }
 
-async function drawGraph(result) {
+async function drawGraph(result, nodes, edges) {
     // Clear previous overlays
     markersLayer.clearLayers();
     edgesLayer.clearLayers();
     pathLayer.clearLayers();
 
+    if (!nodes) nodes = readNodesFromDOM();
+    if (!edges) edges = readEdgesFromDOM();
+
     const source = parseInt(document.getElementById('source-select').value);
     const target = parseInt(document.getElementById('dest-select').value);
+
+    // Fit map to nodes
+    if (nodes.length > 0) {
+        const allBounds = L.latLngBounds(nodes.map(n => [n.lat, n.lng]));
+        map.fitBounds(allBounds.pad(0.15));
+    }
 
     // Build path edge set for highlighting
     const pathEdgeSet = new Set();
@@ -2638,8 +2881,9 @@ async function drawGraph(result) {
     }
 
     // Draw edges as polylines with arrows
-    for (const e of EDGES) {
-        const n1 = NODES[e.from], n2 = NODES[e.to];
+    for (const e of edges) {
+        if (e.from >= nodes.length || e.to >= nodes.length) continue;
+        const n1 = nodes[e.from], n2 = nodes[e.to];
         const isPathEdge = pathEdgeSet.has(e.from + '-' + e.to);
         const color = isPathEdge ? COLORS.pathEdge : COLORS.edge;
         const weight = isPathEdge ? 4 : 2;
@@ -2651,7 +2895,7 @@ async function drawGraph(result) {
         );
         line.addTo(edgesLayer);
 
-        // Arrowhead at midpoint using a small triangle marker
+        // Arrowhead at midpoint
         const midLat = (n1.lat + n2.lat) / 2;
         const midLng = (n1.lng + n2.lng) / 2;
         const angle = Math.atan2(n2.lng - n1.lng, n2.lat - n1.lat) * 180 / Math.PI;
@@ -2672,34 +2916,36 @@ async function drawGraph(result) {
         // Weight label offset slightly from midpoint
         const dx = n2.lng - n1.lng, dy = n2.lat - n1.lat;
         const len = Math.sqrt(dx * dx + dy * dy);
-        const nx = -dx / len, ny = dy / len;
-        const offsetLat = midLat + ny * 0.0012;
-        const offsetLng = midLng + nx * 0.0012;
+        if (len > 0) {
+            const nx = -dx / len, ny = dy / len;
+            const offsetLat = midLat + ny * 0.0012;
+            const offsetLng = midLng + nx * 0.0012;
 
-        const weightIcon = L.divIcon({
-            className: '',
-            iconSize: [24, 16],
-            iconAnchor: [12, 8],
-            html: `<div style="
-                font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
-                color:${isPathEdge ? COLORS.pathEdge : COLORS.edgeWeight};
-                text-shadow: 0 0 4px rgba(10,25,47,0.9), 0 0 8px rgba(10,25,47,0.9);
-                text-align:center;white-space:nowrap;
-            ">${e.weight}</div>`
-        });
-        L.marker([offsetLat, offsetLng], { icon: weightIcon, interactive: false }).addTo(edgesLayer);
+            const weightIcon = L.divIcon({
+                className: '',
+                iconSize: [24, 16],
+                iconAnchor: [12, 8],
+                html: `<div style="
+                    font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;
+                    color:${isPathEdge ? COLORS.pathEdge : COLORS.edgeWeight};
+                    text-shadow: 0 0 4px rgba(10,25,47,0.9), 0 0 8px rgba(10,25,47,0.9);
+                    text-align:center;white-space:nowrap;
+                ">${e.weight}</div>`
+            });
+            L.marker([offsetLat, offsetLng], { icon: weightIcon, interactive: false }).addTo(edgesLayer);
+        }
     }
 
     // Draw path highlight on top (try OSRM road geometry, fall back to straight lines)
     if (result && result.path.length > 1) {
         let pathLatLngs = null;
         try {
-            pathLatLngs = await getRouteGeometry(result.path);
+            pathLatLngs = await getRouteGeometry(result.path, nodes);
         } catch (e) {
             // silently fall back
         }
         if (!pathLatLngs) {
-            pathLatLngs = result.path.map(nid => [NODES[nid].lat, NODES[nid].lng]);
+            pathLatLngs = result.path.map(nid => [nodes[nid].lat, nodes[nid].lng]);
         }
         L.polyline(pathLatLngs, {
             color: COLORS.pathEdge,
@@ -2713,8 +2959,8 @@ async function drawGraph(result) {
     const pathSet = new Set(result ? result.path : []);
 
     // Draw nodes as markers
-    for (let i = 0; i < NODES.length; i++) {
-        const n = NODES[i];
+    for (let i = 0; i < nodes.length; i++) {
+        const n = nodes[i];
         let color = COLORS.node;
         let size = 28;
 
@@ -2746,10 +2992,10 @@ function toggleAlgo(chip) {
     chip.classList.toggle('selected');
 }
 function selectAllAlgos() {
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.add('selected'));
+    document.querySelectorAll('#algo-select .algo-chip').forEach(c => c.classList.add('selected'));
 }
 function clearAllAlgos() {
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('selected'));
+    document.querySelectorAll('#algo-select .algo-chip').forEach(c => c.classList.remove('selected'));
 }
 
 // ── Solve ──
@@ -2760,9 +3006,15 @@ async function solve() {
     solving = true;
     const solveBtn = document.querySelector('.solver-btn.primary');
     const statusEl = document.getElementById('solver-status');
+    const spinner = document.getElementById('solveSpinner');
     if (solveBtn) solveBtn.disabled = true;
+    if (spinner) spinner.style.display = 'inline';
 
     try {
+        // Read live data from DOM tables
+        const nodes = readNodesFromDOM();
+        const edges = readEdgesFromDOM();
+
         const source = parseInt(document.getElementById('source-select').value);
         const target = parseInt(document.getElementById('dest-select').value);
 
@@ -2771,9 +3023,14 @@ async function solve() {
             return;
         }
 
+        if (source >= nodes.length || target >= nodes.length) {
+            statusEl.textContent = 'Source or destination index out of range.';
+            return;
+        }
+
         const selectedAlgos = [];
-        document.querySelectorAll('.algo-chip.selected').forEach(chip => {
-            selectedAlgos.push(chip.dataset.algo);
+        document.querySelectorAll('#algo-select .algo-chip.selected').forEach(chip => {
+            if (chip.dataset.algo) selectedAlgos.push(chip.dataset.algo);
         });
 
         if (selectedAlgos.length === 0) {
@@ -2783,6 +3040,9 @@ async function solve() {
 
         statusEl.textContent = 'Finding shortest path...';
 
+        // Allow UI to update before computation
+        await new Promise(r => setTimeout(r, 20));
+
         currentResults = [];
 
         for (const algo of selectedAlgos) {
@@ -2791,10 +3051,10 @@ async function solve() {
             let algoName;
 
             if (algo === 'dijkstra') {
-                result = dijkstra(source, target);
+                result = dijkstra(source, target, nodes, edges);
                 algoName = "Dijkstra's Algorithm";
             } else {
-                result = bellmanFord(source, target);
+                result = bellmanFord(source, target, nodes, edges);
                 algoName = "Bellman-Ford";
             }
 
@@ -2807,20 +3067,22 @@ async function solve() {
                 visited: result.visited,
                 nodesVisited: result.nodesVisited,
                 negativeCycle: result.negativeCycle || false,
-                time: elapsed
+                time: elapsed,
+                nodes: nodes,
+                edges: edges
             });
         }
 
         // Sort by distance (best first)
         currentResults.sort((a, b) => a.distance - b.distance);
 
-        // Populate results table immediately (before async map drawing)
+        // Populate results table
         const tbody = document.getElementById('results-table').querySelector('tbody');
         tbody.innerHTML = '';
         currentResults.forEach((r, i) => {
             const tr = document.createElement('tr');
             const pathStr = r.path.length > 0
-                ? r.path.map(n => NODES[n].name).join(' -> ')
+                ? r.path.map(n => r.nodes[n].name).join(' \u2192 ')
                 : 'No path found';
             const distStr = r.distance < Infinity ? r.distance.toString() : 'N/A';
             const timeStr = r.time < 1 ? r.time.toFixed(3) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
@@ -2837,9 +3099,9 @@ async function solve() {
 
         showRouteDetails(currentResults[0]);
 
-        // Draw graph on map (async, may fail if OSRM geometry unavailable)
+        // Draw graph on map
         try {
-            await drawGraph(currentResults[0]);
+            await drawGraph(currentResults[0], nodes, edges);
         } catch (mapErr) {
             console.warn('Graph drawing failed, results still shown:', mapErr);
         }
@@ -2850,23 +3112,28 @@ async function solve() {
         statusEl.textContent = statusMsg;
     } catch (e) {
         console.error('solve error:', e);
-        statusEl.textContent = 'Error during pathfinding. Try clicking Find Route again.';
+        statusEl.textContent = 'Error during pathfinding. Check your graph data and try again.';
     } finally {
         if (solveBtn) solveBtn.disabled = false;
+        if (spinner) spinner.style.display = 'none';
         solving = false;
     }
 }
 
 function showRouteDetails(r) {
+    const nodes = r.nodes || readNodesFromDOM();
+    const edges = r.edges || readEdgesFromDOM();
     const lines = [];
     if (r.negativeCycle) {
         lines.push('WARNING: Negative cycle detected in the graph!');
         lines.push('Shortest path is undefined.');
     } else if (r.path.length === 0) {
-        lines.push(`No path exists from ${NODES[parseInt(document.getElementById('source-select').value)].name} to ${NODES[parseInt(document.getElementById('dest-select').value)].name}.`);
+        const src = parseInt(document.getElementById('source-select').value);
+        const dst = parseInt(document.getElementById('dest-select').value);
+        lines.push(`No path exists from ${nodes[src] ? nodes[src].name : src} to ${nodes[dst] ? nodes[dst].name : dst}.`);
     } else {
         lines.push(`Algorithm: ${r.name}`);
-        lines.push(`Path: ${r.path.map(n => n + ' (' + NODES[n].name + ')').join(' -> ')}`);
+        lines.push(`Path: ${r.path.map(n => n + ' (' + nodes[n].name + ')').join(' \u2192 ')}`);
         lines.push(`Total travel time: ${r.distance} minutes`);
         lines.push(`Nodes visited during search: ${r.nodesVisited}`);
         lines.push(`Computation time: ${r.time < 1 ? r.time.toFixed(3) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}`);
@@ -2876,9 +3143,9 @@ function showRouteDetails(r) {
         lines.push('Route segments:');
         for (let i = 0; i < r.path.length - 1; i++) {
             const from = r.path[i], to = r.path[i + 1];
-            const edge = EDGES.find(e => e.from === from && e.to === to);
+            const edge = edges.find(e => e.from === from && e.to === to);
             const w = edge ? edge.weight : '?';
-            lines.push(`  ${NODES[from].name} -> ${NODES[to].name}  (${w} min)`);
+            lines.push(`  ${nodes[from].name} \u2192 ${nodes[to].name}  (${w} min)`);
         }
     }
 
@@ -2888,7 +3155,7 @@ function showRouteDetails(r) {
 async function showResult(r) {
     showRouteDetails(r);
     try {
-        await drawGraph(r);
+        await drawGraph(r, r.nodes, r.edges);
     } catch (e) {
         console.warn('Graph drawing failed:', e);
     }
@@ -2901,6 +3168,8 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
+renderNodeTable(DEFAULT_NODES);
+renderEdgeTable(DEFAULT_EDGES);
 drawGraph(null);
 
 // Handle resize for Leaflet map
@@ -2912,7 +3181,7 @@ async function boot() {
     statusEl.textContent = 'Running algorithms...';
 
     // Auto-solve with all algorithms
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.add('selected'));
+    document.querySelectorAll('#algo-select .algo-chip').forEach(c => c.classList.add('selected'));
     await solve();
 }
 

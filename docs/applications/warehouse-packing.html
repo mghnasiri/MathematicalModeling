@@ -2453,6 +2453,10 @@ const ITEM_COLORS = [
     '#73daca', '#b4f9f8', '#c0caf5', '#ff9e64'
 ];
 
+// ── Styles for editable inputs ──
+const inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:JetBrains Mono,monospace;font-size:0.82rem;text-align:center;width:55px;outline:none;';
+const nameStyle  = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-family:Inter,sans-serif;font-size:0.82rem;width:75px;outline:none;';
+
 // ── Default Items ──
 const DEFAULT_ITEMS = [
     { name: 'Books',       size: 35 },
@@ -2465,30 +2469,173 @@ const DEFAULT_ITEMS = [
     { name: 'Office',      size: 15 }
 ];
 
-let items = DEFAULT_ITEMS.map(it => ({ ...it }));
+const ITEM_NAMES = ['Books','Electronics','Clothes','Toys','Kitchen','Sports','Garden','Office','Tools','Shoes','Bedding','Snacks','Beauty','Games','Lamps','Mugs'];
+
+const PRESET_HEAVY = [
+    { name: 'Engine',  size: 85 },
+    { name: 'Turbine', size: 70 },
+    { name: 'Battery', size: 60 },
+    { name: 'Frame',   size: 90 },
+    { name: 'Panel',   size: 45 },
+    { name: 'Casing',  size: 55 }
+];
+
+const PRESET_MANY = [
+    { name: 'A', size: 12 }, { name: 'B', size: 8 },  { name: 'C', size: 15 },
+    { name: 'D', size: 10 }, { name: 'E', size: 18 }, { name: 'F', size: 6 },
+    { name: 'G', size: 14 }, { name: 'H', size: 9 },  { name: 'I', size: 11 },
+    { name: 'J', size: 7 },  { name: 'K', size: 20 }, { name: 'L', size: 13 },
+    { name: 'M', size: 5 },  { name: 'N', size: 16 }, { name: 'O', size: 22 }
+];
+
 let capacity = 100;
 let currentResults = [];
 
-// ── Drawing ──
+// ═══════════════════════════════════════════════════════════════
+// Table Rendering & DOM Read
+// ═══════════════════════════════════════════════════════════════
+
+function renderItemsTable(items) {
+    const tbody = document.getElementById('itemsBody');
+    tbody.innerHTML = '';
+    items.forEach((item, i) => {
+        const color = ITEM_COLORS[i % ITEM_COLORS.length];
+        const tr = document.createElement('tr');
+        tr.innerHTML =
+            '<td style="white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + ';margin-right:0.5rem;vertical-align:middle;"></span><input type="text" value="' + item.name + '" style="' + nameStyle + '"></td>' +
+            '<td><input type="number" value="' + item.size + '" min="1" max="999" step="1" style="' + inputStyle + '"></td>' +
+            '<td><button onclick="removeItemRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>';
+        tbody.appendChild(tr);
+    });
+    updateSummary();
+}
+
+function readItems() {
+    const rows = document.querySelectorAll('#itemsBody tr');
+    return [...rows].map((row, i) => {
+        const inputs = row.querySelectorAll('input');
+        return {
+            name: inputs[0].value.trim() || ('Item' + (i + 1)),
+            size: Math.max(1, parseInt(inputs[1].value) || 1),
+            originalIndex: i
+        };
+    });
+}
+
+function updateSummary() {
+    const n = document.querySelectorAll('#itemsBody tr').length;
+    const cap = parseInt(document.getElementById('capacity-slider').value) || 100;
+    document.getElementById('configSummary').textContent = n + ' Items \u00b7 Capacity ' + cap + ' \u00b7 Click any cell to edit';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Actions: Add, Remove, Reset, Randomize, Presets
+// ═══════════════════════════════════════════════════════════════
+
+function addItem() {
+    const idx = document.querySelectorAll('#itemsBody tr').length;
+    const name = ITEM_NAMES[idx % ITEM_NAMES.length];
+    const size = Math.floor(Math.random() * 50) + 10;
+    const color = ITEM_COLORS[idx % ITEM_COLORS.length];
+    const tbody = document.getElementById('itemsBody');
+    const tr = document.createElement('tr');
+    tr.innerHTML =
+        '<td style="white-space:nowrap;"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:' + color + ';margin-right:0.5rem;vertical-align:middle;"></span><input type="text" value="' + name + '" style="' + nameStyle + '"></td>' +
+        '<td><input type="number" value="' + size + '" min="1" max="999" step="1" style="' + inputStyle + '"></td>' +
+        '<td><button onclick="removeItemRow(this)" style="background:transparent;border:none;color:#e06c75;cursor:pointer;font-size:0.9rem;" title="Remove"><i class="fas fa-times"></i></button></td>';
+    tbody.appendChild(tr);
+    updateSummary();
+    clearCanvas();
+}
+
+function removeLastItem() {
+    const rows = document.querySelectorAll('#itemsBody tr');
+    if (rows.length <= 1) { alert('Need at least 1 item.'); return; }
+    rows[rows.length - 1].remove();
+    updateSummary();
+    clearCanvas();
+}
+
+function removeItemRow(btn) {
+    if (document.querySelectorAll('#itemsBody tr').length <= 1) { alert('Need at least 1 item.'); return; }
+    btn.closest('tr').remove();
+    updateSummary();
+    clearCanvas();
+}
+
+function resetDefaults() {
+    renderItemsTable(DEFAULT_ITEMS);
+    capacity = 100;
+    document.getElementById('capacity-slider').value = 100;
+    document.getElementById('capacity-display').textContent = '100';
+    clearResults();
+    clearCanvas();
+}
+
+function randomizeItems() {
+    document.querySelectorAll('#itemsBody tr').forEach(row => {
+        const sizeInput = row.querySelectorAll('input')[1];
+        sizeInput.value = Math.floor(Math.random() * 80) + 5;
+    });
+    updateSummary();
+    clearCanvas();
+}
+
+function loadPreset(type) {
+    if (type === 'heavy') {
+        renderItemsTable(PRESET_HEAVY);
+        capacity = 100;
+        document.getElementById('capacity-slider').value = 100;
+        document.getElementById('capacity-display').textContent = '100';
+    } else if (type === 'many') {
+        renderItemsTable(PRESET_MANY);
+        capacity = 50;
+        document.getElementById('capacity-slider').value = 50;
+        document.getElementById('capacity-display').textContent = '50';
+    }
+    clearResults();
+    clearCanvas();
+}
+
+function updateCapacity(val) {
+    capacity = parseInt(val);
+    document.getElementById('capacity-display').textContent = val;
+    updateSummary();
+    clearCanvas();
+}
+
+function clearResults() {
+    currentResults = [];
+    const tbody = document.getElementById('results-table').querySelector('tbody');
+    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:\'Inter\',sans-serif;">Click Solve &amp; Compare All Algorithms</td></tr>';
+    document.getElementById('bin-output').textContent = 'Bin contents will appear here after packing.';
+    document.getElementById('solver-status').textContent = 'Ready.';
+}
+
+// ═══════════════════════════════════════════════════════════════
+// Drawing
+// ═══════════════════════════════════════════════════════════════
+
 function clearCanvas() {
+    const items = readItems();
     ctx.fillStyle = '#112240';
     ctx.fillRect(0, 0, CW, CH);
 
-    // Draw unpacked items preview
     ctx.fillStyle = 'rgba(248,249,250,0.5)';
     ctx.font = '12px Inter, sans-serif';
     ctx.textAlign = 'center';
     ctx.fillText('Items to pack:', CW / 2, 25);
 
-    const totalW = items.length * 70;
+    const maxPerRow = Math.min(items.length, Math.floor((CW - 40) / 70));
+    const totalW = maxPerRow * 70;
     const startX = (CW - totalW) / 2;
-    items.forEach((item, i) => {
+    const showCount = Math.min(items.length, maxPerRow);
+    items.slice(0, showCount).forEach((item, i) => {
         const x = startX + i * 70;
-        const barH = (item.size / capacity) * 180;
+        const barH = Math.min((item.size / capacity) * 180, 180);
         const y = 220 - barH;
         const color = ITEM_COLORS[i % ITEM_COLORS.length];
 
-        // Item bar
         ctx.fillStyle = color;
         ctx.globalAlpha = 0.6;
         ctx.fillRect(x + 5, y, 60, barH);
@@ -2497,17 +2644,21 @@ function clearCanvas() {
         ctx.lineWidth = 1;
         ctx.strokeRect(x + 5, y, 60, barH);
 
-        // Item label
         ctx.fillStyle = 'rgba(248,249,250,0.8)';
         ctx.font = '9px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(item.name, x + 35, 235);
+        ctx.fillText(item.name.substring(0, 8), x + 35, 235);
         ctx.font = '10px JetBrains Mono, monospace';
         ctx.fillStyle = color;
         ctx.fillText(item.size, x + 35, 248);
     });
+    if (items.length > showCount) {
+        ctx.fillStyle = 'rgba(248,249,250,0.4)';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('+ ' + (items.length - showCount) + ' more items', CW / 2, 270);
+    }
 
-    // Capacity line label
     ctx.fillStyle = 'rgba(248,249,250,0.3)';
     ctx.font = '10px Inter, sans-serif';
     ctx.textAlign = 'left';
@@ -2532,23 +2683,20 @@ function drawBins(bins, algoName) {
     const totalW = numBins * binW + (numBins - 1) * gap;
     const startX = (CW - totalW) / 2;
 
-    // Title
     ctx.fillStyle = 'rgba(248,249,250,0.6)';
     ctx.font = '12px Inter, sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText(algoName + '  —  ' + numBins + ' bin' + (numBins !== 1 ? 's' : '') + ' used', CW / 2, 22);
+    ctx.fillText(algoName + '  \u2014  ' + numBins + ' bin' + (numBins !== 1 ? 's' : '') + ' used', CW / 2, 22);
 
     bins.forEach((bin, bi) => {
         const bx = startX + bi * (binW + gap);
         const by = topMargin;
         const bh = binAreaH;
 
-        // Bin outline
         ctx.strokeStyle = 'rgba(197, 160, 89, 0.4)';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(bx, by, binW, bh);
 
-        // Capacity line at top
         ctx.setLineDash([4, 3]);
         ctx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
         ctx.beginPath();
@@ -2557,8 +2705,7 @@ function drawBins(bins, algoName) {
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Draw items stacked from bottom
-        let currentY = by + bh; // bottom of bin
+        let currentY = by + bh;
         const binLoad = bin.reduce((s, it) => s + it.size, 0);
 
         bin.forEach((item) => {
@@ -2566,18 +2713,15 @@ function drawBins(bins, algoName) {
             currentY -= itemH;
             const color = ITEM_COLORS[item.originalIndex % ITEM_COLORS.length];
 
-            // Item fill
             ctx.fillStyle = color;
             ctx.globalAlpha = 0.55;
             ctx.fillRect(bx + 2, currentY, binW - 4, itemH - 1);
             ctx.globalAlpha = 1;
 
-            // Item border
             ctx.strokeStyle = color;
             ctx.lineWidth = 1;
             ctx.strokeRect(bx + 2, currentY, binW - 4, itemH - 1);
 
-            // Item label (only if tall enough)
             if (itemH > 16 && binW > 50) {
                 ctx.fillStyle = '#F8F9FA';
                 ctx.font = (binW > 80 ? '10' : '8') + 'px Inter, sans-serif';
@@ -2604,12 +2748,10 @@ function drawBins(bins, algoName) {
         ctx.textBaseline = 'alphabetic';
         ctx.textAlign = 'center';
 
-        // Bin label
         ctx.fillStyle = 'rgba(248,249,250,0.7)';
         ctx.font = '10px Inter, sans-serif';
         ctx.fillText('Bin ' + (bi + 1), bx + binW / 2, by + bh + 15);
 
-        // Utilization
         const util = ((binLoad / capacity) * 100).toFixed(0);
         ctx.fillStyle = binLoad === capacity ? '#64ffda' :
                         binLoad > capacity * 0.8 ? 'rgba(197,160,89,0.8)' :
@@ -2617,7 +2759,6 @@ function drawBins(bins, algoName) {
         ctx.font = '9px JetBrains Mono, monospace';
         ctx.fillText(util + '%', bx + binW / 2, by + bh + 28);
 
-        // Free space indicator
         const freeH = ((capacity - binLoad) / capacity) * bh;
         if (freeH > 2) {
             ctx.fillStyle = 'rgba(197, 160, 89, 0.04)';
@@ -2626,62 +2767,13 @@ function drawBins(bins, algoName) {
     });
 }
 
-// ── Item Editor ──
-function buildItemEditor() {
-    const grid = document.getElementById('item-grid');
-    grid.innerHTML = '';
-    items.forEach((item, i) => {
-        const div = document.createElement('div');
-        div.className = 'item-entry';
-        div.innerHTML = `<label>${item.name}</label><input type="number" min="1" max="200" value="${item.size}" onchange="updateItemSize(${i}, this.value)">`;
-        grid.appendChild(div);
-    });
-}
-
-function toggleItemEditor() {
-    const el = document.getElementById('item-editor');
-    el.style.display = el.style.display === 'none' ? 'block' : 'none';
-    if (el.style.display === 'block') buildItemEditor();
-}
-
-function updateItemSize(idx, val) {
-    items[idx].size = Math.max(1, parseInt(val) || 1);
-    clearCanvas();
-}
-
-function updateCapacity(val) {
-    capacity = parseInt(val);
-    document.getElementById('capacity-display').textContent = val;
-    clearCanvas();
-}
-
-function resetItems() {
-    items = DEFAULT_ITEMS.map(it => ({ ...it }));
-    capacity = 100;
-    document.querySelector('.solver-slider').value = 100;
-    document.getElementById('capacity-display').textContent = '100';
-    buildItemEditor();
-    clearCanvas();
-    clearResults();
-}
-
-function clearResults() {
-    currentResults = [];
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:\'Inter\',sans-serif;">Select algorithms and click Pack Items</td></tr>';
-    document.getElementById('bin-output').textContent = 'Bin contents will appear here after packing.';
-    document.getElementById('solver-status').textContent = 'Ready.';
-}
-
-function toggleAlgo(el) { el.classList.toggle('selected'); }
-
 // ═══════════════════════════════════════════════════════════════
 // Bin Packing Algorithms
 // ═══════════════════════════════════════════════════════════════
 
-function firstFit(itemList) {
-    const bins = []; // each bin is an array of {name, size, originalIndex}
-    const remaining = []; // remaining capacity per bin
+function firstFit(itemList, cap) {
+    const bins = [];
+    const remaining = [];
 
     for (const item of itemList) {
         let placed = false;
@@ -2695,28 +2787,29 @@ function firstFit(itemList) {
         }
         if (!placed) {
             bins.push([item]);
-            remaining.push(capacity - item.size);
+            remaining.push(cap - item.size);
         }
     }
     return bins;
 }
 
-function firstFitDecreasing() {
-    const sorted = items.map((it, i) => ({ ...it, originalIndex: i }))
-        .sort((a, b) => b.size - a.size);
-    return firstFit(sorted);
+function firstFitOriginal(items, cap) {
+    return firstFit(items, cap);
 }
 
-function bestFitDecreasing() {
-    const sorted = items.map((it, i) => ({ ...it, originalIndex: i }))
-        .sort((a, b) => b.size - a.size);
+function firstFitDecreasing(items, cap) {
+    const sorted = items.slice().sort((a, b) => b.size - a.size);
+    return firstFit(sorted, cap);
+}
 
+function bestFitDecreasing(items, cap) {
+    const sorted = items.slice().sort((a, b) => b.size - a.size);
     const bins = [];
     const remaining = [];
 
     for (const item of sorted) {
         let bestBin = -1;
-        let bestRemaining = capacity + 1;
+        let bestRemaining = cap + 1;
 
         for (let b = 0; b < bins.length; b++) {
             if (remaining[b] >= item.size && remaining[b] < bestRemaining) {
@@ -2730,15 +2823,10 @@ function bestFitDecreasing() {
             remaining[bestBin] -= item.size;
         } else {
             bins.push([item]);
-            remaining.push(capacity - item.size);
+            remaining.push(cap - item.size);
         }
     }
     return bins;
-}
-
-function firstFitOriginal() {
-    const ordered = items.map((it, i) => ({ ...it, originalIndex: i }));
-    return firstFit(ordered);
 }
 
 // ── Solve ──
@@ -2749,7 +2837,14 @@ const ALGO_MAP = {
 };
 
 function solveAll() {
-    // Validate items fit in capacity
+    const items = readItems();
+    capacity = parseInt(document.getElementById('capacity-slider').value) || 100;
+
+    // Validate
+    if (items.length === 0) {
+        document.getElementById('solver-status').textContent = 'Add at least one item.';
+        return;
+    }
     for (const item of items) {
         if (item.size > capacity) {
             document.getElementById('solver-status').textContent =
@@ -2758,58 +2853,59 @@ function solveAll() {
         }
     }
 
-    const algos = Array.from(document.querySelectorAll('#algo-select .algo-chip.selected'))
-        .map(c => c.dataset.algo);
-    if (algos.length === 0) {
-        document.getElementById('solver-status').textContent = 'Select at least one algorithm.';
-        return;
-    }
+    // Show spinner
+    const spinner = document.getElementById('solveSpinner');
+    if (spinner) spinner.style.display = 'inline';
 
-    currentResults = [];
-    for (const key of algos) {
-        const algo = ALGO_MAP[key];
-        const t0 = performance.now();
-        const bins = algo.fn();
-        const elapsed = performance.now() - t0;
-        const totalSize = items.reduce((s, it) => s + it.size, 0);
-        const utilization = (totalSize / (bins.length * capacity)) * 100;
+    setTimeout(() => {
+        const algoKeys = Object.keys(ALGO_MAP);
+        currentResults = [];
+        for (const key of algoKeys) {
+            const algo = ALGO_MAP[key];
+            const t0 = performance.now();
+            const bins = algo.fn(items, capacity);
+            const elapsed = performance.now() - t0;
+            const totalSize = items.reduce((s, it) => s + it.size, 0);
+            const utilization = (totalSize / (bins.length * capacity)) * 100;
 
-        currentResults.push({
-            key, name: algo.name, bins,
-            numBins: bins.length,
-            utilization: utilization,
-            time: elapsed
+            currentResults.push({
+                key, name: algo.name, bins,
+                numBins: bins.length,
+                utilization: utilization,
+                time: elapsed
+            });
+        }
+        currentResults.sort((a, b) => a.numBins - b.numBins || b.utilization - a.utilization);
+
+        // Draw best solution
+        drawBins(currentResults[0].bins, currentResults[0].name);
+
+        // Update results table
+        const tbody = document.getElementById('results-table').querySelector('tbody');
+        tbody.innerHTML = '';
+        currentResults.forEach((r, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML =
+                '<td class="algo-label">' + r.name + '</td>' +
+                '<td class="' + (i === 0 ? 'best-val' : '') + '">' + r.numBins + '</td>' +
+                '<td>' + r.utilization.toFixed(1) + '%</td>' +
+                '<td>' + (r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s') + '</td>';
+            tr.addEventListener('click', () => showResult(r));
+            tbody.appendChild(tr);
         });
-    }
-    currentResults.sort((a, b) => a.numBins - b.numBins || b.utilization - a.utilization);
 
-    // Draw best solution
-    drawBins(currentResults[0].bins, currentResults[0].name);
+        showResult(currentResults[0]);
+        document.getElementById('solver-status').textContent =
+            'Solved with ' + currentResults.length + ' algorithms. Click a row to view its packing.';
 
-    // Update results table
-    const tbody = document.getElementById('results-table').querySelector('tbody');
-    tbody.innerHTML = '';
-    currentResults.forEach((r, i) => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-            <td class="algo-label">${r.name}</td>
-            <td class="${i === 0 ? 'best-val' : ''}">${r.numBins}</td>
-            <td>${r.utilization.toFixed(1)}%</td>
-            <td>${r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s'}</td>
-        `;
-        tr.addEventListener('click', () => showResult(r));
-        tbody.appendChild(tr);
-    });
-
-    showResult(currentResults[0]);
-    document.getElementById('solver-status').textContent =
-        'Solved with ' + currentResults.length + ' algorithm' + (currentResults.length > 1 ? 's' : '') +
-        '. Click a row to view its packing.';
+        if (spinner) spinner.style.display = 'none';
+    }, 60);
 }
 
 function showResult(r) {
     drawBins(r.bins, r.name);
 
+    const items = readItems();
     const lines = [];
     r.bins.forEach((bin, bi) => {
         const load = bin.reduce((s, it) => s + it.size, 0);
@@ -2834,6 +2930,7 @@ const observer = new IntersectionObserver(entries => {
 document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
 // ── Initialize ──
+renderItemsTable(DEFAULT_ITEMS);
 clearCanvas();
 </script>
 
