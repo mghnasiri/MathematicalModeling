@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Logistics &amp; Transportation | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Three OR problems in logistics: capacitated vehicle routing, 1D bin packing, and technician dispatch with time windows.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/logistics-domain.html">
+    <meta property="og:title" content="Logistics &amp; Transportation | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Three OR problems in logistics: capacitated vehicle routing, 1D bin packing, and technician dispatch with time windows.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Logistics &amp; Transportation | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Three OR problems in logistics: capacitated vehicle routing, 1D bin packing, and technician dispatch with time windows.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: transparent;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            margin-top: 56px;
+            background: rgba(10, 25, 47, 0.5);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .breadcrumb-nav ol {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a {
+            color: var(--slate);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(2px 2px at 20% 30%, rgba(122,162,247,0.25) 0%, transparent 100%), radial-gradient(2px 2px at 70% 25%, rgba(197,160,89,0.2) 0%, transparent 100%), radial-gradient(2px 2px at 45% 65%, rgba(122,162,247,0.2) 0%, transparent 100%), radial-gradient(2px 2px at 80% 70%, rgba(197,160,89,0.15) 0%, transparent 100%), linear-gradient(160deg, transparent 20%, rgba(122,162,247,0.03) 50%, transparent 80%), radial-gradient(ellipse at 50% 30%, rgba(122,162,247,0.05) 0%, transparent 65%);
+            pointer-events: none;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Tabs */
+        .domain-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .domain-tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            color: var(--slate);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            position: relative;
+            border-bottom: 2px solid transparent;
+        }
+        .domain-tab:hover { color: var(--ivory); }
+        .domain-tab.active {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+        }
+        .tab-content { display: none; padding: 3rem 0; }
+        .tab-content.active { display: block; }
+
+        /* Science Context */
+        .science-context {
+            background: rgba(122, 162, 247, 0.06);
+            border: 1px solid rgba(122, 162, 247, 0.15);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .science-context-title {
+            font-size: 0.7rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .science-context p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+        .science-context strong { color: var(--ivory); font-weight: 500; }
+
+        /* Evidence Panel */
+        .evidence-panel {
+            background: rgba(100, 255, 218, 0.04);
+            border: 1px solid rgba(100, 255, 218, 0.12);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+        }
+        .evidence-panel-title {
+            font-size: 0.7rem;
+            color: var(--green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+        .evidence-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .evidence-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(100, 255, 218, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .evidence-list li:last-child { border-bottom: none; }
+        .ev-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+        .ev-published {
+            background: rgba(100, 255, 218, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .ev-operational {
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--gold);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+        }
+
+        /* Formulation */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* Content Block */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 140px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .schedule-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* CTA Panel */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Back Link */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Nav search trigger */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* Scroll Progress */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Resource legend */
+        .resource-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .resource-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .resource-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .domain-tab { padding: 0.8rem 1rem; font-size: 0.72rem; }
+            .solver-body { padding: 1rem; }
+            .science-context { padding: 1rem 1.2rem; }
+            .evidence-panel { padding: 1rem 1.2rem; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .cta-panel { padding: 2rem 1rem; }
+        }
+
+        /* Bin utilization bars */
+        .bin-bar-container {
+            display: flex;
+            gap: 6px;
+            align-items: flex-end;
+            height: 100px;
+            margin-top: 0.8rem;
+            padding: 0.5rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+        }
+        .bin-bar-wrap {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            height: 100%;
+            position: relative;
+        }
+        .bin-bar {
+            width: 100%;
+            max-width: 32px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 2px;
+            position: relative;
+            height: 100%;
+            overflow: hidden;
+        }
+        .bin-bar-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            transition: height 0.5s ease;
+        }
+        .bin-bar-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            color: var(--slate);
+            margin-top: 3px;
+        }
+
+        .hero-icon--logistics { filter: drop-shadow(0 0 10px rgba(122,162,247,0.35)) drop-shadow(0 0 30px rgba(197,160,89,0.2)); animation: routePulse 3s ease-in-out infinite; }
+        @keyframes routePulse { 0% { filter: drop-shadow(0 0 10px rgba(122,162,247,0.35)) drop-shadow(0 0 30px rgba(197,160,89,0.2)); transform: translateY(0); } 50% { filter: drop-shadow(0 0 16px rgba(122,162,247,0.5)) drop-shadow(0 0 40px rgba(197,160,89,0.3)); transform: translateY(-4px); } 100% { filter: drop-shadow(0 0 10px rgba(122,162,247,0.35)) drop-shadow(0 0 30px rgba(197,160,89,0.2)); transform: translateY(0); } }
+
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&ShortUpArrow;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li style="color: var(--gold);">Logistics &amp; Transportation</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--logistics"><i class="fas fa-shipping-fast"></i></div>
+        <h1>Logistics &amp; <span>Transportation</span></h1>
+        <p class="hero-subtitle">Routing &middot; Hub Design &middot; Fleet &middot; Dispatch</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Logistics is arguably the most studied domain in operations research.
+            The Travelling Salesman Problem has driven combinatorial optimisation since the 1930s,
+            and the Vehicle Routing Problem introduced by Dantzig &amp; Ramser in 1959 remains
+            a cornerstone of applied OR &mdash; three problems that illustrate how mathematical
+            models transform everyday delivery, warehousing, and field-service operations.
+        </p>
+    </div>
+</section>
+
+<!-- Tabs -->
+<section style="padding: 0;">
+    <div class="container">
+        <div class="domain-tabs" id="domainTabs">
+            <button class="domain-tab active" data-tab="delivery" type="button">
+                <i class="fas fa-route" style="margin-right:0.4rem"></i>Delivery Routing
+            </button>
+            <button class="domain-tab" data-tab="packing" type="button">
+                <i class="fas fa-boxes" style="margin-right:0.4rem"></i>Warehouse Packing
+            </button>
+            <button class="domain-tab" data-tab="technician" type="button">
+                <i class="fas fa-tools" style="margin-right:0.4rem"></i>Technician Dispatch
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- TAB 1: Delivery Routing (CVRP) -->
+<div class="tab-content active" id="tab-delivery">
+    <div class="container">
+        <div class="fade-in">
+            <div class="science-context">
+                <div class="science-context-title"><i class="fas fa-microscope"></i> Domain Context</div>
+                <p>
+                    The <strong>Capacitated Vehicle Routing Problem (CVRP)</strong> was introduced by
+                    <strong>Dantzig &amp; Ramser (1959)</strong> in the context of gasoline delivery.
+                    Each vehicle departs from a depot, visits a subset of customers whose total demand
+                    does not exceed vehicle capacity, and returns. The goal is to minimise total route
+                    distance. Clarke &amp; Wright (1964) proposed a savings heuristic that remains a
+                    practical baseline &mdash; it starts with one route per customer and iteratively
+                    merges routes when the savings from combining them exceed the extra cost.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-6 fade-in">
+                <div class="content-block" style="max-width:none;">
+                    <p><strong>Problem type:</strong> Capacitated Vehicle Routing (CVRP).
+                    Assign customers to vehicle routes and sequence visits within each route
+                    to minimise total travel distance, subject to vehicle capacity constraints.
+                    All routes begin and end at the depot.</p>
+                </div>
+                <div class="formulation">
+                    <span class="form-label">Mathematical Formulation</span>
+                    <span class="keyword">min</span> &Sigma;<sub>i,j</sub> <span class="variable">c_ij</span> &middot; <span class="variable">x_ij</span><br>
+                    <span class="keyword">s.t.</span> &Sigma;<sub>j</sub> <span class="variable">x_ij</span> = 1 &nbsp; &forall; customer <span class="variable">i</span> <span class="comment">// each visited once</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; &Sigma;<sub>i&isin;S</sub> <span class="variable">d_i</span> &le; <span class="variable">Q</span> &nbsp; &forall; route <span class="variable">S</span> <span class="comment">// capacity</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x_ij</span> &isin; {0,1} <span class="comment">// binary edge selection</span><br>
+                    <span class="comment">// subtour elimination via MTZ or cut callbacks</span>
+                </div>
+            </div>
+            <div class="col-lg-6 fade-in">
+                <div class="solver-panel">
+                    <div class="solver-panel-header">
+                        <h4><i class="fas fa-route"></i> CVRP Solver</h4>
+                    </div>
+                    <div class="solver-body">
+                        <div class="solver-section-label">Scenario</div>
+                        <div class="algo-select" id="cvrpScenarios">
+                            <div class="algo-chip selected" data-algo="8">8 Customers</div>
+                            <div class="algo-chip" data-algo="12">12 Customers</div>
+                            <div class="algo-chip" data-algo="16">16 Customers</div>
+                        </div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="cvrpAlgos">
+                            <div class="algo-chip selected" data-algo="nn">Nearest Neighbour</div>
+                            <div class="algo-chip selected" data-algo="cw">Clarke-Wright</div>
+                        </div>
+                        <button class="solver-btn primary" id="cvrpSolve" type="button">
+                            <i class="fas fa-play" style="margin-right:0.4rem"></i>Solve
+                        </button>
+                        <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                            <canvas id="cvrpCanvas" width="560" height="420"></canvas>
+                        </div>
+                        <div id="cvrpResults" style="margin-top:1rem;"></div>
+                        <div class="solver-status" id="cvrpStatus">Select scenario and algorithm, then click Solve.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fade-in">
+            <div class="evidence-panel">
+                <div class="evidence-panel-title"><i class="fas fa-book-open" style="margin-right:0.4rem"></i> Evidence Base</div>
+                <ul class="evidence-list">
+                    <li>Dantzig, G. &amp; Ramser, J. (1959). The truck dispatching problem. <em>Management Science</em>, 6(1), 80-91. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Clarke, G. &amp; Wright, J. (1964). Scheduling of vehicles from a central depot to a number of delivery points. <em>Operations Research</em>, 12(4), 568-581. <span class="ev-badge ev-published">Published</span></li>
+                    <li>UPS ORION (On-Road Integrated Optimization &amp; Navigation). Deployed across 55,000+ routes, saving 100 million miles per year. <span class="ev-badge ev-operational">Operational</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: Warehouse Packing (1D Bin Packing) -->
+<div class="tab-content" id="tab-packing">
+    <div class="container">
+        <div class="fade-in">
+            <div class="science-context">
+                <div class="science-context-title"><i class="fas fa-microscope"></i> Domain Context</div>
+                <p>
+                    The <strong>1D Bin Packing Problem</strong> asks: given items of various sizes and bins
+                    of uniform capacity, pack all items using the fewest bins. Garey, Graham &amp; Ullman (1972)
+                    showed that <strong>First Fit Decreasing (FFD)</strong> &mdash; sorting items large-to-small
+                    then placing each in the first bin that fits &mdash; uses at most <strong>(11/9)OPT + 6/9</strong>
+                    bins. Johnson (1974) tightened bounds and showed FFD performs within 22% of optimal in the worst
+                    case. In warehouse operations, this maps directly to packing orders into shipping cartons,
+                    palletising goods, or loading truck compartments.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-6 fade-in">
+                <div class="content-block" style="max-width:none;">
+                    <p><strong>Problem type:</strong> 1D Bin Packing (NP-hard).
+                    Assign items with known sizes to unit-capacity bins, minimising the number of
+                    bins used, subject to the constraint that total size in each bin does not exceed capacity.</p>
+                </div>
+                <div class="formulation">
+                    <span class="form-label">Mathematical Formulation</span>
+                    <span class="keyword">min</span> &Sigma;<sub>j</sub> <span class="variable">y_j</span> <span class="comment">// number of bins used</span><br>
+                    <span class="keyword">s.t.</span> &Sigma;<sub>j</sub> <span class="variable">x_ij</span> = 1 &nbsp; &forall; item <span class="variable">i</span> <span class="comment">// each item assigned once</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; &Sigma;<sub>i</sub> <span class="variable">s_i</span> &middot; <span class="variable">x_ij</span> &le; <span class="variable">C</span> &middot; <span class="variable">y_j</span> &nbsp; &forall; bin <span class="variable">j</span> <span class="comment">// capacity</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x_ij</span>, <span class="variable">y_j</span> &isin; {0,1}
+                </div>
+            </div>
+            <div class="col-lg-6 fade-in">
+                <div class="solver-panel">
+                    <div class="solver-panel-header">
+                        <h4><i class="fas fa-boxes"></i> Bin Packing Solver</h4>
+                    </div>
+                    <div class="solver-body">
+                        <div class="solver-section-label">Scenario</div>
+                        <div class="algo-select" id="bpScenarios">
+                            <div class="algo-chip selected" data-algo="10">10 Items</div>
+                            <div class="algo-chip" data-algo="16">16 Items</div>
+                            <div class="algo-chip" data-algo="24">24 Items</div>
+                        </div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="bpAlgos">
+                            <div class="algo-chip selected" data-algo="ffd">First Fit Decreasing</div>
+                            <div class="algo-chip selected" data-algo="bfd">Best Fit Decreasing</div>
+                        </div>
+                        <button class="solver-btn primary" id="bpSolve" type="button">
+                            <i class="fas fa-play" style="margin-right:0.4rem"></i>Solve
+                        </button>
+                        <div id="bpBins" style="margin-top:1rem;"></div>
+                        <div id="bpResults" style="margin-top:1rem;"></div>
+                        <div class="solver-status" id="bpStatus">Select scenario and algorithm, then click Solve.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fade-in">
+            <div class="evidence-panel">
+                <div class="evidence-panel-title"><i class="fas fa-book-open" style="margin-right:0.4rem"></i> Evidence Base</div>
+                <ul class="evidence-list">
+                    <li>Garey, M., Graham, R. &amp; Ullman, J. (1972). Worst-case analysis of memory allocation algorithms. <em>Proceedings of the 4th ACM Symposium on Theory of Computing</em>, 143-150. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Johnson, D. (1974). Fast algorithms for bin packing. <em>Journal of Computer and System Sciences</em>, 8(3), 272-314. <span class="ev-badge ev-published">Published</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: Technician Dispatch (VRPTW + Skills) -->
+<div class="tab-content" id="tab-technician">
+    <div class="container">
+        <div class="fade-in">
+            <div class="science-context">
+                <div class="science-context-title"><i class="fas fa-microscope"></i> Domain Context</div>
+                <p>
+                    The <strong>Vehicle Routing Problem with Time Windows (VRPTW)</strong> adds appointment
+                    constraints to the standard VRP: each customer must be served within a specified
+                    time interval. Solomon (1987) introduced benchmark instances that remain standard today.
+                    In <strong>technician dispatch</strong>, skill requirements add another dimension &mdash;
+                    a repair job may require a specific certification. Cordeau, Laporte, Pasin &amp; Ropke (2005)
+                    showed that metaheuristics for the VRPTW with heterogeneous skills can reduce fleet costs
+                    by <strong>15-25%</strong> over manual scheduling.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-6 fade-in">
+                <div class="content-block" style="max-width:none;">
+                    <p><strong>Problem type:</strong> VRPTW with skill constraints.
+                    Assign service calls to technicians and sequence visits so that each call
+                    is served within its time window by a technician with the required skill,
+                    minimising total travel time and tardiness.</p>
+                </div>
+                <div class="formulation">
+                    <span class="form-label">Mathematical Formulation</span>
+                    <span class="keyword">min</span> &Sigma; <span class="variable">travel_time</span> + <span class="variable">&alpha;</span> &middot; &Sigma; <span class="variable">tardiness</span><br>
+                    <span class="keyword">s.t.</span> <span class="variable">a_i</span> &le; <span class="variable">start_i</span> &le; <span class="variable">b_i</span> &nbsp; &forall; call <span class="variable">i</span> <span class="comment">// time window</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">skill</span>(<span class="variable">tech_k</span>) &supseteq; <span class="variable">req</span>(<span class="variable">call_i</span>) <span class="comment">// skill match</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">start_j</span> &ge; <span class="variable">start_i</span> + <span class="variable">service_i</span> + <span class="variable">travel_ij</span> <span class="comment">// sequencing</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; &Sigma;<sub>k</sub> <span class="variable">x_ik</span> = 1 &nbsp; &forall; call <span class="variable">i</span> <span class="comment">// each call assigned once</span>
+                </div>
+            </div>
+            <div class="col-lg-6 fade-in">
+                <div class="solver-panel">
+                    <div class="solver-panel-header">
+                        <h4><i class="fas fa-tools"></i> Technician Dispatch Solver</h4>
+                    </div>
+                    <div class="solver-body">
+                        <div class="solver-section-label">Scenario</div>
+                        <div class="algo-select" id="techScenarios">
+                            <div class="algo-chip selected" data-algo="6">6 Calls</div>
+                            <div class="algo-chip" data-algo="10">10 Calls</div>
+                            <div class="algo-chip" data-algo="14">14 Calls</div>
+                        </div>
+                        <div class="solver-section-label">Resources</div>
+                        <div class="resource-legend">
+                            <div class="resource-legend-item"><div class="resource-dot" style="background:#C5A059"></div> Electrical (2)</div>
+                            <div class="resource-legend-item"><div class="resource-dot" style="background:#7aa2f7"></div> Plumbing (2)</div>
+                            <div class="resource-legend-item"><div class="resource-dot" style="background:#64ffda"></div> HVAC (1)</div>
+                        </div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="techAlgos">
+                            <div class="algo-chip selected" data-algo="greedy">Greedy Assignment</div>
+                            <div class="algo-chip selected" data-algo="twinsert">Time-Window Insertion</div>
+                        </div>
+                        <button class="solver-btn primary" id="techSolve" type="button">
+                            <i class="fas fa-play" style="margin-right:0.4rem"></i>Solve
+                        </button>
+                        <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                            <canvas id="techCanvas" width="560" height="420"></canvas>
+                        </div>
+                        <div id="techResults" style="margin-top:1rem;"></div>
+                        <div class="solver-status" id="techStatus">Select scenario and algorithm, then click Solve.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fade-in">
+            <div class="evidence-panel">
+                <div class="evidence-panel-title"><i class="fas fa-book-open" style="margin-right:0.4rem"></i> Evidence Base</div>
+                <ul class="evidence-list">
+                    <li>Solomon, M. (1987). Algorithms for the vehicle routing and scheduling problems with time window constraints. <em>Operations Research</em>, 35(2), 254-265. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Cordeau, J.-F., Laporte, G., Pasin, F. &amp; Ropke, S. (2010). Scheduling technicians and tasks in a telecommunications company. <em>Journal of Scheduling</em>, 13, 393-409. <span class="ev-badge ev-published">Published</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA -->
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Explore More Applications</h3>
+            <p>See how the same mathematical families &mdash; vehicle routing, bin packing,
+               scheduling with constraints &mdash; apply across healthcare, energy, agriculture, and manufacturing.</p>
+            <div class="cta-links">
+                <a class="cta-link" href="../index.html"><i class="fas fa-arrow-left"></i> Portfolio</a>
+                <a class="cta-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>
+            <a href="../index.html">&larr; Back to Portfolio</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<!-- Back Link -->
+<a class="back-link" href="../index.html"><i class="fas fa-arrow-left" style="margin-right:0.4rem"></i> Portfolio</a>
+
+<!-- Scroll-to-top -->
+<div class="scroll-top-btn" id="scrollTopBtn"><i class="fas fa-chevron-up"></i></div>
+
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdOverlay">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search pages...">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <span>Navigate to page</span>
+            <div class="cmd-footer-keys">
+                <span><span class="cmd-kbd">&uarr;&darr;</span> navigate</span>
+                <span><span class="cmd-kbd">&crarr;</span> open</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+    "use strict";
+
+    /* ===== TABS ===== */
+    var tabBtns = document.querySelectorAll('.domain-tab');
+    var tabContents = document.querySelectorAll('.tab-content');
+    tabBtns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var target = btn.getAttribute('data-tab');
+            tabBtns.forEach(function(b){ b.classList.remove('active'); });
+            tabContents.forEach(function(tc){ tc.classList.remove('active'); });
+            btn.classList.add('active');
+            var el = document.getElementById('tab-' + target);
+            if(el) el.classList.add('active');
+        });
+    });
+
+    /* ===== ALGO CHIP TOGGLE (scenarios = radio, algos = toggle) ===== */
+    function setupRadioGroup(containerId) {
+        var chips = document.querySelectorAll('#' + containerId + ' .algo-chip');
+        chips.forEach(function(chip){
+            chip.addEventListener('click', function(){
+                chips.forEach(function(c){ c.classList.remove('selected'); });
+                chip.classList.add('selected');
+            });
+        });
+    }
+    setupRadioGroup('cvrpScenarios');
+    setupRadioGroup('bpScenarios');
+    setupRadioGroup('techScenarios');
+
+    document.querySelectorAll('#cvrpAlgos .algo-chip, #bpAlgos .algo-chip, #techAlgos .algo-chip').forEach(function(chip){
+        chip.addEventListener('click', function(){
+            chip.classList.toggle('selected');
+        });
+    });
+
+    /* ===== UTILITY ===== */
+    function eucDist(a, b) {
+        var dx = a[0] - b[0];
+        var dy = a[1] - b[1];
+        return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    function getSelectedAlgos(containerId) {
+        var chips = document.querySelectorAll('#' + containerId + ' .algo-chip.selected');
+        var algos = [];
+        chips.forEach(function(c){ algos.push(c.getAttribute('data-algo')); });
+        return algos;
+    }
+
+    function getSelectedScenario(containerId) {
+        var chip = document.querySelector('#' + containerId + ' .algo-chip.selected');
+        return chip ? parseInt(chip.getAttribute('data-algo'), 10) : 8;
+    }
+
+    function clearContainer(id) {
+        var el = document.getElementById(id);
+        while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function buildResultsTable(headers, rows) {
+        var tbl = document.createElement('table');
+        tbl.className = 'results-table';
+        var thead = document.createElement('thead');
+        var hrow = document.createElement('tr');
+        headers.forEach(function(h) {
+            var th = document.createElement('th');
+            th.textContent = h;
+            hrow.appendChild(th);
+        });
+        thead.appendChild(hrow);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        rows.forEach(function(cells) {
+            var tr = document.createElement('tr');
+            cells.forEach(function(cell) {
+                var td = document.createElement('td');
+                td.textContent = cell.text;
+                if (cell.cls) td.className = cell.cls;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+        return tbl;
+    }
+
+    /* ================================================================
+       GENERATE CUSTOMER DATA
+       ================================================================ */
+    function generateCustomers(n) {
+        var depotX = 280, depotY = 210;
+        var custs = [{ x: depotX, y: depotY, demand: 0, name: 'Depot' }];
+        var seeds16 = [
+            [80, 60], [160, 50], [400, 40], [480, 80],
+            [50, 180], [200, 140], [360, 130], [500, 170],
+            [70, 300], [180, 340], [300, 360], [430, 310],
+            [120, 240], [350, 250], [460, 380], [250, 280]
+        ];
+        for (var i = 0; i < n; i++) {
+            var sx = seeds16[i % seeds16.length][0] + (Math.random() - 0.5) * 30;
+            var sy = seeds16[i % seeds16.length][1] + (Math.random() - 0.5) * 30;
+            custs.push({
+                x: Math.max(20, Math.min(540, sx)),
+                y: Math.max(20, Math.min(400, sy)),
+                demand: 10 + Math.floor(Math.random() * 30),
+                name: 'C' + (i + 1)
+            });
+        }
+        return custs;
+    }
+
+    /* ================================================================
+       TAB 1: CVRP SOLVER
+       ================================================================ */
+    var VEHICLE_CAP = 80;
+    var routeColors = ['#C5A059', '#7aa2f7', '#64ffda', '#ff6b6b', '#bb86fc', '#ff9f43', '#43e97b'];
+
+    function drawCVRP(custs, routes, animProgress) {
+        var canvas = document.getElementById('cvrpCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        /* grid */
+        ctx.strokeStyle = 'rgba(197,160,89,0.04)';
+        ctx.lineWidth = 0.5;
+        for (var g = 0; g < W; g += 40) {
+            ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, H); ctx.stroke();
+        }
+        for (var g2 = 0; g2 < H; g2 += 40) {
+            ctx.beginPath(); ctx.moveTo(0, g2); ctx.lineTo(W, g2); ctx.stroke();
+        }
+
+        /* draw routes */
+        if (routes) {
+            var prog = animProgress !== undefined ? animProgress : 1;
+            routes.forEach(function(route, ri) {
+                var col = routeColors[ri % routeColors.length];
+                var fullPath = [0].concat(route).concat([0]);
+                var totalSegs = fullPath.length - 1;
+                var drawSegs = Math.ceil(totalSegs * prog);
+                ctx.strokeStyle = col;
+                ctx.lineWidth = 2;
+                ctx.globalAlpha = 0.7;
+                ctx.beginPath();
+                ctx.moveTo(custs[fullPath[0]].x, custs[fullPath[0]].y);
+                for (var s = 1; s <= drawSegs && s < fullPath.length; s++) {
+                    ctx.lineTo(custs[fullPath[s]].x, custs[fullPath[s]].y);
+                }
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+
+                /* arrow on last drawn segment */
+                if (drawSegs >= 1 && drawSegs < fullPath.length) {
+                    var from = custs[fullPath[drawSegs - 1]];
+                    var to = custs[fullPath[drawSegs]];
+                    var angle = Math.atan2(to.y - from.y, to.x - from.x);
+                    var ax = to.x - Math.cos(angle) * 10;
+                    var ay = to.y - Math.sin(angle) * 10;
+                    ctx.beginPath();
+                    ctx.moveTo(to.x, to.y);
+                    ctx.lineTo(ax - Math.cos(angle - 0.5) * 8, ay - Math.sin(angle - 0.5) * 8);
+                    ctx.moveTo(to.x, to.y);
+                    ctx.lineTo(ax - Math.cos(angle + 0.5) * 8, ay - Math.sin(angle + 0.5) * 8);
+                    ctx.strokeStyle = col;
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                }
+            });
+        }
+
+        /* customer dots */
+        custs.forEach(function(c, i) {
+            ctx.beginPath();
+            if (i === 0) {
+                /* depot: square */
+                ctx.fillStyle = '#ff6b6b';
+                ctx.fillRect(c.x - 7, c.y - 7, 14, 14);
+                ctx.strokeStyle = '#ff6b6b';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(c.x - 7, c.y - 7, 14, 14);
+            } else {
+                ctx.arc(c.x, c.y, 5, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(168,178,209,0.6)';
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(168,178,209,0.8)';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+            }
+            ctx.fillStyle = i === 0 ? '#F8F9FA' : '#8892B0';
+            ctx.font = i === 0 ? 'bold 10px Inter, sans-serif' : '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(c.name, c.x, c.y - 12);
+            if (i > 0) {
+                ctx.fillStyle = '#8892B0';
+                ctx.font = '8px JetBrains Mono, monospace';
+                ctx.fillText('d=' + c.demand, c.x, c.y + 16);
+            }
+        });
+
+        /* legend */
+        if (routes) {
+            ctx.font = '10px Inter, sans-serif';
+            routes.forEach(function(route, ri) {
+                var load = 0;
+                route.forEach(function(ci){ load += custs[ci].demand; });
+                var ly = 15 + ri * 16;
+                ctx.fillStyle = routeColors[ri % routeColors.length];
+                ctx.fillRect(10, ly - 6, 12, 8);
+                ctx.fillStyle = '#a8b2d1';
+                ctx.textAlign = 'left';
+                ctx.fillText('Route ' + (ri + 1) + ' (' + load + '/' + VEHICLE_CAP + ')', 26, ly + 1);
+            });
+        }
+    }
+
+    function routeDistance(custs, route) {
+        var path = [0].concat(route).concat([0]);
+        var dist = 0;
+        for (var i = 1; i < path.length; i++) {
+            dist += eucDist([custs[path[i-1]].x, custs[path[i-1]].y], [custs[path[i]].x, custs[path[i]].y]);
+        }
+        return dist;
+    }
+
+    function nnCVRP(custs) {
+        var unvisited = [];
+        for (var i = 1; i < custs.length; i++) unvisited.push(i);
+        var routes = [];
+        while (unvisited.length > 0) {
+            var route = [];
+            var load = 0;
+            var current = 0;
+            while (true) {
+                var bestDist = Infinity, bestIdx = -1, bestPos = -1;
+                for (var u = 0; u < unvisited.length; u++) {
+                    var ci = unvisited[u];
+                    if (load + custs[ci].demand <= VEHICLE_CAP) {
+                        var d = eucDist([custs[current].x, custs[current].y], [custs[ci].x, custs[ci].y]);
+                        if (d < bestDist) { bestDist = d; bestIdx = ci; bestPos = u; }
+                    }
+                }
+                if (bestIdx === -1) break;
+                route.push(bestIdx);
+                load += custs[bestIdx].demand;
+                current = bestIdx;
+                unvisited.splice(bestPos, 1);
+            }
+            if (route.length > 0) routes.push(route);
+        }
+        return routes;
+    }
+
+    function cwCVRP(custs) {
+        /* each customer starts as its own route */
+        var routes = [];
+        for (var i = 1; i < custs.length; i++) routes.push([i]);
+
+        /* compute savings */
+        var savings = [];
+        for (var a = 1; a < custs.length; a++) {
+            for (var b = a + 1; b < custs.length; b++) {
+                var s = eucDist([custs[0].x, custs[0].y], [custs[a].x, custs[a].y]) +
+                        eucDist([custs[0].x, custs[0].y], [custs[b].x, custs[b].y]) -
+                        eucDist([custs[a].x, custs[a].y], [custs[b].x, custs[b].y]);
+                savings.push({ a: a, b: b, s: s });
+            }
+        }
+        savings.sort(function(x, y){ return y.s - x.s; });
+
+        function findRoute(ci) {
+            for (var r = 0; r < routes.length; r++) {
+                if (routes[r].indexOf(ci) >= 0) return r;
+            }
+            return -1;
+        }
+
+        function routeLoad(route) {
+            var l = 0;
+            route.forEach(function(ci){ l += custs[ci].demand; });
+            return l;
+        }
+
+        savings.forEach(function(sv) {
+            var rA = findRoute(sv.a);
+            var rB = findRoute(sv.b);
+            if (rA === rB || rA === -1 || rB === -1) return;
+            /* only merge if a is at end of rA and b is at start of rB (or vice versa) */
+            var endA = routes[rA][routes[rA].length - 1] === sv.a;
+            var startB = routes[rB][0] === sv.b;
+            var endB = routes[rB][routes[rB].length - 1] === sv.b;
+            var startA = routes[rA][0] === sv.a;
+
+            if (routeLoad(routes[rA]) + routeLoad(routes[rB]) > VEHICLE_CAP) return;
+
+            if (endA && startB) {
+                routes[rA] = routes[rA].concat(routes[rB]);
+                routes.splice(rB, 1);
+            } else if (endB && startA) {
+                routes[rB] = routes[rB].concat(routes[rA]);
+                routes.splice(rA, 1);
+            } else if (startA && startB) {
+                routes[rA].reverse();
+                routes[rA] = routes[rA].concat(routes[rB]);
+                routes.splice(rB, 1);
+            } else if (endA && endB) {
+                routes[rB].reverse();
+                routes[rA] = routes[rA].concat(routes[rB]);
+                routes.splice(rB, 1);
+            }
+        });
+
+        return routes;
+    }
+
+    function solveCVRP() {
+        var n = getSelectedScenario('cvrpScenarios');
+        var algos = getSelectedAlgos('cvrpAlgos');
+        if (algos.length === 0) {
+            document.getElementById('cvrpStatus').textContent = 'Select at least one algorithm.';
+            return;
+        }
+
+        var custs = generateCustomers(n);
+        var results = [];
+        var bestRoutes = null;
+        var bestDist = Infinity;
+
+        algos.forEach(function(algo) {
+            var routes;
+            var label;
+            if (algo === 'nn') {
+                routes = nnCVRP(custs);
+                label = 'Nearest Neighbour';
+            } else {
+                routes = cwCVRP(custs);
+                label = 'Clarke-Wright';
+            }
+            var totalDist = 0;
+            routes.forEach(function(r){ totalDist += routeDistance(custs, r); });
+            results.push({ algo: label, dist: totalDist, vehicles: routes.length, routes: routes });
+            if (totalDist < bestDist) { bestDist = totalDist; bestRoutes = routes; }
+        });
+
+        /* animate */
+        var frame = 0;
+        var totalFrames = 40;
+        function animate() {
+            frame++;
+            var prog = Math.min(1, frame / totalFrames);
+            drawCVRP(custs, bestRoutes, prog);
+            if (frame < totalFrames) requestAnimationFrame(animate);
+        }
+        animate();
+
+        var lowestDist = Math.min.apply(null, results.map(function(r){ return r.dist; }));
+        var fewestVeh = Math.min.apply(null, results.map(function(r){ return r.vehicles; }));
+        var rows = results.map(function(r) {
+            return [
+                { text: r.algo, cls: 'algo-label' },
+                { text: r.dist.toFixed(1), cls: r.dist === lowestDist ? 'best-val' : '' },
+                { text: String(r.vehicles), cls: r.vehicles === fewestVeh ? 'best-val' : '' }
+            ];
+        });
+
+        clearContainer('cvrpResults');
+        document.getElementById('cvrpResults').appendChild(
+            buildResultsTable(['Algorithm', 'Total Distance', 'Vehicles'], rows)
+        );
+        document.getElementById('cvrpStatus').textContent =
+            n + ' customers, capacity=' + VEHICLE_CAP + '. Showing best solution on map.';
+    }
+
+    document.getElementById('cvrpSolve').addEventListener('click', solveCVRP);
+    drawCVRP(generateCustomers(8), null);
+
+    /* ================================================================
+       TAB 2: BIN PACKING SOLVER
+       ================================================================ */
+    function generateItems(n) {
+        var items = [];
+        for (var i = 0; i < n; i++) {
+            items.push({ size: 0.1 + Math.random() * 0.55, id: i + 1 });
+        }
+        return items;
+    }
+
+    var itemColors = ['#C5A059', '#7aa2f7', '#64ffda', '#ff6b6b', '#bb86fc', '#ff9f43', '#43e97b',
+                      '#e06c9f', '#56c2e6', '#f7dc6f', '#a29bfe', '#fd79a8', '#00cec9', '#fab1a0'];
+
+    function ffd(items) {
+        var sorted = items.slice().sort(function(a, b){ return b.size - a.size; });
+        var bins = []; /* each bin: { items: [], remaining: 1.0 } */
+        sorted.forEach(function(item) {
+            var placed = false;
+            for (var b = 0; b < bins.length; b++) {
+                if (bins[b].remaining >= item.size) {
+                    bins[b].items.push(item);
+                    bins[b].remaining -= item.size;
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                bins.push({ items: [item], remaining: 1.0 - item.size });
+            }
+        });
+        return bins;
+    }
+
+    function bfd(items) {
+        var sorted = items.slice().sort(function(a, b){ return b.size - a.size; });
+        var bins = [];
+        sorted.forEach(function(item) {
+            var bestBin = -1, bestRemain = 2;
+            for (var b = 0; b < bins.length; b++) {
+                if (bins[b].remaining >= item.size && bins[b].remaining - item.size < bestRemain) {
+                    bestRemain = bins[b].remaining - item.size;
+                    bestBin = b;
+                }
+            }
+            if (bestBin >= 0) {
+                bins[bestBin].items.push(item);
+                bins[bestBin].remaining -= item.size;
+            } else {
+                bins.push({ items: [item], remaining: 1.0 - item.size });
+            }
+        });
+        return bins;
+    }
+
+    function renderBinBars(binSets) {
+        var container = document.getElementById('bpBins');
+        clearContainer('bpBins');
+
+        binSets.forEach(function(set) {
+            var label = document.createElement('div');
+            label.className = 'solver-section-label';
+            label.style.marginTop = '1rem';
+            label.textContent = set.algo;
+            container.appendChild(label);
+
+            var barContainer = document.createElement('div');
+            barContainer.className = 'bin-bar-container';
+
+            set.bins.forEach(function(bin, bi) {
+                var wrap = document.createElement('div');
+                wrap.className = 'bin-bar-wrap';
+
+                var bar = document.createElement('div');
+                bar.className = 'bin-bar';
+
+                var fillPct = ((1 - bin.remaining) * 100);
+                var fill = document.createElement('div');
+                fill.className = 'bin-bar-fill';
+                var hue = fillPct > 90 ? '160, 255, 218' : (fillPct > 70 ? '197, 160, 89' : '122, 162, 247');
+                fill.style.background = 'rgba(' + hue + ', 0.5)';
+                fill.style.height = '0%';
+                bar.appendChild(fill);
+
+                var lbl = document.createElement('div');
+                lbl.className = 'bin-bar-label';
+                lbl.textContent = fillPct.toFixed(0) + '%';
+
+                wrap.appendChild(bar);
+                wrap.appendChild(lbl);
+                barContainer.appendChild(wrap);
+
+                /* animate */
+                setTimeout(function() {
+                    fill.style.height = fillPct + '%';
+                }, 50 + bi * 80);
+            });
+
+            container.appendChild(barContainer);
+        });
+    }
+
+    function solveBP() {
+        var n = getSelectedScenario('bpScenarios');
+        var algos = getSelectedAlgos('bpAlgos');
+        if (algos.length === 0) {
+            document.getElementById('bpStatus').textContent = 'Select at least one algorithm.';
+            return;
+        }
+
+        var items = generateItems(n);
+        var results = [];
+        var binSets = [];
+
+        algos.forEach(function(algo) {
+            var bins;
+            var label;
+            if (algo === 'ffd') {
+                bins = ffd(items);
+                label = 'First Fit Decreasing';
+            } else {
+                bins = bfd(items);
+                label = 'Best Fit Decreasing';
+            }
+            var avgUtil = 0;
+            bins.forEach(function(b){ avgUtil += (1 - b.remaining); });
+            avgUtil = (avgUtil / bins.length) * 100;
+            results.push({ algo: label, numBins: bins.length, avgUtil: avgUtil });
+            binSets.push({ algo: label, bins: bins });
+        });
+
+        renderBinBars(binSets);
+
+        var fewestBins = Math.min.apply(null, results.map(function(r){ return r.numBins; }));
+        var bestUtil = Math.max.apply(null, results.map(function(r){ return r.avgUtil; }));
+        var rows = results.map(function(r) {
+            return [
+                { text: r.algo, cls: 'algo-label' },
+                { text: String(r.numBins), cls: r.numBins === fewestBins ? 'best-val' : '' },
+                { text: r.avgUtil.toFixed(1) + '%', cls: r.avgUtil === bestUtil ? 'best-val' : '' }
+            ];
+        });
+
+        clearContainer('bpResults');
+        document.getElementById('bpResults').appendChild(
+            buildResultsTable(['Algorithm', 'Bins Used', 'Avg Utilization'], rows)
+        );
+        document.getElementById('bpStatus').textContent =
+            n + ' items packed. Bar height = bin utilization.';
+    }
+
+    document.getElementById('bpSolve').addEventListener('click', solveBP);
+
+    /* ================================================================
+       TAB 3: TECHNICIAN DISPATCH SOLVER (VRPTW + skills)
+       ================================================================ */
+    var SKILLS = ['Electrical', 'Plumbing', 'HVAC'];
+    var SKILL_COLORS = { 'Electrical': '#C5A059', 'Plumbing': '#7aa2f7', 'HVAC': '#64ffda' };
+    var TECHS = [
+        { name: 'E1', skill: 'Electrical', color: '#C5A059' },
+        { name: 'E2', skill: 'Electrical', color: '#C5A059' },
+        { name: 'P1', skill: 'Plumbing',   color: '#7aa2f7' },
+        { name: 'P2', skill: 'Plumbing',   color: '#7aa2f7' },
+        { name: 'H1', skill: 'HVAC',       color: '#64ffda' }
+    ];
+
+    function generateCalls(n) {
+        var calls = [];
+        var positions = [
+            [90, 70], [450, 60], [150, 320], [400, 350], [260, 50],
+            [80, 200], [480, 200], [200, 180], [350, 280], [120, 380],
+            [420, 100], [300, 340], [50, 120], [500, 300]
+        ];
+        for (var i = 0; i < n; i++) {
+            var tw_start = 8 + Math.floor(Math.random() * 6); /* 8-13 */
+            var tw_end = tw_start + 2 + Math.floor(Math.random() * 3); /* +2..4 hours */
+            calls.push({
+                x: positions[i % positions.length][0] + (Math.random() - 0.5) * 20,
+                y: positions[i % positions.length][1] + (Math.random() - 0.5) * 20,
+                skill: SKILLS[Math.floor(Math.random() * SKILLS.length)],
+                tw: [tw_start, Math.min(tw_end, 17)],
+                service: 30 + Math.floor(Math.random() * 30), /* minutes */
+                name: 'J' + (i + 1)
+            });
+        }
+        return calls;
+    }
+
+    function drawTech(calls, assignments) {
+        var canvas = document.getElementById('techCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        /* grid */
+        ctx.strokeStyle = 'rgba(197,160,89,0.04)';
+        ctx.lineWidth = 0.5;
+        for (var g = 0; g < W; g += 40) {
+            ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, H); ctx.stroke();
+        }
+        for (var g2 = 0; g2 < H; g2 += 40) {
+            ctx.beginPath(); ctx.moveTo(0, g2); ctx.lineTo(W, g2); ctx.stroke();
+        }
+
+        /* depot */
+        var depotX = 280, depotY = 210;
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillRect(depotX - 7, depotY - 7, 14, 14);
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = 'bold 10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Depot', depotX, depotY - 12);
+
+        /* draw routes */
+        if (assignments) {
+            assignments.forEach(function(a) {
+                var path = [{ x: depotX, y: depotY }].concat(a.route.map(function(ci){ return calls[ci]; })).concat([{ x: depotX, y: depotY }]);
+                ctx.strokeStyle = a.color;
+                ctx.lineWidth = 1.5;
+                ctx.globalAlpha = 0.6;
+                ctx.setLineDash([4, 4]);
+                ctx.beginPath();
+                ctx.moveTo(path[0].x, path[0].y);
+                for (var s = 1; s < path.length; s++) {
+                    ctx.lineTo(path[s].x, path[s].y);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+                ctx.globalAlpha = 1;
+
+                /* tech label at first call */
+                if (a.route.length > 0) {
+                    var fc = calls[a.route[0]];
+                    ctx.beginPath();
+                    ctx.arc(fc.x + 16, fc.y - 16, 10, 0, Math.PI * 2);
+                    ctx.fillStyle = a.color;
+                    ctx.fill();
+                    ctx.fillStyle = '#0A192F';
+                    ctx.font = 'bold 8px Inter, sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(a.tech, fc.x + 16, fc.y - 13);
+                }
+            });
+        }
+
+        /* call dots */
+        calls.forEach(function(c, i) {
+            var col = SKILL_COLORS[c.skill] || '#a8b2d1';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = col + 'AA';
+            ctx.fill();
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(c.name, c.x, c.y - 11);
+
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '7px JetBrains Mono, monospace';
+            ctx.fillText(c.tw[0] + ':00-' + c.tw[1] + ':00', c.x, c.y + 16);
+        });
+    }
+
+    function greedyTech(calls) {
+        var assignments = TECHS.map(function(t){ return { tech: t.name, skill: t.skill, color: t.color, route: [], time: 8, totalTravel: 0 }; });
+        var depotX = 280, depotY = 210;
+        var unassigned = [];
+        for (var i = 0; i < calls.length; i++) unassigned.push(i);
+
+        /* sort calls by earliest time window start */
+        unassigned.sort(function(a, b){ return calls[a].tw[0] - calls[b].tw[0]; });
+
+        unassigned.forEach(function(ci) {
+            var call = calls[ci];
+            var bestTech = -1, bestFinish = Infinity;
+            for (var t = 0; t < assignments.length; t++) {
+                if (assignments[t].skill !== call.skill) continue;
+                var lastPos = assignments[t].route.length > 0
+                    ? calls[assignments[t].route[assignments[t].route.length - 1]]
+                    : { x: depotX, y: depotY };
+                var travel = eucDist([lastPos.x, lastPos.y], [call.x, call.y]) / 60; /* scale to hours */
+                var arrive = assignments[t].time + travel;
+                var start = Math.max(arrive, call.tw[0]);
+                var finish = start + call.service / 60;
+                if (start <= call.tw[1] && finish < bestFinish) {
+                    bestFinish = finish;
+                    bestTech = t;
+                }
+            }
+            if (bestTech >= 0) {
+                var a = assignments[bestTech];
+                var lp = a.route.length > 0 ? calls[a.route[a.route.length - 1]] : { x: depotX, y: depotY };
+                var tr = eucDist([lp.x, lp.y], [call.x, call.y]);
+                a.totalTravel += tr;
+                a.route.push(ci);
+                a.time = bestFinish;
+            }
+        });
+        return assignments;
+    }
+
+    function twInsertTech(calls) {
+        var assignments = TECHS.map(function(t){ return { tech: t.name, skill: t.skill, color: t.color, route: [], totalTravel: 0 }; });
+        var depotX = 280, depotY = 210;
+        var unassigned = [];
+        for (var i = 0; i < calls.length; i++) unassigned.push(i);
+
+        /* try inserting each call at the best position in each compatible tech's route */
+        while (unassigned.length > 0) {
+            var bestCi = -1, bestTi = -1, bestPos = -1, bestCost = Infinity;
+
+            for (var u = 0; u < unassigned.length; u++) {
+                var ci = unassigned[u];
+                var call = calls[ci];
+
+                for (var t = 0; t < assignments.length; t++) {
+                    if (assignments[t].skill !== call.skill) continue;
+                    var route = assignments[t].route;
+
+                    for (var pos = 0; pos <= route.length; pos++) {
+                        /* calculate insertion cost */
+                        var prevPt = pos === 0 ? { x: depotX, y: depotY } : calls[route[pos - 1]];
+                        var nextPt = pos === route.length ? { x: depotX, y: depotY } : calls[route[pos]];
+                        var insertCost = eucDist([prevPt.x, prevPt.y], [call.x, call.y]) +
+                                        eucDist([call.x, call.y], [nextPt.x, nextPt.y]) -
+                                        eucDist([prevPt.x, prevPt.y], [nextPt.x, nextPt.y]);
+
+                        /* check feasibility: simulate time along route with insertion */
+                        var testRoute = route.slice();
+                        testRoute.splice(pos, 0, ci);
+                        var feasible = true;
+                        var time = 8;
+                        var prev = { x: depotX, y: depotY };
+                        for (var r = 0; r < testRoute.length; r++) {
+                            var rc = calls[testRoute[r]];
+                            var tt = eucDist([prev.x, prev.y], [rc.x, rc.y]) / 60;
+                            time += tt;
+                            var start = Math.max(time, rc.tw[0]);
+                            if (start > rc.tw[1]) { feasible = false; break; }
+                            time = start + rc.service / 60;
+                            prev = rc;
+                        }
+
+                        if (feasible && insertCost < bestCost) {
+                            bestCost = insertCost;
+                            bestCi = ci;
+                            bestTi = t;
+                            bestPos = pos;
+                        }
+                    }
+                }
+            }
+
+            if (bestCi === -1) break; /* no feasible insertion left */
+
+            assignments[bestTi].route.splice(bestPos, 0, bestCi);
+            assignments[bestTi].totalTravel += bestCost;
+            var idx = unassigned.indexOf(bestCi);
+            if (idx >= 0) unassigned.splice(idx, 1);
+        }
+
+        /* recalculate totalTravel accurately */
+        assignments.forEach(function(a) {
+            a.totalTravel = 0;
+            var prev = { x: depotX, y: depotY };
+            a.route.forEach(function(ci) {
+                a.totalTravel += eucDist([prev.x, prev.y], [calls[ci].x, calls[ci].y]);
+                prev = calls[ci];
+            });
+            a.totalTravel += eucDist([prev.x, prev.y], { x: depotX, y: depotY });
+        });
+
+        return assignments;
+    }
+
+    function solveTech() {
+        var n = getSelectedScenario('techScenarios');
+        var algos = getSelectedAlgos('techAlgos');
+        if (algos.length === 0) {
+            document.getElementById('techStatus').textContent = 'Select at least one algorithm.';
+            return;
+        }
+
+        var calls = generateCalls(n);
+        var results = [];
+        var bestAssign = null;
+        var bestTravel = Infinity;
+
+        algos.forEach(function(algo) {
+            var assignments;
+            var label;
+            if (algo === 'greedy') {
+                assignments = greedyTech(calls);
+                label = 'Greedy Assignment';
+            } else {
+                assignments = twInsertTech(calls);
+                label = 'Time-Window Insertion';
+            }
+
+            var totalTravel = 0;
+            var totalServed = 0;
+            assignments.forEach(function(a) {
+                totalTravel += a.totalTravel;
+                totalServed += a.route.length;
+            });
+
+            results.push({ algo: label, travel: totalTravel, served: totalServed, total: n, assignments: assignments });
+            if (totalTravel < bestTravel && totalServed > 0) {
+                bestTravel = totalTravel;
+                bestAssign = assignments;
+            }
+        });
+
+        drawTech(calls, bestAssign);
+
+        var lowestTravel = Math.min.apply(null, results.map(function(r){ return r.travel; }));
+        var mostServed = Math.max.apply(null, results.map(function(r){ return r.served; }));
+        var rows = results.map(function(r) {
+            return [
+                { text: r.algo, cls: 'algo-label' },
+                { text: r.travel.toFixed(1), cls: r.travel === lowestTravel ? 'best-val' : '' },
+                { text: r.served + '/' + r.total, cls: r.served === mostServed ? 'best-val' : '' }
+            ];
+        });
+
+        clearContainer('techResults');
+        document.getElementById('techResults').appendChild(
+            buildResultsTable(['Algorithm', 'Total Travel', 'Calls Served'], rows)
+        );
+
+        /* schedule detail */
+        if (bestAssign) {
+            var detail = document.createElement('div');
+            detail.className = 'schedule-output';
+            var lines = ['Best schedule (' + results[0].algo + '):'];
+            bestAssign.forEach(function(a) {
+                if (a.route.length === 0) return;
+                var stops = a.route.map(function(ci){ return calls[ci].name + ' [' + calls[ci].tw[0] + '-' + calls[ci].tw[1] + ']'; });
+                lines.push(a.tech + ' (' + a.skill + '): ' + stops.join(' -> '));
+            });
+            detail.textContent = lines.join('\n');
+            document.getElementById('techResults').appendChild(detail);
+        }
+
+        document.getElementById('techStatus').textContent =
+            n + ' service calls dispatched to 5 technicians. Showing best on map.';
+    }
+
+    document.getElementById('techSolve').addEventListener('click', solveTech);
+    drawTech(generateCalls(6), null);
+
+    /* ===== NAVBAR SCROLL ===== */
+    window.addEventListener('scroll', function() {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var pct = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = pct + '%';
+
+        var btn = document.getElementById('scrollTopBtn');
+        if (winScroll > 400) btn.classList.add('visible');
+        else btn.classList.remove('visible');
+    });
+
+    document.getElementById('scrollTopBtn').addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    /* ===== FADE IN ===== */
+    var fadeEls = document.querySelectorAll('.fade-in');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+    fadeEls.forEach(function(el){ observer.observe(el); });
+
+    /* ===== THEME TOGGLE ===== */
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        var html = document.documentElement;
+        var cur = html.getAttribute('data-theme');
+        html.setAttribute('data-theme', cur === 'light' ? 'dark' : 'light');
+    });
+
+    /* ===== COMMAND PALETTE ===== */
+    var cmdPages = [
+        { title: 'Home', subtitle: 'Portfolio overview', icon: 'fa-home', url: '../index.html' },
+        { title: 'Healthcare', subtitle: 'Sector application chain', icon: 'fa-heartbeat', url: 'healthcare.html' },
+        { title: 'Agriculture', subtitle: 'Farming optimization', icon: 'fa-tractor', url: 'agriculture.html' },
+        { title: 'Energy', subtitle: 'Power grid optimization', icon: 'fa-bolt', url: 'energy.html' },
+        { title: 'Climate & Earth Sciences', subtitle: 'Environmental monitoring', icon: 'fa-globe', url: 'climate-earth-sciences.html' },
+        { title: 'Logistics & Transportation', subtitle: 'Current page', icon: 'fa-shipping-fast', url: '#' },
+        { title: 'Construction', subtitle: 'Project scheduling', icon: 'fa-hard-hat', url: 'construction.html' },
+        { title: 'Manufacturing', subtitle: 'Production optimization', icon: 'fa-industry', url: 'manufacturing.html' },
+        { title: 'Retail', subtitle: 'Inventory & assortment', icon: 'fa-store', url: 'retail.html' }
+    ];
+
+    var cmdOverlay = document.getElementById('cmdOverlay');
+    var cmdInput = document.getElementById('cmdInput');
+    var cmdResultsEl = document.getElementById('cmdResults');
+
+    function renderCmdResults(query) {
+        while (cmdResultsEl.firstChild) cmdResultsEl.removeChild(cmdResultsEl.firstChild);
+        var q = query.toLowerCase();
+        var filtered = cmdPages.filter(function(p) {
+            return p.title.toLowerCase().indexOf(q) >= 0 || p.subtitle.toLowerCase().indexOf(q) >= 0;
+        });
+        if (filtered.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found.';
+            cmdResultsEl.appendChild(empty);
+            return;
+        }
+        var label = document.createElement('div');
+        label.className = 'cmd-group-label';
+        label.textContent = 'Pages';
+        cmdResultsEl.appendChild(label);
+        filtered.forEach(function(p) {
+            var a = document.createElement('a');
+            a.className = 'cmd-result';
+            a.href = p.url;
+            var iconDiv = document.createElement('div');
+            iconDiv.className = 'cmd-icon';
+            var ico = document.createElement('i');
+            ico.className = 'fas ' + p.icon;
+            iconDiv.appendChild(ico);
+            a.appendChild(iconDiv);
+            var info = document.createElement('div');
+            info.className = 'cmd-info';
+            var title = document.createElement('div');
+            title.className = 'cmd-title';
+            title.textContent = p.title;
+            info.appendChild(title);
+            var sub = document.createElement('div');
+            sub.className = 'cmd-subtitle';
+            sub.textContent = p.subtitle;
+            info.appendChild(sub);
+            a.appendChild(info);
+            cmdResultsEl.appendChild(a);
+        });
+    }
+
+    function openCmd() {
+        cmdOverlay.classList.add('open');
+        cmdInput.value = '';
+        renderCmdResults('');
+        setTimeout(function(){ cmdInput.focus(); }, 50);
+    }
+    function closeCmd() { cmdOverlay.classList.remove('open'); }
+
+    cmdInput.addEventListener('input', function(){ renderCmdResults(cmdInput.value); });
+    cmdOverlay.addEventListener('click', function(e){ if (e.target === cmdOverlay) closeCmd(); });
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (cmdOverlay.classList.contains('open')) closeCmd();
+            else openCmd();
+        }
+        if (e.key === 'Escape' && cmdOverlay.classList.contains('open')) closeCmd();
+    });
+
+    var navSearchTrigger = document.getElementById('navSearchTrigger');
+    if (navSearchTrigger) navSearchTrigger.addEventListener('click', openCmd);
+
+})();
+</script>
+</body>
+</html>

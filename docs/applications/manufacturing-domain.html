@@ -1,0 +1,2528 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manufacturing Operations | Mathematical Modeling &amp; OR</title>
+    <meta name="description" content="Three OR problems in manufacturing: assembly line balancing, steel production scheduling, and cutting stock optimization.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/manufacturing-domain.html">
+    <meta property="og:title" content="Manufacturing Operations | Mathematical Modeling &amp; OR">
+    <meta property="og:description" content="Three OR problems in manufacturing: assembly line balancing, steel production scheduling, and cutting stock optimization.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Manufacturing Operations | Mathematical Modeling &amp; OR">
+    <meta name="twitter:description" content="Three OR problems in manufacturing: assembly line balancing, steel production scheduling, and cutting stock optimization.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: transparent;
+            padding: 1.5rem 0;
+            transition: all 0.4s ease;
+            z-index: 1000;
+        }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            margin-top: 56px;
+            background: rgba(10, 25, 47, 0.5);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .breadcrumb-nav ol {
+            background: transparent;
+            padding: 0;
+            margin: 0;
+            list-style: none;
+            display: flex;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a {
+            color: var(--slate);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Hero */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image: linear-gradient(rgba(197,160,89,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(197,160,89,0.04) 1px, transparent 1px), radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.05) 0%, transparent 65%);
+            background-size: 40px 40px, 40px 40px, 100% 100%;
+            pointer-events: none;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Tabs */
+        .domain-tabs {
+            display: flex;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .domain-tab {
+            padding: 1rem 2rem;
+            background: transparent;
+            border: none;
+            color: var(--slate);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            white-space: nowrap;
+            position: relative;
+            border-bottom: 2px solid transparent;
+        }
+        .domain-tab:hover { color: var(--ivory); }
+        .domain-tab.active {
+            color: var(--gold);
+            border-bottom-color: var(--gold);
+        }
+        .tab-content { display: none; padding: 3rem 0; }
+        .tab-content.active { display: block; }
+
+        /* Science Context */
+        .science-context {
+            background: rgba(122, 162, 247, 0.06);
+            border: 1px solid rgba(122, 162, 247, 0.15);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .science-context-title {
+            font-size: 0.7rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .science-context p {
+            color: var(--slate-light);
+            font-size: 0.92rem;
+            line-height: 1.8;
+            margin: 0;
+        }
+        .science-context strong { color: var(--ivory); font-weight: 500; }
+
+        /* Evidence Panel */
+        .evidence-panel {
+            background: rgba(100, 255, 218, 0.04);
+            border: 1px solid rgba(100, 255, 218, 0.12);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+        }
+        .evidence-panel-title {
+            font-size: 0.7rem;
+            color: var(--green);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.8rem;
+        }
+        .evidence-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .evidence-list li {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid rgba(100, 255, 218, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .evidence-list li:last-child { border-bottom: none; }
+        .ev-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 0.5rem;
+            font-weight: 600;
+        }
+        .ev-published {
+            background: rgba(100, 255, 218, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .ev-operational {
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--gold);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+        }
+
+        /* Formulation */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* Content Block */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 2rem;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-slider {
+            -webkit-appearance: none;
+            appearance: none;
+            height: 4px;
+            background: var(--midnight-lighter);
+            border-radius: 2px;
+            outline: none;
+            width: 140px;
+        }
+        .solver-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+        }
+        .solver-slider::-moz-range-thumb {
+            width: 16px; height: 16px;
+            border-radius: 50%;
+            background: var(--gold);
+            cursor: pointer;
+            border: none;
+        }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.85rem;
+            color: var(--gold);
+            min-width: 32px;
+            text-align: center;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        .schedule-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 250px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        /* CTA Panel */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Back Link */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Nav search trigger */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* Scroll Progress */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Resource legend */
+        .resource-legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .resource-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .resource-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .domain-tab { padding: 0.8rem 1rem; font-size: 0.72rem; }
+            .solver-body { padding: 1rem; }
+            .science-context { padding: 1rem 1.2rem; }
+            .evidence-panel { padding: 1rem 1.2rem; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .cta-panel { padding: 2rem 1rem; }
+        }
+
+        .hero-icon--manufacturing {
+            filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)) drop-shadow(0 2px 16px rgba(197,160,89,0.2));
+            animation: gearGlow 5s ease-in-out infinite;
+        }
+        @keyframes gearGlow {
+            0%,100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)); }
+            50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.65)) drop-shadow(0 0 35px rgba(197,160,89,0.2)); }
+        }
+
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&ShortUpArrow;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li style="color: var(--gold);">Manufacturing Operations</li>
+        </ol>
+    </div>
+</div>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--manufacturing"><i class="fas fa-industry"></i></div>
+        <h1>Manufacturing <span>Operations</span></h1>
+        <p class="hero-subtitle">Scheduling &middot; Assembly &middot; Maintenance &middot; Location</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Manufacturing is where operations research was born. The wartime production planning problems of the 1940s were the original motivating problems for linear programming and integer programming. Today, the questions have grown more complex: how to balance assembly lines with hundreds of tasks, how to schedule steel production across blast furnaces, how to cut raw materials with minimum waste.
+        </p>
+        <p class="hero-desc" style="margin-top:0;">
+            Every factory embeds a family of NP-hard combinatorial problems. Assembly line balancing is a bin-packing variant. Steel production scheduling is a sequence-dependent job shop. Cutting stock is a one-dimensional bin packing with multiplicity. These problems have been studied continuously since the 1950s; the methods developed in manufacturing have propagated into every other domain.
+        </p>
+    </div>
+</section>
+
+<!-- Tabs -->
+<section style="padding: 0;">
+    <div class="container">
+        <div class="domain-tabs" id="domainTabs">
+            <button class="domain-tab active" data-tab="assembly" type="button">
+                <i class="fas fa-cogs" style="margin-right:0.4rem"></i>Assembly Line Balancing
+            </button>
+            <button class="domain-tab" data-tab="steel" type="button">
+                <i class="fas fa-fire-alt" style="margin-right:0.4rem"></i>Steel Production
+            </button>
+            <button class="domain-tab" data-tab="cutting" type="button">
+                <i class="fas fa-cut" style="margin-right:0.4rem"></i>Cutting Stock
+            </button>
+        </div>
+    </div>
+</section>
+
+<!-- TAB 1: Assembly Line Balancing -->
+<div class="tab-content active" id="tab-assembly">
+    <div class="container">
+        <div class="fade-in">
+            <div class="science-context">
+                <div class="science-context-title"><i class="fas fa-microscope"></i> Manufacturing Context</div>
+                <p>
+                    The <strong>Simple Assembly Line Balancing Problem (SALBP-1)</strong> assigns tasks to workstations
+                    along a serial production line so that no station exceeds the <strong>cycle time</strong> and all
+                    <strong>precedence constraints</strong> are respected. Each task has a fixed processing time and a
+                    set of predecessors that must be completed before it can start. The goal is to minimise the number
+                    of stations &mdash; equivalently, to maximise line efficiency. SALBP-1 is NP-hard in the strong
+                    sense, yet heuristics like <strong>Kilbridge-Wester</strong> (column-based priority) and
+                    <strong>COMSOAL</strong> (randomised feasible sequencing) produce near-optimal solutions for
+                    industrial instances with hundreds of tasks.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-6 fade-in">
+                <div class="content-block" style="max-width:none;">
+                    <p><strong>Problem type:</strong> Bin-packing variant with precedence constraints.
+                    Assign n tasks to the minimum number of stations such that the total task time in each
+                    station does not exceed the cycle time C, and all precedence arcs are respected
+                    (if task i precedes task j, then station(i) &le; station(j)).</p>
+                </div>
+                <div class="formulation">
+                    <span class="form-label">Mathematical Formulation &mdash; SALBP-1</span>
+                    <span class="keyword">min</span> <span class="variable">m</span> <span class="comment">// number of stations</span><br>
+                    <span class="keyword">s.t.</span> &Sigma;<sub>i&isin;S<sub>k</sub></sub> <span class="variable">t_i</span> &le; <span class="variable">C</span> &nbsp; &forall; station <span class="variable">k</span> <span class="comment">// cycle time</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">station</span>(<span class="variable">i</span>) &le; <span class="variable">station</span>(<span class="variable">j</span>) &nbsp; &forall; (<span class="variable">i</span>,<span class="variable">j</span>) &isin; <span class="variable">P</span> <span class="comment">// precedence</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; each task assigned to exactly one station
+                </div>
+            </div>
+            <div class="col-lg-6 fade-in">
+                <div class="solver-panel">
+                    <div class="solver-panel-header">
+                        <h4><i class="fas fa-cogs"></i> Assembly Line Solver</h4>
+                    </div>
+                    <div class="solver-body">
+                        <div class="solver-section-label">Scenario</div>
+                        <div class="algo-select" id="assemblyScenarios">
+                            <div class="algo-chip selected" data-algo="small">8 Tasks</div>
+                            <div class="algo-chip" data-algo="medium">12 Tasks</div>
+                            <div class="algo-chip" data-algo="large">18 Tasks</div>
+                        </div>
+                        <div class="solver-section-label">Cycle Time</div>
+                        <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1rem;flex-wrap:wrap;">
+                            <input type="range" class="solver-slider" id="assemblyCycle" min="8" max="25" value="12">
+                            <span class="size-display" id="assemblyCycleVal">12</span>
+                        </div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="assemblyAlgos">
+                            <div class="algo-chip selected" data-algo="kw">Kilbridge-Wester</div>
+                            <div class="algo-chip selected" data-algo="comsoal">COMSOAL</div>
+                        </div>
+                        <button class="solver-btn primary" id="assemblySolve" type="button">
+                            <i class="fas fa-play" style="margin-right:0.4rem"></i>Solve
+                        </button>
+                        <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                            <canvas id="assemblyCanvas" width="560" height="400"></canvas>
+                        </div>
+                        <div id="assemblyResults" style="margin-top:1rem;"></div>
+                        <div class="solver-status" id="assemblyStatus">Select scenario and click Solve.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fade-in">
+            <div class="evidence-panel">
+                <div class="evidence-panel-title"><i class="fas fa-book-open" style="margin-right:0.4rem"></i> Evidence Base</div>
+                <ul class="evidence-list">
+                    <li>Salveson, M. E. (1955). The assembly line balancing problem. <em>Journal of Industrial Engineering</em>, 6(3), 18-25. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Scholl, A. &amp; Becker, C. (2006). State-of-the-art exact and heuristic solution procedures for simple assembly line balancing. <em>European Journal of Operational Research</em>, 168(3), 666-693. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Kilbridge, M. D. &amp; Wester, L. (1961). A heuristic method of assembly line balancing. <em>Journal of Industrial Engineering</em>, 12(4), 292-298. <span class="ev-badge ev-published">Published</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 2: Steel Production -->
+<div class="tab-content" id="tab-steel">
+    <div class="container">
+        <div class="fade-in">
+            <div class="science-context">
+                <div class="science-context-title"><i class="fas fa-microscope"></i> Manufacturing Context</div>
+                <p>
+                    Steel production scheduling is a <strong>flexible job-shop problem with sequence-dependent setup times</strong>.
+                    Each heat of molten steel must pass through a fixed sequence of processing stages &mdash;
+                    <strong>Electric Arc Furnace (EAF)</strong>, <strong>Ladle Furnace (LF)</strong>, and
+                    <strong>Continuous Caster (CC)</strong> &mdash; with tight timing constraints between stages
+                    to prevent metal solidification. Different steel grades require different setup times when
+                    switching on the caster. The objective is to minimise <strong>total makespan</strong> while
+                    respecting machine capacity, grade-dependent sequencing, and thermal constraints that make
+                    buffer time between stages critical.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-6 fade-in">
+                <div class="content-block" style="max-width:none;">
+                    <p><strong>Problem type:</strong> Flexible job-shop with sequence-dependent setups.
+                    Schedule n heats across 3 stages (EAF &rarr; LF &rarr; CC) to minimise makespan,
+                    subject to machine capacity, no-wait constraints between stages, and
+                    grade-dependent setup times on the caster.</p>
+                </div>
+                <div class="formulation">
+                    <span class="form-label">Mathematical Formulation</span>
+                    <span class="keyword">min</span> <span class="variable">C_max</span> <span class="comment">// makespan</span><br>
+                    <span class="keyword">s.t.</span> <span class="variable">start</span>(<span class="variable">h,LF</span>) &ge; <span class="variable">end</span>(<span class="variable">h,EAF</span>) <span class="comment">// stage precedence</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">start</span>(<span class="variable">h,CC</span>) &ge; <span class="variable">end</span>(<span class="variable">h,LF</span>) <span class="comment">// stage precedence</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">start</span>(<span class="variable">h,LF</span>) - <span class="variable">end</span>(<span class="variable">h,EAF</span>) &le; <span class="variable">&Delta;</span> <span class="comment">// no-wait thermal</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">gap</span>(<span class="variable">h_i</span>,<span class="variable">h_j</span>,CC) &ge; <span class="variable">setup</span>(<span class="variable">grade_i</span>,<span class="variable">grade_j</span>) <span class="comment">// seq-dep setup</span>
+                </div>
+            </div>
+            <div class="col-lg-6 fade-in">
+                <div class="solver-panel">
+                    <div class="solver-panel-header">
+                        <h4><i class="fas fa-fire-alt"></i> Steel Scheduling Solver</h4>
+                    </div>
+                    <div class="solver-body">
+                        <div class="solver-section-label">Scenario</div>
+                        <div class="algo-select" id="steelScenarios">
+                            <div class="algo-chip selected" data-algo="small">4 Heats</div>
+                            <div class="algo-chip" data-algo="medium">6 Heats</div>
+                            <div class="algo-chip" data-algo="large">8 Heats</div>
+                        </div>
+                        <div class="solver-section-label">Dispatch Rule</div>
+                        <div class="algo-select" id="steelAlgos">
+                            <div class="algo-chip selected" data-algo="fifo">FIFO</div>
+                            <div class="algo-chip selected" data-algo="edd">EDD (Earliest Due Date)</div>
+                        </div>
+                        <button class="solver-btn primary" id="steelSolve" type="button">
+                            <i class="fas fa-play" style="margin-right:0.4rem"></i>Solve
+                        </button>
+                        <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                            <canvas id="steelCanvas" width="560" height="400"></canvas>
+                        </div>
+                        <div id="steelResults" style="margin-top:1rem;"></div>
+                        <div class="solver-status" id="steelStatus">Select scenario and click Solve.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fade-in">
+            <div class="evidence-panel">
+                <div class="evidence-panel-title"><i class="fas fa-book-open" style="margin-right:0.4rem"></i> Evidence Base</div>
+                <ul class="evidence-list">
+                    <li>Tang, L., Liu, J., Rong, A., &amp; Yang, Z. (2001). A review of planning and scheduling systems and methods for integrated steel production. <em>European Journal of Operational Research</em>, 133(1), 1-20. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Cowling, P. &amp; Rezig, W. (2000). Integration of continuous caster and hot strip mill planning for steel production. <em>Journal of Scheduling</em>, 3(4), 185-208. <span class="ev-badge ev-published">Published</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TAB 3: Cutting Stock -->
+<div class="tab-content" id="tab-cutting">
+    <div class="container">
+        <div class="fade-in">
+            <div class="science-context">
+                <div class="science-context-title"><i class="fas fa-microscope"></i> Manufacturing Context</div>
+                <p>
+                    The <strong>one-dimensional cutting stock problem (1D-CSP)</strong> arises whenever raw material
+                    comes in standard lengths (master rolls of paper, steel bars, timber logs) and customer orders
+                    require pieces of various shorter widths. The objective is to minimise the number of master rolls
+                    used &mdash; equivalently, minimise waste. This is a classic NP-hard problem first solved
+                    optimally by <strong>Gilmore &amp; Gomory (1961)</strong> using <strong>column generation</strong>,
+                    where each column represents a cutting pattern and the LP relaxation is solved iteratively by
+                    generating new patterns via a knapsack subproblem. The First Fit Decreasing (FFD) heuristic
+                    provides a fast 11/9 OPT + 6/9 upper bound.
+                </p>
+            </div>
+        </div>
+
+        <div class="row mt-4">
+            <div class="col-lg-6 fade-in">
+                <div class="content-block" style="max-width:none;">
+                    <p><strong>Problem type:</strong> One-dimensional bin packing with multiplicity.
+                    Cut demanded widths from master rolls of width W to minimise the total number of rolls used.
+                    Each roll can accommodate any combination of widths that fit within W.
+                    Column generation solves the LP relaxation optimally.</p>
+                </div>
+                <div class="formulation">
+                    <span class="form-label">Mathematical Formulation &mdash; Gilmore-Gomory</span>
+                    <span class="keyword">min</span> &Sigma;<sub>p</sub> <span class="variable">x_p</span> <span class="comment">// number of rolls used</span><br>
+                    <span class="keyword">s.t.</span> &Sigma;<sub>p</sub> <span class="variable">a_ip</span> &middot; <span class="variable">x_p</span> &ge; <span class="variable">d_i</span> &nbsp; &forall; width <span class="variable">i</span> <span class="comment">// demand</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; &Sigma;<sub>i</sub> <span class="variable">w_i</span> &middot; <span class="variable">a_ip</span> &le; <span class="variable">W</span> &nbsp; &forall; pattern <span class="variable">p</span> <span class="comment">// roll capacity</span><br>
+                    &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x_p</span> &ge; 0 <span class="comment">// (LP relaxation; round up for IP)</span>
+                </div>
+            </div>
+            <div class="col-lg-6 fade-in">
+                <div class="solver-panel">
+                    <div class="solver-panel-header">
+                        <h4><i class="fas fa-cut"></i> Cutting Stock Solver</h4>
+                    </div>
+                    <div class="solver-body">
+                        <div class="solver-section-label">Scenario</div>
+                        <div class="algo-select" id="cuttingScenarios">
+                            <div class="algo-chip selected" data-algo="small">4 Widths</div>
+                            <div class="algo-chip" data-algo="medium">6 Widths</div>
+                            <div class="algo-chip" data-algo="large">8 Widths</div>
+                        </div>
+                        <div class="solver-section-label">Algorithm</div>
+                        <div class="algo-select" id="cuttingAlgos">
+                            <div class="algo-chip selected" data-algo="ffd">FFD (First Fit Decreasing)</div>
+                            <div class="algo-chip selected" data-algo="colgen">Column Generation LP</div>
+                        </div>
+                        <button class="solver-btn primary" id="cuttingSolve" type="button">
+                            <i class="fas fa-play" style="margin-right:0.4rem"></i>Solve
+                        </button>
+                        <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                            <canvas id="cuttingCanvas" width="560" height="400"></canvas>
+                        </div>
+                        <div id="cuttingResults" style="margin-top:1rem;"></div>
+                        <div class="solver-status" id="cuttingStatus">Select scenario and click Solve.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="fade-in">
+            <div class="evidence-panel">
+                <div class="evidence-panel-title"><i class="fas fa-book-open" style="margin-right:0.4rem"></i> Evidence Base</div>
+                <ul class="evidence-list">
+                    <li>Gilmore, P. C. &amp; Gomory, R. E. (1961). A linear programming approach to the cutting-stock problem. <em>Operations Research</em>, 9(6), 849-859. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Gilmore, P. C. &amp; Gomory, R. E. (1963). A linear programming approach to the cutting stock problem &mdash; Part II. <em>Operations Research</em>, 11(6), 863-888. <span class="ev-badge ev-published">Published</span></li>
+                    <li>Vanderbeck, F. (2000). On Dantzig-Wolfe decomposition in integer programming and ways to perform branching in a branch-and-price algorithm. <em>Operations Research</em>, 48(1), 111-128. <span class="ev-badge ev-published">Published</span></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- CTA -->
+<section style="padding: 5rem 0;">
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Explore More Applications</h3>
+            <p>See how the same mathematical families &mdash; bin packing, job-shop scheduling,
+               column generation &mdash; apply across healthcare, logistics, energy, and agriculture.</p>
+            <div class="cta-links">
+                <a class="cta-link" href="../index.html"><i class="fas fa-arrow-left"></i> Portfolio</a>
+                <a class="cta-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>
+            <a href="../index.html">&larr; Back to Portfolio</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<!-- Back Link -->
+<a class="back-link" href="../index.html"><i class="fas fa-arrow-left" style="margin-right:0.4rem"></i> Portfolio</a>
+
+<!-- Scroll-to-top -->
+<div class="scroll-top-btn" id="scrollTopBtn"><i class="fas fa-chevron-up"></i></div>
+
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdOverlay">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search pages...">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <span>Navigate to page</span>
+            <div class="cmd-footer-keys">
+                <span><span class="cmd-kbd">&uarr;&darr;</span> navigate</span>
+                <span><span class="cmd-kbd">&crarr;</span> open</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+    "use strict";
+
+    /* ===== TABS ===== */
+    var tabBtns = document.querySelectorAll('.domain-tab');
+    var tabContents = document.querySelectorAll('.tab-content');
+    tabBtns.forEach(function(btn){
+        btn.addEventListener('click', function(){
+            var target = btn.getAttribute('data-tab');
+            tabBtns.forEach(function(b){ b.classList.remove('active'); });
+            tabContents.forEach(function(tc){ tc.classList.remove('active'); });
+            btn.classList.add('active');
+            var el = document.getElementById('tab-' + target);
+            if(el) el.classList.add('active');
+        });
+    });
+
+    /* ===== ALGO CHIP TOGGLE ===== */
+    document.querySelectorAll('.algo-chip').forEach(function(chip){
+        chip.addEventListener('click', function(){
+            /* For scenario selectors, make them radio-style */
+            var parent = chip.parentElement;
+            var isScenario = parent.id && parent.id.indexOf('Scenarios') >= 0;
+            if (isScenario) {
+                parent.querySelectorAll('.algo-chip').forEach(function(c){ c.classList.remove('selected'); });
+                chip.classList.add('selected');
+            } else {
+                chip.classList.toggle('selected');
+            }
+        });
+    });
+
+    /* ===== SLIDER VALUE DISPLAYS ===== */
+    function bindSlider(sliderId, displayId, suffix) {
+        var slider = document.getElementById(sliderId);
+        var display = document.getElementById(displayId);
+        if (!slider || !display) return;
+        slider.addEventListener('input', function(){
+            display.textContent = slider.value + (suffix || '');
+        });
+    }
+    bindSlider('assemblyCycle', 'assemblyCycleVal', '');
+
+    /* ===== UTILITY ===== */
+    function getSelectedAlgos(containerId) {
+        var chips = document.querySelectorAll('#' + containerId + ' .algo-chip.selected');
+        var algos = [];
+        chips.forEach(function(c){ algos.push(c.getAttribute('data-algo')); });
+        return algos;
+    }
+
+    function getSelectedScenario(containerId) {
+        var chip = document.querySelector('#' + containerId + ' .algo-chip.selected');
+        return chip ? chip.getAttribute('data-algo') : 'small';
+    }
+
+    function clearContainer(id) {
+        var el = document.getElementById(id);
+        while (el.firstChild) el.removeChild(el.firstChild);
+    }
+
+    function buildResultsTable(headers, rows) {
+        var tbl = document.createElement('table');
+        tbl.className = 'results-table';
+        var thead = document.createElement('thead');
+        var hrow = document.createElement('tr');
+        headers.forEach(function(h) {
+            var th = document.createElement('th');
+            th.textContent = h;
+            hrow.appendChild(th);
+        });
+        thead.appendChild(hrow);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        rows.forEach(function(cells) {
+            var tr = document.createElement('tr');
+            cells.forEach(function(cell) {
+                var td = document.createElement('td');
+                td.textContent = cell.text;
+                if (cell.cls) td.className = cell.cls;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+        return tbl;
+    }
+
+    /* ================================================================
+       TAB 1: ASSEMBLY LINE BALANCING (SALBP-1)
+       ================================================================ */
+    var assemblyData = {
+        small: {
+            tasks: [
+                { id:1, time:3, pred:[] },
+                { id:2, time:4, pred:[] },
+                { id:3, time:2, pred:[1] },
+                { id:4, time:5, pred:[1] },
+                { id:5, time:3, pred:[2,3] },
+                { id:6, time:4, pred:[4] },
+                { id:7, time:2, pred:[5,6] },
+                { id:8, time:3, pred:[7] }
+            ]
+        },
+        medium: {
+            tasks: [
+                { id:1, time:2, pred:[] },
+                { id:2, time:3, pred:[] },
+                { id:3, time:4, pred:[1] },
+                { id:4, time:3, pred:[1] },
+                { id:5, time:2, pred:[2] },
+                { id:6, time:5, pred:[3] },
+                { id:7, time:3, pred:[4,5] },
+                { id:8, time:2, pred:[6] },
+                { id:9, time:4, pred:[7] },
+                { id:10, time:3, pred:[8,9] },
+                { id:11, time:2, pred:[10] },
+                { id:12, time:3, pred:[11] }
+            ]
+        },
+        large: {
+            tasks: [
+                { id:1, time:2, pred:[] },
+                { id:2, time:3, pred:[] },
+                { id:3, time:1, pred:[] },
+                { id:4, time:4, pred:[1] },
+                { id:5, time:3, pred:[1,2] },
+                { id:6, time:2, pred:[2] },
+                { id:7, time:5, pred:[3] },
+                { id:8, time:3, pred:[4] },
+                { id:9, time:2, pred:[5,6] },
+                { id:10, time:4, pred:[7] },
+                { id:11, time:3, pred:[8,9] },
+                { id:12, time:2, pred:[9,10] },
+                { id:13, time:3, pred:[11] },
+                { id:14, time:4, pred:[12] },
+                { id:15, time:2, pred:[13,14] },
+                { id:16, time:3, pred:[15] },
+                { id:17, time:2, pred:[15] },
+                { id:18, time:3, pred:[16,17] }
+            ]
+        }
+    };
+
+    /* Kilbridge-Wester: assign tasks by column (precedence depth), largest time first */
+    function kwBalance(tasks, C) {
+        var n = tasks.length;
+        /* compute column (max depth from source) */
+        var depth = {};
+        function getDepth(t) {
+            if (depth[t.id] !== undefined) return depth[t.id];
+            if (t.pred.length === 0) { depth[t.id] = 0; return 0; }
+            var maxD = 0;
+            t.pred.forEach(function(pid) {
+                var pt = tasks.find(function(x){ return x.id === pid; });
+                var d = getDepth(pt);
+                if (d + 1 > maxD) maxD = d + 1;
+            });
+            depth[t.id] = maxD;
+            return maxD;
+        }
+        tasks.forEach(function(t){ getDepth(t); });
+
+        /* sort by column asc, then time desc */
+        var sorted = tasks.slice().sort(function(a, b) {
+            if (depth[a.id] !== depth[b.id]) return depth[a.id] - depth[b.id];
+            return b.time - a.time;
+        });
+
+        var stations = [];
+        var assigned = {};
+        sorted.forEach(function(t) {
+            /* find first station where it fits and all predecessors are in earlier/same stations */
+            var placed = false;
+            for (var s = 0; s < stations.length; s++) {
+                var stationTime = 0;
+                stations[s].forEach(function(tid) {
+                    var task = tasks.find(function(x){ return x.id === tid; });
+                    stationTime += task.time;
+                });
+                if (stationTime + t.time > C) continue;
+                /* check precedence */
+                var predOk = true;
+                t.pred.forEach(function(pid) {
+                    if (assigned[pid] === undefined || assigned[pid] > s) predOk = false;
+                });
+                if (predOk) {
+                    stations[s].push(t.id);
+                    assigned[t.id] = s;
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                /* check precedence for new station */
+                var predOk2 = true;
+                t.pred.forEach(function(pid) {
+                    if (assigned[pid] === undefined || assigned[pid] > stations.length) predOk2 = false;
+                });
+                if (predOk2) {
+                    stations.push([t.id]);
+                    assigned[t.id] = stations.length - 1;
+                }
+            }
+        });
+        return stations;
+    }
+
+    /* COMSOAL: random feasible sequencing, best of N trials */
+    function comsoalBalance(tasks, C, trials) {
+        var best = null;
+        var bestCount = Infinity;
+        for (var trial = 0; trial < (trials || 200); trial++) {
+            var assigned = {};
+            var stations = [[]];
+            var stationTime = [0];
+            var remaining = tasks.map(function(t){ return t.id; });
+
+            while (remaining.length > 0) {
+                /* find feasible tasks */
+                var feasible = remaining.filter(function(tid) {
+                    var t = tasks.find(function(x){ return x.id === tid; });
+                    return t.pred.every(function(pid){ return assigned[pid] !== undefined; });
+                });
+                if (feasible.length === 0) break;
+                /* pick random feasible */
+                var pick = feasible[Math.floor(Math.random() * feasible.length)];
+                var t = tasks.find(function(x){ return x.id === pick; });
+                var curStation = stations.length - 1;
+                if (stationTime[curStation] + t.time <= C) {
+                    stations[curStation].push(pick);
+                    stationTime[curStation] += t.time;
+                } else {
+                    stations.push([pick]);
+                    stationTime.push(t.time);
+                }
+                assigned[pick] = stations.length - 1;
+                remaining = remaining.filter(function(id){ return id !== pick; });
+            }
+
+            if (stations.length < bestCount) {
+                bestCount = stations.length;
+                best = stations.map(function(s){ return s.slice(); });
+            }
+        }
+        return best;
+    }
+
+    function drawAssembly(tasks, stationsList) {
+        var canvas = document.getElementById('assemblyCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        if (!stationsList || stationsList.length === 0) {
+            /* draw precedence DAG only */
+            drawDAG(ctx, tasks, W, H, null, null);
+            return;
+        }
+
+        /* draw best result (first algo) */
+        var stations = stationsList[0].stations;
+        var colors = ['#C5A059','#64ffda','#7aa2f7','#ff6b6b','#ff9f43','#a78bfa','#f472b6','#34d399'];
+        var pad = 40;
+        var stationW = (W - 2 * pad) / stations.length;
+
+        /* station boxes */
+        stations.forEach(function(st, si) {
+            var x = pad + si * stationW;
+            ctx.fillStyle = 'rgba(197,160,89,0.06)';
+            ctx.fillRect(x + 2, pad, stationW - 4, H - 2 * pad);
+            ctx.strokeStyle = 'rgba(197,160,89,0.15)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 2, pad, stationW - 4, H - 2 * pad);
+
+            ctx.fillStyle = var_gold();
+            ctx.font = '10px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('S' + (si + 1), x + stationW / 2, pad - 8);
+
+            /* tasks in station */
+            var taskH = Math.min(50, (H - 2 * pad - 40) / st.length);
+            st.forEach(function(tid, ti) {
+                var t = tasks.find(function(x){ return x.id === tid; });
+                var ty = pad + 20 + ti * (taskH + 8);
+                var tw = stationW - 20;
+                var tx = x + 10;
+
+                ctx.fillStyle = colors[si % colors.length] + '30';
+                ctx.strokeStyle = colors[si % colors.length];
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(tx, ty, tw, taskH, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#F8F9FA';
+                ctx.font = '11px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText('T' + t.id, tx + tw / 2, ty + taskH / 2 - 4);
+                ctx.fillStyle = var_slate();
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.fillText('t=' + t.time, tx + tw / 2, ty + taskH / 2 + 10);
+            });
+
+            /* station load bar */
+            var totalTime = 0;
+            st.forEach(function(tid) {
+                var t = tasks.find(function(x){ return x.id === tid; });
+                totalTime += t.time;
+            });
+            var C = parseInt(document.getElementById('assemblyCycle').value, 10);
+            var barY = H - pad + 5;
+            var barW = stationW - 20;
+            var barX = x + 10;
+            ctx.fillStyle = 'rgba(197,160,89,0.1)';
+            ctx.fillRect(barX, barY, barW, 8);
+            var fill = Math.min(1, totalTime / C);
+            ctx.fillStyle = fill > 0.9 ? '#ff6b6b' : colors[si % colors.length];
+            ctx.fillRect(barX, barY, barW * fill, 8);
+            ctx.fillStyle = var_slate();
+            ctx.font = '8px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(totalTime + '/' + C, barX + barW / 2, barY + 18);
+        });
+
+        /* legend for multiple algos */
+        if (stationsList.length > 1) {
+            ctx.font = '10px Inter, sans-serif';
+            stationsList.forEach(function(set, si) {
+                var ly = 14 + si * 16;
+                ctx.fillStyle = si === 0 ? '#C5A059' : '#7aa2f7';
+                ctx.fillRect(W - 170, ly - 6, 10, 10);
+                ctx.fillStyle = '#a8b2d1';
+                ctx.textAlign = 'left';
+                ctx.fillText(set.algo + ': ' + set.stations.length + ' stations', W - 155, ly + 2);
+            });
+        }
+    }
+
+    function var_gold() { return '#C5A059'; }
+    function var_slate() { return '#8892B0'; }
+
+    function drawDAG(ctx, tasks, W, H, stations, color) {
+        /* simple layered DAG */
+        var depth = {};
+        function getD(t) {
+            if (depth[t.id] !== undefined) return depth[t.id];
+            if (t.pred.length === 0) { depth[t.id] = 0; return 0; }
+            var mx = 0;
+            t.pred.forEach(function(pid) {
+                var pt = tasks.find(function(x){ return x.id === pid; });
+                var d = getD(pt);
+                if (d + 1 > mx) mx = d + 1;
+            });
+            depth[t.id] = mx;
+            return mx;
+        }
+        tasks.forEach(function(t){ getD(t); });
+
+        var maxD = 0;
+        tasks.forEach(function(t){ if (depth[t.id] > maxD) maxD = depth[t.id]; });
+
+        var layers = [];
+        for (var d = 0; d <= maxD; d++) {
+            layers[d] = tasks.filter(function(t){ return depth[t.id] === d; });
+        }
+
+        var pad = 50;
+        var layerW = (W - 2 * pad) / (maxD + 1);
+        var pos = {};
+        layers.forEach(function(layer, d) {
+            var layerH = (H - 2 * pad) / (layer.length + 1);
+            layer.forEach(function(t, i) {
+                pos[t.id] = { x: pad + d * layerW + layerW / 2, y: pad + (i + 1) * layerH };
+            });
+        });
+
+        /* edges */
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.lineWidth = 1;
+        tasks.forEach(function(t) {
+            t.pred.forEach(function(pid) {
+                var from = pos[pid];
+                var to = pos[t.id];
+                if (from && to) {
+                    ctx.beginPath();
+                    ctx.moveTo(from.x, from.y);
+                    ctx.lineTo(to.x, to.y);
+                    ctx.stroke();
+                    /* arrow */
+                    var angle = Math.atan2(to.y - from.y, to.x - from.x);
+                    var ax = to.x - 14 * Math.cos(angle);
+                    var ay = to.y - 14 * Math.sin(angle);
+                    ctx.beginPath();
+                    ctx.moveTo(to.x - 12 * Math.cos(angle), to.y - 12 * Math.sin(angle));
+                    ctx.lineTo(ax - 5 * Math.cos(angle - 0.5), ay - 5 * Math.sin(angle - 0.5));
+                    ctx.lineTo(ax - 5 * Math.cos(angle + 0.5), ay - 5 * Math.sin(angle + 0.5));
+                    ctx.closePath();
+                    ctx.fillStyle = 'rgba(197,160,89,0.3)';
+                    ctx.fill();
+                }
+            });
+        });
+
+        /* nodes */
+        tasks.forEach(function(t) {
+            var p = pos[t.id];
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 14, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(197,160,89,0.12)';
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(197,160,89,0.4)';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('T' + t.id, p.x, p.y + 4);
+        });
+    }
+
+    function solveAssembly() {
+        var scenario = getSelectedScenario('assemblyScenarios');
+        var algos = getSelectedAlgos('assemblyAlgos');
+        var C = parseInt(document.getElementById('assemblyCycle').value, 10);
+        var tasks = assemblyData[scenario].tasks;
+
+        if (algos.length === 0) {
+            document.getElementById('assemblyStatus').textContent = 'Select at least one algorithm.';
+            return;
+        }
+
+        var totalTime = 0;
+        tasks.forEach(function(t){ totalTime += t.time; });
+        if (C < Math.max.apply(null, tasks.map(function(t){ return t.time; }))) {
+            document.getElementById('assemblyStatus').textContent =
+                'Cycle time too small. Must be at least ' + Math.max.apply(null, tasks.map(function(t){ return t.time; })) + '.';
+            return;
+        }
+
+        var results = [];
+        algos.forEach(function(algo) {
+            var stations;
+            if (algo === 'kw') {
+                stations = kwBalance(tasks, C);
+            } else {
+                stations = comsoalBalance(tasks, C, 500);
+            }
+            var label = algo === 'kw' ? 'Kilbridge-Wester' : 'COMSOAL';
+            var efficiency = (totalTime / (stations.length * C) * 100);
+            results.push({ algo: label, stations: stations, numStations: stations.length, efficiency: efficiency });
+        });
+
+        drawAssembly(tasks, results);
+
+        var bestStations = Math.min.apply(null, results.map(function(r){ return r.numStations; }));
+        var bestEff = Math.max.apply(null, results.map(function(r){ return r.efficiency; }));
+
+        var rows = results.map(function(r) {
+            return [
+                { text: r.algo, cls: 'algo-label' },
+                { text: String(r.numStations), cls: r.numStations === bestStations ? 'best-val' : '' },
+                { text: r.efficiency.toFixed(1) + '%', cls: r.efficiency === bestEff ? 'best-val' : '' },
+                { text: String(tasks.length), cls: '' }
+            ];
+        });
+
+        clearContainer('assemblyResults');
+        document.getElementById('assemblyResults').appendChild(
+            buildResultsTable(['Algorithm', 'Stations', 'Efficiency', 'Tasks'], rows)
+        );
+
+        /* schedule output */
+        var detail = document.createElement('div');
+        detail.className = 'schedule-output';
+        var lines = [];
+        results.forEach(function(r) {
+            lines.push(r.algo + ' (' + r.numStations + ' stations):');
+            r.stations.forEach(function(st, si) {
+                var stTime = 0;
+                st.forEach(function(tid) {
+                    var t = tasks.find(function(x){ return x.id === tid; });
+                    stTime += t.time;
+                });
+                lines.push('  S' + (si + 1) + ': [' + st.map(function(id){ return 'T' + id; }).join(', ') + '] load=' + stTime + '/' + C);
+            });
+            lines.push('');
+        });
+        detail.textContent = lines.join('\n');
+        document.getElementById('assemblyResults').appendChild(detail);
+
+        document.getElementById('assemblyStatus').textContent =
+            'Solved. ' + tasks.length + ' tasks balanced across stations with cycle time ' + C + '.';
+    }
+
+    document.getElementById('assemblySolve').addEventListener('click', solveAssembly);
+    /* initial draw */
+    (function(){
+        var canvas = document.getElementById('assemblyCanvas');
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        drawDAG(ctx, assemblyData.small.tasks, canvas.width, canvas.height, null, null);
+    })();
+
+    /* ================================================================
+       TAB 2: STEEL PRODUCTION SCHEDULING
+       ================================================================ */
+    var steelScenarios = {
+        small: {
+            heats: [
+                { id: 'H1', grade: 'A', eaf: 6, lf: 4, cc: 5, due: 25 },
+                { id: 'H2', grade: 'B', eaf: 5, lf: 3, cc: 6, due: 22 },
+                { id: 'H3', grade: 'A', eaf: 7, lf: 5, cc: 4, due: 30 },
+                { id: 'H4', grade: 'C', eaf: 4, lf: 4, cc: 5, due: 28 }
+            ]
+        },
+        medium: {
+            heats: [
+                { id: 'H1', grade: 'A', eaf: 6, lf: 4, cc: 5, due: 30 },
+                { id: 'H2', grade: 'B', eaf: 5, lf: 3, cc: 6, due: 25 },
+                { id: 'H3', grade: 'A', eaf: 7, lf: 5, cc: 4, due: 35 },
+                { id: 'H4', grade: 'C', eaf: 4, lf: 4, cc: 5, due: 32 },
+                { id: 'H5', grade: 'B', eaf: 6, lf: 3, cc: 5, due: 28 },
+                { id: 'H6', grade: 'A', eaf: 5, lf: 4, cc: 6, due: 38 }
+            ]
+        },
+        large: {
+            heats: [
+                { id: 'H1', grade: 'A', eaf: 6, lf: 4, cc: 5, due: 35 },
+                { id: 'H2', grade: 'B', eaf: 5, lf: 3, cc: 6, due: 28 },
+                { id: 'H3', grade: 'C', eaf: 7, lf: 5, cc: 4, due: 40 },
+                { id: 'H4', grade: 'A', eaf: 4, lf: 4, cc: 5, due: 32 },
+                { id: 'H5', grade: 'B', eaf: 6, lf: 3, cc: 5, due: 30 },
+                { id: 'H6', grade: 'C', eaf: 5, lf: 4, cc: 6, due: 45 },
+                { id: 'H7', grade: 'A', eaf: 7, lf: 5, cc: 4, due: 42 },
+                { id: 'H8', grade: 'B', eaf: 4, lf: 3, cc: 5, due: 38 }
+            ]
+        }
+    };
+
+    var setupTimes = { 'AA':0, 'AB':2, 'AC':3, 'BA':2, 'BB':0, 'BC':2, 'CA':3, 'CB':2, 'CC':0 };
+
+    function scheduleSteelFIFO(heats) {
+        return scheduleSteel(heats.slice());
+    }
+
+    function scheduleSteelEDD(heats) {
+        var sorted = heats.slice().sort(function(a, b){ return a.due - b.due; });
+        return scheduleSteel(sorted);
+    }
+
+    function scheduleSteel(order) {
+        var schedule = [];
+        var eafEnd = 0, lfEnd = 0, ccEnd = 0;
+        var prevGrade = null;
+
+        order.forEach(function(h) {
+            var eafStart = eafEnd;
+            var eafFinish = eafStart + h.eaf;
+            eafEnd = eafFinish;
+
+            var lfStart = Math.max(eafFinish, lfEnd);
+            /* no-wait: LF must start within 2 units of EAF end */
+            if (lfStart - eafFinish > 2) lfStart = eafFinish;
+            lfStart = Math.max(lfStart, lfEnd);
+            var lfFinish = lfStart + h.lf;
+            lfEnd = lfFinish;
+
+            var setup = prevGrade ? (setupTimes[prevGrade + h.grade] || 0) : 0;
+            var ccStart = Math.max(lfFinish, ccEnd + setup);
+            var ccFinish = ccStart + h.cc;
+            ccEnd = ccFinish;
+            prevGrade = h.grade;
+
+            schedule.push({
+                id: h.id, grade: h.grade, due: h.due,
+                eaf: [eafStart, eafFinish],
+                lf: [lfStart, lfFinish],
+                cc: [ccStart, ccFinish]
+            });
+        });
+
+        return schedule;
+    }
+
+    function drawSteel(scheduleList) {
+        var canvas = document.getElementById('steelCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        if (!scheduleList || scheduleList.length === 0) {
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Select scenario and click Solve', W / 2, H / 2);
+            return;
+        }
+
+        /* draw first schedule as Gantt */
+        var sched = scheduleList[0].schedule;
+        var pad = 60;
+        var stageNames = ['EAF', 'LF', 'CC'];
+        var stageH = (H - 2 * pad) / 3;
+
+        /* find max time */
+        var maxT = 0;
+        sched.forEach(function(s) {
+            if (s.cc[1] > maxT) maxT = s.cc[1];
+        });
+        maxT = Math.max(maxT + 2, 20);
+
+        var plotW = W - pad - 30;
+        function tx(t) { return pad + (t / maxT) * plotW; }
+
+        var gradeColors = { A: '#C5A059', B: '#64ffda', C: '#7aa2f7' };
+
+        /* stage labels */
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'right';
+        stageNames.forEach(function(name, i) {
+            var cy = pad + i * stageH + stageH / 2;
+            ctx.fillText(name, pad - 10, cy + 4);
+        });
+
+        /* time axis */
+        ctx.strokeStyle = 'rgba(197,160,89,0.15)';
+        ctx.lineWidth = 0.5;
+        for (var t = 0; t <= maxT; t += 5) {
+            var x = tx(t);
+            ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, H - pad); ctx.stroke();
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(String(t), x, H - pad + 14);
+        }
+
+        /* stage dividers */
+        ctx.strokeStyle = 'rgba(197,160,89,0.1)';
+        ctx.lineWidth = 1;
+        for (var s = 0; s <= 3; s++) {
+            var y = pad + s * stageH;
+            ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - 30, y); ctx.stroke();
+        }
+
+        /* bars */
+        var stages = ['eaf', 'lf', 'cc'];
+        sched.forEach(function(h) {
+            stages.forEach(function(stage, si) {
+                var start = h[stage][0];
+                var end = h[stage][1];
+                var x1 = tx(start);
+                var x2 = tx(end);
+                var y = pad + si * stageH + 10;
+                var bh = stageH - 20;
+                var col = gradeColors[h.grade] || '#C5A059';
+
+                ctx.fillStyle = col + '35';
+                ctx.strokeStyle = col;
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(x1, y, x2 - x1, bh, 3);
+                ctx.fill();
+                ctx.stroke();
+
+                ctx.fillStyle = '#F8F9FA';
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                if (x2 - x1 > 25) {
+                    ctx.fillText(h.id, (x1 + x2) / 2, y + bh / 2 + 3);
+                }
+            });
+        });
+
+        /* legend */
+        ctx.font = '9px Inter, sans-serif';
+        var lx = W - 130;
+        Object.keys(gradeColors).forEach(function(grade, i) {
+            var ly = 12 + i * 14;
+            ctx.fillStyle = gradeColors[grade];
+            ctx.fillRect(lx, ly - 6, 8, 8);
+            ctx.fillStyle = '#a8b2d1';
+            ctx.textAlign = 'left';
+            ctx.fillText('Grade ' + grade, lx + 12, ly + 1);
+        });
+
+        /* multi-algo legend */
+        if (scheduleList.length > 1) {
+            ctx.font = '10px Inter, sans-serif';
+            scheduleList.forEach(function(set, si) {
+                var ly = H - 18 + si * 0;
+            });
+        }
+    }
+
+    function solveSteel() {
+        var scenario = getSelectedScenario('steelScenarios');
+        var algos = getSelectedAlgos('steelAlgos');
+        var heats = steelScenarios[scenario].heats;
+
+        if (algos.length === 0) {
+            document.getElementById('steelStatus').textContent = 'Select at least one dispatch rule.';
+            return;
+        }
+
+        var results = [];
+        algos.forEach(function(algo) {
+            var schedule;
+            var label;
+            if (algo === 'fifo') {
+                schedule = scheduleSteelFIFO(heats);
+                label = 'FIFO';
+            } else {
+                schedule = scheduleSteelEDD(heats);
+                label = 'EDD';
+            }
+            var makespan = 0;
+            var totalTardiness = 0;
+            schedule.forEach(function(s) {
+                if (s.cc[1] > makespan) makespan = s.cc[1];
+                var tardiness = Math.max(0, s.cc[1] - s.due);
+                totalTardiness += tardiness;
+            });
+            results.push({ algo: label, schedule: schedule, makespan: makespan, tardiness: totalTardiness });
+        });
+
+        drawSteel(results);
+
+        var bestMakespan = Math.min.apply(null, results.map(function(r){ return r.makespan; }));
+        var bestTardiness = Math.min.apply(null, results.map(function(r){ return r.tardiness; }));
+
+        var rows = results.map(function(r) {
+            return [
+                { text: r.algo, cls: 'algo-label' },
+                { text: String(r.makespan), cls: r.makespan === bestMakespan ? 'best-val' : '' },
+                { text: String(r.tardiness), cls: r.tardiness === bestTardiness ? 'best-val' : '' },
+                { text: String(r.schedule.length) + ' heats', cls: '' }
+            ];
+        });
+
+        clearContainer('steelResults');
+        document.getElementById('steelResults').appendChild(
+            buildResultsTable(['Dispatch Rule', 'Makespan', 'Total Tardiness', 'Heats'], rows)
+        );
+
+        /* detail */
+        var detail = document.createElement('div');
+        detail.className = 'schedule-output';
+        var lines = [];
+        results.forEach(function(r) {
+            lines.push(r.algo + ' (makespan=' + r.makespan + '):');
+            r.schedule.forEach(function(s) {
+                lines.push('  ' + s.id + ' [' + s.grade + ']: EAF=' + s.eaf[0] + '-' + s.eaf[1] +
+                    ' LF=' + s.lf[0] + '-' + s.lf[1] + ' CC=' + s.cc[0] + '-' + s.cc[1] +
+                    ' due=' + s.due + (s.cc[1] > s.due ? ' LATE' : ''));
+            });
+            lines.push('');
+        });
+        detail.textContent = lines.join('\n');
+        document.getElementById('steelResults').appendChild(detail);
+
+        document.getElementById('steelStatus').textContent =
+            'Solved. Gantt chart shows ' + results[0].algo + ' schedule.';
+    }
+
+    document.getElementById('steelSolve').addEventListener('click', solveSteel);
+    drawSteel(null);
+
+    /* ================================================================
+       TAB 3: CUTTING STOCK
+       ================================================================ */
+    var ROLL_WIDTH = 100;
+    var cuttingScenarios = {
+        small: {
+            orders: [
+                { width: 45, demand: 3 },
+                { width: 36, demand: 2 },
+                { width: 31, demand: 4 },
+                { width: 14, demand: 5 }
+            ]
+        },
+        medium: {
+            orders: [
+                { width: 48, demand: 2 },
+                { width: 42, demand: 3 },
+                { width: 35, demand: 4 },
+                { width: 28, demand: 3 },
+                { width: 22, demand: 5 },
+                { width: 15, demand: 6 }
+            ]
+        },
+        large: {
+            orders: [
+                { width: 50, demand: 2 },
+                { width: 45, demand: 3 },
+                { width: 40, demand: 2 },
+                { width: 35, demand: 4 },
+                { width: 30, demand: 3 },
+                { width: 25, demand: 5 },
+                { width: 18, demand: 4 },
+                { width: 12, demand: 6 }
+            ]
+        }
+    };
+
+    /* FFD: First Fit Decreasing */
+    function ffdCutting(orders) {
+        /* expand orders into individual pieces */
+        var pieces = [];
+        orders.forEach(function(o) {
+            for (var i = 0; i < o.demand; i++) pieces.push(o.width);
+        });
+        pieces.sort(function(a, b){ return b - a; });
+
+        var rolls = []; /* each roll: { pieces: [], remaining: ROLL_WIDTH } */
+        pieces.forEach(function(w) {
+            var placed = false;
+            for (var r = 0; r < rolls.length; r++) {
+                if (rolls[r].remaining >= w) {
+                    rolls[r].pieces.push(w);
+                    rolls[r].remaining -= w;
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed) {
+                rolls.push({ pieces: [w], remaining: ROLL_WIDTH - w });
+            }
+        });
+        return rolls;
+    }
+
+    /* Column generation LP (simplified simulation) */
+    function colGenCutting(orders) {
+        /* Generate useful patterns via greedy knapsack approach */
+        var patterns = [];
+
+        /* Generate many candidate patterns */
+        for (var iter = 0; iter < 300; iter++) {
+            var pattern = new Array(orders.length).fill(0);
+            var remaining = ROLL_WIDTH;
+            /* random order of items */
+            var indices = orders.map(function(_, i){ return i; });
+            for (var i = indices.length - 1; i > 0; i--) {
+                var j = Math.floor(Math.random() * (i + 1));
+                var tmp = indices[i]; indices[i] = indices[j]; indices[j] = tmp;
+            }
+            indices.forEach(function(idx) {
+                var maxFit = Math.floor(remaining / orders[idx].width);
+                if (maxFit > 0) {
+                    var use = Math.min(maxFit, 1 + Math.floor(Math.random() * maxFit));
+                    pattern[idx] = use;
+                    remaining -= use * orders[idx].width;
+                }
+            });
+            /* also try greedy largest first */
+            if (iter < orders.length) {
+                pattern = new Array(orders.length).fill(0);
+                remaining = ROLL_WIDTH;
+                var sortedIdx = orders.map(function(_, i){ return i; }).sort(function(a, b){ return orders[b].width - orders[a].width; });
+                /* prioritize item iter */
+                var prio = iter % orders.length;
+                var maxP = Math.floor(remaining / orders[prio].width);
+                pattern[prio] = maxP;
+                remaining -= maxP * orders[prio].width;
+                sortedIdx.forEach(function(idx) {
+                    if (idx === prio) return;
+                    var fit = Math.floor(remaining / orders[idx].width);
+                    if (fit > 0) { pattern[idx] = fit; remaining -= fit * orders[idx].width; }
+                });
+            }
+            var totalWidth = 0;
+            pattern.forEach(function(cnt, idx){ totalWidth += cnt * orders[idx].width; });
+            if (totalWidth > 0) patterns.push(pattern);
+        }
+
+        /* Greedy set cover to select patterns */
+        var demandLeft = orders.map(function(o){ return o.demand; });
+        var rolls = [];
+        var maxIter = 100;
+        while (maxIter-- > 0) {
+            var allMet = demandLeft.every(function(d){ return d <= 0; });
+            if (allMet) break;
+
+            /* find pattern that covers the most unmet demand */
+            var bestPattern = null;
+            var bestScore = -1;
+            patterns.forEach(function(p) {
+                var score = 0;
+                var feasible = true;
+                p.forEach(function(cnt, idx) {
+                    var useful = Math.min(cnt, Math.max(0, demandLeft[idx]));
+                    score += useful;
+                });
+                if (score > bestScore) { bestScore = score; bestPattern = p; }
+            });
+
+            if (!bestPattern || bestScore <= 0) {
+                /* fallback: single-item patterns */
+                for (var i = 0; i < orders.length; i++) {
+                    while (demandLeft[i] > 0) {
+                        var p = new Array(orders.length).fill(0);
+                        p[i] = 1;
+                        rolls.push(patternToRoll(p, orders));
+                        demandLeft[i]--;
+                    }
+                }
+                break;
+            }
+
+            /* apply pattern */
+            var actualPattern = bestPattern.slice();
+            actualPattern.forEach(function(cnt, idx) {
+                actualPattern[idx] = Math.min(cnt, Math.max(0, demandLeft[idx]));
+            });
+            rolls.push(patternToRoll(actualPattern, orders));
+            actualPattern.forEach(function(cnt, idx) { demandLeft[idx] -= cnt; });
+        }
+        return rolls;
+    }
+
+    function patternToRoll(pattern, orders) {
+        var pieces = [];
+        var used = 0;
+        pattern.forEach(function(cnt, idx) {
+            for (var i = 0; i < cnt; i++) {
+                pieces.push(orders[idx].width);
+                used += orders[idx].width;
+            }
+        });
+        return { pieces: pieces, remaining: ROLL_WIDTH - used };
+    }
+
+    function drawCutting(rollsList) {
+        var canvas = document.getElementById('cuttingCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        if (!rollsList || rollsList.length === 0) {
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '14px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Select scenario and click Solve', W / 2, H / 2);
+            return;
+        }
+
+        /* draw first algo's rolls */
+        var rolls = rollsList[0].rolls;
+        var pad = 40;
+        var rollH = Math.min(30, (H - 2 * pad) / (rolls.length + 1));
+        var barW = W - 2 * pad - 60;
+
+        var pieceColors = ['#C5A059','#64ffda','#7aa2f7','#ff6b6b','#ff9f43','#a78bfa','#f472b6','#34d399'];
+
+        /* header */
+        ctx.fillStyle = var_gold();
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Roll Width = ' + ROLL_WIDTH, pad, pad - 10);
+
+        rolls.forEach(function(roll, ri) {
+            var y = pad + ri * (rollH + 6);
+
+            /* roll background */
+            ctx.fillStyle = 'rgba(197,160,89,0.06)';
+            ctx.strokeStyle = 'rgba(197,160,89,0.2)';
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.roundRect(pad, y, barW, rollH, 3);
+            ctx.fill();
+            ctx.stroke();
+
+            /* pieces */
+            var x = pad;
+            roll.pieces.forEach(function(w, pi) {
+                var pw = (w / ROLL_WIDTH) * barW;
+                var col = pieceColors[pi % pieceColors.length];
+                ctx.fillStyle = col + '50';
+                ctx.strokeStyle = col;
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.roundRect(x, y, pw, rollH, 2);
+                ctx.fill();
+                ctx.stroke();
+
+                if (pw > 18) {
+                    ctx.fillStyle = '#F8F9FA';
+                    ctx.font = '8px JetBrains Mono, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(String(w), x + pw / 2, y + rollH / 2 + 3);
+                }
+                x += pw;
+            });
+
+            /* waste */
+            if (roll.remaining > 0) {
+                var wasteW = (roll.remaining / ROLL_WIDTH) * barW;
+                ctx.fillStyle = 'rgba(255,107,107,0.15)';
+                ctx.fillRect(x, y, wasteW, rollH);
+                ctx.strokeStyle = 'rgba(255,107,107,0.3)';
+                ctx.lineWidth = 0.5;
+                /* diagonal hatching for waste */
+                ctx.save();
+                ctx.beginPath();
+                ctx.rect(x, y, wasteW, rollH);
+                ctx.clip();
+                ctx.strokeStyle = 'rgba(255,107,107,0.15)';
+                for (var d = -rollH; d < wasteW + rollH; d += 6) {
+                    ctx.beginPath();
+                    ctx.moveTo(x + d, y);
+                    ctx.lineTo(x + d + rollH, y + rollH);
+                    ctx.stroke();
+                }
+                ctx.restore();
+            }
+
+            /* label */
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '8px JetBrains Mono, monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('R' + (ri + 1), pad + barW + 6, y + rollH / 2 + 3);
+        });
+
+        /* multi-algo legend */
+        if (rollsList.length > 1) {
+            ctx.font = '10px Inter, sans-serif';
+            rollsList.forEach(function(set, si) {
+                var ly = H - 30 + si * 14;
+                ctx.fillStyle = si === 0 ? '#C5A059' : '#7aa2f7';
+                ctx.fillRect(pad, ly - 6, 10, 10);
+                ctx.fillStyle = '#a8b2d1';
+                ctx.textAlign = 'left';
+                ctx.fillText(set.algo + ': ' + set.rolls.length + ' rolls, waste=' + set.waste.toFixed(1) + '%', pad + 14, ly + 2);
+            });
+        }
+    }
+
+    function solveCutting() {
+        var scenario = getSelectedScenario('cuttingScenarios');
+        var algos = getSelectedAlgos('cuttingAlgos');
+        var orders = cuttingScenarios[scenario].orders;
+
+        if (algos.length === 0) {
+            document.getElementById('cuttingStatus').textContent = 'Select at least one algorithm.';
+            return;
+        }
+
+        var totalDemandWidth = 0;
+        orders.forEach(function(o){ totalDemandWidth += o.width * o.demand; });
+        var lowerBound = Math.ceil(totalDemandWidth / ROLL_WIDTH);
+
+        var results = [];
+        algos.forEach(function(algo) {
+            var rolls;
+            var label;
+            if (algo === 'ffd') {
+                rolls = ffdCutting(orders);
+                label = 'FFD';
+            } else {
+                rolls = colGenCutting(orders);
+                label = 'Column Gen LP';
+            }
+            var totalWaste = 0;
+            rolls.forEach(function(r){ totalWaste += r.remaining; });
+            var wastePercent = (totalWaste / (rolls.length * ROLL_WIDTH)) * 100;
+            results.push({ algo: label, rolls: rolls, numRolls: rolls.length, waste: wastePercent, totalWaste: totalWaste });
+        });
+
+        drawCutting(results);
+
+        var bestRolls = Math.min.apply(null, results.map(function(r){ return r.numRolls; }));
+        var bestWaste = Math.min.apply(null, results.map(function(r){ return r.waste; }));
+
+        var rows = results.map(function(r) {
+            return [
+                { text: r.algo, cls: 'algo-label' },
+                { text: String(r.numRolls), cls: r.numRolls === bestRolls ? 'best-val' : '' },
+                { text: r.waste.toFixed(1) + '%', cls: r.waste === bestWaste ? 'best-val' : '' },
+                { text: String(lowerBound), cls: '' }
+            ];
+        });
+
+        clearContainer('cuttingResults');
+        document.getElementById('cuttingResults').appendChild(
+            buildResultsTable(['Algorithm', 'Rolls Used', 'Waste %', 'LP Lower Bound'], rows)
+        );
+
+        /* detail */
+        var detail = document.createElement('div');
+        detail.className = 'schedule-output';
+        var lines = ['Orders: ' + orders.map(function(o){ return 'w=' + o.width + ' x' + o.demand; }).join(', ')];
+        lines.push('Roll width: ' + ROLL_WIDTH + ', LP lower bound: ' + lowerBound);
+        lines.push('');
+        results.forEach(function(r) {
+            lines.push(r.algo + ' (' + r.numRolls + ' rolls, waste=' + r.waste.toFixed(1) + '%):');
+            r.rolls.forEach(function(roll, ri) {
+                lines.push('  R' + (ri + 1) + ': [' + roll.pieces.join(', ') + '] waste=' + roll.remaining);
+            });
+            lines.push('');
+        });
+        detail.textContent = lines.join('\n');
+        document.getElementById('cuttingResults').appendChild(detail);
+
+        document.getElementById('cuttingStatus').textContent =
+            'Solved. ' + orders.length + ' order widths cut from ' + ROLL_WIDTH + '-unit rolls.';
+    }
+
+    document.getElementById('cuttingSolve').addEventListener('click', solveCutting);
+    drawCutting(null);
+
+    /* ===== NAVBAR SCROLL ===== */
+    window.addEventListener('scroll', function() {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var pct = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = pct + '%';
+
+        var btn = document.getElementById('scrollTopBtn');
+        if (winScroll > 400) btn.classList.add('visible');
+        else btn.classList.remove('visible');
+    });
+
+    document.getElementById('scrollTopBtn').addEventListener('click', function() {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    });
+
+    /* ===== FADE IN ===== */
+    var fadeEls = document.querySelectorAll('.fade-in');
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(entry) {
+            if (entry.isIntersecting) entry.target.classList.add('visible');
+        });
+    }, { threshold: 0.1 });
+    fadeEls.forEach(function(el){ observer.observe(el); });
+
+    /* ===== THEME TOGGLE ===== */
+    document.getElementById('themeToggle').addEventListener('click', function() {
+        var html = document.documentElement;
+        var cur = html.getAttribute('data-theme');
+        html.setAttribute('data-theme', cur === 'light' ? 'dark' : 'light');
+    });
+
+    /* ===== COMMAND PALETTE ===== */
+    var cmdPages = [
+        { title: 'Home', subtitle: 'Portfolio overview', icon: 'fa-home', url: '../index.html' },
+        { title: 'Healthcare', subtitle: 'Sector application chain', icon: 'fa-heartbeat', url: 'healthcare.html' },
+        { title: 'Agriculture', subtitle: 'Farming optimization', icon: 'fa-tractor', url: 'agriculture.html' },
+        { title: 'Energy', subtitle: 'Power grid optimization', icon: 'fa-bolt', url: 'energy.html' },
+        { title: 'Climate & Earth Sciences', subtitle: 'Environmental monitoring', icon: 'fa-globe', url: 'climate-earth-sciences.html' },
+        { title: 'Transportation', subtitle: 'Logistics & routing', icon: 'fa-truck', url: 'transportation.html' },
+        { title: 'Construction', subtitle: 'Project scheduling', icon: 'fa-hard-hat', url: 'construction.html' },
+        { title: 'Manufacturing', subtitle: 'Current page', icon: 'fa-industry', url: '#' },
+        { title: 'Retail', subtitle: 'Inventory & assortment', icon: 'fa-store', url: 'retail.html' }
+    ];
+
+    var cmdOverlay = document.getElementById('cmdOverlay');
+    var cmdInput = document.getElementById('cmdInput');
+    var cmdResultsEl = document.getElementById('cmdResults');
+
+    function renderCmdResults(query) {
+        while (cmdResultsEl.firstChild) cmdResultsEl.removeChild(cmdResultsEl.firstChild);
+        var q = query.toLowerCase();
+        var filtered = cmdPages.filter(function(p) {
+            return p.title.toLowerCase().indexOf(q) >= 0 || p.subtitle.toLowerCase().indexOf(q) >= 0;
+        });
+        if (filtered.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found.';
+            cmdResultsEl.appendChild(empty);
+            return;
+        }
+        var label = document.createElement('div');
+        label.className = 'cmd-group-label';
+        label.textContent = 'Pages';
+        cmdResultsEl.appendChild(label);
+        filtered.forEach(function(p) {
+            var a = document.createElement('a');
+            a.className = 'cmd-result';
+            a.href = p.url;
+            var iconDiv = document.createElement('div');
+            iconDiv.className = 'cmd-icon';
+            var ico = document.createElement('i');
+            ico.className = 'fas ' + p.icon;
+            iconDiv.appendChild(ico);
+            a.appendChild(iconDiv);
+            var info = document.createElement('div');
+            info.className = 'cmd-info';
+            var title = document.createElement('div');
+            title.className = 'cmd-title';
+            title.textContent = p.title;
+            info.appendChild(title);
+            var sub = document.createElement('div');
+            sub.className = 'cmd-subtitle';
+            sub.textContent = p.subtitle;
+            info.appendChild(sub);
+            a.appendChild(info);
+            cmdResultsEl.appendChild(a);
+        });
+    }
+
+    function openCmd() {
+        cmdOverlay.classList.add('open');
+        cmdInput.value = '';
+        renderCmdResults('');
+        setTimeout(function(){ cmdInput.focus(); }, 50);
+    }
+    function closeCmd() { cmdOverlay.classList.remove('open'); }
+
+    cmdInput.addEventListener('input', function(){ renderCmdResults(cmdInput.value); });
+    cmdOverlay.addEventListener('click', function(e){ if (e.target === cmdOverlay) closeCmd(); });
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (cmdOverlay.classList.contains('open')) closeCmd();
+            else openCmd();
+        }
+        if (e.key === 'Escape' && cmdOverlay.classList.contains('open')) closeCmd();
+    });
+
+    var navSearchTrigger = document.getElementById('navSearchTrigger');
+    if (navSearchTrigger) navSearchTrigger.addEventListener('click', openCmd);
+
+})();
+</script>
+</body>
+</html>
