@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punch List Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Parallel Machine Scheduling demo for construction punch list completion using LPT, List Scheduling, and Simulated Annealing algorithms.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/construction-punch-list.html">
+    <meta property="og:title" content="Punch List Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Parallel Machine Scheduling demo for construction punch list completion using LPT, List Scheduling, and Simulated Annealing algorithms.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Punch List Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Parallel Machine Scheduling demo for construction punch list completion using LPT, List Scheduling, and Simulated Annealing algorithms.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- TODO: Add Python solver file when available -->
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        /* ── Hero Section ── */
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%); pointer-events: none; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 700px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        /* ── Section Headers ── */
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        /* ── Formulation Block ── */
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; }
+        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); }
+        .solver-panel-header h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        @media (max-width: 768px) { .solver-row { grid-template-columns: 1fr; } .hero h1 { font-size: 2.2rem; } }
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; font-weight: 500; }
+
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-tag { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+
+        /* ── Decision Chain ── */
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        /* ── Scenario Switcher ── */
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
+        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
+        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; font-style: italic; }
+
+        /* ── Mapping Table ── */
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+        .mapping-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.2); text-align: left; }
+        .mapping-table td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.05); color: var(--slate-light); }
+        .mapping-table .icon-col { color: var(--gold); width: 40px; text-align: center; }
+        .formula-block { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--green); padding: 0.8rem 1.2rem; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; margin-top: 1rem; }
+
+        /* ── Business Panel ── */
+        .business-panel { margin-top: 1.5rem; padding: 1.2rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; background: rgba(197,160,89,0.04); }
+        .biz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+        .biz-card { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .biz-val { font-size: 1.5rem; font-weight: 600; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+        .biz-label-text { font-size: 0.75rem; color: var(--slate-light); line-height: 1.4; }
+        .biz-label-text small { color: var(--slate); }
+        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); font-style: italic; margin: 0; }
+
+        /* ── Algorithm Cards ── */
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.8rem; color: var(--ivory); }
+        .algo-card .algo-complexity { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); margin-bottom: 1rem; display: inline-block; }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+
+        /* ── Complexity Box ── */
+        .complexity-box { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-top: 2rem; }
+        .complexity-box h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 1.2rem; color: var(--ivory); }
+        .complexity-box h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .complexity-list { list-style: none; padding: 0; }
+        .complexity-list li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before { content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; color: var(--gold); font-size: 0.6rem; top: 0.75rem; }
+
+        /* ── References ── */
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel { background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02)); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 3rem; text-align: center; }
+        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; letter-spacing: 2px; margin-bottom: 1rem; color: var(--ivory); }
+        .cta-panel p { color: var(--slate-light); font-size: 0.95rem; max-width: 650px; margin: 0 auto 2rem; line-height: 1.8; }
+        .cta-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+        .cta-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.8rem; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; }
+        .cta-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Back Link ── */
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        /* ── Footer ── */
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle { position: relative; width: 44px; height: 24px; background: var(--midnight-lighter); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.4s ease; display: flex; align-items: center; padding: 0 3px; margin-left: 0.8rem; flex-shrink: 0; }
+        .theme-toggle::before { content: ''; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35); box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+        html[data-theme="light"] { --midnight: #F5F1EB; --midnight-light: #EDE8E0; --midnight-lighter: #E3DDD4; --ivory: #1a1a2e; --slate: #5a6178; --slate-light: #3d4155; }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Scroll Progress + Scroll-to-Top ── */
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .scroll-top-btn { position: fixed; bottom: 5rem; right: 2rem; width: 42px; height: 42px; border-radius: 50%; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); color: var(--gold); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 998; opacity: 0; transform: translateY(10px); pointer-events: none; }
+        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4); }
+
+        .nav-search-trigger { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 6px; background: rgba(197, 160, 89, 0.05); color: var(--slate); font-size: 0.78rem; cursor: pointer; transition: all 0.3s; margin-left: 0.5rem; white-space: nowrap; }
+        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .nav-search-trigger .search-shortcut { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 1px 5px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 3px; background: rgba(197, 160, 89, 0.05); }
+
+        .hero-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* ── Gantt-specific ── */
+        .gantt-legend { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.8rem; font-size: 0.72rem; color: var(--slate); }
+        .gantt-legend-item { display: flex; align-items: center; gap: 0.3rem; }
+        .gantt-legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+        .dep-indicator { font-size: 0.72rem; color: var(--slate); margin-top: 0.4rem; }
+        .dep-indicator i { color: var(--gold); margin-right: 0.3rem; }
+        .schedule-detail { margin-top: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--slate-light); padding: 0.8rem 1rem; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; line-height: 1.8; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+
+        @media (max-width: 480px) {
+            .scenario-switcher { grid-template-columns: 1fr; }
+            .biz-cards { grid-template-columns: 1fr; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+            .chain-arrow { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger"><i class="fas fa-search" style="font-size:0.75rem"></i><span>Search</span><span class="search-shortcut">&#8984;K</span></div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme"><span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span><span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container"><ol><li><a href="../index.html">Home</a></li><li><a href="../index.html#applications">Construction</a></li><li>Punch List Scheduling</li></ol></div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-clipboard-check"></i></div>
+        <h1>Punch List <span>Scheduling</span></h1>
+        <p class="hero-subtitle">Parallel Machine Scheduling &middot; NP-Hard</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Punch list completion delays extend project handover by 2&ndash;6 weeks on average,
+            costing developers &euro;3K&ndash;&euro;15K per day in delayed occupancy revenue and
+            liquidated damages. In the final construction phase, a project manager must schedule
+            40&ndash;80 deficiency items across multiple zones using limited trade crews. This is
+            parallel machine scheduling with precedence constraints &mdash; NP-hard &mdash; where
+            zone access sequences and trade availability windows create complex dependencies.
+        </p>
+    </div>
+</section>
+
+<!-- 2. Decision in Context -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where This <span>Decision Fits</span></h2><p>Construction project lifecycle &mdash; the highlighted step is what this page optimizes</p></div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">Site Selection<span class="chain-sub">Land &amp; zoning</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Portfolio Selection<span class="chain-sub">Project pipeline</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Project Scheduling<span class="chain-sub">CPM &amp; RCPSP</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Procurement<span class="chain-sub">Materials &amp; contracts</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">Punch List<span class="chain-sub">Closeout</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Problem -->
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Problem</span></h2><p>From construction deficiency lists to optimization theory</p></div>
+        <div class="content-block fade-in">
+            <p>A building project is nearing completion. The construction manager has compiled a <strong>punch list</strong> of 25 deficiency items spread across 5 building zones (Lobby, Floors 2&ndash;5, Rooftop, Parking, Mechanical Room). Four trade crews &mdash; carpentry, painting, electrical, and plumbing &mdash; are available. Each item has a known duration, belongs to a specific zone, and requires a specific trade. Some items have precedence constraints: you must patch drywall before you paint.</p>
+            <p>The objective is to <strong>minimize the makespan</strong> &mdash; the total time from when the first crew starts to when the last deficiency item is resolved. Every extra day of punch list work delays the certificate of occupancy and triggers liquidated damages, lost rental income, and reputational cost.</p>
+            <table class="mapping-table"><thead><tr><th></th><th>Construction Domain</th><th>Parallel Machine Model</th></tr></thead>
+            <tbody>
+                <tr><td class="icon-col"><i class="fas fa-hard-hat"></i></td><td>Trade crew</td><td>Machine</td></tr>
+                <tr><td class="icon-col"><i class="fas fa-clipboard-list"></i></td><td>Punch list item</td><td>Job</td></tr>
+                <tr><td class="icon-col"><i class="fas fa-clock"></i></td><td>Item duration (hours)</td><td>Processing time p<sub>j</sub></td></tr>
+                <tr><td class="icon-col"><i class="fas fa-bullseye"></i></td><td>Finish all items ASAP</td><td>Minimize C<sub>max</sub></td></tr>
+                <tr><td class="icon-col"><i class="fas fa-link"></i></td><td>Patch before paint</td><td>Precedence constraint</td></tr>
+            </tbody></table>
+            <div class="formulation">
+                <span class="form-label">Parallel Machine Scheduling Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">C<sub>max</sub></span> &nbsp; <span class="comment">// makespan</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ij</sub> = 1 &nbsp; &forall; j</span> &nbsp;&nbsp; <span class="comment">// each item assigned to exactly one crew</span><br>
+                &nbsp;&nbsp;<span class="variable">C<sub>max</sub> &ge; &Sigma;<sub>j</sub> p<sub>j</sub> &middot; x<sub>ij</sub> &nbsp; &forall; i</span> &nbsp;&nbsp; <span class="comment">// makespan &ge; every crew's load</span><br>
+                &nbsp;&nbsp;<span class="variable">S<sub>k</sub> &ge; C<sub>j</sub> &nbsp; &forall; (j,k) &isin; Prec</span> &nbsp;&nbsp; <span class="comment">// precedence: j finishes before k starts</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary assignment</span>
+            </div>
+            <div class="formula-block">Pm | prec | C<sub>max</sub> &mdash; NP-hard; LPT gives 4/3 &minus; 1/(3m) approximation</div>
+            <a href="../families/scheduling.html#parallel-machine" class="theory-link"><i class="fas fa-arrow-right"></i> See full Parallel Machine theory</a>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Try It Yourself -->
+<section id="interactive">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Try It <span>Yourself</span></h2><p>Schedule punch list items across trade crews and see the Gantt chart update</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-clipboard-check"></i> Punch List Scheduler</h4>
+                <span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">25 Items &middot; 4 Crews</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Choose a Scenario</div>
+                <div class="scenario-switcher" id="scenario-switcher">
+                    <button class="scenario-btn active" data-scenario="0" onclick="loadNamedScenario(0)"><span class="scn-name">Condo Tower Handover</span><span class="scn-desc">25 items, 5 zones, 4 crews &mdash; typical residential closeout</span></button>
+                    <button class="scenario-btn" data-scenario="1" onclick="loadNamedScenario(1)"><span class="scn-name">Office Fit-Out Final</span><span class="scn-desc">18 items, 3 zones, 3 crews &mdash; commercial tenant handover</span></button>
+                    <button class="scenario-btn" data-scenario="2" onclick="loadNamedScenario(2)"><span class="scn-name">Hospital Commissioning</span><span class="scn-desc">35 items, 8 zones, 6 crews &mdash; critical infrastructure closeout</span></button>
+                </div>
+                <div class="scenario-context" id="scenario-context">A 24-storey condo tower nearing final handover. 25 punch list items across Lobby, Floors 2&ndash;5, Rooftop, Parking, and Mechanical Room. Four trade crews must resolve all deficiencies before the certificate of occupancy.</div>
+
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-hard-hat" style="color:var(--gold);margin-right:0.4rem;"></i>Trade Crews:</label>
+                    <input type="range" id="crewSlider" min="1" max="8" value="4" oninput="document.getElementById('crewVal').textContent=this.value;updateConfigLabel();" style="flex:1;accent-color:var(--gold);">
+                    <span id="crewVal" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">4</span>
+                </div>
+
+                <div class="solver-section-label">Punch List Items</div>
+                <div style="overflow-x:auto;max-height:300px;overflow-y:auto;margin-bottom:0.5rem;">
+                    <table class="results-table" id="taskTable"><thead><tr><th>#</th><th>Item</th><th>Zone</th><th>Trade</th><th>Hrs</th><th>Dep</th><th style="width:30px;"></th></tr></thead><tbody id="taskTableBody"></tbody></table>
+                </div>
+
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addTask()"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Item</button>
+                    <button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset</button>
+                    <button class="algo-chip" onclick="randomizeTasks()"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                </div>
+
+                <div class="solver-section-label">Select Algorithm</div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip active" data-algo="lpt" onclick="selectAlgorithm('lpt')">LPT (Longest First) <span class="chip-tag">heuristic</span></button>
+                    <button class="algo-chip" data-algo="list" onclick="selectAlgorithm('list')">List Scheduling (Zone Priority) <span class="chip-tag">heuristic</span></button>
+                    <button class="algo-chip" data-algo="sa" onclick="selectAlgorithm('sa')">Simulated Annealing <span class="chip-tag">metaheuristic</span></button>
+                </div>
+
+                <div style="text-align:center;margin:1.2rem 0;">
+                    <button id="solveBtn" onclick="runSolver()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--midnight);border:none;padding:0.8rem 2.5rem;border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(197,160,89,0.3);"><i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Visualize</button>
+                </div>
+
+                <div class="solver-section-label">Gantt Chart by Zone</div>
+                <div class="solver-canvas-wrap"><canvas id="ganttCanvas" width="900" height="400"></canvas></div>
+                <div class="gantt-legend" id="ganttLegend"></div>
+                <div class="dep-indicator" id="depIndicator"><i class="fas fa-info-circle"></i> Dashed arrows show precedence constraints between items.</div>
+                <p class="solver-status" id="solver-status">Ready. Select a scenario and click &ldquo;Solve &amp; Visualize&rdquo;.</p>
+
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Comparison</div>
+                        <table class="results-table" id="results-table"><thead><tr><th>Algorithm</th><th>Makespan</th><th>Utilization</th><th>Time</th></tr></thead><tbody id="resultsBody"><tr><td colspan="4" style="text-align:center;color:var(--slate);font-family:'Inter',sans-serif;">Click Solve &amp; Visualize</td></tr></tbody></table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Schedule Detail</div>
+                        <div class="schedule-detail" id="scheduleDetail">Schedule details will appear here after solving.</div>
+                    </div>
+                </div>
+
+                <div class="business-panel" id="business-panel" style="display:none">
+                    <div class="solver-section-label" style="margin-top:0"><i class="fas fa-chart-line" style="color:var(--gold);margin-right:0.5rem"></i>What this means for your project</div>
+                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;font-size:0.82rem;color:var(--slate-light);align-items:center;">
+                        <label>Cost per day of delay (&euro;) <input type="number" id="biz-unit-cost" value="8000" min="1" max="100000" step="500" style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()"></label>
+                        <label>Handovers per year <input type="number" id="biz-ops-per-year" value="6" min="1" max="100" step="1" style="width:60px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()"></label>
+                    </div>
+                    <div class="biz-cards">
+                        <div class="biz-card"><span class="biz-val" id="biz-gap">&mdash;</span><span class="biz-label-text">Extra hours per handover<br><small>worst vs best algorithm</small></span></div>
+                        <div class="biz-card"><span class="biz-val" id="biz-daily">&mdash;</span><span class="biz-label-text">Wasted per handover<br><small>at current cost/day</small></span></div>
+                        <div class="biz-card"><span class="biz-val" id="biz-annual">&mdash;</span><span class="biz-label-text">Wasted per year<br><small>across all handovers</small></span></div>
+                    </div>
+                    <p class="biz-disclaimer">Values are illustrative estimates based on the scenario above. Adjust inputs to model your operation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Algorithms -->
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Algorithms</span></h2><p>Three approaches to parallel machine scheduling</p></div>
+        <div class="content-block fade-in">
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>Longest Processing Time (LPT)</h3>
+                <span class="algo-complexity">O(n log n) &nbsp;|&nbsp; Guarantee: &le; 4/3 &minus; 1/(3m) &middot; OPT</span>
+                <p>Sort all punch list items by duration in <strong>descending order</strong>. For each item, assign it to the crew with the <strong>smallest current load</strong>. By placing the longest tasks first, LPT creates a balanced foundation that shorter tasks can fill around. Graham (1969) proved this gives at most 4/3 &minus; 1/(3m) times the optimal makespan.</p>
+            </div>
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>List Scheduling (Zone Priority)</h3>
+                <span class="algo-complexity">O(n log n) &nbsp;|&nbsp; Guarantee: &le; 2 &minus; 1/m &middot; OPT</span>
+                <p>Process items in a <strong>priority order based on zone criticality</strong> (e.g., common areas first, mechanical rooms last). For each item, assign it to the crew with the earliest availability, respecting precedence constraints. This mirrors how construction managers naturally think &mdash; prioritizing client-visible zones.</p>
+            </div>
+            <div class="algo-card">
+                <div class="algo-tag">Metaheuristic</div>
+                <h3>Simulated Annealing</h3>
+                <span class="algo-complexity">Iterative &nbsp;|&nbsp; Near-optimal for large instances</span>
+                <p>Start with an LPT solution, then iteratively <strong>swap task assignments</strong> between crews. Accept improving moves always; accept worsening moves with probability <em>e<sup>&minus;&Delta;/T</sup></em> where <em>T</em> decreases over time. This allows escape from local optima and typically finds solutions within 1&ndash;3% of optimal.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. Real-World Complexity -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-World <span>Complexity</span></h2><p>Why punch list scheduling goes beyond the parallel machine model</p></div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-layer-group"></i> Beyond the Basic Model</h3>
+                <ul class="complexity-list">
+                    <li><strong>Zone access conflicts</strong> &mdash; Two crews cannot work in the same small zone simultaneously; spatial constraints limit parallelism</li>
+                    <li><strong>Trade specialization</strong> &mdash; Not every crew can do every task; unrelated machine scheduling (R<sub>m</sub>) is needed when crews have different capabilities</li>
+                    <li><strong>Inspector availability</strong> &mdash; Many items require inspection sign-off before the next phase, creating release dates and deadlines</li>
+                    <li><strong>Material procurement</strong> &mdash; Replacement parts may have multi-day lead times, adding stochastic release dates to tasks</li>
+                    <li><strong>Weather sensitivity</strong> &mdash; Rooftop and exterior items depend on weather windows, introducing uncertainty</li>
+                    <li><strong>Tenant coordination</strong> &mdash; In occupied buildings, work hours are restricted and noise-sensitive areas have time-window constraints</li>
+                    <li><strong>Multi-building portfolios</strong> &mdash; Crews may be shared across multiple projects, adding resource-constrained project scheduling dimensions</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. References -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>References</span></h2><p>Foundational works in parallel machine scheduling</p></div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li><span class="ref-author">Graham, R.L.</span> (1969). <span class="ref-title">&ldquo;Bounds on multiprocessing timing anomalies.&rdquo;</span> <span class="ref-journal">SIAM Journal on Applied Mathematics, 17(2), 416&ndash;429.</span></li>
+                <li><span class="ref-author">Pinedo, M.L.</span> (2016). <span class="ref-title">&ldquo;Scheduling: Theory, Algorithms, and Systems.&rdquo;</span> <span class="ref-journal">5th Edition, Springer.</span></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 8. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize construction project closeout?</h3>
+            <p>From punch list scheduling to resource-constrained project planning, mathematical modeling can accelerate your construction operations. Let&rsquo;s discuss how Operations Research can work for you.</p>
+            <div class="cta-links"><a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link"><i class="fab fa-linkedin"></i> Connect on LinkedIn</a></div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box"><div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>Data shown is illustrative. Item names, durations, zones, and trade assignments are representative scenarios for educational purposes and do not reflect any specific construction project.</div>
+    </div>
+</section>
+
+<footer><div class="container"><p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p></div></footer>
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top"><i class="fas fa-chevron-up"></i></button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Punch List Scheduling — Parallel Machine Interactive Demo
+// ═══════════════════════════════════════════════════════════════
+
+var canvas = document.getElementById('ganttCanvas');
+var ctx = canvas.getContext('2d');
+var dpr = window.devicePixelRatio || 1;
+var CW = 900, CH = 400;
+canvas.width = CW * dpr;
+canvas.height = CH * dpr;
+canvas.style.width = CW + 'px';
+canvas.style.height = CH + 'px';
+ctx.scale(dpr, dpr);
+
+var CREW_COLORS = ['#7aa2f7','#64ffda','#ff9e64','#bb9af7','#f0c040','#ff6b6b','#9ece6a','#d4a054'];
+var ZONE_COLORS = {'Lobby':'#C5A059','Floor 2':'#7aa2f7','Floor 3':'#64ffda','Floor 4':'#ff9e64','Floor 5':'#bb9af7','Rooftop':'#f0c040','Parking':'#9ece6a','Mechanical':'#ff6b6b','Reception':'#C5A059','Open Plan':'#7aa2f7','Executive':'#64ffda','ER':'#ff6b6b','ICU':'#bb9af7','Ward A':'#64ffda','Ward B':'#7aa2f7','Surgical':'#9ece6a','Lab':'#f0c040','Pharmacy':'#C5A059','Radiology':'#ff9e64'};
+var TRADES = ['Carpentry','Painting','Electrical','Plumbing','HVAC','Fire Safety'];
+var inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-size:0.78rem;font-family:"Inter",sans-serif;';
+
+var SCENARIOS = [
+    {name:'Condo Tower Handover',crews:4,context:'A 24-storey condo tower nearing final handover. 25 punch list items across Lobby, Floors 2\u20135, Rooftop, Parking, and Mechanical Room. Four trade crews must resolve all deficiencies before the certificate of occupancy.',tasks:[
+        {item:'Lobby tile crack',zone:'Lobby',trade:'Carpentry',dur:3,dep:''},{item:'Lobby paint scuff',zone:'Lobby',trade:'Painting',dur:2,dep:'1'},{item:'Lobby light fixture',zone:'Lobby',trade:'Electrical',dur:1.5,dep:''},{item:'Lobby door alignment',zone:'Lobby',trade:'Carpentry',dur:2,dep:''},
+        {item:'F2 drywall patch',zone:'Floor 2',trade:'Carpentry',dur:2.5,dep:''},{item:'F2 wall paint',zone:'Floor 2',trade:'Painting',dur:3,dep:'5'},{item:'F2 outlet cover',zone:'Floor 2',trade:'Electrical',dur:0.5,dep:''},
+        {item:'F3 baseboard gap',zone:'Floor 3',trade:'Carpentry',dur:1.5,dep:''},{item:'F3 ceiling paint',zone:'Floor 3',trade:'Painting',dur:4,dep:''},{item:'F3 smoke detector',zone:'Floor 3',trade:'Electrical',dur:1,dep:''},
+        {item:'F4 window caulk',zone:'Floor 4',trade:'Carpentry',dur:2,dep:''},{item:'F4 bathroom grout',zone:'Floor 4',trade:'Plumbing',dur:3,dep:''},{item:'F4 trim paint',zone:'Floor 4',trade:'Painting',dur:2.5,dep:'11'},
+        {item:'F5 door hardware',zone:'Floor 5',trade:'Carpentry',dur:1,dep:''},{item:'F5 faucet leak',zone:'Floor 5',trade:'Plumbing',dur:2,dep:''},{item:'F5 wall touch-up',zone:'Floor 5',trade:'Painting',dur:1.5,dep:''},
+        {item:'Roof membrane patch',zone:'Rooftop',trade:'Carpentry',dur:4,dep:''},{item:'Roof drain clean',zone:'Rooftop',trade:'Plumbing',dur:2,dep:''},{item:'Roof light install',zone:'Rooftop',trade:'Electrical',dur:3,dep:'17'},
+        {item:'Parking line repaint',zone:'Parking',trade:'Painting',dur:3,dep:''},{item:'Parking light fix',zone:'Parking',trade:'Electrical',dur:2,dep:''},{item:'Parking drain grate',zone:'Parking',trade:'Plumbing',dur:1.5,dep:''},
+        {item:'Mech panel label',zone:'Mechanical',trade:'Electrical',dur:1,dep:''},{item:'Mech pipe insulation',zone:'Mechanical',trade:'Plumbing',dur:3,dep:''},{item:'Mech vent seal',zone:'Mechanical',trade:'Carpentry',dur:2,dep:'24'}
+    ]},
+    {name:'Office Fit-Out Final',crews:3,context:'A commercial office fit-out approaching tenant handover. 18 items across Reception, Open Plan, and Executive zones. Three trade crews handle the remaining deficiencies.',tasks:[
+        {item:'Reception desk scratch',zone:'Reception',trade:'Carpentry',dur:2,dep:''},{item:'Reception wall paint',zone:'Reception',trade:'Painting',dur:3,dep:'1'},{item:'Reception downlights',zone:'Reception',trade:'Electrical',dur:2,dep:''},{item:'Reception signage',zone:'Reception',trade:'Carpentry',dur:1,dep:'2'},
+        {item:'Open plan partition',zone:'Open Plan',trade:'Carpentry',dur:4,dep:''},{item:'Open plan ceiling tile',zone:'Open Plan',trade:'Carpentry',dur:2,dep:''},{item:'Open plan paint',zone:'Open Plan',trade:'Painting',dur:5,dep:'5'},{item:'Open plan data outlet',zone:'Open Plan',trade:'Electrical',dur:1.5,dep:''},{item:'Open plan dimmer',zone:'Open Plan',trade:'Electrical',dur:1,dep:''},{item:'Open plan carpet seam',zone:'Open Plan',trade:'Carpentry',dur:2,dep:''},
+        {item:'Exec office door',zone:'Executive',trade:'Carpentry',dur:1.5,dep:''},{item:'Exec office paint',zone:'Executive',trade:'Painting',dur:3,dep:'11'},{item:'Exec bookshelf mount',zone:'Executive',trade:'Carpentry',dur:2,dep:''},{item:'Exec pendant light',zone:'Executive',trade:'Electrical',dur:2,dep:'12'},{item:'Exec window blind',zone:'Executive',trade:'Carpentry',dur:1,dep:''},{item:'Exec power strip',zone:'Executive',trade:'Electrical',dur:0.5,dep:''},{item:'Exec baseboard',zone:'Executive',trade:'Carpentry',dur:1.5,dep:''},{item:'Exec touch-up',zone:'Executive',trade:'Painting',dur:2,dep:'17'}
+    ]},
+    {name:'Hospital Commissioning',crews:6,context:'A new hospital wing commissioning with 35 critical items across 8 zones. Six specialized crews must clear all items before patients can be admitted.',tasks:[
+        {item:'ER door sensor',zone:'ER',trade:'Electrical',dur:2,dep:''},{item:'ER handwash plumb',zone:'ER',trade:'Plumbing',dur:3,dep:''},{item:'ER wall paint',zone:'ER',trade:'Painting',dur:2,dep:''},{item:'ER fire panel',zone:'ER',trade:'Fire Safety',dur:4,dep:''},
+        {item:'ICU gas outlet',zone:'ICU',trade:'Plumbing',dur:3,dep:''},{item:'ICU HVAC balance',zone:'ICU',trade:'HVAC',dur:5,dep:''},{item:'ICU light dimmer',zone:'ICU',trade:'Electrical',dur:1.5,dep:''},{item:'ICU cabinet fix',zone:'ICU',trade:'Carpentry',dur:2,dep:''},
+        {item:'Ward A bed rail',zone:'Ward A',trade:'Carpentry',dur:1,dep:''},{item:'Ward A call button',zone:'Ward A',trade:'Electrical',dur:1.5,dep:''},{item:'Ward A paint',zone:'Ward A',trade:'Painting',dur:3,dep:''},{item:'Ward A toilet valve',zone:'Ward A',trade:'Plumbing',dur:2,dep:''},
+        {item:'Ward B ceiling tile',zone:'Ward B',trade:'Carpentry',dur:2,dep:''},{item:'Ward B sprinkler',zone:'Ward B',trade:'Fire Safety',dur:3,dep:'13'},{item:'Ward B outlet',zone:'Ward B',trade:'Electrical',dur:1,dep:''},{item:'Ward B paint',zone:'Ward B',trade:'Painting',dur:2.5,dep:'13'},
+        {item:'Surgical air handler',zone:'Surgical',trade:'HVAC',dur:6,dep:''},{item:'Surgical light mount',zone:'Surgical',trade:'Electrical',dur:3,dep:'17'},{item:'Surgical floor seal',zone:'Surgical',trade:'Carpentry',dur:4,dep:''},{item:'Surgical gas line',zone:'Surgical',trade:'Plumbing',dur:3,dep:''},
+        {item:'Lab fume hood',zone:'Lab',trade:'HVAC',dur:4,dep:''},{item:'Lab bench plumbing',zone:'Lab',trade:'Plumbing',dur:3,dep:''},{item:'Lab emergency shower',zone:'Lab',trade:'Plumbing',dur:2,dep:''},{item:'Lab data cabling',zone:'Lab',trade:'Electrical',dur:2,dep:''},{item:'Lab paint',zone:'Lab',trade:'Painting',dur:2,dep:'21'},
+        {item:'Pharmacy shelving',zone:'Pharmacy',trade:'Carpentry',dur:3,dep:''},{item:'Pharmacy HVAC',zone:'Pharmacy',trade:'HVAC',dur:3,dep:''},{item:'Pharmacy lock',zone:'Pharmacy',trade:'Carpentry',dur:1,dep:'26'},{item:'Pharmacy paint',zone:'Pharmacy',trade:'Painting',dur:2,dep:'26'},
+        {item:'Radiology shield door',zone:'Radiology',trade:'Carpentry',dur:5,dep:''},{item:'Radiology power',zone:'Radiology',trade:'Electrical',dur:4,dep:'30'},{item:'Radiology HVAC',zone:'Radiology',trade:'HVAC',dur:3,dep:''},{item:'Radiology paint',zone:'Radiology',trade:'Painting',dur:2,dep:'30'},{item:'Radiology fire alarm',zone:'Radiology',trade:'Fire Safety',dur:2,dep:''},{item:'Radiology plumbing',zone:'Radiology',trade:'Plumbing',dur:2,dep:''}
+    ]}
+];
+
+var currentScenarioIdx = 0, currentAlgo = 'lpt', allResults = [];
+
+function updateConfigLabel() {
+    var n = document.querySelectorAll('#taskTableBody tr').length;
+    document.getElementById('configLabel').textContent = n + ' Items \u00b7 ' + document.getElementById('crewSlider').value + ' Crews';
+}
+
+function renderTable(tasks) {
+    var tbody = document.getElementById('taskTableBody');
+    tbody.textContent = '';
+    for (var i = 0; i < tasks.length; i++) {
+        var t = tasks[i];
+        var tr = document.createElement('tr');
+        var zc = ZONE_COLORS[t.zone] || '#C5A059';
+        // Build cells using DOM methods
+        var td0 = document.createElement('td'); td0.style.cssText = 'color:var(--slate);font-family:"JetBrains Mono",monospace;font-size:0.72rem;'; td0.textContent = (i+1); tr.appendChild(td0);
+        var td1 = document.createElement('td'); var inp1 = document.createElement('input'); inp1.type = 'text'; inp1.value = t.item; inp1.style.cssText = inputStyle + 'width:120px;'; td1.appendChild(inp1); tr.appendChild(td1);
+        var td2 = document.createElement('td'); var dot = document.createElement('span'); dot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + zc + ';margin-right:4px;vertical-align:middle;'; td2.appendChild(dot); var inp2 = document.createElement('input'); inp2.type = 'text'; inp2.value = t.zone; inp2.style.cssText = inputStyle + 'width:80px;'; td2.appendChild(inp2); tr.appendChild(td2);
+        var td3 = document.createElement('td'); var inp3 = document.createElement('input'); inp3.type = 'text'; inp3.value = t.trade; inp3.style.cssText = inputStyle + 'width:75px;'; td3.appendChild(inp3); tr.appendChild(td3);
+        var td4 = document.createElement('td'); var inp4 = document.createElement('input'); inp4.type = 'number'; inp4.value = t.dur; inp4.min = '0.5'; inp4.max = '50'; inp4.step = '0.5'; inp4.style.cssText = inputStyle + 'width:50px;text-align:center;font-family:"JetBrains Mono",monospace;'; td4.appendChild(inp4); tr.appendChild(td4);
+        var td5 = document.createElement('td'); var inp5 = document.createElement('input'); inp5.type = 'text'; inp5.value = t.dep || ''; inp5.style.cssText = inputStyle + 'width:50px;text-align:center;'; inp5.placeholder = '\u2014'; inp5.title = 'Task # that must finish first'; td5.appendChild(inp5); tr.appendChild(td5);
+        var td6 = document.createElement('td'); var btn = document.createElement('button'); btn.onclick = function(){ removeTask(this); }; btn.style.cssText = 'background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;'; btn.title = 'Remove'; var ic = document.createElement('i'); ic.className = 'fas fa-times'; btn.appendChild(ic); td6.appendChild(btn); tr.appendChild(td6);
+        tbody.appendChild(tr);
+    }
+    updateConfigLabel();
+}
+
+function readTasksFromTable() {
+    var rows = document.querySelectorAll('#taskTableBody tr');
+    var tasks = [];
+    for (var i = 0; i < rows.length; i++) {
+        var inputs = rows[i].querySelectorAll('input');
+        var depStr = (inputs[4].value || '').trim();
+        var depIdx = depStr ? parseInt(depStr) - 1 : -1;
+        tasks.push({ id: i, item: inputs[0].value, zone: inputs[1].value, trade: inputs[2].value, dur: Math.max(0.5, parseFloat(inputs[3].value) || 1), dep: (depIdx >= 0 && depIdx < rows.length && depIdx !== i) ? depIdx : -1 });
+    }
+    return tasks;
+}
+
+function addTask() {
+    var tasks = readTasksFromTable();
+    var zones = Object.keys(ZONE_COLORS);
+    tasks.push({ item: 'New item ' + (tasks.length + 1), zone: zones[tasks.length % zones.length], trade: TRADES[tasks.length % TRADES.length], dur: 1 + Math.floor(Math.random() * 4), dep: '' });
+    renderTable(tasks);
+}
+function removeTask(btn) { if (document.querySelectorAll('#taskTableBody tr').length <= 1) return; btn.closest('tr').remove(); updateConfigLabel(); }
+function resetDefaults() { loadNamedScenario(currentScenarioIdx); }
+function randomizeTasks() { document.querySelectorAll('#taskTableBody tr').forEach(function(row) { row.querySelectorAll('input')[3].value = (0.5 + Math.floor(Math.random() * 10) * 0.5).toFixed(1); }); }
+
+function loadNamedScenario(idx) {
+    currentScenarioIdx = idx;
+    var scn = SCENARIOS[idx];
+    document.getElementById('crewSlider').value = scn.crews;
+    document.getElementById('crewVal').textContent = scn.crews;
+    document.getElementById('scenario-context').textContent = scn.context;
+    renderTable(scn.tasks);
+    clearResults(); drawEmpty();
+    document.querySelectorAll('.scenario-btn').forEach(function(btn, i) { btn.classList.toggle('active', i === idx); });
+}
+
+function selectAlgorithm(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('[data-algo]').forEach(function(btn) { btn.classList.toggle('active', btn.getAttribute('data-algo') === algo); });
+}
+
+function clearResults() {
+    allResults = [];
+    document.getElementById('resultsBody').textContent = '';
+    var placeholder = document.createElement('tr'); var ptd = document.createElement('td'); ptd.colSpan = 4; ptd.style.cssText = 'text-align:center;color:var(--slate);font-family:"Inter",sans-serif;'; ptd.textContent = 'Click Solve & Visualize'; placeholder.appendChild(ptd);
+    document.getElementById('resultsBody').appendChild(placeholder);
+    document.getElementById('scheduleDetail').textContent = 'Schedule details will appear here after solving.';
+    document.getElementById('business-panel').style.display = 'none';
+}
+
+// ── Solvers ──
+
+function computeEarliestStart(tasks) {
+    var n = tasks.length, earliest = new Array(n).fill(0);
+    for (var iter = 0; iter < n; iter++) {
+        for (var j = 0; j < n; j++) {
+            if (tasks[j].dep >= 0 && tasks[j].dep < n) earliest[j] = Math.max(earliest[j], earliest[tasks[j].dep] + tasks[tasks[j].dep].dur);
+        }
+    }
+    return earliest;
+}
+
+function solveLPT(tasks, M) {
+    var t0 = performance.now(), earliest = computeEarliestStart(tasks);
+    var sorted = tasks.map(function(t,i){return {idx:i,dur:t.dur,earliest:earliest[i]};}).sort(function(a,b){return b.dur - a.dur;});
+    var machines = []; for (var i = 0; i < M; i++) machines.push({tasks:[], load:0});
+    sorted.forEach(function(item) {
+        var bestM = 0, bestStart = Infinity;
+        for (var m = 0; m < M; m++) { var s = Math.max(machines[m].load, item.earliest); if (s < bestStart) { bestStart = s; bestM = m; } }
+        machines[bestM].tasks.push({idx:item.idx, start:bestStart, dur:item.dur}); machines[bestM].load = bestStart + item.dur;
+    });
+    var makespan = Math.max.apply(null, machines.map(function(m){return m.load;}));
+    var totalWork = tasks.reduce(function(s,t){return s+t.dur;},0);
+    return {machines:machines, makespan:makespan, utilization: makespan > 0 ? (totalWork / (M * makespan) * 100) : 0, elapsed:performance.now()-t0, method:'LPT (Longest First)', M:M, tasks:tasks};
+}
+
+function solveListScheduling(tasks, M) {
+    var t0 = performance.now(), earliest = computeEarliestStart(tasks);
+    var zones = []; tasks.forEach(function(t) { if (zones.indexOf(t.zone) === -1) zones.push(t.zone); });
+    var sorted = tasks.map(function(t,i){return {idx:i,dur:t.dur,earliest:earliest[i],zone:t.zone};}).sort(function(a,b) { var za = zones.indexOf(a.zone), zb = zones.indexOf(b.zone); return za !== zb ? za - zb : b.dur - a.dur; });
+    var machines = []; for (var i = 0; i < M; i++) machines.push({tasks:[], load:0});
+    sorted.forEach(function(item) {
+        var bestM = 0, bestStart = Infinity;
+        for (var m = 0; m < M; m++) { var s = Math.max(machines[m].load, item.earliest); if (s < bestStart) { bestStart = s; bestM = m; } }
+        machines[bestM].tasks.push({idx:item.idx, start:bestStart, dur:item.dur}); machines[bestM].load = bestStart + item.dur;
+    });
+    var makespan = Math.max.apply(null, machines.map(function(m){return m.load;}));
+    var totalWork = tasks.reduce(function(s,t){return s+t.dur;},0);
+    return {machines:machines, makespan:makespan, utilization: makespan > 0 ? (totalWork / (M * makespan) * 100) : 0, elapsed:performance.now()-t0, method:'List Scheduling (Zone)', M:M, tasks:tasks};
+}
+
+function evaluateAssignment(tasks, assign, M) {
+    var earliest = computeEarliestStart(tasks);
+    var machines = []; for (var i = 0; i < M; i++) machines.push({tasks:[], load:0});
+    var scheduled = new Array(tasks.length).fill(false), completionTime = new Array(tasks.length).fill(0), remaining = tasks.length;
+    while (remaining > 0) {
+        var found = false;
+        for (var j = 0; j < tasks.length; j++) {
+            if (scheduled[j]) continue;
+            if (tasks[j].dep >= 0 && !scheduled[tasks[j].dep]) continue;
+            var m = assign[j], predEnd = tasks[j].dep >= 0 ? completionTime[tasks[j].dep] : 0;
+            var start = Math.max(machines[m].load, predEnd);
+            machines[m].tasks.push({idx:j, start:start, dur:tasks[j].dur}); machines[m].load = start + tasks[j].dur;
+            completionTime[j] = start + tasks[j].dur; scheduled[j] = true; remaining--; found = true;
+        }
+        if (!found) break;
+    }
+    var makespan = Math.max.apply(null, machines.map(function(m){return m.load;}));
+    var totalWork = tasks.reduce(function(s,t){return s+t.dur;},0);
+    return {machines:machines, makespan:makespan, utilization: makespan > 0 ? (totalWork / (M * makespan) * 100) : 0, M:M, tasks:tasks};
+}
+
+function solveSA(tasks, M) {
+    var t0 = performance.now(), best = solveLPT(tasks, M);
+    var assign = new Array(tasks.length).fill(0);
+    best.machines.forEach(function(machine, mIdx) { machine.tasks.forEach(function(t) { assign[t.idx] = mIdx; }); });
+    var bestMakespan = best.makespan, curAssign = assign.slice(), curMakespan = bestMakespan;
+    var T = bestMakespan * 0.5, alpha = 0.97, iterations = Math.min(5000, tasks.length * 200);
+    for (var iter = 0; iter < iterations; iter++) {
+        var taskIdx = Math.floor(Math.random() * tasks.length), newMachine = Math.floor(Math.random() * M);
+        if (newMachine === curAssign[taskIdx]) continue;
+        var oldMachine = curAssign[taskIdx]; curAssign[taskIdx] = newMachine;
+        var newResult = evaluateAssignment(tasks, curAssign, M), delta = newResult.makespan - curMakespan;
+        if (delta < 0 || Math.random() < Math.exp(-delta / T)) { curMakespan = newResult.makespan; if (curMakespan < bestMakespan) { bestMakespan = curMakespan; assign = curAssign.slice(); } }
+        else { curAssign[taskIdx] = oldMachine; }
+        T *= alpha;
+    }
+    var result = evaluateAssignment(tasks, assign, M);
+    result.method = 'Simulated Annealing'; result.elapsed = performance.now() - t0;
+    return result;
+}
+
+function runSolver() {
+    var tasks = readTasksFromTable(), M = parseInt(document.getElementById('crewSlider').value);
+    if (tasks.length === 0) return;
+    var lptResult = solveLPT(tasks, M), listResult = solveListScheduling(tasks, M), saResult = solveSA(tasks, M);
+    allResults = [lptResult, listResult, saResult];
+    var bestMakespan = Math.min(lptResult.makespan, listResult.makespan, saResult.makespan);
+    var selected = currentAlgo === 'lpt' ? lptResult : currentAlgo === 'list' ? listResult : saResult;
+    drawGantt(selected);
+
+    var tbody = document.getElementById('resultsBody');
+    tbody.textContent = '';
+    allResults.forEach(function(r) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td'); td1.className = 'algo-label'; td1.textContent = r.method; tr.appendChild(td1);
+        var td2 = document.createElement('td'); if (r.makespan === bestMakespan) td2.className = 'best-val'; td2.textContent = r.makespan.toFixed(1) + 'h'; tr.appendChild(td2);
+        var td3 = document.createElement('td'); td3.textContent = r.utilization.toFixed(1) + '%'; tr.appendChild(td3);
+        var td4 = document.createElement('td'); td4.textContent = r.elapsed.toFixed(1) + 'ms'; tr.appendChild(td4);
+        tr.style.cursor = 'pointer';
+        tr.onclick = (function(result) { return function() { drawGantt(result); renderScheduleDetail(result); }; })(r);
+        tbody.appendChild(tr);
+    });
+    renderScheduleDetail(selected);
+    document.getElementById('solver-status').textContent = 'Solved. Best makespan: ' + bestMakespan.toFixed(1) + 'h. Click a row to visualize that algorithm.';
+    document.getElementById('business-panel').style.display = '';
+    updateBusinessPanel();
+}
+
+function renderScheduleDetail(result) {
+    var lines = [];
+    result.machines.forEach(function(machine, mIdx) {
+        lines.push('Crew ' + (mIdx + 1) + ' (load: ' + machine.load.toFixed(1) + 'h):');
+        machine.tasks.forEach(function(t) {
+            var task = result.tasks[t.idx];
+            lines.push('  [' + t.start.toFixed(1) + '\u2013' + (t.start + t.dur).toFixed(1) + 'h] ' + task.item + ' (' + task.zone + ', ' + task.trade + ')');
+        });
+    });
+    document.getElementById('scheduleDetail').textContent = lines.join('\n');
+}
+
+function updateBusinessPanel() {
+    if (allResults.length === 0) return;
+    var makespans = allResults.map(function(r){return r.makespan;}), best = Math.min.apply(null, makespans), worst = Math.max.apply(null, makespans), gap = worst - best;
+    var costPerDay = parseFloat(document.getElementById('biz-unit-cost').value) || 8000;
+    var opsPerYear = parseFloat(document.getElementById('biz-ops-per-year').value) || 6;
+    var costPerHour = costPerDay / 8;
+    document.getElementById('biz-gap').textContent = gap.toFixed(1) + 'h';
+    document.getElementById('biz-daily').textContent = '\u20ac' + Math.round(gap * costPerHour).toLocaleString();
+    document.getElementById('biz-annual').textContent = '\u20ac' + Math.round(gap * costPerHour * opsPerYear).toLocaleString();
+}
+
+// ── Gantt Drawing ──
+
+function drawEmpty() {
+    ctx.fillStyle = '#112240'; ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'rgba(248,249,250,0.3)'; ctx.font = '13px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Click "Solve & Visualize" to generate the Gantt chart', CW / 2, CH / 2);
+}
+
+function drawGantt(result) {
+    ctx.fillStyle = '#112240'; ctx.fillRect(0, 0, CW, CH);
+    var tasks = result.tasks, machines = result.machines, M = result.M, makespan = result.makespan;
+    if (makespan === 0) { drawEmpty(); return; }
+    var PAD = {l: 90, r: 30, t: 40, b: 40}, chartW = CW - PAD.l - PAD.r, chartH = CH - PAD.t - PAD.b;
+    var rowH = Math.min(chartH / M, 50), barH = rowH * 0.65;
+
+    ctx.fillStyle = 'rgba(248,249,250,0.6)'; ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(result.method + '  \u2014  Makespan: ' + makespan.toFixed(1) + 'h', CW / 2, 22);
+
+    var timeStep = makespan <= 10 ? 1 : makespan <= 30 ? 2 : makespan <= 60 ? 5 : 10;
+    ctx.strokeStyle = 'rgba(197,160,89,0.15)'; ctx.lineWidth = 0.5; ctx.fillStyle = '#8892B0'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+    for (var t = 0; t <= makespan; t += timeStep) { var x = PAD.l + (t / makespan) * chartW; ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + M * rowH); ctx.stroke(); ctx.fillText(t + 'h', x, PAD.t + M * rowH + 16); }
+
+    ctx.textAlign = 'right'; ctx.font = '11px Inter, sans-serif';
+    for (var m = 0; m < M; m++) { ctx.fillStyle = CREW_COLORS[m % CREW_COLORS.length]; ctx.fillText('Crew ' + (m + 1), PAD.l - 12, PAD.t + m * rowH + rowH / 2 + 4); }
+
+    machines.forEach(function(machine, mIdx) {
+        machine.tasks.forEach(function(tsk) {
+            var task = tasks[tsk.idx], color = ZONE_COLORS[task.zone] || CREW_COLORS[mIdx % CREW_COLORS.length];
+            var x = PAD.l + (tsk.start / makespan) * chartW, w = (tsk.dur / makespan) * chartW, y = PAD.t + mIdx * rowH + (rowH - barH) / 2;
+            ctx.fillStyle = color; ctx.globalAlpha = 0.7; ctx.fillRect(x, y, Math.max(w - 1, 2), barH); ctx.globalAlpha = 1;
+            ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.strokeRect(x, y, Math.max(w - 1, 2), barH);
+            if (w > 30) { ctx.fillStyle = '#F8F9FA'; ctx.font = '8px Inter, sans-serif'; ctx.textAlign = 'left'; var label = task.item; if (label.length > 15) label = label.substring(0, 14) + '\u2026'; ctx.fillText(label, x + 3, y + barH / 2 + 3); }
+        });
+    });
+
+    // Dependency arrows
+    ctx.strokeStyle = 'rgba(197,160,89,0.5)'; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]);
+    tasks.forEach(function(task, j) {
+        if (task.dep < 0) return;
+        var predEnd = null, succStart = null;
+        machines.forEach(function(machine, mIdx) {
+            machine.tasks.forEach(function(tsk) {
+                if (tsk.idx === task.dep) predEnd = { x: PAD.l + ((tsk.start + tsk.dur) / makespan) * chartW, y: PAD.t + mIdx * rowH + rowH / 2 };
+                if (tsk.idx === j) succStart = { x: PAD.l + (tsk.start / makespan) * chartW, y: PAD.t + mIdx * rowH + rowH / 2 };
+            });
+        });
+        if (predEnd && succStart) {
+            ctx.beginPath(); ctx.moveTo(predEnd.x, predEnd.y); ctx.lineTo(succStart.x, succStart.y); ctx.stroke();
+            var angle = Math.atan2(succStart.y - predEnd.y, succStart.x - predEnd.x);
+            ctx.beginPath(); ctx.moveTo(succStart.x, succStart.y);
+            ctx.lineTo(succStart.x - 6 * Math.cos(angle - 0.4), succStart.y - 6 * Math.sin(angle - 0.4));
+            ctx.lineTo(succStart.x - 6 * Math.cos(angle + 0.4), succStart.y - 6 * Math.sin(angle + 0.4));
+            ctx.closePath(); ctx.fillStyle = 'rgba(197,160,89,0.5)'; ctx.fill();
+        }
+    });
+    ctx.setLineDash([]);
+
+    // Legend
+    var legendEl = document.getElementById('ganttLegend');
+    legendEl.textContent = '';
+    var zones = []; tasks.forEach(function(t) { if (zones.indexOf(t.zone) === -1) zones.push(t.zone); });
+    zones.forEach(function(z) {
+        var c = ZONE_COLORS[z] || '#C5A059';
+        var div = document.createElement('div'); div.className = 'gantt-legend-item';
+        var swatch = document.createElement('span'); swatch.className = 'gantt-legend-swatch'; swatch.style.background = c; div.appendChild(swatch);
+        div.appendChild(document.createTextNode(z)); legendEl.appendChild(div);
+    });
+}
+
+// ── Scroll Animations & Init ──
+var observer = new IntersectionObserver(function(entries) { entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
+loadNamedScenario(0); drawEmpty();
+</script>
+
+<script>
+(function() {
+    'use strict';
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // Particle Network Background
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [], PARTICLE_COUNT = 40, CONNECTION_DIST = 120;
+        function resizePC() { pCanvas.width = heroEl.offsetWidth; pCanvas.height = heroEl.offsetHeight; }
+        resizePC(); window.addEventListener('resize', resizePC);
+        function Particle() { this.x = Math.random() * pCanvas.width; this.y = Math.random() * pCanvas.height; this.vx = (Math.random()-0.5)*0.4; this.vy = (Math.random()-0.5)*0.4; this.radius = Math.random()*2+1; }
+        Particle.prototype.update = function() { this.x += this.vx; this.y += this.vy; if (this.x<0||this.x>pCanvas.width) this.vx*=-1; if (this.y<0||this.y>pCanvas.height) this.vy*=-1; };
+        Particle.prototype.draw = function() { pCtx.beginPath(); pCtx.arc(this.x,this.y,this.radius,0,Math.PI*2); pCtx.fillStyle='rgba(197,160,89,0.35)'; pCtx.fill(); };
+        for (var pi=0;pi<PARTICLE_COUNT;pi++) particles.push(new Particle());
+        function animP() {
+            pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+            particles.forEach(function(p){p.update();p.draw();});
+            for (var i=0;i<particles.length;i++) for (var j=i+1;j<particles.length;j++) {
+                var dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+                if (dist<CONNECTION_DIST){pCtx.beginPath();pCtx.moveTo(particles[i].x,particles[i].y);pCtx.lineTo(particles[j].x,particles[j].y);pCtx.strokeStyle='rgba(197,160,89,'+(0.12*(1-dist/CONNECTION_DIST))+')';pCtx.lineWidth=0.6;pCtx.stroke();}
+            }
+            requestAnimationFrame(animP);
+        }
+        animP();
+    }
+
+    // Scroll Progress + Scroll-to-Top
+    var progressBar = document.getElementById('scrollProgress'), scrollTopBtn = document.getElementById('scrollTopBtn');
+    function onScroll() {
+        var scrollTop = window.scrollY, docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (progressBar) progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('visible', scrollTop > 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    if (scrollTopBtn) scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
+</script>
+</body>
+</html>

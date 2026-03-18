@@ -1,0 +1,1550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Material Procurement Planning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Lot Sizing demo for construction material procurement using Wagner-Whitin, Silver-Meal, and Lot-for-Lot algorithms.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/construction-procurement-planning.html">
+    <meta property="og:title" content="Material Procurement Planning | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Lot Sizing demo for construction material procurement using Wagner-Whitin, Silver-Meal, and Lot-for-Lot algorithms.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Material Procurement Planning | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Lot Sizing demo for construction material procurement using Wagner-Whitin, Silver-Meal, and Lot-for-Lot algorithms.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav { padding: 1rem 0; background: var(--midnight-light); border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        /* ── Hero Section ── */
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%); pointer-events: none; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 700px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        /* ── Section Headers ── */
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        /* ── Formulation Block ── */
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Decision Chain ── */
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); font-weight: 500; text-align: center; min-width: 110px; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); }
+        .solver-panel-header h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        @media (max-width: 768px) { .solver-row { grid-template-columns: 1fr; } .hero h1 { font-size: 2.2rem; } }
+
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; font-weight: 500; }
+
+        .solver-slider { -webkit-appearance: none; appearance: none; height: 4px; background: var(--midnight-lighter); border-radius: 2px; outline: none; width: 140px; }
+        .solver-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 16px; height: 16px; border-radius: 50%; background: var(--gold); cursor: pointer; }
+        .solver-slider::-moz-range-thumb { width: 16px; height: 16px; border-radius: 50%; background: var(--gold); cursor: pointer; border: none; }
+        .size-display { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: var(--gold); min-width: 32px; text-align: center; }
+
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-type { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+        .bin-output { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--slate-light); margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; line-height: 1.8; max-height: 200px; overflow-y: auto; white-space: pre-line; }
+
+        /* ── Algorithm Cards ── */
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.8rem; color: var(--ivory); }
+        .algo-card .algo-complexity { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); margin-bottom: 1rem; display: inline-block; }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+
+        /* ── Complexity Box ── */
+        .complexity-box { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-top: 2rem; }
+        .complexity-box h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 1.2rem; color: var(--ivory); }
+        .complexity-box h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .complexity-list { list-style: none; padding: 0; }
+        .complexity-list li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before { content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; color: var(--gold); font-size: 0.6rem; top: 0.75rem; }
+
+        /* ── References ── */
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel { background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02)); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 3rem; text-align: center; }
+        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; letter-spacing: 2px; margin-bottom: 1rem; color: var(--ivory); }
+        .cta-panel p { color: var(--slate-light); font-size: 0.95rem; max-width: 650px; margin: 0 auto 2rem; line-height: 1.8; }
+        .cta-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+        .cta-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.8rem; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; }
+        .cta-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Back Link ── */
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        /* ── Footer ── */
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle { position: relative; width: 44px; height: 24px; background: var(--midnight-lighter); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.4s ease; display: flex; align-items: center; padding: 0 3px; margin-left: 0.8rem; flex-shrink: 0; }
+        .theme-toggle::before { content: ''; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35); box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+        html[data-theme="light"] { --midnight: #F5F1EB; --midnight-light: #EDE8E0; --midnight-lighter: #E3DDD4; --ivory: #1a1a2e; --slate: #5a6178; --slate-light: #3d4155; }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Command Palette ── */
+        .cmd-palette-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh; }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette { width: 90%; max-width: 580px; background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 12px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); overflow: hidden; animation: cmdSlideIn 0.2s ease-out; }
+        @keyframes cmdSlideIn { from { opacity: 0; transform: translateY(-20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .cmd-input-wrap { display: flex; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid rgba(197, 160, 89, 0.15); gap: 0.8rem; }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input { flex: 1; background: transparent; border: none; outline: none; color: var(--ivory); font-family: 'Inter', sans-serif; font-size: 1rem; caret-color: var(--gold); }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; padding: 2px 6px; border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 4px; color: var(--slate); background: rgba(197, 160, 89, 0.05); }
+        .cmd-results { max-height: 340px; overflow-y: auto; padding: 0.5rem; }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label { font-size: 0.65rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; padding: 0.6rem 0.8rem 0.3rem; font-weight: 600; }
+        .cmd-result { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; text-decoration: none; color: var(--ivory); }
+        .cmd-result:hover, .cmd-result.active { background: rgba(197, 160, 89, 0.12); color: var(--ivory); }
+        .cmd-result .cmd-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(197, 160, 89, 0.08); color: var(--gold); font-size: 0.85rem; flex-shrink: 0; }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cmd-result .cmd-subtitle { font-size: 0.72rem; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cmd-result .cmd-badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+        .cmd-empty { padding: 2rem; text-align: center; color: var(--slate); font-size: 0.88rem; }
+        .cmd-footer { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1.2rem; border-top: 1px solid rgba(197, 160, 89, 0.1); font-size: 0.68rem; color: var(--slate); }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* ── Scroll Progress ── */
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .scroll-top-btn { position: fixed; bottom: 5rem; right: 2rem; width: 42px; height: 42px; border-radius: 50%; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); color: var(--gold); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 998; opacity: 0; transform: translateY(10px); pointer-events: none; }
+        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4); }
+
+        .nav-search-trigger { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 6px; background: rgba(197, 160, 89, 0.05); color: var(--slate); font-size: 0.78rem; cursor: pointer; transition: all 0.3s; margin-left: 0.5rem; white-space: nowrap; }
+        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .nav-search-trigger .search-shortcut { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 1px 5px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 3px; background: rgba(197, 160, 89, 0.05); }
+
+        /* ── Preset Gallery ── */
+        .preset-gallery { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-top: 0.5rem; }
+        .preset-btn { font-size: 0.68rem; padding: 5px 12px; border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; background: transparent; color: var(--slate-light); cursor: pointer; transition: all 0.2s; font-family: 'Inter', sans-serif; display: flex; align-items: center; gap: 0.3rem; }
+        .preset-btn:hover { border-color: var(--gold); color: var(--gold); background: rgba(197, 160, 89, 0.05); }
+        .preset-btn.active { background: rgba(197, 160, 89, 0.12); border-color: var(--gold); color: var(--gold); }
+
+        /* ── Business Panel ── */
+        .business-panel { margin-top: 1.5rem; padding: 1.2rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; background: rgba(197,160,89,0.04); }
+        .biz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+        .biz-card { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .biz-val { font-size: 1.5rem; font-weight: 600; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+        .biz-label-text { font-size: 0.75rem; color: var(--slate-light); line-height: 1.4; }
+        .biz-label-text small { color: var(--slate); }
+        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+        .biz-label { font-size: 0.78rem; color: var(--slate-light); display: flex; align-items: center; }
+        .business-controls { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+
+        /* ── Sparkline ── */
+        .sparkline-wrap { margin: 0.5rem 0; padding: 0.5rem; background: rgba(10, 25, 47, 0.3); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; }
+        .sparkline-wrap canvas { width: 100%; height: 60px; display: block; }
+
+        /* ── Solve Animation ── */
+        @keyframes resultFadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .results-table tbody tr { animation: resultFadeIn 0.3s ease-out both; }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+
+        /* ── Hero Particles ── */
+        .hero-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .hero > .container { position: relative; z-index: 1; }
+
+        @media (max-width: 576px) { .scroll-top-btn { bottom: 4rem; right: 1rem; } .nav-search-trigger .search-shortcut { display: none; } }
+    </style>
+</head>
+<body>
+
+<!-- ── Navigation ── -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/supply-chain.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&CommandKey;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="construction.html">Construction</a></li>
+            <li>Procurement Planning</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <canvas class="hero-particles" id="heroParticles"></canvas>
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-boxes"></i></div>
+        <h1>Material Procurement <span>Planning</span></h1>
+        <p class="hero-subtitle">Lot Sizing &middot; Wagner-Whitin Algorithm</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Construction material waste from poor procurement timing runs 8&ndash;12% of total material cost,
+            with storage fees adding &euro;15&ndash;&euro;40 per cubic meter per week on congested urban sites.
+            Every project phase, a procurement manager must decide <strong>when and how much to order</strong>
+            &mdash; balancing setup/delivery costs against holding costs and storage constraints. This is the
+            <strong>dynamic lot sizing problem</strong> &mdash; solvable exactly by Wagner-Whitin in
+            O(T&sup2;) &mdash; where ordering too early wastes storage and too late causes delays.
+        </p>
+    </div>
+</section>
+
+<!-- ── Decision Chain ── -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>Construction planning chain &mdash; the highlighted step is what this page optimizes</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">
+                Site Selection
+                <span class="chain-sub">Facility location</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Portfolio Selection
+                <span class="chain-sub">Project prioritization</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Project Scheduling
+                <span class="chain-sub">RCPSP / CPM</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">
+                Procurement
+                <span class="chain-sub">Lot sizing &amp; ordering</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Site Operations
+                <span class="chain-sub">Execution &amp; logistics</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 2. The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Dynamic lot sizing for construction material procurement</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Consider a <strong>12-week project horizon</strong> for an office tower construction.
+                Each week has a known demand for structural steel measured in tonnes. Every delivery
+                incurs a fixed <strong>setup cost of &euro;2,500</strong> (truck dispatch, crane time,
+                inspection, and paperwork) regardless of order size. Holding unused material on-site
+                costs <strong>&euro;45 per tonne per week</strong> in storage space, weatherproofing,
+                and insurance. The procurement manager must decide the <strong>order quantities for each
+                week</strong> to satisfy all demand at minimum total cost.
+            </p>
+            <p>
+                The key trade-off: <strong>order frequently</strong> and pay high setup costs with
+                minimal inventory, or <strong>batch orders</strong> and pay lower setup costs but
+                carry inventory. The Wagner-Whitin algorithm finds the exact optimum by exploiting
+                the zero-inventory property &mdash; it is always optimal to begin a new order only
+                when inventory reaches zero.
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Dynamic Lot Sizing Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>t</sub> (K &middot; &delta;<sub>t</sub> + h &middot; I<sub>t</sub>)</span> &nbsp; <span class="comment">// total setup + holding cost</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">I<sub>t</sub> = I<sub>t-1</sub> + x<sub>t</sub> &minus; d<sub>t</sub></span> &nbsp;&nbsp; <span class="comment">// inventory balance</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>t</sub> &le; M &middot; &delta;<sub>t</sub></span> &nbsp;&nbsp; <span class="comment">// order only when setup is paid</span><br>
+                &nbsp;&nbsp;<span class="variable">I<sub>t</sub> &ge; 0</span> &nbsp;&nbsp; <span class="comment">// no backorders</span><br>
+                &nbsp;&nbsp;<span class="variable">&delta;<sub>t</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary setup indicator</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">K</span>
+                is the fixed setup/delivery cost,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">h</span>
+                is the per-unit holding cost per period,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>t</sub></span>
+                is the demand in period <em>t</em>,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">x<sub>t</sub></span>
+                is the order quantity, and
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">I<sub>t</sub></span>
+                is the ending inventory.
+            </p>
+
+            <!-- TODO: Link to lot sizing theory page when available -->
+            <!-- TODO: Python solver integration — no Python file exists for this problem yet -->
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Optimize material procurement across the project horizon</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-boxes"></i> Lot Sizing Optimizer</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">12 Weeks &middot; K=&euro;2,500</span>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario Presets -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="preset-gallery" style="margin-bottom:1.2rem;">
+                    <button class="preset-btn active" id="preset-steel"><i class="fas fa-building" style="font-size:0.6rem"></i> Structural Steel &mdash; Office Tower</button>
+                    <button class="preset-btn" id="preset-concrete"><i class="fas fa-parking" style="font-size:0.6rem"></i> Ready-Mix Concrete &mdash; Parking Garage</button>
+                    <button class="preset-btn" id="preset-panels"><i class="fas fa-home" style="font-size:0.6rem"></i> Precast Panels &mdash; Residential Complex</button>
+                </div>
+
+                <!-- Cost Parameters -->
+                <div class="solver-row">
+                    <div>
+                        <div class="solver-section-label">Setup Cost (K)</div>
+                        <div style="display:flex;align-items:center;gap:0.7rem;">
+                            <input type="range" class="solver-slider" id="setup-slider" min="500" max="8000" value="2500" step="100" style="width:180px;">
+                            <span class="size-display" id="setup-display">&euro;2,500</span>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Holding Cost (h) per unit/week</div>
+                        <div style="display:flex;align-items:center;gap:0.7rem;">
+                            <input type="range" class="solver-slider" id="hold-slider" min="5" max="150" value="45" step="5" style="width:180px;">
+                            <span class="size-display" id="hold-display">&euro;45</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Demand Table -->
+                <div class="solver-section-label">Weekly Demand</div>
+                <div style="overflow-x:auto;margin-bottom:0.5rem;">
+                    <table class="results-table" id="demand-table">
+                        <thead><tr id="demandHeaderRow"></tr></thead>
+                        <tbody><tr id="demandInputRow"></tr></tbody>
+                    </table>
+                </div>
+
+                <!-- Demand Sparkline -->
+                <div class="sparkline-wrap">
+                    <canvas id="sparkCanvas" height="60"></canvas>
+                </div>
+
+                <!-- Algorithms -->
+                <div class="solver-section-label" style="margin-top:1rem;">Algorithm</div>
+                <div class="algo-select" id="algoSelect">
+                    <button class="algo-chip selected" data-algo="ww">Wagner-Whitin <span class="chip-type">(Exact DP)</span></button>
+                    <button class="algo-chip" data-algo="sm">Silver-Meal <span class="chip-type">(Heuristic)</span></button>
+                    <button class="algo-chip" data-algo="lfl">Lot-for-Lot <span class="chip-type">(Baseline)</span></button>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip active" id="solveBtn" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                </button>
+
+                <!-- Lot Plan Canvas -->
+                <div class="solver-section-label">Lot Plan &amp; Inventory</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="lotCanvas" width="900" height="400"></canvas>
+                </div>
+                <p class="solver-status" id="solver-status">Ready. Click &ldquo;Solve &amp; Compare All Algorithms&rdquo; to run.</p>
+
+                <!-- Results -->
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Comparison</div>
+                        <table class="results-table" id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Total Cost</th>
+                                    <th>Deliveries</th>
+                                    <th>Avg Inventory</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="4" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Click Solve &amp; Compare All Algorithms</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Order Schedule</div>
+                        <div class="bin-output" id="order-output">Order schedule will appear here after solving.</div>
+                    </div>
+                </div>
+
+                <!-- Business Panel -->
+                <div class="business-panel" id="business-panel" style="display:none">
+                    <div class="solver-section-label" style="margin-top:0">
+                        <i class="fas fa-chart-line" style="color:var(--gold);margin-right:0.5rem"></i>
+                        What this means for your project
+                    </div>
+                    <div class="business-controls">
+                        <label class="biz-label">
+                            Cost per delivery (&euro;)
+                            <input type="number" id="biz-delivery-cost" value="2500" min="100" max="50000" step="100"
+                                   style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" readonly>
+                        </label>
+                        <label class="biz-label">
+                            Deliveries per project
+                            <input type="number" id="biz-deliveries" value="12" min="1" max="100" step="1"
+                                   style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" readonly>
+                        </label>
+                    </div>
+                    <div class="biz-cards">
+                        <div class="biz-card">
+                            <span class="biz-val" id="biz-savings">&mdash;</span>
+                            <span class="biz-label-text">Savings vs Lot-for-Lot<br><small>Wagner-Whitin optimum</small></span>
+                        </div>
+                        <div class="biz-card">
+                            <span class="biz-val" id="biz-deliveries-val">&mdash;</span>
+                            <span class="biz-label-text">Fewer deliveries<br><small>vs weekly ordering</small></span>
+                        </div>
+                        <div class="biz-card">
+                            <span class="biz-val" id="biz-pct">&mdash;</span>
+                            <span class="biz-label-text">Cost reduction<br><small>percentage saved</small></span>
+                        </div>
+                    </div>
+                    <div class="biz-disclaimer">Values are illustrative &mdash; actual savings depend on site-specific parameters.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>From exact dynamic programming to simple heuristics</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="algo-card">
+                <div class="algo-tag">Exact</div>
+                <h3>Wagner-Whitin Algorithm</h3>
+                <span class="algo-complexity">O(T&sup2;) &nbsp;|&nbsp; Optimal solution guaranteed</span>
+                <p>
+                    A dynamic programming approach that exploits the <strong>zero-inventory ordering
+                    (ZIO) property</strong>: in an optimal plan, a new order is placed only when
+                    ending inventory is zero. The algorithm builds a cost matrix
+                    <em>C(i, j)</em> representing the minimum cost of covering demands from period
+                    <em>i</em> through <em>j</em> with a single order placed in period <em>i</em>,
+                    then finds the globally optimal partition of the horizon into order intervals.
+                    Published by Wagner &amp; Whitin in 1958, it remains the gold standard for
+                    uncapacitated lot sizing.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>Silver-Meal Heuristic</h3>
+                <span class="algo-complexity">O(T) &nbsp;|&nbsp; Myopic forward pass</span>
+                <p>
+                    A greedy forward-pass heuristic that decides how many future periods to cover
+                    with each order. Starting from the current period, it extends the order horizon
+                    one period at a time, computing the <strong>average cost per period</strong>
+                    (setup cost plus cumulative holding cost divided by the number of periods covered).
+                    It stops extending when the average cost begins to increase and places the order
+                    covering all periods up to that point. Simple, fast, and often near-optimal for
+                    smooth demand patterns.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Baseline</div>
+                <h3>Lot-for-Lot (L4L)</h3>
+                <span class="algo-complexity">O(T) &nbsp;|&nbsp; Zero inventory policy</span>
+                <p>
+                    The simplest possible policy: <strong>order exactly what is needed each period</strong>.
+                    Every period with positive demand triggers a separate delivery, resulting in
+                    zero holding cost but maximum setup cost. L4L serves as the <strong>upper bound
+                    baseline</strong> &mdash; any reasonable batching heuristic should do at least
+                    as well. It is optimal only when setup costs are negligible relative to holding
+                    costs.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. Real-World Complexity ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why construction procurement goes beyond textbook lot sizing</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-hard-hat"></i> Beyond the Basic Model</h3>
+                <ul class="complexity-list">
+                    <li><strong>Capacity constraints</strong> &mdash; Limited site storage, truck payloads, and crane availability cap order sizes per delivery</li>
+                    <li><strong>Quantity discounts</strong> &mdash; Suppliers offer tiered pricing; larger orders reduce per-unit cost but increase holding expense</li>
+                    <li><strong>Lead times</strong> &mdash; Materials must be ordered weeks in advance; lead times vary by supplier and material type</li>
+                    <li><strong>Perishability &amp; shelf life</strong> &mdash; Ready-mix concrete sets within hours; adhesives and sealants have limited shelf life</li>
+                    <li><strong>Multi-material coordination</strong> &mdash; Steel, concrete, and formwork must arrive in sync with the construction schedule</li>
+                    <li><strong>Weather uncertainty</strong> &mdash; Rain delays shift demand forward; procurement plans must accommodate schedule slippage</li>
+                    <li><strong>Cash flow constraints</strong> &mdash; Progress billing cycles and payment terms limit when materials can be purchased</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational works in lot sizing</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Wagner, H. M. &amp; Whitin, T. M.</span> (1958).
+                    <span class="ref-title">&ldquo;Dynamic version of the economic lot size model.&rdquo;</span>
+                    <span class="ref-journal">Management Science, 5(1), 89&ndash;96.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Silver, E. A. &amp; Meal, H. C.</span> (1973).
+                    <span class="ref-title">&ldquo;A heuristic for selecting lot size quantities for the case of a deterministic time-varying demand rate and discrete opportunities for replenishment.&rdquo;</span>
+                    <span class="ref-journal">Production and Inventory Management, 14(2), 64&ndash;74.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. CTA ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize your construction procurement?</h3>
+            <p>
+                From lot sizing to project scheduling and resource leveling,
+                mathematical modeling can transform your construction supply chain.
+                Let&rsquo;s discuss how Operations Research can work for you.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Disclaimer ── -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. Material types, demands, and cost parameters are
+            representative scenarios for educational purposes and do not reflect any specific
+            construction project.
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="construction.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+
+<!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
+<div class="scroll-progress" id="scrollProgress"></div>
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top"><i class="fas fa-chevron-up"></i></button>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Material Procurement Planning — Lot Sizing Interactive Demo
+// ═══════════════════════════════════════════════════════════════
+(function() {
+    'use strict';
+
+    var canvas = document.getElementById('lotCanvas');
+    var ctx = canvas.getContext('2d');
+    var dpr = window.devicePixelRatio || 1;
+    var CW = 900, CH = 400;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + 'px';
+    canvas.style.height = CH + 'px';
+    ctx.scale(dpr, dpr);
+
+    var ALGO_COLORS = { ww: '#64ffda', sm: '#C5A059', lfl: '#ff6b6b' };
+    var ALGO_NAMES  = { ww: 'Wagner-Whitin', sm: 'Silver-Meal', lfl: 'Lot-for-Lot' };
+
+    var SCENARIOS = {
+        steel: {
+            name: 'Structural Steel \u2014 Office Tower',
+            periods: 12,
+            demand: [20, 25, 15, 30, 35, 10, 40, 20, 25, 30, 15, 20],
+            setupCost: 2500, holdCost: 45, unit: 'tonnes'
+        },
+        concrete: {
+            name: 'Ready-Mix Concrete \u2014 Parking Garage',
+            periods: 8,
+            demand: [0, 80, 0, 60, 0, 90, 0, 50],
+            setupCost: 1800, holdCost: 30, unit: 'm\u00B3'
+        },
+        panels: {
+            name: 'Precast Panels \u2014 Residential Complex',
+            periods: 10,
+            demand: [50, 45, 40, 35, 30, 20, 15, 10, 5, 5],
+            setupCost: 3200, holdCost: 60, unit: 'panels'
+        }
+    };
+
+    var currentScenario = 'steel';
+    var selectedAlgo = 'ww';
+    var lastResults = {};
+
+    // ── DOM builder helpers ──
+    var inputStyle = 'width:48px;background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.3rem;font-family:JetBrains Mono,monospace;font-size:0.78rem;text-align:center;outline:none;';
+
+    function renderDemandTable() {
+        var sc = SCENARIOS[currentScenario];
+        var headerRow = document.getElementById('demandHeaderRow');
+        var inputRow = document.getElementById('demandInputRow');
+
+        // Clear existing
+        while (headerRow.firstChild) headerRow.removeChild(headerRow.firstChild);
+        while (inputRow.firstChild) inputRow.removeChild(inputRow.firstChild);
+
+        var thW = document.createElement('th');
+        thW.style.minWidth = '50px';
+        thW.textContent = 'Week';
+        headerRow.appendChild(thW);
+
+        for (var t = 0; t < sc.periods; t++) {
+            var th = document.createElement('th');
+            th.style.minWidth = '44px';
+            th.textContent = String(t + 1);
+            headerRow.appendChild(th);
+
+            var td = document.createElement('td');
+            var inp = document.createElement('input');
+            inp.type = 'number';
+            inp.value = sc.demand[t];
+            inp.min = '0';
+            inp.max = '999';
+            inp.step = '1';
+            inp.setAttribute('data-week', String(t));
+            inp.setAttribute('style', inputStyle);
+            inp.addEventListener('input', onDemandChange);
+            td.appendChild(inp);
+            inputRow.appendChild(td);
+        }
+        updateSummary();
+        drawSparkline();
+    }
+
+    function readDemand() {
+        var inputs = document.querySelectorAll('#demandInputRow input');
+        var d = [];
+        for (var i = 0; i < inputs.length; i++) {
+            d.push(Math.max(0, parseInt(inputs[i].value) || 0));
+        }
+        return d;
+    }
+
+    function onDemandChange() {
+        updateSummary();
+        drawSparkline();
+        clearSolverCanvas();
+    }
+
+    function updateSummary() {
+        var K = parseInt(document.getElementById('setup-slider').value);
+        var h = parseInt(document.getElementById('hold-slider').value);
+        var demand = readDemand();
+        document.getElementById('configSummary').textContent = demand.length + ' Weeks \u00B7 K=\u20AC' + K.toLocaleString() + ' \u00B7 h=\u20AC' + h;
+    }
+
+    // ── Sparkline ──
+    function drawSparkline() {
+        var sparkCanvas = document.getElementById('sparkCanvas');
+        var sCtx = sparkCanvas.getContext('2d');
+        var W = sparkCanvas.parentElement.clientWidth - 16;
+        var H = 60;
+        sparkCanvas.width = W * dpr;
+        sparkCanvas.height = H * dpr;
+        sparkCanvas.style.width = W + 'px';
+        sparkCanvas.style.height = H + 'px';
+        sCtx.scale(dpr, dpr);
+
+        var demand = readDemand();
+        var maxD = Math.max.apply(null, demand) || 1;
+        var barW = Math.max(4, (W - 20) / demand.length - 2);
+        var startX = 10;
+
+        sCtx.clearRect(0, 0, W, H);
+        for (var i = 0; i < demand.length; i++) {
+            var bh = (demand[i] / maxD) * (H - 15);
+            var x = startX + i * (barW + 2);
+            var y = H - 5 - bh;
+            sCtx.fillStyle = demand[i] > 0 ? 'rgba(197,160,89,0.5)' : 'rgba(136,146,176,0.15)';
+            sCtx.fillRect(x, y, barW, bh);
+            if (barW > 12) {
+                sCtx.fillStyle = 'rgba(248,249,250,0.6)';
+                sCtx.font = '8px JetBrains Mono, monospace';
+                sCtx.textAlign = 'center';
+                sCtx.fillText(String(demand[i]), x + barW / 2, y - 2);
+            }
+        }
+    }
+
+    // ── Scenario Loading ──
+    function loadScenario(key) {
+        currentScenario = key;
+        var sc = SCENARIOS[key];
+        document.getElementById('setup-slider').value = sc.setupCost;
+        document.getElementById('setup-display').textContent = '\u20AC' + sc.setupCost.toLocaleString();
+        document.getElementById('hold-slider').value = sc.holdCost;
+        document.getElementById('hold-display').textContent = '\u20AC' + sc.holdCost;
+
+        document.querySelectorAll('.preset-btn').forEach(function(b) { b.classList.remove('active'); });
+        document.getElementById('preset-' + key).classList.add('active');
+
+        renderDemandTable();
+        clearResults();
+        clearSolverCanvas();
+    }
+
+    function selectAlgo(btn) {
+        document.querySelectorAll('.algo-chip[data-algo]').forEach(function(c) { c.classList.remove('selected'); });
+        btn.classList.add('selected');
+        selectedAlgo = btn.dataset.algo;
+        if (lastResults[selectedAlgo]) {
+            drawLotPlan(lastResults[selectedAlgo], selectedAlgo);
+        }
+    }
+
+    // ── Wire up preset buttons ──
+    document.getElementById('preset-steel').addEventListener('click', function() { loadScenario('steel'); });
+    document.getElementById('preset-concrete').addEventListener('click', function() { loadScenario('concrete'); });
+    document.getElementById('preset-panels').addEventListener('click', function() { loadScenario('panels'); });
+
+    // ── Wire up algo chips ──
+    document.querySelectorAll('.algo-chip[data-algo]').forEach(function(chip) {
+        chip.addEventListener('click', function() { selectAlgo(this); });
+    });
+
+    // ── Wire up sliders ──
+    document.getElementById('setup-slider').addEventListener('input', function() {
+        document.getElementById('setup-display').textContent = '\u20AC' + parseInt(this.value).toLocaleString();
+        updateSummary();
+        clearSolverCanvas();
+    });
+    document.getElementById('hold-slider').addEventListener('input', function() {
+        document.getElementById('hold-display').textContent = '\u20AC' + parseInt(this.value);
+        updateSummary();
+        clearSolverCanvas();
+    });
+
+    // ── Wire up solve button ──
+    document.getElementById('solveBtn').addEventListener('click', solveAll);
+
+    // ═══════════════════════════════════════════════════════════════
+    // Lot Sizing Algorithms
+    // ═══════════════════════════════════════════════════════════════
+
+    // <!-- TODO: Python solver integration — no Python file exists for this problem yet -->
+
+    function wagnerWhitin(demand, K, h) {
+        var T = demand.length;
+        var f = new Array(T + 1);
+        var orderAt = new Array(T + 1);
+        f[0] = 0;
+
+        for (var t = 1; t <= T; t++) {
+            f[t] = Infinity;
+            for (var j = 1; j <= t; j++) {
+                var cost = f[j - 1] + K;
+                for (var k = j + 1; k <= t; k++) {
+                    cost += h * demand[k - 1] * (k - j);
+                }
+                if (cost < f[t]) {
+                    f[t] = cost;
+                    orderAt[t] = j;
+                }
+            }
+        }
+
+        var orders = new Array(T).fill(0);
+        var tt = T;
+        while (tt > 0) {
+            var start = orderAt[tt];
+            var qty = 0;
+            for (var p = start; p <= tt; p++) qty += demand[p - 1];
+            orders[start - 1] = qty;
+            tt = start - 1;
+        }
+        return { orders: orders, totalCost: f[T] };
+    }
+
+    function silverMeal(demand, K, h) {
+        var T = demand.length;
+        var orders = new Array(T).fill(0);
+        var totalCost = 0;
+        var t = 0;
+
+        while (t < T) {
+            if (demand[t] === 0) { t++; continue; }
+            var bestAvg = Infinity;
+            var bestCover = 0;
+            var cumHold = 0;
+
+            for (var j = 0; t + j < T; j++) {
+                cumHold += h * demand[t + j] * j;
+                var avgCost = (K + cumHold) / (j + 1);
+                if (avgCost <= bestAvg) {
+                    bestAvg = avgCost;
+                    bestCover = j;
+                } else {
+                    break;
+                }
+            }
+
+            var qty = 0;
+            var holdingCost = 0;
+            for (var k = 0; k <= bestCover; k++) {
+                qty += demand[t + k];
+                holdingCost += h * demand[t + k] * k;
+            }
+            orders[t] = qty;
+            totalCost += K + holdingCost;
+            t += bestCover + 1;
+        }
+        return { orders: orders, totalCost: totalCost };
+    }
+
+    function lotForLot(demand, K, h) {
+        var T = demand.length;
+        var orders = new Array(T).fill(0);
+        var totalCost = 0;
+        for (var t = 0; t < T; t++) {
+            if (demand[t] > 0) {
+                orders[t] = demand[t];
+                totalCost += K;
+            }
+        }
+        return { orders: orders, totalCost: totalCost };
+    }
+
+    function computeInventory(demand, orders) {
+        var T = demand.length;
+        var inv = new Array(T);
+        var running = 0;
+        for (var t = 0; t < T; t++) {
+            running += orders[t] - demand[t];
+            inv[t] = running;
+        }
+        return inv;
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Drawing
+    // ═══════════════════════════════════════════════════════════════
+
+    function clearSolverCanvas() {
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, CW, CH);
+        ctx.fillStyle = 'rgba(248,249,250,0.4)';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Click "Solve & Compare All Algorithms" to see the lot plan', CW / 2, CH / 2);
+    }
+
+    function drawLotPlan(result, algoKey) {
+        var demand = readDemand();
+        var T = demand.length;
+        var orders = result.orders;
+        var inv = computeInventory(demand, orders);
+        var color = ALGO_COLORS[algoKey];
+        var algoName = ALGO_NAMES[algoKey];
+
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, CW, CH);
+
+        var PAD = { l: 60, r: 30, t: 45, b: 65 };
+        var plotW = CW - PAD.l - PAD.r;
+        var plotH = CH - PAD.t - PAD.b;
+        var barW = plotW / T;
+        var maxVal = Math.max(Math.max.apply(null, orders), Math.max.apply(null, demand), Math.max.apply(null, inv), 1);
+
+        // Title
+        ctx.fillStyle = 'rgba(248,249,250,0.7)';
+        ctx.font = '13px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(algoName + '  \u2014  Total Cost: \u20AC' + result.totalCost.toLocaleString(), CW / 2, 22);
+
+        // Y-axis grid
+        ctx.strokeStyle = 'rgba(197,160,89,0.2)';
+        ctx.lineWidth = 1;
+        for (var g = 0; g <= 4; g++) {
+            var yy = PAD.t + plotH - (g / 4) * plotH;
+            ctx.beginPath();
+            ctx.moveTo(PAD.l, yy);
+            ctx.lineTo(CW - PAD.r, yy);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(136,146,176,0.6)';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText(String(Math.round(maxVal * g / 4)), PAD.l - 6, yy + 3);
+        }
+
+        // Demand bars (grey, behind)
+        for (var t = 0; t < T; t++) {
+            var x = PAD.l + t * barW;
+            var bh = (demand[t] / maxVal) * plotH;
+            var y = PAD.t + plotH - bh;
+            ctx.fillStyle = 'rgba(136,146,176,0.2)';
+            ctx.fillRect(x + barW * 0.05, y, barW * 0.4, bh);
+            if (demand[t] > 0) {
+                ctx.fillStyle = 'rgba(136,146,176,0.7)';
+                ctx.font = '8px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(demand[t]), x + barW * 0.25, y - 3);
+            }
+        }
+
+        // Order bars (colored)
+        for (var t2 = 0; t2 < T; t2++) {
+            if (orders[t2] > 0) {
+                var x2 = PAD.l + t2 * barW;
+                var bh2 = (orders[t2] / maxVal) * plotH;
+                var y2 = PAD.t + plotH - bh2;
+                ctx.fillStyle = color;
+                ctx.globalAlpha = 0.6;
+                ctx.fillRect(x2 + barW * 0.5, y2, barW * 0.4, bh2);
+                ctx.globalAlpha = 1;
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x2 + barW * 0.5, y2, barW * 0.4, bh2);
+                ctx.fillStyle = color;
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(String(orders[t2]), x2 + barW * 0.7, y2 - 3);
+            }
+        }
+
+        // Inventory line overlay
+        ctx.strokeStyle = '#e0af68';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        for (var t3 = 0; t3 < T; t3++) {
+            var ix = PAD.l + (t3 + 0.5) * barW;
+            var iy = PAD.t + plotH - (inv[t3] / maxVal) * plotH;
+            if (t3 === 0) ctx.moveTo(ix, iy);
+            else ctx.lineTo(ix, iy);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Inventory dots
+        for (var t4 = 0; t4 < T; t4++) {
+            var dx = PAD.l + (t4 + 0.5) * barW;
+            var dy = PAD.t + plotH - (inv[t4] / maxVal) * plotH;
+            ctx.beginPath();
+            ctx.arc(dx, dy, 3, 0, Math.PI * 2);
+            ctx.fillStyle = '#e0af68';
+            ctx.fill();
+            ctx.fillStyle = 'rgba(224,175,104,0.8)';
+            ctx.font = '8px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(String(inv[t4]), dx, dy - 7);
+        }
+
+        // X-axis labels
+        ctx.fillStyle = 'rgba(248,249,250,0.6)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        for (var t5 = 0; t5 < T; t5++) {
+            ctx.fillText('W' + (t5 + 1), PAD.l + (t5 + 0.5) * barW, PAD.t + plotH + 18);
+        }
+
+        // Legend
+        var legY = CH - 18;
+        ctx.font = '9px Inter, sans-serif';
+        ctx.textAlign = 'left';
+
+        ctx.fillStyle = 'rgba(136,146,176,0.3)';
+        ctx.fillRect(PAD.l, legY - 6, 12, 8);
+        ctx.fillStyle = 'rgba(136,146,176,0.7)';
+        ctx.fillText('Demand', PAD.l + 16, legY);
+
+        ctx.fillStyle = color;
+        ctx.globalAlpha = 0.6;
+        ctx.fillRect(PAD.l + 80, legY - 6, 12, 8);
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = color;
+        ctx.fillText('Order', PAD.l + 96, legY);
+
+        ctx.strokeStyle = '#e0af68';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(PAD.l + 150, legY - 2);
+        ctx.lineTo(PAD.l + 162, legY - 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#e0af68';
+        ctx.fillText('Inventory', PAD.l + 168, legY);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Solve & Display
+    // ═══════════════════════════════════════════════════════════════
+
+    function clearResults() {
+        lastResults = {};
+        document.getElementById('resultsBody').textContent = '';
+        var emptyRow = document.createElement('tr');
+        var emptyTd = document.createElement('td');
+        emptyTd.colSpan = 4;
+        emptyTd.style.cssText = 'text-align:center; color:var(--slate); font-family:Inter,sans-serif;';
+        emptyTd.textContent = 'Click Solve & Compare All Algorithms';
+        emptyRow.appendChild(emptyTd);
+        document.getElementById('resultsBody').appendChild(emptyRow);
+        document.getElementById('order-output').textContent = 'Order schedule will appear here after solving.';
+        document.getElementById('solver-status').textContent = 'Ready.';
+        document.getElementById('business-panel').style.display = 'none';
+    }
+
+    function solveAll() {
+        var demand = readDemand();
+        var K = parseInt(document.getElementById('setup-slider').value);
+        var h = parseInt(document.getElementById('hold-slider').value);
+
+        var totalDemand = demand.reduce(function(a, b) { return a + b; }, 0);
+        if (totalDemand === 0) {
+            document.getElementById('solver-status').textContent = 'All demands are zero \u2014 nothing to order.';
+            return;
+        }
+
+        var t0 = performance.now();
+        var wwResult = wagnerWhitin(demand, K, h);
+        var t1 = performance.now();
+        var smResult = silverMeal(demand, K, h);
+        var t2 = performance.now();
+        var lflResult = lotForLot(demand, K, h);
+        var t3 = performance.now();
+
+        lastResults = { ww: wwResult, sm: smResult, lfl: lflResult };
+        var bestCost = Math.min(wwResult.totalCost, smResult.totalCost, lflResult.totalCost);
+
+        function countOrders(orders) { return orders.filter(function(x) { return x > 0; }).length; }
+        function avgInv(dem, orders) {
+            var inv = computeInventory(dem, orders);
+            var sum = inv.reduce(function(a, b) { return a + b; }, 0);
+            return (sum / inv.length).toFixed(1);
+        }
+
+        var results = [
+            { key: 'ww',  name: 'Wagner-Whitin', cost: wwResult.totalCost,  deliveries: countOrders(wwResult.orders),  avgInv: avgInv(demand, wwResult.orders) },
+            { key: 'sm',  name: 'Silver-Meal',   cost: smResult.totalCost,  deliveries: countOrders(smResult.orders),  avgInv: avgInv(demand, smResult.orders) },
+            { key: 'lfl', name: 'Lot-for-Lot',   cost: lflResult.totalCost, deliveries: countOrders(lflResult.orders), avgInv: avgInv(demand, lflResult.orders) }
+        ];
+
+        // Render table using DOM
+        var tbody = document.getElementById('resultsBody');
+        tbody.textContent = '';
+        results.forEach(function(r) {
+            var tr = document.createElement('tr');
+            tr.style.cursor = 'pointer';
+            tr.addEventListener('click', (function(k) { return function() { selectAndDraw(k); }; })(r.key));
+
+            var tdName = document.createElement('td');
+            tdName.className = 'algo-label';
+            tdName.textContent = r.name;
+
+            var tdCost = document.createElement('td');
+            tdCost.textContent = '\u20AC' + r.cost.toLocaleString();
+            if (r.cost === bestCost) tdCost.className = 'best-val';
+
+            var tdDel = document.createElement('td');
+            tdDel.textContent = String(r.deliveries);
+
+            var tdAvg = document.createElement('td');
+            tdAvg.textContent = r.avgInv;
+
+            tr.appendChild(tdName);
+            tr.appendChild(tdCost);
+            tr.appendChild(tdDel);
+            tr.appendChild(tdAvg);
+            tbody.appendChild(tr);
+        });
+
+        showOrderOutput(lastResults[selectedAlgo], demand);
+        drawLotPlan(lastResults[selectedAlgo], selectedAlgo);
+
+        document.getElementById('solver-status').textContent = 'Solved in ' + (t3 - t0).toFixed(1) + ' ms. Click a row to visualize its plan.';
+        updateBusinessPanel(results);
+    }
+
+    function selectAndDraw(key) {
+        selectedAlgo = key;
+        document.querySelectorAll('.algo-chip[data-algo]').forEach(function(c) { c.classList.remove('selected'); });
+        var btn = document.querySelector('.algo-chip[data-algo="' + key + '"]');
+        if (btn) btn.classList.add('selected');
+        drawLotPlan(lastResults[key], key);
+        showOrderOutput(lastResults[key], readDemand());
+    }
+
+    function showOrderOutput(result, demand) {
+        var lines = [];
+        var sc = SCENARIOS[currentScenario];
+        for (var t = 0; t < result.orders.length; t++) {
+            if (result.orders[t] > 0) {
+                lines.push('Week ' + (t + 1) + ': Order ' + result.orders[t] + ' ' + sc.unit + ' (demand: ' + demand[t] + ')');
+            }
+        }
+        document.getElementById('order-output').textContent = lines.join('\n');
+    }
+
+    function updateBusinessPanel(results) {
+        if (!results) return;
+        var panel = document.getElementById('business-panel');
+        panel.style.display = 'block';
+
+        var wwCost = results[0].cost;
+        var lflCost = results[2].cost;
+        var savings = lflCost - wwCost;
+        var lflDeliveries = results[2].deliveries;
+        var wwDeliveries = results[0].deliveries;
+        var fewerDeliveries = lflDeliveries - wwDeliveries;
+        var pct = lflCost > 0 ? ((savings / lflCost) * 100).toFixed(1) : '0';
+
+        document.getElementById('biz-savings').textContent = '\u20AC' + savings.toLocaleString();
+        document.getElementById('biz-deliveries-val').textContent = String(fewerDeliveries);
+        document.getElementById('biz-pct').textContent = pct + '%';
+        document.getElementById('biz-deliveries').value = wwDeliveries;
+        document.getElementById('biz-delivery-cost').value = parseInt(document.getElementById('setup-slider').value);
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    // Hero Particles (animated canvas)
+    // ═══════════════════════════════════════════════════════════════
+
+    var hc = document.getElementById('heroParticles');
+    if (hc) {
+        var hCtx = hc.getContext('2d');
+        var particles = [];
+        var pCount = 40;
+
+        function resizeHero() {
+            hc.width = hc.parentElement.clientWidth;
+            hc.height = hc.parentElement.clientHeight;
+        }
+        resizeHero();
+        window.addEventListener('resize', resizeHero);
+
+        for (var i = 0; i < pCount; i++) {
+            particles.push({
+                x: Math.random() * hc.width,
+                y: Math.random() * hc.height,
+                vx: (Math.random() - 0.5) * 0.4,
+                vy: (Math.random() - 0.5) * 0.4,
+                r: Math.random() * 2 + 1
+            });
+        }
+
+        function animateParticles() {
+            hCtx.clearRect(0, 0, hc.width, hc.height);
+            particles.forEach(function(p) {
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0 || p.x > hc.width) p.vx *= -1;
+                if (p.y < 0 || p.y > hc.height) p.vy *= -1;
+                hCtx.beginPath();
+                hCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                hCtx.fillStyle = 'rgba(197,160,89,0.15)';
+                hCtx.fill();
+            });
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        hCtx.beginPath();
+                        hCtx.moveTo(particles[i].x, particles[i].y);
+                        hCtx.lineTo(particles[j].x, particles[j].y);
+                        hCtx.strokeStyle = 'rgba(197,160,89,' + (0.08 * (1 - dist / 120)) + ')';
+                        hCtx.lineWidth = 0.5;
+                        hCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── Scroll Animations ──
+    var observer = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.1 });
+    document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
+
+    // ── Initialize ──
+    renderDemandTable();
+    clearSolverCanvas();
+
+})();
+</script>
+
+<script>
+(function() {
+    'use strict';
+
+    // ── Theme Toggle ──
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ── Command Palette ──
+    var SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: '6 problems', icon: 'fa-industry', url: 'families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'Routing', subtitle: '3 problems', icon: 'fa-route', url: 'families/routing.html', group: 'Families', badge: 'Family' },
+        { title: 'Packing & Cutting', subtitle: '3 problems', icon: 'fa-box', url: 'families/packing.html', group: 'Families', badge: 'Family' },
+        { title: 'Supply Chain', subtitle: '6 problems', icon: 'fa-boxes-stacked', url: 'families/supply-chain.html', group: 'Families', badge: 'Family' },
+        { title: 'Wagner-Whitin', subtitle: 'Lot Sizing \u00B7 O(T\u00B2)', icon: 'fa-bolt', url: 'families/supply-chain.html', group: 'Algorithms', badge: 'Exact' },
+        { title: 'Silver-Meal', subtitle: 'Lot Sizing Heuristic', icon: 'fa-bolt', url: 'families/supply-chain.html', group: 'Algorithms', badge: 'Heuristic' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'applications/construction-project.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Material Procurement', subtitle: 'Lot Sizing', icon: 'fa-boxes', url: 'applications/construction-procurement-planning.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'applications/warehouse-packing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'applications/delivery-routing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Investment Portfolio', subtitle: 'Robust Portfolio', icon: 'fa-chart-pie', url: 'applications/portfolio.html', group: 'Applications', badge: 'Demo' }
+    ];
+
+    var path = window.location.pathname;
+    var depth = (path.match(/families\/|applications\//)) ? '../' : '';
+
+    var overlay = document.getElementById('cmdPalette');
+    var input = document.getElementById('cmdInput');
+    var resultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() { overlay.classList.add('open'); input.value = ''; input.focus(); renderResults(''); activeIdx = -1; }
+    function closePalette() { overlay.classList.remove('open'); activeIdx = -1; }
+
+    function fuzzyMatch(query, text) {
+        query = query.toLowerCase(); text = text.toLowerCase();
+        if (!query) return true;
+        if (text.indexOf(query) !== -1) return true;
+        var qi = 0;
+        for (var i = 0; i < text.length && qi < query.length; i++) { if (text[i] === query[qi]) qi++; }
+        return qi === query.length;
+    }
+
+    function renderResults(query) {
+        var filtered = SEARCH_DATA.filter(function(item) {
+            return fuzzyMatch(query, item.title) || fuzzyMatch(query, item.subtitle) || fuzzyMatch(query, item.group);
+        });
+
+        if (filtered.length === 0) {
+            resultsDiv.textContent = '';
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found';
+            resultsDiv.appendChild(empty);
+            return;
+        }
+
+        var groups = {};
+        var order = ['Families', 'Problems', 'Algorithms', 'Applications'];
+        filtered.forEach(function(item) { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+
+        resultsDiv.textContent = '';
+        var idx = 0;
+        order.forEach(function(g) {
+            if (!groups[g]) return;
+            var label = document.createElement('div');
+            label.className = 'cmd-group-label';
+            label.textContent = g;
+            resultsDiv.appendChild(label);
+
+            groups[g].forEach(function(item) {
+                var a = document.createElement('a');
+                a.href = depth + item.url;
+                a.className = 'cmd-result';
+                a.setAttribute('data-idx', String(idx));
+
+                var iconDiv = document.createElement('div');
+                iconDiv.className = 'cmd-icon';
+                var ic = document.createElement('i');
+                ic.className = 'fas ' + item.icon;
+                iconDiv.appendChild(ic);
+
+                var infoDiv = document.createElement('div');
+                infoDiv.className = 'cmd-info';
+                var titleDiv = document.createElement('div');
+                titleDiv.className = 'cmd-title';
+                titleDiv.textContent = item.title;
+                var subDiv = document.createElement('div');
+                subDiv.className = 'cmd-subtitle';
+                subDiv.textContent = item.subtitle;
+                infoDiv.appendChild(titleDiv);
+                infoDiv.appendChild(subDiv);
+
+                var badge = document.createElement('span');
+                badge.className = 'cmd-badge';
+                badge.style.cssText = 'border:1px solid rgba(197,160,89,0.3);color:var(--gold)';
+                badge.textContent = item.badge;
+
+                a.appendChild(iconDiv);
+                a.appendChild(infoDiv);
+                a.appendChild(badge);
+                resultsDiv.appendChild(a);
+                idx++;
+            });
+        });
+    }
+
+    if (input) { input.addEventListener('input', function() { renderResults(input.value); activeIdx = -1; }); }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); overlay.classList.contains('open') ? closePalette() : openPalette(); }
+        if (e.key === 'Escape' && overlay.classList.contains('open')) closePalette();
+        if (!overlay.classList.contains('open')) return;
+        var items = resultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, items.length - 1); items.forEach(function(it, i) { it.classList.toggle('active', i === activeIdx); }); if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' }); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); items.forEach(function(it, i) { it.classList.toggle('active', i === activeIdx); }); if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' }); }
+        else if (e.key === 'Enter' && activeIdx >= 0 && items[activeIdx]) { e.preventDefault(); window.location.href = items[activeIdx].href; }
+    });
+
+    overlay.addEventListener('click', function(e) { if (e.target === overlay) closePalette(); });
+    var navTrigger = document.getElementById('navSearchTrigger');
+    if (navTrigger) navTrigger.addEventListener('click', openPalette);
+
+    // ── Scroll Progress & Scroll-to-Top ──
+    var scrollProgress = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+    window.addEventListener('scroll', function() {
+        var h = document.documentElement.scrollHeight - window.innerHeight;
+        var pct = h > 0 ? (window.scrollY / h) * 100 : 0;
+        if (scrollProgress) scrollProgress.style.width = pct + '%';
+        if (scrollTopBtn) { scrollTopBtn.classList.toggle('visible', window.scrollY > 400); }
+    });
+    if (scrollTopBtn) { scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); }); }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Construction Resource Leveling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive resource leveling demo for construction projects using Burgess-Killebrew, Greedy Shift, and Simulated Annealing algorithms.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/construction-resource-leveling.html">
+    <meta property="og:title" content="Construction Resource Leveling | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive resource leveling demo for construction projects using Burgess-Killebrew, Greedy Shift, and Simulated Annealing algorithms.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Construction Resource Leveling | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive resource leveling demo for construction projects using Burgess-Killebrew, Greedy Shift, and Simulated Annealing algorithms.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        /* ── Hero Section ── */
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%); pointer-events: none; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 700px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        /* ── Section Headers ── */
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        /* ── Formulation Block ── */
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; }
+        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Decision Chain ── */
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        /* ── Scenario Switcher ── */
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
+        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
+        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; font-style: italic; }
+
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); }
+        .solver-panel-header h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        @media (max-width: 768px) { .solver-row { grid-template-columns: 1fr; } .hero h1 { font-size: 2.2rem; } }
+
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; font-weight: 500; }
+        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-type { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+
+        /* ── Activity Table ── */
+        .activity-table-wrap { overflow-x: auto; margin-bottom: 0.5rem; }
+        .activity-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+        .activity-table thead th { font-family: 'Inter', sans-serif; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; white-space: nowrap; }
+        .activity-table tbody td { padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.78rem; }
+        .activity-table tbody td:first-child { font-weight: 500; color: var(--ivory); }
+        .activity-table input[type="number"] { width: 50px; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; text-align: center; padding: 2px 4px; }
+        .activity-table input[type="number"]:focus { outline: none; border-color: var(--gold); }
+
+        /* ── Algorithm Cards ── */
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.8rem; color: var(--ivory); }
+        .algo-card .algo-complexity { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); margin-bottom: 1rem; display: inline-block; }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+
+        /* ── Business Translation Panel ── */
+        .business-panel { margin-top: 1.5rem; padding: 1.2rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; background: rgba(197,160,89,0.04); }
+        .business-controls { display: flex; gap: 1.5rem; flex-wrap: wrap; margin-bottom: 1rem; font-size: 0.82rem; color: var(--slate-light); align-items: center; }
+        .biz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+        .biz-card { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .biz-val { font-size: 1.5rem; font-weight: 600; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+        .biz-label-text { font-size: 0.75rem; color: var(--slate-light); line-height: 1.4; }
+        .biz-label-text small { color: var(--slate); }
+        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); font-style: italic; margin: 0; }
+
+        /* ── References ── */
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel { background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02)); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 3rem; text-align: center; }
+        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; letter-spacing: 2px; margin-bottom: 1rem; color: var(--ivory); }
+        .cta-panel p { color: var(--slate-light); font-size: 0.95rem; max-width: 650px; margin: 0 auto 2rem; line-height: 1.8; }
+        .cta-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+        .cta-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.8rem; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; }
+        .cta-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Back Link ── */
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        /* ── Footer ── */
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle { position: relative; width: 44px; height: 24px; background: var(--midnight-lighter); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.4s ease; display: flex; align-items: center; padding: 0 3px; margin-left: 0.8rem; flex-shrink: 0; }
+        .theme-toggle::before { content: ''; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35); box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] { --midnight: #F5F1EB; --midnight-light: #EDE8E0; --midnight-lighter: #E3DDD4; --ivory: #1a1a2e; --slate: #5a6178; --slate-light: #3d4155; }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        .hero-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .hero > .container { position: relative; z-index: 1; }
+
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .scroll-top-btn { position: fixed; bottom: 5rem; right: 2rem; width: 42px; height: 42px; border-radius: 50%; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); color: var(--gold); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 998; opacity: 0; transform: translateY(10px); pointer-events: none; }
+        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4); }
+
+        .nav-search-trigger { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 6px; background: rgba(197, 160, 89, 0.05); color: var(--slate); font-size: 0.78rem; cursor: pointer; transition: all 0.3s; margin-left: 0.5rem; white-space: nowrap; }
+        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .nav-search-trigger .search-shortcut { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 1px 5px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 3px; background: rgba(197, 160, 89, 0.05); }
+
+        .cmd-palette-overlay { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.6); backdrop-filter: blur(8px); z-index: 10000; display: none; align-items: flex-start; justify-content: center; padding-top: 15vh; }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette { width: 90%; max-width: 580px; background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 12px; box-shadow: 0 25px 60px rgba(0,0,0,0.5); overflow: hidden; animation: cmdSlideIn 0.2s ease-out; }
+        @keyframes cmdSlideIn { from { opacity: 0; transform: translateY(-20px) scale(0.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+        .cmd-input-wrap { display: flex; align-items: center; padding: 1rem 1.2rem; border-bottom: 1px solid rgba(197, 160, 89, 0.15); gap: 0.8rem; }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input { flex: 1; background: transparent; border: none; outline: none; color: var(--ivory); font-family: 'Inter', sans-serif; font-size: 1rem; caret-color: var(--gold); }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd { font-family: 'JetBrains Mono', monospace; font-size: 0.65rem; padding: 2px 6px; border: 1px solid rgba(197, 160, 89, 0.25); border-radius: 4px; color: var(--slate); background: rgba(197, 160, 89, 0.05); }
+        .cmd-results { max-height: 340px; overflow-y: auto; padding: 0.5rem; }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label { font-size: 0.65rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; padding: 0.6rem 0.8rem 0.3rem; font-weight: 600; }
+        .cmd-result { display: flex; align-items: center; gap: 0.8rem; padding: 0.6rem 0.8rem; border-radius: 8px; cursor: pointer; transition: background 0.15s; text-decoration: none; color: var(--ivory); }
+        .cmd-result:hover, .cmd-result.active { background: rgba(197, 160, 89, 0.12); color: var(--ivory); }
+        .cmd-result .cmd-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; background: rgba(197, 160, 89, 0.08); color: var(--gold); font-size: 0.85rem; flex-shrink: 0; }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cmd-result .cmd-subtitle { font-size: 0.72rem; color: var(--slate); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cmd-result .cmd-badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
+        .cmd-empty { padding: 2rem; text-align: center; color: var(--slate); font-size: 0.88rem; }
+        .cmd-footer { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 1.2rem; border-top: 1px solid rgba(197, 160, 89, 0.1); font-size: 0.68rem; color: var(--slate); }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        @keyframes resultFadeIn { from { opacity: 0; transform: translateX(-10px); } to { opacity: 1; transform: translateX(0); } }
+        .results-table tbody tr { animation: resultFadeIn 0.3s ease-out both; cursor: pointer; transition: background 0.15s; }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+        .results-table tbody tr:hover { background: rgba(197, 160, 89, 0.06); }
+
+        @media (max-width: 480px) { .scenario-switcher { grid-template-columns: 1fr; } .biz-cards { grid-template-columns: 1fr; } .decision-chain { gap: 0.3rem; } .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; } .chain-arrow { font-size: 0.9rem; } }
+        @media (max-width: 576px) { .scroll-top-btn { bottom: 4rem; right: 1rem; } .nav-search-trigger .search-shortcut { display: none; } }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger"><i class="fas fa-search" style="font-size:0.75rem"></i><span>Search</span><span class="search-shortcut">&#8984;K</span></div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme"><span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span><span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container"><ol><li><a href="../index.html">Home</a></li><li><a href="#">Applications</a></li><li>Construction Resource Leveling</li></ol></div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-chart-bar"></i></div>
+        <h1>Resource <span>Leveling</span></h1>
+        <p class="hero-subtitle">Resource Optimization &middot; Schedule Smoothing</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Peak-to-trough labor swings of 40&ndash;60% between weeks cost contractors
+            &euro;800&ndash;&euro;2,500 per worker in hiring/layoff overhead, with productivity losses
+            of 15&ndash;20% from constant crew turnover. Every month, a project superintendent must
+            smooth the resource histogram &mdash; shifting non-critical activities within their float
+            to minimize peak demand. This is the <strong>resource leveling problem</strong> &mdash;
+            computationally hard when combined with precedence and deadline constraints.
+        </p>
+    </div>
+</section>
+
+<!-- 2. Decision Chain -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where This <span>Decision Fits</span></h2><p>Construction operations chain &mdash; the highlighted step is what this page optimizes</p></div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">Site Selection<span class="chain-sub">Location &amp; permits</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Portfolio Selection<span class="chain-sub">Project prioritization</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Project Scheduling<span class="chain-sub">CPM / RCPSP</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">Resource Leveling<span class="chain-sub">Smooth labor histogram</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Site Operations<span class="chain-sub">Execution &amp; control</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Problem -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Problem</span></h2><p>Why resource leveling matters in construction</p></div>
+        <div class="content-block fade-in">
+            <p>Given a scheduled project with <strong>12 activities</strong>, precedence relationships, and float windows, the superintendent must shift activities within their slack to <strong>minimize peak resource usage</strong> (workers per day). Activities cannot violate precedence constraints or extend the project deadline.</p>
+            <p>Unleveled schedules create sharp peaks and valleys in the resource histogram. Peaks force expensive overtime hiring or subcontracting, while valleys leave crews idle. The resource leveling problem seeks a schedule that keeps daily resource demand as uniform as possible &mdash; reducing peak-to-average ratios and smoothing the workforce over the project duration.</p>
+            <p>This problem is <strong>NP-hard</strong> in the general case: even with a fixed project deadline, finding the optimal shift for each activity within its float is computationally intractable for large networks. The classic objective, proposed by <strong>Burgess &amp; Killebrew (1962)</strong>, minimizes the sum of squared daily resource usage &mdash; a convex proxy that penalizes peaks quadratically.</p>
+            <div class="formulation">
+                <span class="form-label">Resource Leveling Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>t</sub> r(t)&sup2;</span> &nbsp; <span class="comment">// sum of squared daily resource usage</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">ES<sub>i</sub> &le; s<sub>i</sub> &le; LS<sub>i</sub></span> &nbsp;&nbsp; <span class="comment">// activity i starts within its float window</span><br>
+                &nbsp;&nbsp;<span class="variable">s<sub>i</sub> + d<sub>i</sub> &le; s<sub>j</sub></span> &nbsp;&nbsp; <span class="comment">// precedence: i finishes before j starts</span><br>
+                &nbsp;&nbsp;<span class="variable">r(t) = &Sigma;<sub>i active at t</sub> w<sub>i</sub></span> &nbsp;&nbsp; <span class="comment">// daily resource usage</span>
+            </div>
+            <p>Where <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">s<sub>i</sub></span> is the start time of activity <em>i</em>, <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">d<sub>i</sub></span> is its duration, <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">w<sub>i</sub></span> is its daily worker requirement, <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">ES<sub>i</sub></span> / <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">LS<sub>i</sub></span> are the earliest/latest start from CPM, and <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">r(t)</span> is total resource demand on day <em>t</em>.</p>
+            <a href="../families/scheduling.html#rcpsp" class="theory-link"><i class="fas fa-arrow-right"></i> See RCPSP theory and scheduling algorithms</a>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Try It Yourself -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Try It <span>Yourself</span></h2><p>Level the resource histogram for a construction project</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-chart-bar"></i> Resource Leveling Optimizer</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">12 Activities &middot; Target Peak 18</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Choose a Scenario</div>
+                <div class="scenario-switcher" id="scenario-switcher"></div>
+                <div class="scenario-context" id="scenario-context"></div>
+
+                <div class="solver-section-label">Activity Data</div>
+                <div class="activity-table-wrap"><table class="activity-table" id="activityTable"><thead><tr><th>Activity</th><th>Duration</th><th>Workers</th><th>ES</th><th>LS</th><th>Float</th><th>Predecessors</th></tr></thead><tbody id="activityBody"></tbody></table></div>
+
+                <div class="solver-section-label" style="margin-top:1.2rem;">Select Algorithm</div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;" id="algoChips"></div>
+
+                <button class="algo-chip active" id="solveBtn" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;"><i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms</button>
+
+                <div class="solver-row">
+                    <div><div class="solver-section-label">Before Leveling</div><div class="solver-canvas-wrap"><canvas id="beforeCanvas" width="440" height="300"></canvas></div></div>
+                    <div><div class="solver-section-label">After Leveling</div><div class="solver-canvas-wrap"><canvas id="afterCanvas" width="440" height="300"></canvas></div></div>
+                </div>
+                <p class="solver-status" id="solver-status">Ready. Click &ldquo;Solve &amp; Compare All Algorithms&rdquo; to run.</p>
+
+                <div class="solver-row" style="margin-top: 1rem;">
+                    <div><div class="solver-section-label">Comparison</div><table class="results-table" id="results-table"><thead><tr><th>Algorithm</th><th>Peak</th><th>&Sigma;r&sup2;</th><th>Time</th></tr></thead><tbody id="resultsBody"></tbody></table></div>
+                    <div><div class="solver-section-label">Schedule Detail</div><div style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--slate-light);padding:0.8rem 1rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.08);border-radius:4px;line-height:1.8;max-height:200px;overflow-y:auto;" id="schedule-output">Schedule details will appear here after leveling.</div></div>
+                </div>
+
+                <div class="business-panel" id="business-panel" style="display:none">
+                    <div class="solver-section-label" style="margin-top:0"><i class="fas fa-chart-line" style="color:var(--gold);margin-right:0.5rem"></i>What this means for your project</div>
+                    <div class="business-controls">
+                        <label style="font-size:0.82rem;color:var(--slate-light);">Cost per peak worker-day (&euro;)<input type="number" id="biz-unit-cost" value="1200" min="1" max="10000" step="50" style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;"></label>
+                        <label style="font-size:0.82rem;color:var(--slate-light);">Projects per year<input type="number" id="biz-projects" value="8" min="1" max="100" step="1" style="width:70px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;"></label>
+                    </div>
+                    <div class="biz-cards">
+                        <div class="biz-card"><span class="biz-val" id="biz-peak-reduction">&mdash;</span><span class="biz-label-text">Peak reduction<br><small>workers per day</small></span></div>
+                        <div class="biz-card"><span class="biz-val" id="biz-savings-project">&mdash;</span><span class="biz-label-text">Savings per project<br><small>at current cost/worker-day</small></span></div>
+                        <div class="biz-card"><span class="biz-val" id="biz-savings-annual">&mdash;</span><span class="biz-label-text">Annual savings<br><small>across all projects</small></span></div>
+                    </div>
+                    <p class="biz-disclaimer">Values are illustrative estimates based on the scenario above. Adjust inputs to model your operation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Algorithms -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Algorithms</span></h2><p>Approaches to resource leveling</p></div>
+        <div class="content-block fade-in">
+            <div class="algo-card"><div class="algo-tag">Optimization</div><h3>Burgess-Killebrew</h3><span class="algo-complexity">O(n &middot; T &middot; F) per iteration</span><p>The classic resource leveling heuristic (1962). For each activity with float, evaluate all possible start times within its float window and choose the one that minimizes the <strong>sum of squared daily resource usage</strong>. Iterate until no further improvement is found. The squared objective penalizes peaks quadratically, naturally smoothing the histogram toward uniformity.</p></div>
+            <div class="algo-card"><div class="algo-tag">Heuristic</div><h3>Greedy Shift</h3><span class="algo-complexity">O(n &middot; T)</span><p>A fast single-pass heuristic that identifies the <strong>highest-peak day</strong>, then shifts the activity contributing most to that peak as late as possible within its float. Repeat until no further peak reduction is possible. Simple and fast, but may get stuck in local optima since it only considers one activity at a time.</p></div>
+            <div class="algo-card"><div class="algo-tag">Metaheuristic</div><h3>Simulated Annealing</h3><span class="algo-complexity">Iterative &middot; O(iterations &middot; n &middot; T)</span><p>A probabilistic search that randomly shifts activities within their float windows. Improvements are always accepted; worse solutions are accepted with decreasing probability as the &ldquo;temperature&rdquo; cools. This allows escape from local optima and often finds solutions superior to greedy approaches, especially on larger networks with many interdependent float windows.</p></div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. References -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>References</span></h2><p>Foundational works in resource leveling</p></div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li><span class="ref-author">Burgess, A. R. &amp; Killebrew, J. B.</span> (1962). <span class="ref-title">&ldquo;Variation in activity level on a cyclical arrow diagram.&rdquo;</span> <span class="ref-journal">Journal of Industrial Engineering, 13(2), 76&ndash;83.</span></li>
+                <li><span class="ref-author">Hegazy, T.</span> (1999). <span class="ref-title">&ldquo;Optimization of resource allocation and leveling using genetic algorithms.&rdquo;</span> <span class="ref-journal">Journal of Construction Engineering and Management, 125(3), 167&ndash;175.</span></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 7. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize your construction scheduling?</h3>
+            <p>From resource leveling to project scheduling and workforce planning, mathematical modeling can transform your construction operations. Let&rsquo;s discuss how Operations Research can work for you.</p>
+            <div class="cta-links"><a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link"><i class="fab fa-linkedin"></i> Connect on LinkedIn</a></div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box"><div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>Data shown is illustrative. Activity names, durations, and resource requirements are representative scenarios for educational purposes and do not reflect any specific construction project.</div>
+    </div>
+</section>
+
+<footer><div class="container"><p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p></div></footer>
+
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+
+<!-- TODO: Add Python solver file (e.g., resource_leveling.py) and link from this page -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function(){
+'use strict';
+
+// ═══════════════════════════════════════════════════════════════
+// Construction Resource Leveling — Interactive Demo
+// ═══════════════════════════════════════════════════════════════
+
+var beforeCanvas = document.getElementById('beforeCanvas');
+var afterCanvas = document.getElementById('afterCanvas');
+var beforeCtx = beforeCanvas.getContext('2d');
+var afterCtx = afterCanvas.getContext('2d');
+
+var dpr = window.devicePixelRatio || 1;
+var CW = 440, CH = 300;
+beforeCanvas.width = CW * dpr; beforeCanvas.height = CH * dpr;
+beforeCanvas.style.width = CW + 'px'; beforeCanvas.style.height = CH + 'px';
+beforeCtx.scale(dpr, dpr);
+afterCanvas.width = CW * dpr; afterCanvas.height = CH * dpr;
+afterCanvas.style.width = CW + 'px'; afterCanvas.style.height = CH + 'px';
+afterCtx.scale(dpr, dpr);
+
+// ── Scenario Data ──
+var SCENARIOS = [
+    { name: 'Condo Tower Phase 2', context: 'A 12-activity condo tower build-out with structural, MEP, and finishing trades. Precedence constraints reflect typical construction sequencing. Target: keep daily crew under 18 workers.', targetPeak: 18,
+      activities: [
+        { name: 'Foundation', dur: 4, workers: 8, preds: [] },
+        { name: 'Steel Frame', dur: 6, workers: 10, preds: [0] },
+        { name: 'Concrete Deck', dur: 5, workers: 12, preds: [1] },
+        { name: 'Ext. Walls', dur: 4, workers: 6, preds: [1] },
+        { name: 'Roofing', dur: 3, workers: 5, preds: [2] },
+        { name: 'Plumbing', dur: 5, workers: 4, preds: [2] },
+        { name: 'Electrical', dur: 4, workers: 5, preds: [2] },
+        { name: 'HVAC', dur: 3, workers: 4, preds: [5, 6] },
+        { name: 'Drywall', dur: 4, workers: 6, preds: [3, 5, 6] },
+        { name: 'Painting', dur: 3, workers: 4, preds: [8] },
+        { name: 'Flooring', dur: 3, workers: 5, preds: [8] },
+        { name: 'Final Inspect', dur: 2, workers: 3, preds: [4, 7, 9, 10] }
+    ]},
+    { name: 'Bridge Deck Replacement', context: 'A 10-activity bridge deck replacement with demolition, rebar, and paving trades. Tight precedence network with limited float. Target: keep daily crew under 12 workers.', targetPeak: 12,
+      activities: [
+        { name: 'Traffic Divert', dur: 1, workers: 3, preds: [] },
+        { name: 'Deck Demolish', dur: 4, workers: 8, preds: [0] },
+        { name: 'Beam Inspect', dur: 2, workers: 3, preds: [1] },
+        { name: 'Beam Repair', dur: 3, workers: 5, preds: [2] },
+        { name: 'Rebar Layout', dur: 3, workers: 6, preds: [3] },
+        { name: 'Formwork', dur: 2, workers: 4, preds: [3] },
+        { name: 'Concrete Pour', dur: 2, workers: 10, preds: [4, 5] },
+        { name: 'Curing', dur: 5, workers: 1, preds: [6] },
+        { name: 'Waterproof', dur: 2, workers: 4, preds: [7] },
+        { name: 'Paving', dur: 3, workers: 6, preds: [8] }
+    ]},
+    { name: 'Hospital Wing Extension', context: 'A 15-activity hospital wing extension with complex MEP coordination and strict infection-control sequencing. Target: keep daily crew under 22 workers.', targetPeak: 22,
+      activities: [
+        { name: 'Site Prep', dur: 3, workers: 6, preds: [] },
+        { name: 'Excavation', dur: 4, workers: 8, preds: [0] },
+        { name: 'Foundation', dur: 5, workers: 10, preds: [1] },
+        { name: 'Steel Erect', dur: 6, workers: 12, preds: [2] },
+        { name: 'Ext. Envelope', dur: 5, workers: 8, preds: [3] },
+        { name: 'Int. Framing', dur: 4, workers: 6, preds: [3] },
+        { name: 'Med Gas Lines', dur: 3, workers: 4, preds: [5] },
+        { name: 'Electrical', dur: 5, workers: 7, preds: [5] },
+        { name: 'Plumbing', dur: 4, workers: 5, preds: [5] },
+        { name: 'HVAC / Filters', dur: 4, workers: 6, preds: [6, 7] },
+        { name: 'Fire Suppress', dur: 3, workers: 4, preds: [7, 8] },
+        { name: 'Drywall', dur: 4, workers: 8, preds: [9, 10] },
+        { name: 'Tile / Epoxy', dur: 3, workers: 5, preds: [11] },
+        { name: 'Equipment Inst', dur: 3, workers: 4, preds: [12] },
+        { name: 'Commissioning', dur: 2, workers: 3, preds: [4, 13] }
+    ]}
+];
+
+var currentScenarioIdx = 0;
+var currentResults = [];
+var beforeHistogram = [];
+var bestResult = null;
+
+// ── CPM ──
+function computeCPM(activities) {
+    var n = activities.length;
+    var es = new Array(n).fill(0), ef = new Array(n).fill(0);
+    var ls = new Array(n).fill(0), lf = new Array(n).fill(0);
+    for (var i = 0; i < n; i++) {
+        var mx = 0;
+        for (var p = 0; p < activities[i].preds.length; p++) { var pr = activities[i].preds[p]; if (ef[pr] > mx) mx = ef[pr]; }
+        es[i] = mx; ef[i] = es[i] + activities[i].dur;
+    }
+    var projectEnd = 0;
+    for (var i = 0; i < n; i++) { if (ef[i] > projectEnd) projectEnd = ef[i]; }
+    for (var i = 0; i < n; i++) lf[i] = projectEnd;
+    for (var i = n - 1; i >= 0; i--) {
+        for (var j = 0; j < n; j++) { for (var p = 0; p < activities[j].preds.length; p++) { if (activities[j].preds[p] === i && ls[j] < lf[i]) lf[i] = ls[j]; } }
+        ls[i] = lf[i] - activities[i].dur;
+    }
+    var result = [];
+    for (var i = 0; i < n; i++) result.push({ name: activities[i].name, dur: activities[i].dur, workers: activities[i].workers, preds: activities[i].preds, es: es[i], ls: ls[i], float: ls[i] - es[i] });
+    return { activities: result, projectEnd: projectEnd };
+}
+
+// ── Histogram Helpers ──
+function buildHistogram(acts, starts, projectEnd) {
+    var hist = new Array(projectEnd).fill(0);
+    for (var i = 0; i < acts.length; i++) { for (var t = starts[i]; t < starts[i] + acts[i].dur && t < projectEnd; t++) hist[t] += acts[i].workers; }
+    return hist;
+}
+function sumSquared(hist) { var s = 0; for (var i = 0; i < hist.length; i++) s += hist[i] * hist[i]; return s; }
+function peakOf(hist) { var m = 0; for (var i = 0; i < hist.length; i++) if (hist[i] > m) m = hist[i]; return m; }
+
+// ── Algorithms ──
+function checkFeasibility(acts, starts, actIdx, newStart) {
+    var n = acts.length;
+    for (var j = 0; j < n; j++) {
+        for (var p = 0; p < acts[j].preds.length; p++) { if (acts[j].preds[p] === actIdx && newStart + acts[actIdx].dur > starts[j]) return false; }
+        if (acts[actIdx].preds.indexOf(j) >= 0 && starts[j] + acts[j].dur > newStart) return false;
+    }
+    return true;
+}
+
+function burgessKillebrew(cpmActs, projectEnd) {
+    var n = cpmActs.length;
+    var starts = []; for (var i = 0; i < n; i++) starts.push(cpmActs[i].es);
+    var improved = true, iter = 0;
+    while (improved && iter < 100) {
+        improved = false; iter++;
+        for (var i = 0; i < n; i++) {
+            if (cpmActs[i].float === 0) continue;
+            var bestStart = starts[i], bestScore = sumSquared(buildHistogram(cpmActs, starts, projectEnd));
+            for (var s = cpmActs[i].es; s <= cpmActs[i].ls; s++) {
+                if (!checkFeasibility(cpmActs, starts, i, s)) continue;
+                var old = starts[i]; starts[i] = s;
+                var score = sumSquared(buildHistogram(cpmActs, starts, projectEnd));
+                if (score < bestScore) { bestScore = score; bestStart = s; improved = true; }
+                starts[i] = old;
+            }
+            starts[i] = bestStart;
+        }
+    }
+    return starts;
+}
+
+function greedyShift(cpmActs, projectEnd) {
+    var n = cpmActs.length;
+    var starts = []; for (var i = 0; i < n; i++) starts.push(cpmActs[i].es);
+    for (var iter = 0; iter < 50; iter++) {
+        var hist = buildHistogram(cpmActs, starts, projectEnd);
+        var peakDay = 0, peakVal = hist[0];
+        for (var t = 1; t < hist.length; t++) if (hist[t] > peakVal) { peakVal = hist[t]; peakDay = t; }
+        var bestAct = -1, bestW = 0;
+        for (var i = 0; i < n; i++) {
+            if (cpmActs[i].float === 0) continue;
+            if (starts[i] <= peakDay && starts[i] + cpmActs[i].dur > peakDay && cpmActs[i].workers > bestW) { bestW = cpmActs[i].workers; bestAct = i; }
+        }
+        if (bestAct < 0) break;
+        var shifted = false;
+        for (var s = cpmActs[bestAct].ls; s > starts[bestAct]; s--) {
+            if (!checkFeasibility(cpmActs, starts, bestAct, s)) continue;
+            var oldPeak = peakOf(buildHistogram(cpmActs, starts, projectEnd));
+            starts[bestAct] = s;
+            if (peakOf(buildHistogram(cpmActs, starts, projectEnd)) < oldPeak) { shifted = true; break; }
+        }
+        if (!shifted) break;
+    }
+    return starts;
+}
+
+function simulatedAnnealing(cpmActs, projectEnd) {
+    var n = cpmActs.length;
+    var starts = []; for (var i = 0; i < n; i++) starts.push(cpmActs[i].es);
+    var bestStarts = starts.slice(), bestScore = sumSquared(buildHistogram(cpmActs, starts, projectEnd));
+    var currentScore = bestScore, temp = 500, cooling = 0.97;
+    for (var iter = 0; iter < 800; iter++) {
+        var candidates = [];
+        for (var i = 0; i < n; i++) if (cpmActs[i].float > 0) candidates.push(i);
+        if (candidates.length === 0) break;
+        var act = candidates[Math.floor(Math.random() * candidates.length)];
+        var newStart = cpmActs[act].es + Math.floor(Math.random() * (cpmActs[act].float + 1));
+        if (!checkFeasibility(cpmActs, starts, act, newStart)) continue;
+        var oldStart = starts[act]; starts[act] = newStart;
+        var newScore = sumSquared(buildHistogram(cpmActs, starts, projectEnd));
+        var delta = newScore - currentScore;
+        if (delta < 0 || Math.random() < Math.exp(-delta / temp)) {
+            currentScore = newScore;
+            if (currentScore < bestScore) { bestScore = currentScore; bestStarts = starts.slice(); }
+        } else { starts[act] = oldStart; }
+        temp *= cooling;
+    }
+    return bestStarts;
+}
+
+// ── Drawing ──
+function drawHistogram(ctx, hist, label, targetPeak, cw, ch) {
+    ctx.fillStyle = '#112240'; ctx.fillRect(0, 0, cw, ch);
+    var pad = { top: 35, bottom: 30, left: 40, right: 15 };
+    var plotW = cw - pad.left - pad.right, plotH = ch - pad.top - pad.bottom;
+    var maxVal = Math.max(targetPeak, peakOf(hist)) + 2;
+    var barW = Math.max(2, Math.floor(plotW / hist.length) - 1);
+    var totalBarsW = hist.length * (barW + 1);
+    var offsetX = pad.left + (plotW - totalBarsW) / 2;
+
+    ctx.fillStyle = 'rgba(248,249,250,0.6)'; ctx.font = '11px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(label, cw / 2, 18);
+
+    ctx.strokeStyle = 'rgba(197,160,89,0.15)'; ctx.lineWidth = 0.5;
+    for (var i = 0; i <= 5; i++) {
+        var y = pad.top + plotH - (i / 5) * plotH;
+        ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(cw - pad.right, y); ctx.stroke();
+        ctx.fillStyle = 'rgba(136,146,176,0.6)'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'right';
+        ctx.fillText(Math.round(i / 5 * maxVal), pad.left - 5, y + 3);
+    }
+
+    for (var t = 0; t < hist.length; t++) {
+        var barH = (hist[t] / maxVal) * plotH;
+        var x = offsetX + t * (barW + 1), y = pad.top + plotH - barH;
+        ctx.fillStyle = hist[t] > targetPeak ? 'rgba(255,107,107,0.7)' : 'rgba(197,160,89,0.65)';
+        ctx.fillRect(x, y, barW, barH);
+    }
+
+    var targetY = pad.top + plotH - (targetPeak / maxVal) * plotH;
+    ctx.setLineDash([5, 3]); ctx.strokeStyle = 'rgba(100,255,218,0.6)'; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(pad.left, targetY); ctx.lineTo(cw - pad.right, targetY); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = 'rgba(100,255,218,0.7)'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'left';
+    ctx.fillText('target: ' + targetPeak, cw - pad.right - 70, targetY - 5);
+
+    ctx.fillStyle = 'rgba(136,146,176,0.5)'; ctx.font = '9px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Day', cw / 2, ch - 5);
+
+    var peak = peakOf(hist);
+    ctx.fillStyle = peak > targetPeak ? 'rgba(255,107,107,0.9)' : 'rgba(100,255,218,0.9)';
+    ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'right';
+    ctx.fillText('Peak: ' + peak, cw - pad.right, 18);
+    ctx.fillStyle = 'rgba(136,146,176,0.5)'; ctx.font = '9px JetBrains Mono, monospace';
+    ctx.fillText('\u03A3r\u00B2=' + sumSquared(hist), cw - pad.right, 30);
+}
+
+function clearBothCanvases() {
+    [beforeCtx, afterCtx].forEach(function(ctx) {
+        ctx.fillStyle = '#112240'; ctx.fillRect(0, 0, CW, CH);
+        ctx.fillStyle = 'rgba(136,146,176,0.3)'; ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('Resource histogram will appear here', CW / 2, CH / 2);
+    });
+}
+
+// ── UI ──
+function renderScenarioButtons() {
+    var container = document.getElementById('scenario-switcher');
+    container.textContent = '';
+    SCENARIOS.forEach(function(scn, i) {
+        var btn = document.createElement('button');
+        btn.className = 'scenario-btn' + (i === currentScenarioIdx ? ' active' : '');
+        btn.setAttribute('data-scenario', i);
+        var nameSpan = document.createElement('span'); nameSpan.className = 'scn-name'; nameSpan.textContent = scn.name;
+        var descSpan = document.createElement('span'); descSpan.className = 'scn-desc'; descSpan.textContent = scn.activities.length + ' activities, target peak ' + scn.targetPeak + ' workers';
+        btn.appendChild(nameSpan); btn.appendChild(descSpan);
+        btn.addEventListener('click', function() { loadScenario(i); });
+        container.appendChild(btn);
+    });
+}
+
+function renderAlgoChips() {
+    var container = document.getElementById('algoChips');
+    container.textContent = '';
+    var algos = [
+        { key: 'burgess', label: 'Burgess-Killebrew', tag: 'exact obj' },
+        { key: 'greedy', label: 'Greedy Shift', tag: 'heuristic' },
+        { key: 'sa', label: 'Simulated Annealing', tag: 'metaheuristic' }
+    ];
+    algos.forEach(function(a) {
+        var btn = document.createElement('button');
+        btn.className = 'algo-chip' + (a.key === 'burgess' ? ' active' : '');
+        btn.setAttribute('data-algo', a.key);
+        btn.textContent = a.label + ' ';
+        var sp = document.createElement('span'); sp.className = 'chip-type'; sp.textContent = a.tag;
+        btn.appendChild(sp);
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('[data-algo]').forEach(function(b) { b.classList.toggle('active', b.getAttribute('data-algo') === a.key); });
+        });
+        container.appendChild(btn);
+    });
+}
+
+function renderActivityTable(cpmResult) {
+    var tbody = document.getElementById('activityBody');
+    tbody.textContent = '';
+    var acts = cpmResult.activities;
+    for (var i = 0; i < acts.length; i++) {
+        var tr = document.createElement('tr');
+        var predNames = acts[i].preds.map(function(p) { return acts[p].name.substring(0, 10); }).join(', ') || '\u2014';
+
+        var tdName = document.createElement('td'); tdName.style.whiteSpace = 'nowrap'; tdName.textContent = acts[i].name;
+        var tdDur = document.createElement('td'); var inpDur = document.createElement('input'); inpDur.type = 'number'; inpDur.value = acts[i].dur; inpDur.min = 1; inpDur.max = 30; inpDur.setAttribute('data-field', 'dur'); inpDur.setAttribute('data-idx', i); inpDur.addEventListener('change', onActivityEdit); tdDur.appendChild(inpDur);
+        var tdW = document.createElement('td'); var inpW = document.createElement('input'); inpW.type = 'number'; inpW.value = acts[i].workers; inpW.min = 1; inpW.max = 50; inpW.setAttribute('data-field', 'workers'); inpW.setAttribute('data-idx', i); inpW.addEventListener('change', onActivityEdit); tdW.appendChild(inpW);
+        var tdES = document.createElement('td'); tdES.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:0.75rem;color:var(--slate);'; tdES.textContent = acts[i].es;
+        var tdLS = document.createElement('td'); tdLS.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:0.75rem;color:var(--slate);'; tdLS.textContent = acts[i].ls;
+        var tdFloat = document.createElement('td'); tdFloat.style.cssText = 'font-family:JetBrains Mono,monospace;font-size:0.75rem;color:' + (acts[i].float > 0 ? 'var(--green)' : 'var(--slate)') + ';'; tdFloat.textContent = acts[i].float;
+        var tdPreds = document.createElement('td'); tdPreds.style.cssText = 'font-size:0.72rem;color:var(--slate);'; tdPreds.textContent = predNames;
+
+        tr.appendChild(tdName); tr.appendChild(tdDur); tr.appendChild(tdW); tr.appendChild(tdES); tr.appendChild(tdLS); tr.appendChild(tdFloat); tr.appendChild(tdPreds);
+        tbody.appendChild(tr);
+    }
+}
+
+function onActivityEdit(e) {
+    var el = e.target;
+    var idx = parseInt(el.getAttribute('data-idx'));
+    var field = el.getAttribute('data-field');
+    SCENARIOS[currentScenarioIdx].activities[idx][field] = parseInt(el.value) || 1;
+    var cpm = computeCPM(SCENARIOS[currentScenarioIdx].activities);
+    renderActivityTable(cpm); updateSummary(); clearBothCanvases(); clearResults();
+}
+
+function loadScenario(idx) {
+    currentScenarioIdx = idx;
+    document.querySelectorAll('.scenario-btn').forEach(function(btn, i) { btn.classList.toggle('active', i === idx); });
+    document.getElementById('scenario-context').textContent = SCENARIOS[idx].context;
+    var cpm = computeCPM(SCENARIOS[idx].activities);
+    renderActivityTable(cpm); updateSummary(); clearBothCanvases(); clearResults();
+}
+
+function updateSummary() {
+    var scn = SCENARIOS[currentScenarioIdx];
+    document.getElementById('configSummary').textContent = scn.activities.length + ' Activities \u00b7 Target Peak ' + scn.targetPeak;
+}
+
+function clearResults() {
+    currentResults = []; bestResult = null;
+    var tbody = document.getElementById('resultsBody');
+    tbody.textContent = '';
+    var tr = document.createElement('tr'); var td = document.createElement('td'); td.colSpan = 4; td.style.cssText = 'text-align:center;color:var(--slate);font-family:Inter,sans-serif;'; td.textContent = 'Click Solve & Compare'; tr.appendChild(td); tbody.appendChild(tr);
+    document.getElementById('schedule-output').textContent = 'Schedule details will appear here after leveling.';
+    document.getElementById('solver-status').textContent = 'Ready.';
+    document.getElementById('business-panel').style.display = 'none';
+}
+
+// ── Solve ──
+function solveAll() {
+    var scn = SCENARIOS[currentScenarioIdx];
+    var cpm = computeCPM(scn.activities);
+    var acts = cpm.activities, projectEnd = cpm.projectEnd;
+
+    var esStarts = []; for (var i = 0; i < acts.length; i++) esStarts.push(acts[i].es);
+    beforeHistogram = buildHistogram(acts, esStarts, projectEnd);
+    drawHistogram(beforeCtx, beforeHistogram, 'Before Leveling (all at ES)', scn.targetPeak, CW, CH);
+
+    var algos = [
+        { key: 'burgess', name: 'Burgess-Killebrew', fn: burgessKillebrew },
+        { key: 'greedy', name: 'Greedy Shift', fn: greedyShift },
+        { key: 'sa', name: 'Simulated Annealing', fn: simulatedAnnealing }
+    ];
+
+    currentResults = [];
+    for (var a = 0; a < algos.length; a++) {
+        var t0 = performance.now();
+        var starts = algos[a].fn(acts, projectEnd);
+        var elapsed = performance.now() - t0;
+        var hist = buildHistogram(acts, starts, projectEnd);
+        currentResults.push({ key: algos[a].key, name: algos[a].name, starts: starts, histogram: hist, peak: peakOf(hist), sumSq: sumSquared(hist), time: elapsed });
+    }
+    currentResults.sort(function(a, b) { return a.sumSq - b.sumSq; });
+    bestResult = currentResults[0];
+
+    drawHistogram(afterCtx, bestResult.histogram, 'After: ' + bestResult.name, scn.targetPeak, CW, CH);
+
+    var tbody = document.getElementById('resultsBody');
+    tbody.textContent = '';
+    currentResults.forEach(function(r, i) {
+        var tr = document.createElement('tr');
+        var tdName = document.createElement('td'); tdName.className = 'algo-label'; tdName.textContent = r.name;
+        var tdPeak = document.createElement('td'); tdPeak.className = i === 0 ? 'best-val' : ''; tdPeak.textContent = r.peak;
+        var tdSumSq = document.createElement('td'); tdSumSq.className = i === 0 ? 'best-val' : ''; tdSumSq.textContent = r.sumSq;
+        var tdTime = document.createElement('td'); tdTime.textContent = r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
+        tr.appendChild(tdName); tr.appendChild(tdPeak); tr.appendChild(tdSumSq); tr.appendChild(tdTime);
+        tr.addEventListener('click', function() { showResult(r); });
+        tbody.appendChild(tr);
+    });
+
+    showResult(bestResult);
+    document.getElementById('solver-status').textContent = 'Solved with 3 algorithms. Best: ' + bestResult.name + ' (peak=' + bestResult.peak + ', \u03A3r\u00B2=' + bestResult.sumSq + '). Click a row to view.';
+    document.getElementById('business-panel').style.display = 'block';
+    updateBusinessPanel();
+}
+
+function showResult(r) {
+    var scn = SCENARIOS[currentScenarioIdx];
+    drawHistogram(afterCtx, r.histogram, 'After: ' + r.name, scn.targetPeak, CW, CH);
+    var cpm = computeCPM(scn.activities);
+    var acts = cpm.activities;
+    var lines = [];
+    for (var i = 0; i < acts.length; i++) {
+        var shift = r.starts[i] - acts[i].es;
+        lines.push(acts[i].name + ': start=' + r.starts[i] + ' (ES=' + acts[i].es + (shift > 0 ? ', shifted +' + shift : '') + ')');
+    }
+    lines.push(''); lines.push('Peak: ' + r.peak + '  |  \u03A3r\u00B2: ' + r.sumSq);
+    document.getElementById('schedule-output').textContent = lines.join('\n');
+}
+
+function updateBusinessPanel() {
+    if (!bestResult) return;
+    var unitCost = parseInt(document.getElementById('biz-unit-cost').value) || 1200;
+    var projects = parseInt(document.getElementById('biz-projects').value) || 8;
+    var beforePeak = peakOf(beforeHistogram);
+    var reduction = beforePeak - bestResult.peak;
+    var cpm = computeCPM(SCENARIOS[currentScenarioIdx].activities);
+    var savingsPerProject = reduction * unitCost * cpm.projectEnd;
+    var annualSavings = savingsPerProject * projects;
+    document.getElementById('biz-peak-reduction').textContent = reduction + ' workers';
+    document.getElementById('biz-savings-project').textContent = '\u20AC' + savingsPerProject.toLocaleString();
+    document.getElementById('biz-savings-annual').textContent = '\u20AC' + annualSavings.toLocaleString();
+}
+
+// Wire up solve button and business inputs
+document.getElementById('solveBtn').addEventListener('click', solveAll);
+document.getElementById('biz-unit-cost').addEventListener('input', updateBusinessPanel);
+document.getElementById('biz-projects').addEventListener('input', updateBusinessPanel);
+
+// ── Initialize ──
+renderScenarioButtons();
+renderAlgoChips();
+clearBothCanvases();
+updateSummary();
+document.getElementById('scenario-context').textContent = SCENARIOS[0].context;
+
+// ── Scroll Animations ──
+var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
+
+})();
+</script>
+
+<!-- Interactivity Enhancements -->
+<div class="scroll-progress" id="scrollProgress"></div>
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top"><i class="fas fa-chevron-up"></i></button>
+
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap"><i class="fas fa-search"></i><input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false"><span class="cmd-kbd">ESC</span></div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer"><div class="cmd-footer-keys"><span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span><span><kbd class="cmd-kbd">&crarr;</kbd> open</span></div><span>Search across all problems</span></div>
+    </div>
+</div>
+
+<script>
+(function() {
+    'use strict';
+
+    // Theme Toggle
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var saved = localStorage.getItem('or-theme') || 'dark';
+        if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var t = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            localStorage.setItem('or-theme', t);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // Command Palette
+    var SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: '6 problems', icon: 'fa-industry', url: 'families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'RCPSP', subtitle: 'PS | prec | Cmax', icon: 'fa-tasks', url: 'families/scheduling.html#rcpsp', group: 'Problems', badge: 'Scheduling' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'applications/construction-project.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Resource Leveling', subtitle: 'Construction Scheduling', icon: 'fa-chart-bar', url: 'applications/construction-resource-leveling.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Equipment Scheduling', subtitle: 'Parallel Machine', icon: 'fa-tractor', url: 'applications/equipment-scheduling.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'applications/warehouse-packing.html', group: 'Applications', badge: 'Demo' },
+    ];
+
+    var depth = (window.location.pathname.match(/families\/|applications\//)) ? '../' : '';
+    var overlay = document.getElementById('cmdPalette');
+    var input = document.getElementById('cmdInput');
+    var resultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() { overlay.classList.add('open'); input.value = ''; input.focus(); renderCmdResults(''); activeIdx = -1; }
+    function closePalette() { overlay.classList.remove('open'); activeIdx = -1; }
+
+    function renderCmdResults(query) {
+        var q = query.toLowerCase();
+        var filtered = SEARCH_DATA.filter(function(it) { return !q || it.title.toLowerCase().indexOf(q) >= 0 || it.subtitle.toLowerCase().indexOf(q) >= 0; });
+        if (!filtered.length) { resultsDiv.textContent = ''; var d = document.createElement('div'); d.className = 'cmd-empty'; d.textContent = 'No results found'; resultsDiv.appendChild(d); return; }
+        resultsDiv.textContent = '';
+        var groups = {}, order = ['Families', 'Problems', 'Applications'];
+        filtered.forEach(function(it) { if (!groups[it.group]) groups[it.group] = []; groups[it.group].push(it); });
+        order.forEach(function(g) {
+            if (!groups[g]) return;
+            var lbl = document.createElement('div'); lbl.className = 'cmd-group-label'; lbl.textContent = g; resultsDiv.appendChild(lbl);
+            groups[g].forEach(function(it) {
+                var a = document.createElement('a'); a.href = depth + it.url; a.className = 'cmd-result';
+                var icon = document.createElement('div'); icon.className = 'cmd-icon'; var ic = document.createElement('i'); ic.className = 'fas ' + it.icon; icon.appendChild(ic);
+                var info = document.createElement('div'); info.className = 'cmd-info';
+                var title = document.createElement('div'); title.className = 'cmd-title'; title.textContent = it.title;
+                var sub = document.createElement('div'); sub.className = 'cmd-subtitle'; sub.textContent = it.subtitle;
+                info.appendChild(title); info.appendChild(sub);
+                var badge = document.createElement('span'); badge.className = 'cmd-badge'; badge.textContent = it.badge;
+                a.appendChild(icon); a.appendChild(info); a.appendChild(badge); resultsDiv.appendChild(a);
+            });
+        });
+    }
+
+    if (input) input.addEventListener('input', function() { renderCmdResults(input.value); activeIdx = -1; });
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); overlay.classList.contains('open') ? closePalette() : openPalette(); return; }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+        var results = resultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, results.length - 1); results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); }); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); }); }
+        else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) { e.preventDefault(); results[activeIdx].click(); }
+    });
+
+    if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closePalette(); });
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) searchTrigger.addEventListener('click', openPalette);
+
+    // Particle Network
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        function resizePC() { pCanvas.width = heroEl.offsetWidth; pCanvas.height = heroEl.offsetHeight; }
+        resizePC(); window.addEventListener('resize', resizePC);
+        function Particle() { this.x = Math.random() * pCanvas.width; this.y = Math.random() * pCanvas.height; this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4; this.r = Math.random() * 2 + 1; }
+        Particle.prototype.update = function() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1; if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1; };
+        Particle.prototype.draw = function() { pCtx.beginPath(); pCtx.arc(this.x, this.y, this.r, 0, Math.PI * 2); pCtx.fillStyle = 'rgba(197,160,89,0.35)'; pCtx.fill(); };
+        for (var i = 0; i < 40; i++) particles.push(new Particle());
+        function animP() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(function(p) { p.update(); p.draw(); });
+            for (var i = 0; i < particles.length; i++) for (var j = i + 1; j < particles.length; j++) {
+                var dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y, d = Math.sqrt(dx * dx + dy * dy);
+                if (d < 120) { pCtx.beginPath(); pCtx.moveTo(particles[i].x, particles[i].y); pCtx.lineTo(particles[j].x, particles[j].y); pCtx.strokeStyle = 'rgba(197,160,89,' + (0.12 * (1 - d / 120)) + ')'; pCtx.lineWidth = 0.6; pCtx.stroke(); }
+            }
+            requestAnimationFrame(animP);
+        }
+        animP();
+    }
+
+    // Scroll Progress + Scroll-to-Top
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+    function onScroll() {
+        var st = window.scrollY, dh = document.documentElement.scrollHeight - window.innerHeight;
+        if (progressBar) progressBar.style.width = (dh > 0 ? (st / dh) * 100 : 0) + '%';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('visible', st > 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    if (scrollTopBtn) scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
+</script>
+
+</body>
+</html>
