@@ -1,0 +1,2421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JWST Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive multi-objective JWST observation scheduling demo with momentum-constrained heuristics: Greedy Priority, Momentum-Balanced, and Pareto Greedy.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/jwst-scheduling.html">
+    <meta property="og:title" content="JWST Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive multi-objective JWST observation scheduling demo with momentum-constrained heuristics: Greedy Priority, Momentum-Balanced, and Pareto Greedy.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="JWST Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive multi-objective JWST observation scheduling demo with momentum-constrained heuristics: Greedy Priority, Momentum-Balanced, and Pareto Greedy.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* Content Blocks */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* Disclaimer Box */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* Formulation Block */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* Science Context */
+        .science-context {
+            background: rgba(122, 162, 247, 0.04);
+            border: 1px solid rgba(122, 162, 247, 0.15);
+            border-left: 3px solid var(--blue);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+        .science-context-label {
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: var(--blue);
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .science-context p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.6rem;
+        }
+        .science-context p:last-child { margin-bottom: 0; }
+        .science-context strong { color: var(--ivory); font-weight: 500; }
+
+        /* Mapping Table */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+        }
+        .mapping-table td:first-child { color: var(--ivory); font-weight: 500; }
+
+        /* Decision Chain */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+        }
+        .chain-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1.2rem 1.5rem;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            background: var(--midnight);
+            min-width: 160px;
+            text-align: center;
+            transition: all 0.3s;
+            position: relative;
+        }
+        .chain-step.active {
+            border-color: var(--gold);
+            background: rgba(197, 160, 89, 0.08);
+            box-shadow: 0 0 20px rgba(197, 160, 89, 0.1);
+        }
+        .chain-step .step-phase {
+            font-size: 0.6rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+        .chain-step .step-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--ivory);
+        }
+        .chain-step .step-detail {
+            font-size: 0.72rem;
+            color: var(--slate);
+            margin-top: 0.2rem;
+        }
+        .chain-arrow {
+            font-size: 1.2rem;
+            color: var(--gold);
+            margin: 0 0.3rem;
+            opacity: 0.5;
+        }
+        @media (max-width: 768px) {
+            .chain-arrow { transform: rotate(90deg); margin: 0.3rem 0; }
+            .decision-chain { flex-direction: column; }
+        }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .algo-select {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .algo-chip .chip-type {
+            font-size: 0.6rem;
+            margin-left: 4px;
+            opacity: 0.7;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* Scenario buttons */
+        .scenario-gallery {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+        .scenario-btn {
+            font-size: 0.72rem;
+            padding: 8px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--slate-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .scenario-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .scenario-btn.active {
+            background: rgba(197, 160, 89, 0.12);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* Complexity Box */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* Algorithm Cards */
+        .algo-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 1.8rem;
+            transition: border-color 0.3s;
+        }
+        .algo-card:hover { border-color: rgba(197, 160, 89, 0.3); }
+        .algo-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ivory);
+            margin-bottom: 0.3rem;
+        }
+        .algo-card .algo-tag {
+            font-size: 0.68rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 1rem;
+            display: block;
+        }
+        .algo-card p {
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.8;
+            margin-bottom: 0.8rem;
+        }
+        .algo-card .algo-steps {
+            list-style: none;
+            padding: 0;
+            margin: 0.8rem 0 0;
+        }
+        .algo-card .algo-steps li {
+            padding: 0.3rem 0 0.3rem 1.2rem;
+            position: relative;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+        }
+        .algo-card .algo-steps li::before {
+            content: attr(data-step);
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            font-weight: 600;
+        }
+
+        /* Evidence Panel */
+        .evidence-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+        }
+        .evidence-panel-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--ivory);
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+        }
+        .evidence-panel-title i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .evidence-item {
+            display: flex;
+            gap: 1rem;
+            padding: 0.7rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            align-items: flex-start;
+        }
+        .evidence-item:last-child { border-bottom: none; }
+        .evidence-badge {
+            font-size: 0.6rem;
+            padding: 3px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-top: 3px;
+            font-weight: 500;
+        }
+        .ev-operational {
+            background: rgba(100, 255, 218, 0.08);
+            color: var(--green);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .ev-published {
+            background: rgba(122, 162, 247, 0.08);
+            color: var(--blue);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+        }
+        .evidence-text {
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .evidence-text .ref-author { color: var(--ivory); font-weight: 500; }
+        .evidence-text .ref-title { font-style: italic; }
+        .evidence-text .ref-journal { color: var(--slate); }
+
+        /* CTA Panel */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Back Link */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Particle canvas */
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* Scroll Progress + Scroll-to-Top */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* Nav search trigger */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* Canvas export */
+        .canvas-wrapper { position: relative; }
+        .canvas-export-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            background: rgba(10, 25, 47, 0.85);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            color: var(--gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            transition: all 0.2s;
+            z-index: 10;
+            opacity: 0;
+            backdrop-filter: blur(4px);
+        }
+        .canvas-wrapper:hover .canvas-export-btn { opacity: 1; }
+        .canvas-export-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Momentum bar styles */
+        .momentum-legend {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-top: 0.8rem;
+            font-size: 0.72rem;
+            color: var(--slate);
+        }
+        .momentum-legend-item {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .legend-swatch {
+            width: 14px;
+            height: 10px;
+            border-radius: 2px;
+            display: inline-block;
+        }
+
+        /* Solve animation */
+        @keyframes solvePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(197, 160, 89, 0.4); }
+            50% { box-shadow: 0 0 0 8px rgba(197, 160, 89, 0); }
+        }
+        .solver-btn.solving {
+            animation: solvePulse 1s ease-in-out infinite;
+            pointer-events: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .solver-btn.solving i { animation: spin 0.8s linear infinite; }
+
+        @keyframes resultFadeIn {
+            from { opacity: 0; transform: translateX(-10px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .results-table tbody tr {
+            animation: resultFadeIn 0.3s ease-out both;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
+        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
+        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
+        .results-table tbody tr:hover { background: rgba(197, 160, 89, 0.06); }
+        .results-table tbody tr.row-selected {
+            background: rgba(197, 160, 89, 0.1);
+            outline: 1px solid rgba(197, 160, 89, 0.2);
+            outline-offset: -1px;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .algo-cards { grid-template-columns: 1fr; }
+            .evidence-item { flex-direction: column; gap: 0.4rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../index.html#families">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="../index.html#applications">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&ShortUpArrow;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li>JWST Scheduling</li>
+        </ol>
+    </div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-satellite"></i></div>
+        <h1>James Webb Space Telescope <span>Scheduling</span></h1>
+        <p class="hero-subtitle">Multi-Objective Scheduling &middot; Momentum-Constrained</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            The Space Telescope Science Institute (STScI) Visit Scheduling System must arrange thousands
+            of astronomical observations across a 365-day cycle, balancing scientific priority against
+            the telescope's angular momentum limits, instrument configuration changes, and narrow
+            visibility windows imposed by JWST's orbit around the Sun&ndash;Earth Lagrange point L2.
+        </p>
+    </div>
+</section>
+
+<!-- 2. Scientific Context -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Scientific <span>Context</span></h2>
+            <p>The orbital mechanics and engineering constraints that shape the scheduling problem</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="science-context">
+                <div class="science-context-label"><i class="fas fa-atom"></i> Orbital &amp; Mechanical Context</div>
+                <p>
+                    JWST orbits the <strong>Sun&ndash;Earth Lagrange point L2</strong>, roughly 1.5 million
+                    kilometres from Earth. Its five-layer sunshield blocks solar radiation but acts as a
+                    <strong>solar sail</strong>: photon pressure exerts torque on the spacecraft, gradually
+                    building angular momentum in the three reaction wheels.
+                </p>
+                <p>
+                    Every observation at a given <strong>roll angle</strong> produces a deterministic
+                    momentum increment &Delta;p(obs, roll). Over each <strong>22-day momentum management
+                    cycle</strong>, the accumulated 3D momentum vector must remain within a polytope
+                    bounded by approximately <strong>24&ndash;30 Nms</strong>. If the limit is breached,
+                    a costly thruster-based momentum dump is required, consuming finite fuel and
+                    interrupting science operations.
+                </p>
+                <p>
+                    The <strong>roll angle</strong> is a continuous decision variable: each observation
+                    can be executed at any angle within a narrow band &plusmn;&Delta; around the nominal
+                    pointing, and the chosen angle determines both the momentum contribution and
+                    whether a suitable <strong>guide star</strong> is available for fine pointing control.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Problem -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Scheduling observations under visibility, momentum, and multi-objective constraints</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Each astronomical observation is modelled as a <strong>job</strong> with a
+                <strong>visibility window</strong> (the days during the year when the target is
+                accessible from L2), a <strong>duration</strong> (exposure time in hours), an
+                <strong>instrument configuration</strong> (NIRCam, NIRSpec, MIRI, FGS), and a
+                <strong>scientific priority</strong> (1&ndash;10, assigned by the Time Allocation Committee).
+            </p>
+            <p>
+                The key constraint is <strong>momentum management</strong>: the 3D angular momentum
+                vector must remain within an allowable polytope across every 22-day bin. The scheduler
+                selects each observation's <strong>roll angle</strong> as a decision variable, which
+                affects both the momentum delta and guide star availability. The problem becomes
+                multi-objective: maximise total science time, minimise missed visibility windows,
+                and minimise peak momentum accumulation.
+            </p>
+
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>Real-World Concept</th>
+                        <th>Model Element</th>
+                        <th>Constraint Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Target visibility</td>
+                        <td>Time window [earliest, latest]</td>
+                        <td>Hard &mdash; physics</td>
+                    </tr>
+                    <tr>
+                        <td>Reaction wheel limit</td>
+                        <td>Cumulative momentum &le; H_max per 22-day bin</td>
+                        <td>Hard &mdash; engineering</td>
+                    </tr>
+                    <tr>
+                        <td>Roll angle selection</td>
+                        <td>Continuous variable &in; [&minus;&Delta;, +&Delta;]</td>
+                        <td>Decision variable</td>
+                    </tr>
+                    <tr>
+                        <td>Guide star availability</td>
+                        <td>Boolean function of (target, roll)</td>
+                        <td>Hard &mdash; pointing</td>
+                    </tr>
+                    <tr>
+                        <td>Instrument changeover</td>
+                        <td>Setup time between configs</td>
+                        <td>Soft &mdash; efficiency</td>
+                    </tr>
+                    <tr>
+                        <td>Science priority</td>
+                        <td>Weight in objective function</td>
+                        <td>Objective</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">Multi-Objective Formulation</span>
+<span class="keyword">Minimise</span>   w<sub>1</sub>&middot;<span class="variable">gaps</span> + w<sub>2</sub>&middot;<span class="variable">lateObs</span> + w<sub>3</sub>&middot;&Vert;&Delta;<span class="variable">p</span>&Vert;
+<span class="keyword">subject to</span>
+  &forall; obs <span class="variable">i</span>: <span class="variable">schedTime</span>(<span class="variable">i</span>) &isin; <span class="variable">visibilityWindow</span>(<span class="variable">i</span>)          <span class="comment">// target accessible from L2</span>
+  &forall; 22-day bin <span class="variable">b</span>: &Vert;&Sigma;<sub><span class="variable">i</span>&isin;<span class="variable">b</span></sub> <span class="variable">momentum</span>(<span class="variable">i</span>, <span class="variable">roll</span>(<span class="variable">i</span>))&Vert; &le; <span class="variable">H_max</span>   <span class="comment">// reaction wheel limit</span>
+  <span class="variable">rollAngle</span>(<span class="variable">i</span>) &isin; [&minus;&Delta;, +&Delta;]                         <span class="comment">// roll freedom band</span>
+  <span class="variable">guideStarAvailable</span>(<span class="variable">i</span>, <span class="variable">rollAngle</span>(<span class="variable">i</span>)) = true          <span class="comment">// fine pointing required</span>
+            </div>
+
+            <div class="complexity-box">
+                <h3><i class="fas fa-exclamation-triangle"></i> Computational Complexity</h3>
+                <ul class="complexity-list">
+                    <li>The problem is NP-hard: it generalises job-shop scheduling with cumulative resource constraints.</li>
+                    <li>Typical Cycle 1&ndash;3 instances contain 1,000&ndash;3,000 observations with overlapping windows.</li>
+                    <li>The continuous roll-angle variable couples the combinatorial scheduling with nonlinear momentum dynamics.</li>
+                    <li>STScI uses a multi-pass heuristic pipeline: long-range planning, short-term scheduling, then real-time patching.</li>
+                    <li>Exact solvers (MIP) handle sub-problems of ~50 observations; the full problem requires decomposition or metaheuristics.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Algorithms -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>Approaches</span></h2>
+            <p>Three heuristics for momentum-constrained observation scheduling</p>
+        </div>
+        <div class="algo-cards fade-in">
+            <div class="algo-card">
+                <h4>Greedy Priority</h4>
+                <span class="algo-tag">Constructive Heuristic</span>
+                <p>
+                    Sort observations by scientific priority (descending). For each observation,
+                    schedule it at the earliest feasible day within its visibility window,
+                    ignoring momentum balance.
+                </p>
+                <ul class="algo-steps">
+                    <li data-step="1.">Sort observations by priority (highest first)</li>
+                    <li data-step="2.">For each observation, find earliest day in window</li>
+                    <li data-step="3.">Place observation; skip if no day available</li>
+                    <li data-step="4.">No momentum checking &mdash; fast but may violate limits</li>
+                </ul>
+            </div>
+            <div class="algo-card">
+                <h4>Momentum-Balanced</h4>
+                <span class="algo-tag">Constraint-Aware Greedy</span>
+                <p>
+                    Sort by window urgency (latest deadline first). For each candidate day,
+                    evaluate the momentum contribution and choose the day that minimises
+                    momentum in the current 22-day bin while remaining feasible.
+                </p>
+                <ul class="algo-steps">
+                    <li data-step="1.">Sort observations by window deadline (earliest deadline first)</li>
+                    <li data-step="2.">For each, iterate days in window</li>
+                    <li data-step="3.">Select the day that minimises bin momentum</li>
+                    <li data-step="4.">Skip observation if all days would exceed H_max</li>
+                </ul>
+            </div>
+            <div class="algo-card">
+                <h4>Pareto Greedy</h4>
+                <span class="algo-tag">Multi-Objective Heuristic</span>
+                <p>
+                    Alternates between science-optimal (highest priority first) and
+                    momentum-optimal (lowest delta first) insertion rounds, building
+                    a schedule that approximates the Pareto front.
+                </p>
+                <ul class="algo-steps">
+                    <li data-step="1.">Round A: pick highest-priority unscheduled observation</li>
+                    <li data-step="2.">Schedule at day minimising momentum, respecting H_max</li>
+                    <li data-step="3.">Round B: pick observation with smallest momentum delta</li>
+                    <li data-step="4.">Alternate rounds until all observations placed or infeasible</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Interactive Solver -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>Solver</span></h2>
+            <p>Schedule 12 synthetic JWST observations across a 365-day cycle</p>
+        </div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-satellite-dish"></i> JWST Observation Scheduler</h4>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario presets -->
+                <div class="solver-section-label">Scenario Preset</div>
+                <div class="scenario-gallery" id="scenarioGallery">
+                    <button class="scenario-btn active" type="button" data-scenario="sparse">Cycle 1 (Sparse)</button>
+                    <button class="scenario-btn" type="button" data-scenario="oversubscribed">Cycle 2 (Oversubscribed)</button>
+                    <button class="scenario-btn" type="button" data-scenario="momentum">Cycle 3 (Momentum-Critical)</button>
+                </div>
+
+                <!-- Algorithm buttons -->
+                <div class="solver-section-label">Algorithm</div>
+                <div class="algo-select" id="algoSelect">
+                    <button class="algo-chip" type="button" data-algo="greedy">Greedy Priority <span class="chip-type">(fast)</span></button>
+                    <button class="algo-chip" type="button" data-algo="balanced">Momentum-Balanced <span class="chip-type">(feasible)</span></button>
+                    <button class="algo-chip" type="button" data-algo="pareto">Pareto Greedy <span class="chip-type">(multi-obj)</span></button>
+                </div>
+
+                <!-- Gantt Canvas -->
+                <div class="solver-section-label">Gantt Chart &mdash; 365-Day Timeline</div>
+                <div class="solver-canvas-wrap canvas-wrapper">
+                    <button class="canvas-export-btn" type="button" id="exportBtn" title="Export as PNG"><i class="fas fa-download"></i></button>
+                    <canvas id="ganttCanvas" height="420"></canvas>
+                </div>
+                <div class="momentum-legend">
+                    <div class="momentum-legend-item"><span class="legend-swatch" style="background:rgba(100,255,218,0.7)"></span> Scheduled observation</div>
+                    <div class="momentum-legend-item"><span class="legend-swatch" style="background:rgba(255,107,107,0.7)"></span> Over momentum limit</div>
+                    <div class="momentum-legend-item"><span class="legend-swatch" style="background:rgba(197,160,89,0.5)"></span> Momentum level</div>
+                    <div class="momentum-legend-item"><span class="legend-swatch" style="background:rgba(255,107,107,0.5)"></span> H_max threshold</div>
+                </div>
+
+                <!-- Results table -->
+                <div class="solver-section-label" style="margin-top:1.5rem">Results Comparison</div>
+                <div style="overflow-x:auto">
+                    <table class="results-table" id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Algorithm</th>
+                                <th>Scheduled</th>
+                                <th>Science Hours</th>
+                                <th>Max Bin Momentum</th>
+                                <th>Bins Exceeding</th>
+                            </tr>
+                        </thead>
+                        <tbody id="resultsBody">
+                            <tr><td colspan="5" style="color:var(--slate);font-family:'Inter',sans-serif;font-style:italic">Select an algorithm above to run the scheduler</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="solver-status" id="solverStatus">Ready &mdash; choose a scenario and algorithm</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. Evidence -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Evidence &amp; <span>References</span></h2>
+            <p>Published work and operational documentation from STScI</p>
+        </div>
+        <div class="evidence-panel fade-in">
+            <div class="evidence-panel-title"><i class="fas fa-book-open"></i> Key References</div>
+
+            <div class="evidence-item">
+                <span class="evidence-badge ev-operational">Operational</span>
+                <div class="evidence-text">
+                    <span class="ref-author">Giuliano, M., Johnston, M., &amp; Denn, G. (2007).</span>
+                    <span class="ref-title">&ldquo;Towards a Heuristic for Scheduling the James Webb Space Telescope.&rdquo;</span>
+                    <span class="ref-journal">AAAI ICAPS 2007 &mdash; Workshop on Scheduling and Planning Applications.</span>
+                </div>
+            </div>
+
+            <div class="evidence-item">
+                <span class="evidence-badge ev-operational">Operational</span>
+                <div class="evidence-text">
+                    <span class="ref-author">Kinzel, W. M. (2007).</span>
+                    <span class="ref-title">&ldquo;JWST Angular Momentum Management with Pass 1 and 2 Torque Tables.&rdquo;</span>
+                    <span class="ref-journal">JWST-STScI-001189, Rev. A. Space Telescope Science Institute.</span>
+                </div>
+            </div>
+
+            <div class="evidence-item">
+                <span class="evidence-badge ev-operational">Operational</span>
+                <div class="evidence-text">
+                    <span class="ref-author">STScI SCOPE Engineering Division (2022).</span>
+                    <span class="ref-title">&ldquo;The Short-Term Scheduling Branch.&rdquo;</span>
+                    <span class="ref-journal">STScI Newsletter, Vol. 39, Issue 01.</span>
+                </div>
+            </div>
+
+            <div class="evidence-item">
+                <span class="evidence-badge ev-published">Published</span>
+                <div class="evidence-text">
+                    <span class="ref-author">Rager, R. &amp; Giuliano, M. (2006).</span>
+                    <span class="ref-title">&ldquo;Evaluating Scheduling Strategies for JWST Momentum Management.&rdquo;</span>
+                    <span class="ref-journal">Space Telescope Science Institute Technical Report.</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Explore More Applications</h3>
+            <p>
+                This JWST scheduling problem belongs to the broader family of resource-constrained
+                scheduling with cumulative constraints. Explore related formulations across
+                healthcare, manufacturing, and logistics.
+            </p>
+            <div class="cta-links">
+                <a class="cta-link" href="../index.html#applications"><i class="fas fa-th"></i> All Applications</a>
+                <a class="cta-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> Source Code</a>
+            </div>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer-box" style="margin-top:2rem">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Educational Disclaimer</div>
+            This interactive demo uses a simplified 1D momentum model with 12 synthetic observations
+            for pedagogical purposes. The real JWST scheduling system handles 3D momentum vectors,
+            thousands of observations, guide star catalogues, thermal constraints, and multi-pass
+            decomposition. The formulations and heuristics shown here illustrate the core trade-offs
+            but do not replicate STScI's operational Spike/MANGO pipeline.
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 M.G. Nasiri &mdash; <a href="https://mghnasiri.github.io">mghnasiri.github.io</a></p>
+    </div>
+</footer>
+
+<!-- Scroll-to-Top Button -->
+<button class="scroll-top-btn" id="scrollTopBtn" type="button" title="Scroll to top"><i class="fas fa-chevron-up"></i></button>
+
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdOverlay">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search pages..." autocomplete="off">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><span class="cmd-kbd">&uarr;&darr;</span> Navigate</span>
+                <span><span class="cmd-kbd">&crarr;</span> Open</span>
+                <span><span class="cmd-kbd">ESC</span> Close</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+(function() {
+    "use strict";
+
+    // ── 0. Fade-in Observer ──
+    var fadeEls = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function(entries) {
+            for (var i = 0; i < entries.length; i++) {
+                if (entries[i].isIntersecting) {
+                    entries[i].target.classList.add('visible');
+                    obs.unobserve(entries[i].target);
+                }
+            }
+        }, { threshold: 0.1 });
+        for (var i = 0; i < fadeEls.length; i++) obs.observe(fadeEls[i]);
+    } else {
+        for (var i = 0; i < fadeEls.length; i++) fadeEls[i].classList.add('visible');
+    }
+
+    // ── 1. Theme Toggle ──
+    var themeToggle = document.getElementById('themeToggle');
+    var saved = localStorage.getItem('theme');
+    if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            var current = document.documentElement.getAttribute('data-theme');
+            var next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+    }
+
+    // ── 2. JWST Solver ──
+    var DAYS = 365;
+    var BIN_DAYS = 22;
+    var NUM_BINS = Math.ceil(DAYS / BIN_DAYS);
+    var H_MAX = 28; // simplified scalar momentum limit
+
+    // Observation colours (for the Gantt bars)
+    var OBS_COLORS = [
+        'rgba(100,255,218,0.8)', 'rgba(122,162,247,0.8)', 'rgba(197,160,89,0.8)',
+        'rgba(163,230,53,0.8)', 'rgba(212,175,55,0.8)', 'rgba(168,178,209,0.8)',
+        'rgba(100,200,255,0.8)', 'rgba(255,200,100,0.8)', 'rgba(180,130,255,0.8)',
+        'rgba(100,255,180,0.8)', 'rgba(255,180,180,0.8)', 'rgba(200,220,255,0.8)'
+    ];
+
+    // Seeded random for reproducibility
+    var seed = 42;
+    function seededRandom() {
+        seed = (seed * 16807 + 0) % 2147483647;
+        return (seed - 1) / 2147483646;
+    }
+
+    function generateObservations(scenario) {
+        seed = 42;
+        var obs = [];
+        var n = 12;
+        for (var i = 0; i < n; i++) {
+            var winStart, winEnd, duration, priority, momentumDelta;
+            if (scenario === 'sparse') {
+                // Wide windows, low momentum
+                winStart = Math.floor(seededRandom() * 300);
+                winEnd = winStart + 40 + Math.floor(seededRandom() * 80);
+                if (winEnd > 364) winEnd = 364;
+                duration = 1 + Math.floor(seededRandom() * 5);
+                priority = 1 + Math.floor(seededRandom() * 10);
+                momentumDelta = 1 + seededRandom() * 4;
+            } else if (scenario === 'oversubscribed') {
+                // Narrow windows, overlapping heavily
+                winStart = Math.floor(seededRandom() * 200) + 50;
+                winEnd = winStart + 15 + Math.floor(seededRandom() * 30);
+                if (winEnd > 364) winEnd = 364;
+                duration = 2 + Math.floor(seededRandom() * 7);
+                priority = 1 + Math.floor(seededRandom() * 10);
+                momentumDelta = 2 + seededRandom() * 5;
+            } else {
+                // momentum-critical: high momentum deltas
+                winStart = Math.floor(seededRandom() * 280);
+                winEnd = winStart + 30 + Math.floor(seededRandom() * 60);
+                if (winEnd > 364) winEnd = 364;
+                duration = 1 + Math.floor(seededRandom() * 6);
+                priority = 1 + Math.floor(seededRandom() * 10);
+                momentumDelta = 5 + seededRandom() * 10;
+            }
+            obs.push({
+                id: i,
+                name: 'OBS-' + (i + 1),
+                winStart: winStart,
+                winEnd: winEnd,
+                duration: duration,
+                priority: priority,
+                momentumDelta: Math.round(momentumDelta * 10) / 10,
+                scheduledDay: -1
+            });
+        }
+        return obs;
+    }
+
+    function getBin(day) { return Math.floor(day / BIN_DAYS); }
+
+    function computeBinMomentum(schedule) {
+        var bins = [];
+        for (var b = 0; b < NUM_BINS; b++) bins.push(0);
+        for (var i = 0; i < schedule.length; i++) {
+            if (schedule[i].scheduledDay >= 0) {
+                var bin = getBin(schedule[i].scheduledDay);
+                if (bin < NUM_BINS) bins[bin] += schedule[i].momentumDelta;
+            }
+        }
+        return bins;
+    }
+
+    // Algorithm 1: Greedy Priority
+    function solveGreedy(observations) {
+        var obs = [];
+        for (var i = 0; i < observations.length; i++) {
+            obs.push({
+                id: observations[i].id,
+                name: observations[i].name,
+                winStart: observations[i].winStart,
+                winEnd: observations[i].winEnd,
+                duration: observations[i].duration,
+                priority: observations[i].priority,
+                momentumDelta: observations[i].momentumDelta,
+                scheduledDay: -1
+            });
+        }
+        // Sort by priority descending
+        obs.sort(function(a, b) { return b.priority - a.priority; });
+
+        var usedDays = {};
+        for (var i = 0; i < obs.length; i++) {
+            for (var d = obs[i].winStart; d <= obs[i].winEnd - obs[i].duration + 1; d++) {
+                var conflict = false;
+                for (var dd = d; dd < d + obs[i].duration; dd++) {
+                    if (usedDays[dd]) { conflict = true; break; }
+                }
+                if (!conflict) {
+                    obs[i].scheduledDay = d;
+                    for (var dd = d; dd < d + obs[i].duration; dd++) usedDays[dd] = true;
+                    break;
+                }
+            }
+        }
+        return obs;
+    }
+
+    // Algorithm 2: Momentum-Balanced
+    function solveBalanced(observations) {
+        var obs = [];
+        for (var i = 0; i < observations.length; i++) {
+            obs.push({
+                id: observations[i].id,
+                name: observations[i].name,
+                winStart: observations[i].winStart,
+                winEnd: observations[i].winEnd,
+                duration: observations[i].duration,
+                priority: observations[i].priority,
+                momentumDelta: observations[i].momentumDelta,
+                scheduledDay: -1
+            });
+        }
+        // Sort by deadline (earliest window end first = most urgent)
+        obs.sort(function(a, b) { return a.winEnd - b.winEnd; });
+
+        var usedDays = {};
+        var binMomentum = [];
+        for (var b = 0; b < NUM_BINS; b++) binMomentum.push(0);
+
+        for (var i = 0; i < obs.length; i++) {
+            var bestDay = -1;
+            var bestBinMom = Infinity;
+            for (var d = obs[i].winStart; d <= obs[i].winEnd - obs[i].duration + 1; d++) {
+                var conflict = false;
+                for (var dd = d; dd < d + obs[i].duration; dd++) {
+                    if (usedDays[dd]) { conflict = true; break; }
+                }
+                if (conflict) continue;
+                var bin = getBin(d);
+                var newMom = binMomentum[bin] + obs[i].momentumDelta;
+                if (newMom <= H_MAX && newMom < bestBinMom) {
+                    bestBinMom = newMom;
+                    bestDay = d;
+                }
+            }
+            if (bestDay >= 0) {
+                obs[i].scheduledDay = bestDay;
+                for (var dd = bestDay; dd < bestDay + obs[i].duration; dd++) usedDays[dd] = true;
+                binMomentum[getBin(bestDay)] += obs[i].momentumDelta;
+            }
+        }
+        return obs;
+    }
+
+    // Algorithm 3: Pareto Greedy
+    function solvePareto(observations) {
+        var obs = [];
+        for (var i = 0; i < observations.length; i++) {
+            obs.push({
+                id: observations[i].id,
+                name: observations[i].name,
+                winStart: observations[i].winStart,
+                winEnd: observations[i].winEnd,
+                duration: observations[i].duration,
+                priority: observations[i].priority,
+                momentumDelta: observations[i].momentumDelta,
+                scheduledDay: -1
+            });
+        }
+
+        var usedDays = {};
+        var binMomentum = [];
+        for (var b = 0; b < NUM_BINS; b++) binMomentum.push(0);
+        var scheduled = {};
+        var round = 0;
+
+        for (var iter = 0; iter < obs.length; iter++) {
+            var candidate = null;
+            if (round % 2 === 0) {
+                // Science-optimal: highest priority unscheduled
+                var bestPri = -1;
+                for (var i = 0; i < obs.length; i++) {
+                    if (!scheduled[obs[i].id] && obs[i].priority > bestPri) {
+                        bestPri = obs[i].priority;
+                        candidate = obs[i];
+                    }
+                }
+            } else {
+                // Momentum-optimal: smallest delta unscheduled
+                var bestDelta = Infinity;
+                for (var i = 0; i < obs.length; i++) {
+                    if (!scheduled[obs[i].id] && obs[i].momentumDelta < bestDelta) {
+                        bestDelta = obs[i].momentumDelta;
+                        candidate = obs[i];
+                    }
+                }
+            }
+            if (!candidate) break;
+
+            // Find best day: minimise momentum in bin, respect H_MAX
+            var bestDay = -1;
+            var bestBinMom = Infinity;
+            for (var d = candidate.winStart; d <= candidate.winEnd - candidate.duration + 1; d++) {
+                var conflict = false;
+                for (var dd = d; dd < d + candidate.duration; dd++) {
+                    if (usedDays[dd]) { conflict = true; break; }
+                }
+                if (conflict) continue;
+                var bin = getBin(d);
+                var newMom = binMomentum[bin] + candidate.momentumDelta;
+                if (newMom <= H_MAX && newMom < bestBinMom) {
+                    bestBinMom = newMom;
+                    bestDay = d;
+                }
+            }
+            if (bestDay >= 0) {
+                candidate.scheduledDay = bestDay;
+                for (var dd = bestDay; dd < bestDay + candidate.duration; dd++) usedDays[dd] = true;
+                binMomentum[getBin(bestDay)] += candidate.momentumDelta;
+            }
+            scheduled[candidate.id] = true;
+            round++;
+        }
+        return obs;
+    }
+
+    // Drawing
+    var canvas = document.getElementById('ganttCanvas');
+    var ctx = canvas ? canvas.getContext('2d') : null;
+    var currentResults = [];
+    var currentScenario = 'sparse';
+    var currentObs = generateObservations('sparse');
+
+    function drawGantt(schedule) {
+        if (!canvas || !ctx) return;
+        var dpr = window.devicePixelRatio || 1;
+        var rect = canvas.parentElement.getBoundingClientRect();
+        var w = rect.width - 16;
+        canvas.style.width = w + 'px';
+        canvas.style.height = '420px';
+        canvas.width = w * dpr;
+        canvas.height = 420 * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        var marginLeft = 70;
+        var marginRight = 20;
+        var marginTop = 30;
+        var ganttHeight = 240;
+        var momTop = ganttHeight + marginTop + 40;
+        var momHeight = 100;
+        var chartW = w - marginLeft - marginRight;
+
+        // Background
+        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--midnight-light').trim() || '#112240';
+        ctx.fillRect(0, 0, w, 420);
+
+        // 22-day bin grid lines
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        ctx.lineWidth = 1;
+        for (var b = 0; b <= NUM_BINS; b++) {
+            var x = marginLeft + (b * BIN_DAYS / DAYS) * chartW;
+            if (x > marginLeft + chartW) x = marginLeft + chartW;
+            ctx.beginPath();
+            ctx.moveTo(x, marginTop);
+            ctx.lineTo(x, marginTop + ganttHeight);
+            ctx.stroke();
+        }
+
+        // Day axis labels
+        ctx.fillStyle = 'rgba(136,146,176,0.6)';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        for (var d = 0; d <= 365; d += 50) {
+            var x = marginLeft + (d / DAYS) * chartW;
+            ctx.fillText('D' + d, x, marginTop + ganttHeight + 15);
+        }
+
+        // Gantt header
+        ctx.fillStyle = 'rgba(197,160,89,0.8)';
+        ctx.font = '500 10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('OBSERVATIONS', marginLeft, marginTop - 10);
+
+        // Row height
+        var rowH = ganttHeight / 12;
+
+        // Draw visibility windows (faint background)
+        for (var i = 0; i < schedule.length; i++) {
+            var obs = schedule[i];
+            var y = marginTop + obs.id * rowH;
+            var xStart = marginLeft + (obs.winStart / DAYS) * chartW;
+            var xEnd = marginLeft + (obs.winEnd / DAYS) * chartW;
+            ctx.fillStyle = 'rgba(197,160,89,0.04)';
+            ctx.fillRect(xStart, y + 2, xEnd - xStart, rowH - 4);
+            ctx.strokeStyle = 'rgba(197,160,89,0.1)';
+            ctx.lineWidth = 0.5;
+            ctx.strokeRect(xStart, y + 2, xEnd - xStart, rowH - 4);
+        }
+
+        // Draw scheduled bars
+        var binMomentum = computeBinMomentum(schedule);
+        for (var i = 0; i < schedule.length; i++) {
+            var obs = schedule[i];
+            var y = marginTop + obs.id * rowH;
+
+            // Label
+            ctx.fillStyle = 'rgba(136,146,176,0.7)';
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText(obs.name, marginLeft - 8, y + rowH / 2 + 3);
+
+            if (obs.scheduledDay >= 0) {
+                var xStart = marginLeft + (obs.scheduledDay / DAYS) * chartW;
+                var barW = (obs.duration / DAYS) * chartW;
+                if (barW < 3) barW = 3;
+
+                // Check if bin is over limit
+                var bin = getBin(obs.scheduledDay);
+                var overLimit = binMomentum[bin] > H_MAX;
+
+                ctx.fillStyle = overLimit ? 'rgba(255,107,107,0.7)' : OBS_COLORS[obs.id % OBS_COLORS.length];
+                ctx.beginPath();
+                ctx.roundRect(xStart, y + 3, barW, rowH - 6, 2);
+                ctx.fill();
+
+                // Priority label on bar
+                if (barW > 15) {
+                    ctx.fillStyle = 'rgba(10,25,47,0.9)';
+                    ctx.font = '600 8px JetBrains Mono, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('P' + obs.priority, xStart + barW / 2, y + rowH / 2 + 3);
+                }
+            }
+        }
+
+        // Momentum section header
+        ctx.fillStyle = 'rgba(197,160,89,0.8)';
+        ctx.font = '500 10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('MOMENTUM PER 22-DAY BIN', marginLeft, momTop - 10);
+
+        // H_MAX line
+        ctx.strokeStyle = 'rgba(255,107,107,0.5)';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([4, 3]);
+        var hmaxY = momTop + momHeight - (H_MAX / (H_MAX * 1.5)) * momHeight;
+        ctx.beginPath();
+        ctx.moveTo(marginLeft, hmaxY);
+        ctx.lineTo(marginLeft + chartW, hmaxY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // H_MAX label
+        ctx.fillStyle = 'rgba(255,107,107,0.7)';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('H_max=' + H_MAX, marginLeft - 5, hmaxY + 3);
+
+        // Draw momentum bars
+        var maxDisplay = H_MAX * 1.5;
+        for (var b = 0; b < NUM_BINS; b++) {
+            var x = marginLeft + (b * BIN_DAYS / DAYS) * chartW;
+            var barW = (BIN_DAYS / DAYS) * chartW;
+            if (b === NUM_BINS - 1) barW = (DAYS - b * BIN_DAYS) / DAYS * chartW;
+            var barH = (binMomentum[b] / maxDisplay) * momHeight;
+            if (barH > momHeight) barH = momHeight;
+            var overLimit = binMomentum[b] > H_MAX;
+
+            ctx.fillStyle = overLimit ? 'rgba(255,107,107,0.5)' : 'rgba(197,160,89,0.35)';
+            ctx.fillRect(x + 2, momTop + momHeight - barH, barW - 4, barH);
+
+            // Value label
+            if (binMomentum[b] > 0) {
+                ctx.fillStyle = overLimit ? 'rgba(255,107,107,0.9)' : 'rgba(197,160,89,0.8)';
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(binMomentum[b].toFixed(1), x + barW / 2, momTop + momHeight - barH - 4);
+            }
+        }
+
+        // Y-axis for momentum
+        ctx.fillStyle = 'rgba(136,146,176,0.5)';
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('0', marginLeft - 5, momTop + momHeight + 3);
+    }
+
+    function updateResults(algoName, schedule) {
+        var scheduled = 0;
+        var scienceHours = 0;
+        for (var i = 0; i < schedule.length; i++) {
+            if (schedule[i].scheduledDay >= 0) {
+                scheduled++;
+                scienceHours += schedule[i].duration;
+            }
+        }
+        var binMom = computeBinMomentum(schedule);
+        var maxMom = 0;
+        var binsExceeding = 0;
+        for (var b = 0; b < binMom.length; b++) {
+            if (binMom[b] > maxMom) maxMom = binMom[b];
+            if (binMom[b] > H_MAX) binsExceeding++;
+        }
+
+        // Check if this algorithm is already in results; replace if so
+        var found = false;
+        for (var i = 0; i < currentResults.length; i++) {
+            if (currentResults[i].name === algoName) {
+                currentResults[i] = { name: algoName, scheduled: scheduled, hours: scienceHours, maxMom: maxMom, binsExceeding: binsExceeding };
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            currentResults.push({ name: algoName, scheduled: scheduled, hours: scienceHours, maxMom: maxMom, binsExceeding: binsExceeding });
+        }
+
+        // Find best values
+        var bestScheduled = 0, bestHours = 0, bestMom = Infinity, bestBins = Infinity;
+        for (var i = 0; i < currentResults.length; i++) {
+            if (currentResults[i].scheduled > bestScheduled) bestScheduled = currentResults[i].scheduled;
+            if (currentResults[i].hours > bestHours) bestHours = currentResults[i].hours;
+            if (currentResults[i].maxMom < bestMom) bestMom = currentResults[i].maxMom;
+            if (currentResults[i].binsExceeding < bestBins) bestBins = currentResults[i].binsExceeding;
+        }
+
+        // Render table
+        var tbody = document.getElementById('resultsBody');
+        if (!tbody) return;
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        for (var i = 0; i < currentResults.length; i++) {
+            var r = currentResults[i];
+            var tr = document.createElement('tr');
+
+            var tdName = document.createElement('td');
+            tdName.className = 'algo-label';
+            tdName.textContent = r.name;
+            tr.appendChild(tdName);
+
+            var tdSch = document.createElement('td');
+            tdSch.textContent = r.scheduled + ' / 12';
+            if (r.scheduled === bestScheduled && currentResults.length > 1) tdSch.className = 'best-val';
+            tr.appendChild(tdSch);
+
+            var tdHrs = document.createElement('td');
+            tdHrs.textContent = r.hours + ' hrs';
+            if (r.hours === bestHours && currentResults.length > 1) tdHrs.className = 'best-val';
+            tr.appendChild(tdHrs);
+
+            var tdMom = document.createElement('td');
+            tdMom.textContent = r.maxMom.toFixed(1) + ' Nms';
+            if (r.maxMom === bestMom && currentResults.length > 1) tdMom.className = 'best-val';
+            tr.appendChild(tdMom);
+
+            var tdBins = document.createElement('td');
+            tdBins.textContent = r.binsExceeding;
+            if (r.binsExceeding === bestBins && currentResults.length > 1) tdBins.className = 'best-val';
+            tr.appendChild(tdBins);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    // Scenario buttons
+    var scenarioBtns = document.querySelectorAll('#scenarioGallery .scenario-btn');
+    for (var i = 0; i < scenarioBtns.length; i++) {
+        scenarioBtns[i].addEventListener('click', function() {
+            for (var j = 0; j < scenarioBtns.length; j++) scenarioBtns[j].classList.remove('active');
+            this.classList.add('active');
+            currentScenario = this.getAttribute('data-scenario');
+            currentObs = generateObservations(currentScenario);
+            currentResults = [];
+            // Clear results table
+            var tbody = document.getElementById('resultsBody');
+            if (tbody) {
+                while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+                var tr = document.createElement('tr');
+                var td = document.createElement('td');
+                td.setAttribute('colspan', '5');
+                td.style.cssText = 'color:var(--slate);font-family:Inter,sans-serif;font-style:italic';
+                td.textContent = 'Select an algorithm above to run the scheduler';
+                tr.appendChild(td);
+                tbody.appendChild(tr);
+            }
+            // Clear canvas
+            drawGantt(currentObs);
+            // Reset algo chips
+            var chips = document.querySelectorAll('#algoSelect .algo-chip');
+            for (var j = 0; j < chips.length; j++) chips[j].classList.remove('selected');
+            var status = document.getElementById('solverStatus');
+            if (status) status.textContent = 'Scenario changed to ' + currentScenario + ' \u2014 choose an algorithm';
+        });
+    }
+
+    // Algorithm buttons
+    var algoChips = document.querySelectorAll('#algoSelect .algo-chip');
+    for (var i = 0; i < algoChips.length; i++) {
+        algoChips[i].addEventListener('click', function() {
+            var algo = this.getAttribute('data-algo');
+            this.classList.add('selected');
+
+            var schedule;
+            var algoName;
+            if (algo === 'greedy') {
+                algoName = 'Greedy Priority';
+                schedule = solveGreedy(currentObs);
+            } else if (algo === 'balanced') {
+                algoName = 'Momentum-Balanced';
+                schedule = solveBalanced(currentObs);
+            } else {
+                algoName = 'Pareto Greedy';
+                schedule = solvePareto(currentObs);
+            }
+
+            drawGantt(schedule);
+            updateResults(algoName, schedule);
+
+            var status = document.getElementById('solverStatus');
+            if (status) {
+                var sched = 0;
+                for (var j = 0; j < schedule.length; j++) {
+                    if (schedule[j].scheduledDay >= 0) sched++;
+                }
+                status.textContent = algoName + ' complete \u2014 ' + sched + '/12 observations scheduled';
+            }
+        });
+    }
+
+    // Initial draw
+    drawGantt(currentObs);
+
+    // Canvas export
+    var exportBtn = document.getElementById('exportBtn');
+    if (exportBtn && canvas) {
+        exportBtn.addEventListener('click', function() {
+            var link = document.createElement('a');
+            link.download = 'jwst-schedule.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    // Handle resize
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            drawGantt(currentObs);
+        }, 150);
+    });
+
+    // ── 3. Command Palette ──
+    var overlay = document.getElementById('cmdOverlay');
+    var input = document.getElementById('cmdInput');
+    var resultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    var cmdItems = [
+        { group: 'Families', title: 'Scheduling', subtitle: 'Job-shop, RCPSP, flow-shop', icon: 'fa-calendar-alt', url: '../families/scheduling.html', badge: 'Family' },
+        { group: 'Families', title: 'Network Optimization', subtitle: 'Routing, shortest path, flow', icon: 'fa-project-diagram', url: '../families/network-optimization.html', badge: 'Family' },
+        { group: 'Applications', title: 'JWST Scheduling', subtitle: 'Multi-objective momentum-constrained', icon: 'fa-satellite', url: 'jwst-scheduling.html', badge: 'Science' },
+        { group: 'Applications', title: 'Clinical Trial Planning', subtitle: 'RCPSP with resource constraints', icon: 'fa-flask', url: 'clinical-trial.html', badge: 'Healthcare' },
+        { group: 'Applications', title: 'Operating Room', subtitle: 'Surgical scheduling optimization', icon: 'fa-hospital', url: 'operating-room.html', badge: 'Healthcare' },
+        { group: 'Applications', title: 'Portfolio Optimization', subtitle: 'Mean-variance, risk-return', icon: 'fa-chart-pie', url: 'portfolio.html', badge: 'Finance' },
+        { group: 'Applications', title: 'Delivery Routing', subtitle: 'Vehicle routing problem', icon: 'fa-truck', url: 'delivery-routing.html', badge: 'Logistics' },
+        { group: 'Applications', title: 'Energy Optimization', subtitle: 'Unit commitment, dispatch', icon: 'fa-bolt', url: 'energy.html', badge: 'Energy' },
+        { group: 'Applications', title: 'Manufacturing', subtitle: 'Production scheduling', icon: 'fa-industry', url: 'manufacturing.html', badge: 'Industry' },
+        { group: 'Applications', title: 'Crop Selection', subtitle: 'Agricultural optimization', icon: 'fa-seedling', url: 'crop-selection.html', badge: 'Agriculture' }
+    ];
+
+    function openPalette() {
+        if (overlay) overlay.classList.add('open');
+        if (input) { input.value = ''; input.focus(); }
+        renderCmdResults('');
+        activeIdx = -1;
+    }
+    function closePalette() {
+        if (overlay) overlay.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function renderCmdResults(query) {
+        if (!resultsDiv) return;
+        var q = query.toLowerCase().trim();
+        var filtered = [];
+        for (var i = 0; i < cmdItems.length; i++) {
+            if (!q || cmdItems[i].title.toLowerCase().indexOf(q) !== -1 ||
+                cmdItems[i].subtitle.toLowerCase().indexOf(q) !== -1 ||
+                cmdItems[i].badge.toLowerCase().indexOf(q) !== -1) {
+                filtered.push(cmdItems[i]);
+            }
+        }
+
+        if (filtered.length === 0) {
+            while (resultsDiv.firstChild) resultsDiv.removeChild(resultsDiv.firstChild);
+            var emptyDiv = document.createElement('div');
+            emptyDiv.className = 'cmd-empty';
+            emptyDiv.textContent = 'No results found';
+            resultsDiv.appendChild(emptyDiv);
+            return;
+        }
+
+        var groups = {};
+        var groupOrder = ['Families', 'Applications'];
+        for (var i = 0; i < filtered.length; i++) {
+            var g = filtered[i].group;
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(filtered[i]);
+        }
+
+        while (resultsDiv.firstChild) resultsDiv.removeChild(resultsDiv.firstChild);
+        var idx = 0;
+        for (var gi = 0; gi < groupOrder.length; gi++) {
+            var g = groupOrder[gi];
+            if (!groups[g]) continue;
+            var label = document.createElement('div');
+            label.className = 'cmd-group-label';
+            label.textContent = g;
+            resultsDiv.appendChild(label);
+
+            for (var j = 0; j < groups[g].length; j++) {
+                var item = groups[g][j];
+                var a = document.createElement('a');
+                a.href = item.url;
+                a.className = 'cmd-result';
+                a.setAttribute('data-idx', idx);
+
+                var iconDiv = document.createElement('div');
+                iconDiv.className = 'cmd-icon';
+                var icon = document.createElement('i');
+                icon.className = 'fas ' + item.icon;
+                iconDiv.appendChild(icon);
+                a.appendChild(iconDiv);
+
+                var infoDiv = document.createElement('div');
+                infoDiv.className = 'cmd-info';
+                var titleDiv = document.createElement('div');
+                titleDiv.className = 'cmd-title';
+                titleDiv.textContent = item.title;
+                infoDiv.appendChild(titleDiv);
+                var subDiv = document.createElement('div');
+                subDiv.className = 'cmd-subtitle';
+                subDiv.textContent = item.subtitle;
+                infoDiv.appendChild(subDiv);
+                a.appendChild(infoDiv);
+
+                var badge = document.createElement('span');
+                badge.className = 'cmd-badge';
+                badge.textContent = item.badge;
+                badge.style.cssText = 'background:rgba(197,160,89,0.15);color:var(--gold);';
+                a.appendChild(badge);
+
+                resultsDiv.appendChild(a);
+                idx++;
+            }
+        }
+    }
+
+    if (input) {
+        input.addEventListener('input', function() {
+            renderCmdResults(input.value);
+            activeIdx = -1;
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) closePalette();
+            else openPalette();
+            return;
+        }
+        if (!overlay || !overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+
+        var results = resultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, results.length - 1);
+            for (var i = 0; i < results.length; i++) {
+                results[i].classList.toggle('active', i === activeIdx);
+            }
+            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+            for (var i = 0; i < results.length; i++) {
+                results[i].classList.toggle('active', i === activeIdx);
+            }
+            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) {
+            e.preventDefault();
+            results[activeIdx].click();
+        }
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePalette();
+        });
+    }
+
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) {
+        searchTrigger.addEventListener('click', openPalette);
+    }
+
+    // ── 4. Particle Network Background ──
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+        var CONNECTION_DIST = 120;
+
+        function resizePCanvas() {
+            pCanvas.width = heroEl.offsetWidth;
+            pCanvas.height = heroEl.offsetHeight;
+        }
+        resizePCanvas();
+        window.addEventListener('resize', resizePCanvas);
+
+        function Particle() {
+            this.x = Math.random() * pCanvas.width;
+            this.y = Math.random() * pCanvas.height;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            this.radius = Math.random() * 2 + 1;
+        }
+        Particle.prototype.update = function() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1;
+        };
+        Particle.prototype.draw = function() {
+            pCtx.beginPath();
+            pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)';
+            pCtx.fill();
+        };
+
+        for (var pi = 0; pi < PARTICLE_COUNT; pi++) particles.push(new Particle());
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        pCtx.beginPath();
+                        pCtx.moveTo(particles[i].x, particles[i].y);
+                        pCtx.lineTo(particles[j].x, particles[j].y);
+                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / CONNECTION_DIST)) + ')';
+                        pCtx.lineWidth = 0.6;
+                        pCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── 5. Scroll Progress + Scroll-to-Top ──
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    function onScroll() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (scrollTopBtn) {
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+})();
+</script>
+
+</body>
+</html>

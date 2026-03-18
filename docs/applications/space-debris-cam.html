@@ -1,0 +1,2260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Space Debris Collision Avoidance | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive POMDP-based collision avoidance manoeuvre decision tool for space debris conjunction events with stochastic CDM evolution.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/space-debris-cam.html">
+    <meta property="og:title" content="Space Debris Collision Avoidance | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive POMDP-based collision avoidance manoeuvre decision tool for space debris conjunction events with stochastic CDM evolution.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Space Debris Collision Avoidance | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive POMDP-based collision avoidance manoeuvre decision tool for space debris conjunction events with stochastic CDM evolution.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Navigation */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* Breadcrumb */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* Section Headers */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* Content Blocks */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* Science Context Panel */
+        .science-context {
+            border-left: 3px solid var(--blue);
+            background: rgba(122, 162, 247, 0.06);
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            border-radius: 0 4px 4px 0;
+        }
+        .science-context h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            color: var(--blue);
+            margin-bottom: 0.8rem;
+        }
+        .science-context p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.6rem;
+        }
+        .science-context p:last-child { margin-bottom: 0; }
+
+        /* Disclaimer Box */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* Formulation Block */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* Mapping Table */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            font-size: 0.88rem;
+        }
+        .mapping-table th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+        }
+        .mapping-table td:first-child { color: var(--ivory); font-weight: 500; }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .solver-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        .solver-btn:disabled:hover {
+            background: transparent;
+            color: var(--slate-light);
+            border-color: rgba(197, 160, 89, 0.3);
+        }
+
+        .scenario-gallery {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+        .scenario-btn {
+            font-size: 0.72rem;
+            padding: 8px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--slate-light);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Inter', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        .scenario-btn:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .scenario-btn.active {
+            background: rgba(197, 160, 89, 0.12);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .canvas-wrapper { position: relative; }
+        .canvas-export-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 30px;
+            height: 30px;
+            border-radius: 4px;
+            background: rgba(10, 25, 47, 0.85);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            color: var(--gold);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.72rem;
+            transition: all 0.2s;
+            z-index: 10;
+            opacity: 0;
+            backdrop-filter: blur(4px);
+        }
+        .canvas-wrapper:hover .canvas-export-btn { opacity: 1; }
+        .canvas-export-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Decision timeline */
+        .cdm-timeline {
+            display: flex;
+            gap: 0;
+            margin: 1rem 0;
+            overflow-x: auto;
+            padding-bottom: 0.5rem;
+        }
+        .cdm-step {
+            flex: 1;
+            min-width: 90px;
+            text-align: center;
+            position: relative;
+            padding: 0.6rem 0.3rem;
+        }
+        .cdm-step::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            right: 0;
+            width: 100%;
+            height: 2px;
+            background: rgba(197, 160, 89, 0.15);
+            z-index: 0;
+        }
+        .cdm-step:last-child::after { display: none; }
+        .cdm-dot {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            border: 2px solid rgba(197, 160, 89, 0.3);
+            background: var(--midnight);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 0.3rem;
+            font-size: 0.6rem;
+            color: var(--slate);
+            position: relative;
+            z-index: 1;
+            transition: all 0.3s;
+        }
+        .cdm-dot.active {
+            border-color: var(--gold);
+            background: rgba(197, 160, 89, 0.15);
+            color: var(--gold);
+        }
+        .cdm-dot.done {
+            border-color: var(--green);
+            background: rgba(100, 255, 218, 0.12);
+            color: var(--green);
+        }
+        .cdm-dot.manoeuvre {
+            border-color: var(--red);
+            background: rgba(255, 107, 107, 0.12);
+            color: var(--red);
+        }
+        .cdm-label {
+            font-size: 0.6rem;
+            color: var(--slate);
+            letter-spacing: 0.5px;
+        }
+        .cdm-poc {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.62rem;
+            color: var(--slate-light);
+            margin-top: 0.15rem;
+        }
+
+        /* Action panel */
+        .action-panel {
+            background: rgba(197, 160, 89, 0.04);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 6px;
+            padding: 1.2rem 1.5rem;
+            margin: 1rem 0;
+        }
+        .action-panel h5 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 0.6rem;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 0.8rem;
+            flex-wrap: wrap;
+        }
+
+        /* Results table */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .results-table .warn-val { color: var(--red); font-weight: 600; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* Evidence list */
+        .evidence-list {
+            list-style: none;
+            padding: 0;
+        }
+        .evidence-list li {
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.7;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+        }
+        .evidence-list li:last-child { border-bottom: none; }
+        .ev-author { color: var(--ivory); font-weight: 500; }
+        .ev-title { font-style: italic; }
+        .ev-journal { color: var(--slate); }
+        .evidence-badge {
+            font-size: 0.58rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-weight: 600;
+            white-space: nowrap;
+            flex-shrink: 0;
+            margin-top: 0.25rem;
+        }
+        .evidence-badge.ev-published {
+            background: rgba(100, 255, 218, 0.12);
+            color: var(--green);
+            border: 1px solid rgba(100, 255, 218, 0.25);
+        }
+        .evidence-badge.ev-operational {
+            background: rgba(122, 162, 247, 0.12);
+            color: var(--blue);
+            border: 1px solid rgba(122, 162, 247, 0.25);
+        }
+
+        /* CTA Panel */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Back Link */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Scroll Animations */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* Particle canvas */
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* Scroll Progress + Scroll-to-Top */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* Nav search trigger */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* PoC severity coloring */
+        .poc-safe { color: var(--green); }
+        .poc-caution { color: var(--gold); }
+        .poc-warning { color: #ff9e64; }
+        .poc-danger { color: var(--red); }
+
+        /* Decision log */
+        .decision-log {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .decision-log::-webkit-scrollbar { width: 4px; }
+        .decision-log::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+
+        /* Metric cards */
+        .metric-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+            margin: 1rem 0;
+        }
+        .metric-card {
+            background: rgba(197, 160, 89, 0.04);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            text-align: center;
+        }
+        .metric-card .metric-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: var(--gold);
+        }
+        .metric-card .metric-label {
+            font-size: 0.62rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-top: 0.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .section-header h2 { font-size: 1.8rem; }
+            .solver-body { padding: 1rem; }
+            .action-buttons { flex-direction: column; }
+            .cdm-timeline { overflow-x: auto; }
+            .metric-cards { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .hero h1 { font-size: 1.8rem; }
+            .cta-panel { padding: 2rem 1.5rem; }
+        }
+        @media (max-width: 375px) {
+            .hero { padding: 4rem 1rem 3rem; }
+            .hero h1 { font-size: 1.6rem; }
+            .metric-cards { grid-template-columns: 1fr 1fr; }
+            .cdm-step { min-width: 70px; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&ShortUpArrow;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Space Debris CAM</li>
+        </ol>
+    </div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-shield-alt"></i></div>
+        <h1>Space Debris Collision <span>Avoidance</span></h1>
+        <p class="hero-subtitle">Stochastic Optimisation &middot; POMDP &middot; Sequential Decision-Making</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            With over <strong>35,000 tracked objects</strong> in orbit, satellite operators receive
+            Conjunction Data Messages (CDMs) warning of potential collisions. Each CDM updates the
+            probability of collision, but the operator must decide &mdash; manoeuvre now, wait for
+            better data, or accept the risk &mdash; under deep uncertainty, with propellant budgets
+            and mission continuity at stake.
+        </p>
+    </div>
+</section>
+
+<!-- 2. Science Context -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Operational <span>Context</span></h2>
+            <p>How conjunction warnings drive collision avoidance decisions in LEO</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="science-context">
+                <h4><i class="fas fa-satellite"></i> Conjunction Data Messages</h4>
+                <p>
+                    The <strong>18th Space Defense Squadron</strong> (formerly 18th Space Control Squadron) at
+                    Vandenberg SFB issues Conjunction Data Messages (CDMs) approximately every <strong>8 hours</strong>
+                    during a conjunction event. Each CDM provides the predicted <strong>Time of Closest Approach
+                    (TCA)</strong>, the <strong>miss distance</strong> in the B-plane, and the computed
+                    <strong>Probability of Collision (PoC)</strong>.
+                </p>
+                <p>
+                    Critically, PoC evolves with each CDM update as tracking data improves: early estimates carry
+                    large covariance (uncertainty), meaning PoC can swing by orders of magnitude between updates.
+                    The operator faces a sequential decision under partial observability: <strong>manoeuvre now</strong>
+                    (consuming propellant and interrupting service), <strong>wait for the next CDM</strong>
+                    (risking insufficient time to manoeuvre), or <strong>accept the residual risk</strong>.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Problem -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Modelling collision avoidance as a Partially Observable Markov Decision Process</p>
+        </div>
+        <div class="content-block fade-in">
+            <table class="mapping-table">
+                <thead>
+                    <tr><th>POMDP Component</th><th>Space Debris CAM Interpretation</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>State space S</td><td>True orbital states + covariance matrices of satellite and debris</td></tr>
+                    <tr><td>Observation space O</td><td>CDM updates: PoC, miss distance, hours to TCA</td></tr>
+                    <tr><td>Action space A</td><td>{wait, manoeuvre(&Delta;v<sub>1</sub>), manoeuvre(&Delta;v<sub>2</sub>), ...}</td></tr>
+                    <tr><td>Transition T(s'|s,a)</td><td>Stochastic: next CDM updates PoC based on orbital propagation</td></tr>
+                    <tr><td>Reward R(s,a)</td><td>&minus;cost(&Delta;v) &minus; service_loss + collision_avoided &times; asset_value</td></tr>
+                    <tr><td>Discount &gamma;</td><td>CDM inter-arrival interval (~6&ndash;8 hours)</td></tr>
+                </tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">POMDP Formulation</span>
+                <span class="keyword">Maximise</span> &nbsp; <span class="variable">E[&Sigma;<sub>t</sub> &gamma;<sup>t</sup> R(s<sub>t</sub>, a<sub>t</sub>, s<sub>t+1</sub>)]</span><br><br>
+                <span class="comment">// POMDP tuple: (S, A, T, R, O, Z, &gamma;)</span><br>
+                &nbsp;&nbsp;<span class="variable">S</span>: continuous orbital state space<br>
+                &nbsp;&nbsp;<span class="variable">A</span>: {<span class="keyword">wait</span>} &cup; {<span class="keyword">CAM</span>(&Delta;v, direction)}<br>
+                &nbsp;&nbsp;<span class="variable">T</span>(s'|s,a): orbital propagation dynamics <span class="comment">// SGP4/numerical</span><br>
+                &nbsp;&nbsp;<span class="variable">R</span>(s,a): &minus;cost(&Delta;v) &minus; service_loss + P(collision|s,a) &times; collision_penalty<br>
+                &nbsp;&nbsp;<span class="variable">O</span>: CDM observation (PoC, miss_distance, TCA_hours)<br>
+                &nbsp;&nbsp;<span class="variable">Z</span>(o|s'): measurement model for CDM generation<br>
+                &nbsp;&nbsp;<span class="variable">&gamma;</span>: discount factor <span class="comment">// CDMs arrive every 6&ndash;8 hours</span>
+            </div>
+
+            <p>
+                Unlike classical deterministic scheduling problems, collision avoidance is fundamentally a
+                <strong>sequential decision problem under partial observability</strong>. The true orbital
+                state is never known exactly &mdash; only observed through noisy CDM measurements. The
+                optimal policy must balance the <strong>information value of waiting</strong> (PoC may
+                decrease with better data) against the <strong>risk of delayed action</strong> (less
+                time for manoeuvre execution, higher &Delta;v required).
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Interactive Solver -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>Solver</span></h2>
+            <p>Simulate a 48-hour conjunction event with sequential CDM updates</p>
+        </div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-satellite-dish"></i> Collision Avoidance Decision Tool</h4>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario Selection -->
+                <div class="solver-section-label">Select Scenario</div>
+                <div class="scenario-gallery" id="scenarioGallery"></div>
+
+                <!-- CDM Timeline -->
+                <div class="solver-section-label">CDM Timeline (48h to TCA)</div>
+                <div class="cdm-timeline" id="cdmTimeline"></div>
+
+                <!-- PoC Chart -->
+                <div class="solver-section-label" style="margin-top:1rem">Probability of Collision (PoC) Evolution</div>
+                <div class="canvas-wrapper">
+                    <div class="solver-canvas-wrap">
+                        <canvas id="pocChart" height="260"></canvas>
+                    </div>
+                    <button class="canvas-export-btn" id="exportChartBtn" title="Export chart as PNG"><i class="fas fa-download"></i></button>
+                </div>
+
+                <!-- Metrics -->
+                <div class="metric-cards" id="metricCards">
+                    <div class="metric-card">
+                        <div class="metric-value" id="metricPoC">--</div>
+                        <div class="metric-label">Current PoC</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="metricTCA">48h</div>
+                        <div class="metric-label">Time to TCA</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="metricDv">0</div>
+                        <div class="metric-label">&Delta;v Used (m/s)</div>
+                    </div>
+                    <div class="metric-card">
+                        <div class="metric-value" id="metricCDM">0/8</div>
+                        <div class="metric-label">CDMs Received</div>
+                    </div>
+                </div>
+
+                <!-- Action Panel -->
+                <div class="action-panel" id="actionPanel">
+                    <h5><i class="fas fa-gamepad"></i> Your Decision</h5>
+                    <div class="action-buttons" id="actionButtons"></div>
+                </div>
+
+                <!-- Decision Log -->
+                <div class="solver-section-label" style="margin-top:1rem">Decision Log</div>
+                <div class="decision-log" id="decisionLog"></div>
+
+                <!-- Results (hidden until complete) -->
+                <div id="resultsPanel" style="display:none; margin-top:1.5rem;">
+                    <div class="solver-section-label">Policy Comparison</div>
+                    <div style="overflow-x:auto;">
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Policy</th>
+                                    <th>Manoeuvres</th>
+                                    <th>&Delta;v (m/s)</th>
+                                    <th>Collision</th>
+                                    <th>Interruptions</th>
+                                    <th>Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="solver-status" id="solverStatus">Select a scenario to begin the conjunction event simulation.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Evidence -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>Evidence</span></h2>
+            <p>Research and operational systems underpinning collision avoidance decision-making</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="evidence-list" id="evidenceList"></ul>
+        </div>
+    </div>
+</section>
+
+<!-- 6. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Interested in space situational awareness?</h3>
+            <p>
+                From conjunction screening to manoeuvre planning, stochastic optimisation and
+                sequential decision-making drive mission safety. Let's discuss how POMDP frameworks
+                can improve your collision avoidance operations.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding:2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box" style="max-width:800px; margin:0 auto;">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. CDM evolution trajectories, PoC values, and manoeuvre
+            costs are simplified for educational purposes and do not represent any specific
+            conjunction event, satellite operator, or space surveillance network output.
+        </div>
+    </div>
+</section>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. All rights reserved.</p>
+    </div>
+</footer>
+
+<!-- Back to Top -->
+<a href="#" class="back-link"><i class="fas fa-arrow-up"></i> Top</a>
+
+<!-- Scroll to Top Button -->
+<div class="scroll-top-btn" id="scrollTopBtn"><i class="fas fa-chevron-up"></i></div>
+
+<!-- Command Palette -->
+<div class="cmd-palette-overlay" id="cmdOverlay">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" class="cmd-input" id="cmdInput" placeholder="Search pages, families, applications...">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><span class="cmd-kbd">&uarr;&darr;</span> navigate</span>
+                <span><span class="cmd-kbd">&crarr;</span> open</span>
+            </div>
+            <span>space debris cam</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+//  Space Debris CAM — Interactive POMDP Solver
+// ══════════════════════════════════════════════════
+(function() {
+    'use strict';
+
+    // ── Scenario Data ──
+    var SCENARIOS = [
+        {
+            name: 'False Alarm',
+            desc: 'PoC starts elevated, steadily decreases as tracking improves',
+            pocs: [1e-3, 6e-4, 2e-4, 8e-5, 3e-5, 1.5e-5, 1e-5, 8e-6],
+            collision: false
+        },
+        {
+            name: 'Confirmed Threat',
+            desc: 'PoC rises steadily, confirming a genuine collision risk',
+            pocs: [1e-3, 2e-3, 5e-3, 8e-3, 1e-2, 1.2e-2, 1.5e-2, 2e-2],
+            collision: true
+        },
+        {
+            name: 'Last-Minute Spike',
+            desc: 'PoC stays low until late, then spikes with only 12h remaining',
+            pocs: [5e-5, 3e-5, 4e-5, 2e-5, 6e-5, 5e-3, 8e-3, 1.2e-2],
+            collision: true
+        }
+    ];
+
+    var MANOEUVRE_DV = 0.15;
+    var CDM_HOURS = [48, 42, 36, 30, 24, 18, 12, 6];
+    var POC_THRESHOLD_REACTIVE = 1e-4;
+    var COLLISION_PENALTY = 500;
+
+    // ── State ──
+    var currentScenario = -1;
+    var currentStep = 0;
+    var userDecisions = [];
+    var userDv = 0;
+    var userManoeuvres = 0;
+    var userServiceInterruptions = 0;
+    var simulationComplete = false;
+    var cdmReceived = false;
+
+    // ── DOM refs ──
+    var scenarioGallery = document.getElementById('scenarioGallery');
+    var cdmTimeline = document.getElementById('cdmTimeline');
+    var pocCanvas = document.getElementById('pocChart');
+    var pocCtx = pocCanvas.getContext('2d');
+    var metricPoC = document.getElementById('metricPoC');
+    var metricTCA = document.getElementById('metricTCA');
+    var metricDv = document.getElementById('metricDv');
+    var metricCDM = document.getElementById('metricCDM');
+    var actionPanel = document.getElementById('actionPanel');
+    var actionButtons = document.getElementById('actionButtons');
+    var decisionLog = document.getElementById('decisionLog');
+    var resultsPanel = document.getElementById('resultsPanel');
+    var resultsBody = document.getElementById('resultsBody');
+    var solverStatus = document.getElementById('solverStatus');
+    var exportBtn = document.getElementById('exportChartBtn');
+
+    // ── Build Scenario Buttons (createElement/textContent) ──
+    SCENARIOS.forEach(function(sc, idx) {
+        var btn = document.createElement('button');
+        btn.className = 'scenario-btn';
+        btn.textContent = sc.name;
+        btn.title = sc.desc;
+        btn.addEventListener('click', function() { selectScenario(idx); });
+        scenarioGallery.appendChild(btn);
+    });
+
+    // ── Build Evidence List (createElement/textContent) ──
+    var evidenceData = [
+        {
+            author: 'Vasile, M. et al.',
+            year: '2025',
+            title: 'CAMmary Review: Autonomous Collision Avoidance Manoeuvre Decision-Making',
+            source: 'arXiv:2503.22555',
+            badge: 'ev-published'
+        },
+        {
+            author: 'Sanchez-Arriaga, G. et al.',
+            year: '2023',
+            title: 'Autonomous Collision Avoidance Manoeuvring via Reinforcement Learning',
+            source: 'arXiv:2310.18966',
+            badge: 'ev-published'
+        },
+        {
+            author: 'ESA Space Debris Office',
+            year: '2024',
+            title: 'CORAM: Collision Risk Assessment and Avoidance Manoeuvre Tool',
+            source: 'Operational system at ESOC, Darmstadt',
+            badge: 'ev-operational'
+        },
+        {
+            author: 'ESA',
+            year: '2024',
+            title: 'Annual Space Environment Report: ~35,000 objects tracked in catalogue',
+            source: 'ESA Space Environment Statistics',
+            badge: 'ev-operational'
+        },
+        {
+            author: 'Bombardelli, C. et al.',
+            year: '2015',
+            title: 'Analytical formulation of impulsive collision avoidance dynamics in the B-plane',
+            source: 'Celestial Mechanics and Dynamical Astronomy',
+            badge: 'ev-published'
+        }
+    ];
+    var evidenceList = document.getElementById('evidenceList');
+    evidenceData.forEach(function(ev) {
+        var li = document.createElement('li');
+
+        var badge = document.createElement('span');
+        badge.className = 'evidence-badge ' + ev.badge;
+        badge.textContent = ev.badge === 'ev-published' ? 'Published' : 'Operational';
+
+        var textDiv = document.createElement('div');
+
+        var authorSpan = document.createElement('span');
+        authorSpan.className = 'ev-author';
+        authorSpan.textContent = ev.author;
+
+        var yearText = document.createTextNode(' (' + ev.year + '). ');
+
+        var titleSpan = document.createElement('span');
+        titleSpan.className = 'ev-title';
+        titleSpan.textContent = ev.title + '. ';
+
+        var sourceSpan = document.createElement('span');
+        sourceSpan.className = 'ev-journal';
+        sourceSpan.textContent = ev.source;
+
+        textDiv.appendChild(authorSpan);
+        textDiv.appendChild(yearText);
+        textDiv.appendChild(titleSpan);
+        textDiv.appendChild(sourceSpan);
+
+        li.appendChild(badge);
+        li.appendChild(textDiv);
+        evidenceList.appendChild(li);
+    });
+
+    // ── Helpers ──
+    function formatPoC(v) {
+        if (v >= 0.01) return (v * 100).toFixed(1) + '%';
+        return v.toExponential(1);
+    }
+
+    function getPoCClass(v) {
+        if (v < 1e-5) return 'poc-safe';
+        if (v < 1e-4) return 'poc-caution';
+        if (v < 1e-3) return 'poc-warning';
+        return 'poc-danger';
+    }
+
+    function clearChildren(el) {
+        while (el.firstChild) { el.removeChild(el.firstChild); }
+    }
+
+    // ── Scenario Selection ──
+    function selectScenario(idx) {
+        currentScenario = idx;
+        currentStep = 0;
+        userDecisions = [];
+        userDv = 0;
+        userManoeuvres = 0;
+        userServiceInterruptions = 0;
+        simulationComplete = false;
+        cdmReceived = false;
+        resultsPanel.style.display = 'none';
+        clearChildren(decisionLog);
+        clearChildren(resultsBody);
+
+        var btns = scenarioGallery.querySelectorAll('.scenario-btn');
+        for (var i = 0; i < btns.length; i++) {
+            btns[i].classList.toggle('active', i === idx);
+        }
+
+        solverStatus.textContent = 'Scenario: ' + SCENARIOS[idx].name + ' \u2014 ' + SCENARIOS[idx].desc;
+        buildTimeline();
+        drawChart();
+        updateMetrics();
+        showActionButtons();
+    }
+
+    // ── CDM Timeline ──
+    function buildTimeline() {
+        clearChildren(cdmTimeline);
+        if (currentScenario < 0) return;
+        var sc = SCENARIOS[currentScenario];
+        for (var i = 0; i < 8; i++) {
+            var step = document.createElement('div');
+            step.className = 'cdm-step';
+
+            var dot = document.createElement('div');
+            dot.className = 'cdm-dot';
+            if (i < currentStep) {
+                if (userDecisions[i] === 'manoeuvre') {
+                    dot.className += ' manoeuvre';
+                    dot.textContent = 'M';
+                } else {
+                    dot.className += ' done';
+                    dot.textContent = '\u2713';
+                }
+            } else if (i === currentStep && !simulationComplete) {
+                dot.className += ' active';
+                dot.textContent = String(i + 1);
+            } else {
+                dot.textContent = String(i + 1);
+            }
+
+            var label = document.createElement('div');
+            label.className = 'cdm-label';
+            label.textContent = CDM_HOURS[i] + 'h';
+
+            var poc = document.createElement('div');
+            poc.className = 'cdm-poc';
+            if (i < currentStep || (i === currentStep && cdmReceived)) {
+                var pocVal = sc.pocs[i];
+                poc.textContent = formatPoC(pocVal);
+                poc.className += ' ' + getPoCClass(pocVal);
+            }
+
+            step.appendChild(dot);
+            step.appendChild(label);
+            step.appendChild(poc);
+            cdmTimeline.appendChild(step);
+        }
+    }
+
+    // ── PoC Chart ──
+    function drawChart() {
+        if (currentScenario < 0) return;
+        var dpr = window.devicePixelRatio || 1;
+        var w = pocCanvas.parentElement.clientWidth - 16;
+        var h = 260;
+        pocCanvas.width = w * dpr;
+        pocCanvas.height = h * dpr;
+        pocCanvas.style.width = w + 'px';
+        pocCanvas.style.height = h + 'px';
+        pocCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+        var sc = SCENARIOS[currentScenario];
+        var padL = 70, padR = 30, padT = 30, padB = 45;
+        var plotW = w - padL - padR;
+        var plotH = h - padT - padB;
+
+        pocCtx.clearRect(0, 0, w, h);
+        pocCtx.fillStyle = 'rgba(10, 25, 47, 0.3)';
+        pocCtx.fillRect(0, 0, w, h);
+
+        var minPoc = 1e-6;
+        var maxPoc = 0.05;
+        var logMin = Math.log10(minPoc);
+        var logMax = Math.log10(maxPoc);
+
+        function yFromPoC(v) {
+            var logV = Math.log10(Math.max(v, minPoc));
+            return padT + plotH - ((logV - logMin) / (logMax - logMin)) * plotH;
+        }
+
+        function xFromIdx(idx) {
+            return padL + (idx / 7) * plotW;
+        }
+
+        // Grid lines
+        pocCtx.strokeStyle = 'rgba(197, 160, 89, 0.08)';
+        pocCtx.lineWidth = 1;
+        var gridPocs = [1e-5, 1e-4, 1e-3, 1e-2];
+        for (var gi = 0; gi < gridPocs.length; gi++) {
+            var gp = gridPocs[gi];
+            var gy = yFromPoC(gp);
+            pocCtx.beginPath();
+            pocCtx.moveTo(padL, gy);
+            pocCtx.lineTo(w - padR, gy);
+            pocCtx.stroke();
+
+            pocCtx.fillStyle = 'rgba(136, 146, 176, 0.6)';
+            pocCtx.font = '10px JetBrains Mono';
+            pocCtx.textAlign = 'right';
+            pocCtx.fillText(formatPoC(gp), padL - 8, gy + 4);
+        }
+
+        // Threshold line at 1e-4
+        var threshY = yFromPoC(POC_THRESHOLD_REACTIVE);
+        pocCtx.strokeStyle = 'rgba(255, 107, 107, 0.35)';
+        pocCtx.setLineDash([6, 4]);
+        pocCtx.beginPath();
+        pocCtx.moveTo(padL, threshY);
+        pocCtx.lineTo(w - padR, threshY);
+        pocCtx.stroke();
+        pocCtx.setLineDash([]);
+
+        pocCtx.fillStyle = 'rgba(255, 107, 107, 0.5)';
+        pocCtx.font = '9px Inter';
+        pocCtx.textAlign = 'left';
+        pocCtx.fillText('Manoeuvre threshold (1e-4)', padL + 4, threshY - 5);
+
+        // X-axis labels
+        pocCtx.fillStyle = 'rgba(136, 146, 176, 0.7)';
+        pocCtx.font = '10px JetBrains Mono';
+        pocCtx.textAlign = 'center';
+        for (var i = 0; i < 8; i++) {
+            var cx = xFromIdx(i);
+            pocCtx.fillText(CDM_HOURS[i] + 'h', cx, h - padB + 20);
+            pocCtx.strokeStyle = 'rgba(197, 160, 89, 0.15)';
+            pocCtx.beginPath();
+            pocCtx.moveTo(cx, h - padB);
+            pocCtx.lineTo(cx, h - padB + 5);
+            pocCtx.stroke();
+        }
+
+        // X-axis title
+        pocCtx.fillStyle = 'rgba(136, 146, 176, 0.5)';
+        pocCtx.font = '10px Inter';
+        pocCtx.fillText('Hours to TCA', w / 2, h - 4);
+
+        // Y-axis title
+        pocCtx.save();
+        pocCtx.translate(14, h / 2);
+        pocCtx.rotate(-Math.PI / 2);
+        pocCtx.fillStyle = 'rgba(136, 146, 176, 0.5)';
+        pocCtx.font = '10px Inter';
+        pocCtx.textAlign = 'center';
+        pocCtx.fillText('PoC (log scale)', 0, 0);
+        pocCtx.restore();
+
+        // Determine how many CDMs to reveal
+        var revealed = 0;
+        if (simulationComplete) {
+            revealed = 8;
+        } else if (cdmReceived) {
+            revealed = currentStep + 1;
+        } else {
+            revealed = currentStep;
+        }
+
+        // Plot PoC line
+        if (revealed > 0) {
+            pocCtx.strokeStyle = 'rgba(197, 160, 89, 0.9)';
+            pocCtx.lineWidth = 2;
+            pocCtx.beginPath();
+            for (var i = 0; i < revealed; i++) {
+                var px = xFromIdx(i);
+                var py = yFromPoC(sc.pocs[i]);
+                if (i === 0) pocCtx.moveTo(px, py);
+                else pocCtx.lineTo(px, py);
+            }
+            pocCtx.stroke();
+
+            // Dots
+            for (var i = 0; i < revealed; i++) {
+                var px = xFromIdx(i);
+                var py = yFromPoC(sc.pocs[i]);
+                pocCtx.beginPath();
+                pocCtx.arc(px, py, 5, 0, Math.PI * 2);
+
+                if (i < userDecisions.length && userDecisions[i] === 'manoeuvre') {
+                    pocCtx.fillStyle = 'rgba(255, 107, 107, 0.9)';
+                } else if (getPoCClass(sc.pocs[i]) === 'poc-danger') {
+                    pocCtx.fillStyle = 'rgba(255, 107, 107, 0.7)';
+                } else if (getPoCClass(sc.pocs[i]) === 'poc-warning') {
+                    pocCtx.fillStyle = 'rgba(255, 158, 100, 0.7)';
+                } else {
+                    pocCtx.fillStyle = 'rgba(197, 160, 89, 0.9)';
+                }
+                pocCtx.fill();
+
+                // Manoeuvre marker
+                if (i < userDecisions.length && userDecisions[i] === 'manoeuvre') {
+                    pocCtx.strokeStyle = 'rgba(255, 107, 107, 0.6)';
+                    pocCtx.lineWidth = 1;
+                    pocCtx.setLineDash([3, 2]);
+                    pocCtx.beginPath();
+                    pocCtx.moveTo(px, py);
+                    pocCtx.lineTo(px, h - padB);
+                    pocCtx.stroke();
+                    pocCtx.setLineDash([]);
+                    pocCtx.lineWidth = 2;
+
+                    pocCtx.fillStyle = 'rgba(255, 107, 107, 0.7)';
+                    pocCtx.font = '8px Inter';
+                    pocCtx.textAlign = 'center';
+                    pocCtx.fillText('CAM', px, h - padB - 4);
+                }
+            }
+        }
+
+        // Axes
+        pocCtx.strokeStyle = 'rgba(197, 160, 89, 0.2)';
+        pocCtx.lineWidth = 1;
+        pocCtx.beginPath();
+        pocCtx.moveTo(padL, padT);
+        pocCtx.lineTo(padL, h - padB);
+        pocCtx.lineTo(w - padR, h - padB);
+        pocCtx.stroke();
+    }
+
+    // ── Update Metrics ──
+    function updateMetrics() {
+        if (currentScenario < 0) return;
+        var sc = SCENARIOS[currentScenario];
+        var step = Math.min(currentStep, 7);
+
+        if (cdmReceived || simulationComplete) {
+            var displayStep = simulationComplete ? 7 : step;
+            metricPoC.textContent = formatPoC(sc.pocs[displayStep]);
+            metricPoC.className = 'metric-value ' + getPoCClass(sc.pocs[displayStep]);
+        } else if (currentStep > 0) {
+            var displayStep = currentStep - 1;
+            metricPoC.textContent = formatPoC(sc.pocs[displayStep]);
+            metricPoC.className = 'metric-value ' + getPoCClass(sc.pocs[displayStep]);
+        } else {
+            metricPoC.textContent = '--';
+            metricPoC.className = 'metric-value';
+        }
+
+        var hoursLeft = simulationComplete ? 0 : CDM_HOURS[step];
+        metricTCA.textContent = hoursLeft + 'h';
+        metricDv.textContent = (userDv * 1000).toFixed(0);
+
+        var cdmCount = simulationComplete ? 8 : currentStep;
+        if (cdmReceived) cdmCount = currentStep + 1;
+        metricCDM.textContent = cdmCount + '/8';
+    }
+
+    // ── Action Buttons ──
+    function showActionButtons() {
+        clearChildren(actionButtons);
+        if (simulationComplete || currentScenario < 0) {
+            actionPanel.style.display = 'none';
+            return;
+        }
+        actionPanel.style.display = '';
+        cdmReceived = false;
+
+        var receiveBtn = document.createElement('button');
+        receiveBtn.className = 'solver-btn primary';
+        receiveBtn.textContent = 'Receive CDM #' + (currentStep + 1);
+        receiveBtn.addEventListener('click', function() { receiveCDM(); });
+        actionButtons.appendChild(receiveBtn);
+    }
+
+    function receiveCDM() {
+        if (simulationComplete || currentScenario < 0) return;
+        var sc = SCENARIOS[currentScenario];
+        var poc = sc.pocs[currentStep];
+        cdmReceived = true;
+
+        var missDistance = (Math.random() * 500 + 50).toFixed(0);
+        addLog('CDM #' + (currentStep + 1) + ' received  |  TCA: ' + CDM_HOURS[currentStep] +
+            'h  |  PoC: ' + formatPoC(poc) + '  |  Miss: ' + missDistance + 'm');
+
+        clearChildren(actionButtons);
+
+        var waitBtn = document.createElement('button');
+        waitBtn.className = 'solver-btn';
+        waitBtn.textContent = 'Wait for next CDM';
+        waitBtn.addEventListener('click', function() { makeDecision('wait'); });
+        actionButtons.appendChild(waitBtn);
+
+        var manBtn = document.createElement('button');
+        manBtn.className = 'solver-btn';
+        manBtn.style.borderColor = 'rgba(255, 107, 107, 0.5)';
+        manBtn.style.color = '#ff6b6b';
+        manBtn.textContent = 'Manoeuvre (\u0394v = ' + (MANOEUVRE_DV * 1000).toFixed(0) + ' m/s)';
+        manBtn.addEventListener('click', function() { makeDecision('manoeuvre'); });
+        actionButtons.appendChild(manBtn);
+
+        drawChart();
+        updateMetrics();
+        buildTimeline();
+    }
+
+    function makeDecision(action) {
+        userDecisions.push(action);
+        cdmReceived = false;
+
+        if (action === 'manoeuvre') {
+            userDv += MANOEUVRE_DV;
+            userManoeuvres++;
+            userServiceInterruptions++;
+            addLog('\u2192 MANOEUVRE executed at T-' + CDM_HOURS[currentStep] + 'h  |  \u0394v = ' +
+                (MANOEUVRE_DV * 1000).toFixed(0) + ' m/s');
+        } else {
+            addLog('\u2192 WAIT  |  holding for next CDM update');
+        }
+
+        currentStep++;
+        buildTimeline();
+        drawChart();
+        updateMetrics();
+
+        if (currentStep >= 8) {
+            completeSimulation();
+        } else {
+            showActionButtons();
+        }
+    }
+
+    // ── Complete Simulation ──
+    function completeSimulation() {
+        simulationComplete = true;
+        actionPanel.style.display = 'none';
+        var sc = SCENARIOS[currentScenario];
+
+        addLog('');
+        addLog('=== TCA REACHED === Conjunction event complete.');
+
+        var userCollision = sc.collision && userManoeuvres === 0;
+        if (userCollision) {
+            addLog('RESULT: COLLISION OCCURRED. No manoeuvre was executed.');
+        } else if (userManoeuvres > 0) {
+            addLog('RESULT: Collision averted via ' + userManoeuvres + ' manoeuvre(s). Total \u0394v: ' +
+                (userDv * 1000).toFixed(0) + ' m/s');
+        } else {
+            addLog('RESULT: No collision (false alarm correctly identified). No propellant spent.');
+        }
+
+        var policies = computePolicies(sc);
+        policies.unshift({
+            name: 'Your Decisions',
+            manoeuvres: userManoeuvres,
+            dv: userDv,
+            collision: userCollision,
+            interruptions: userServiceInterruptions,
+            highlight: true
+        });
+
+        policies.forEach(function(p) {
+            p.score = 100 - (p.dv * 1000) * 0.5 - p.interruptions * 10 - (p.collision ? COLLISION_PENALTY : 0);
+        });
+
+        var bestScore = -Infinity;
+        policies.forEach(function(p) { if (p.score > bestScore) bestScore = p.score; });
+
+        clearChildren(resultsBody);
+        policies.forEach(function(p) {
+            var tr = document.createElement('tr');
+            if (p.highlight) tr.style.background = 'rgba(197, 160, 89, 0.06)';
+
+            var tdName = document.createElement('td');
+            tdName.className = 'algo-label';
+            tdName.textContent = p.name;
+
+            var tdMan = document.createElement('td');
+            tdMan.textContent = String(p.manoeuvres);
+
+            var tdDv = document.createElement('td');
+            tdDv.textContent = (p.dv * 1000).toFixed(0);
+
+            var tdCol = document.createElement('td');
+            tdCol.textContent = p.collision ? 'YES' : 'No';
+            tdCol.className = p.collision ? 'warn-val' : 'best-val';
+
+            var tdInt = document.createElement('td');
+            tdInt.textContent = String(p.interruptions);
+
+            var tdScore = document.createElement('td');
+            tdScore.textContent = p.score.toFixed(0);
+            if (p.score === bestScore) tdScore.className = 'best-val';
+
+            tr.appendChild(tdName);
+            tr.appendChild(tdMan);
+            tr.appendChild(tdDv);
+            tr.appendChild(tdCol);
+            tr.appendChild(tdInt);
+            tr.appendChild(tdScore);
+            resultsBody.appendChild(tr);
+        });
+
+        resultsPanel.style.display = '';
+        solverStatus.textContent = 'Simulation complete. Compare your decisions against automated policies below.';
+
+        buildTimeline();
+        drawChart();
+        updateMetrics();
+    }
+
+    // ── Automated Policies ──
+    function computePolicies(sc) {
+        // Policy 1: Always act if PoC > 1e-4
+        var p1 = { name: 'Reactive (PoC > 1e-4)', manoeuvres: 0, dv: 0, collision: false, interruptions: 0 };
+        var p1acted = false;
+        for (var i = 0; i < 8; i++) {
+            if (!p1acted && sc.pocs[i] > POC_THRESHOLD_REACTIVE) {
+                p1.manoeuvres++;
+                p1.dv += MANOEUVRE_DV;
+                p1.interruptions++;
+                p1acted = true;
+            }
+        }
+        if (!p1acted && sc.collision) p1.collision = true;
+
+        // Policy 2: Wait for confirmation (PoC > 1e-3 for 2 consecutive CDMs)
+        var p2 = { name: 'Confirmation (2x > 1e-3)', manoeuvres: 0, dv: 0, collision: false, interruptions: 0 };
+        var p2acted = false;
+        for (var i = 1; i < 8; i++) {
+            if (!p2acted && sc.pocs[i] > 1e-3 && sc.pocs[i - 1] > 1e-3) {
+                p2.manoeuvres++;
+                p2.dv += MANOEUVRE_DV;
+                p2.interruptions++;
+                p2acted = true;
+            }
+        }
+        if (!p2acted && sc.collision) p2.collision = true;
+
+        // Policy 3: POMDP-optimal (balances belief and TCA proximity)
+        var p3 = { name: 'POMDP-Optimal', manoeuvres: 0, dv: 0, collision: false, interruptions: 0 };
+        var p3acted = false;
+        for (var i = 0; i < 8; i++) {
+            if (p3acted) break;
+            var hoursLeft = CDM_HOURS[i];
+            var dynamicThresh = 1e-3 * Math.pow(hoursLeft / 48, 1.5);
+            var trend = 0;
+            if (i > 0) trend = sc.pocs[i] - sc.pocs[i - 1];
+
+            if (sc.pocs[i] > dynamicThresh && (trend > 0 || hoursLeft <= 18)) {
+                if (sc.pocs[i] < 5e-5 && hoursLeft > 24) continue;
+                p3.manoeuvres++;
+                p3.dv += MANOEUVRE_DV;
+                p3.interruptions++;
+                p3acted = true;
+            }
+        }
+        if (!p3acted && sc.collision) p3.collision = true;
+
+        return [p1, p2, p3];
+    }
+
+    // ── Decision Log ──
+    function addLog(msg) {
+        var line = document.createElement('div');
+        line.textContent = msg;
+        decisionLog.appendChild(line);
+        decisionLog.scrollTop = decisionLog.scrollHeight;
+    }
+
+    // ── Export Chart ──
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            var link = document.createElement('a');
+            link.download = 'poc-evolution-chart.png';
+            link.href = pocCanvas.toDataURL('image/png');
+            link.click();
+        });
+    }
+
+    // ── Resize handling ──
+    window.addEventListener('resize', function() {
+        if (currentScenario >= 0) drawChart();
+    });
+
+    // ── 1. Fade-in Observer ──
+    var fadeEls = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var obs = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    obs.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        fadeEls.forEach(function(el) { obs.observe(el); });
+    } else {
+        fadeEls.forEach(function(el) { el.classList.add('visible'); });
+    }
+
+    // ── 2. Theme Toggle ──
+    var toggle = document.getElementById('themeToggle');
+    if (toggle) {
+        var saved = localStorage.getItem('theme');
+        if (saved) document.documentElement.setAttribute('data-theme', saved);
+        toggle.addEventListener('click', function() {
+            var current = document.documentElement.getAttribute('data-theme');
+            var next = current === 'light' ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', next);
+            localStorage.setItem('theme', next);
+        });
+    }
+
+    // ── 2b. Command Palette ──
+    var overlay = document.getElementById('cmdOverlay');
+    var cmdInput = document.getElementById('cmdInput');
+    var cmdResultsEl = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    var cmdItems = [
+        { title: 'Home', subtitle: 'Main landing page', icon: 'fa-home', url: '../index.html' },
+        { title: 'Applications', subtitle: 'All application pages', icon: 'fa-th', url: '#' },
+        { title: 'Space Debris CAM', subtitle: 'This page \u2014 POMDP collision avoidance', icon: 'fa-shield-alt', url: '#' },
+        { title: 'Clinical Trial Planning', subtitle: 'RCPSP scheduling', icon: 'fa-flask', url: 'clinical-trial.html' },
+        { title: 'Ambulance Placement', subtitle: 'Facility location', icon: 'fa-ambulance', url: 'ambulance-placement.html' },
+        { title: 'GitHub Repository', subtitle: 'Source code', icon: 'fab fa-github', url: 'https://github.com/mghnasiri/MathematicalModeling' }
+    ];
+
+    function openPalette() {
+        if (overlay) {
+            overlay.classList.add('open');
+            if (cmdInput) { cmdInput.value = ''; cmdInput.focus(); }
+            renderCmdResults('');
+        }
+    }
+
+    function closePalette() {
+        if (overlay) overlay.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function renderCmdResults(query) {
+        if (!cmdResultsEl) return;
+        clearChildren(cmdResultsEl);
+        var q = query.toLowerCase().trim();
+        var filtered = cmdItems.filter(function(it) {
+            if (!q) return true;
+            return it.title.toLowerCase().indexOf(q) >= 0 || it.subtitle.toLowerCase().indexOf(q) >= 0;
+        });
+
+        if (filtered.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found';
+            cmdResultsEl.appendChild(empty);
+            return;
+        }
+
+        var groupLabel = document.createElement('div');
+        groupLabel.className = 'cmd-group-label';
+        groupLabel.textContent = 'Pages';
+        cmdResultsEl.appendChild(groupLabel);
+
+        filtered.forEach(function(it) {
+            var a = document.createElement('a');
+            a.className = 'cmd-result';
+            a.href = it.url;
+
+            var iconDiv = document.createElement('div');
+            iconDiv.className = 'cmd-icon';
+            var iconI = document.createElement('i');
+            iconI.className = (it.icon.indexOf('fab') === 0 ? it.icon : 'fas ' + it.icon);
+            iconDiv.appendChild(iconI);
+
+            var info = document.createElement('div');
+            info.className = 'cmd-info';
+
+            var title = document.createElement('div');
+            title.className = 'cmd-title';
+            title.textContent = it.title;
+
+            var subtitle = document.createElement('div');
+            subtitle.className = 'cmd-subtitle';
+            subtitle.textContent = it.subtitle;
+
+            info.appendChild(title);
+            info.appendChild(subtitle);
+            a.appendChild(iconDiv);
+            a.appendChild(info);
+            cmdResultsEl.appendChild(a);
+        });
+
+        activeIdx = -1;
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay && overlay.classList.contains('open')) closePalette();
+            else openPalette();
+        }
+        if (e.key === 'Escape') closePalette();
+
+        if (!overlay || !overlay.classList.contains('open')) return;
+        var results = cmdResultsEl.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, results.length - 1);
+            results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+            results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); });
+        } else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) {
+            e.preventDefault();
+            results[activeIdx].click();
+        }
+    });
+
+    if (cmdInput) {
+        cmdInput.addEventListener('input', function() {
+            renderCmdResults(cmdInput.value);
+        });
+    }
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePalette();
+        });
+    }
+
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) {
+        searchTrigger.addEventListener('click', openPalette);
+    }
+
+    // ── 3. Particle Network Background ──
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+        var CONNECTION_DIST = 120;
+
+        function resizePCanvas() {
+            pCanvas.width = heroEl.offsetWidth;
+            pCanvas.height = heroEl.offsetHeight;
+        }
+        resizePCanvas();
+        window.addEventListener('resize', resizePCanvas);
+
+        function Particle() {
+            this.x = Math.random() * pCanvas.width;
+            this.y = Math.random() * pCanvas.height;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            this.radius = Math.random() * 2 + 1;
+        }
+        Particle.prototype.update = function() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1;
+        };
+        Particle.prototype.draw = function() {
+            pCtx.beginPath();
+            pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)';
+            pCtx.fill();
+        };
+
+        for (var pi = 0; pi < PARTICLE_COUNT; pi++) particles.push(new Particle());
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        pCtx.beginPath();
+                        pCtx.moveTo(particles[i].x, particles[i].y);
+                        pCtx.lineTo(particles[j].x, particles[j].y);
+                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / CONNECTION_DIST)) + ')';
+                        pCtx.lineWidth = 0.6;
+                        pCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── 4. Scroll Progress + Scroll-to-Top ──
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    function onScroll() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (scrollTopBtn) {
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+})();
+</script>
+
+</body>
+</html>

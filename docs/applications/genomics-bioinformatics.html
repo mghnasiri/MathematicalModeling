@@ -1,0 +1,2442 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Genomics &amp; Bioinformatics | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Operations research in molecular biology: genome assembly via de Bruijn graphs, multiple sequence alignment, and protein side-chain packing.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/genomics-bioinformatics.html">
+    <meta property="og:title" content="Genomics &amp; Bioinformatics | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Operations research in molecular biology: genome assembly via de Bruijn graphs, multiple sequence alignment, and protein side-chain packing.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Genomics &amp; Bioinformatics | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Operations research in molecular biology: genome assembly via de Bruijn graphs, multiple sequence alignment, and protein side-chain packing.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--slate);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        .hero {
+            min-height: 50vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            position: relative;
+            padding: 6rem 2rem 4rem;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.2rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero-title span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate-light);
+            max-width: 700px;
+            margin: 0 auto 1.5rem;
+            line-height: 1.8;
+        }
+        .hero-desc {
+            font-size: 0.9rem;
+            color: var(--slate);
+            max-width: 650px;
+            margin: 0 auto;
+            line-height: 1.8;
+        }
+
+        .section-block { padding: 3rem 0 5rem; }
+
+        .domain-intro {
+            max-width: 800px;
+            margin: 0 auto 3rem;
+            font-size: 0.95rem;
+            color: var(--slate-light);
+            line-height: 1.9;
+            text-align: center;
+            padding: 0 1rem;
+        }
+
+        /* Domain Tabs */
+        .domain-tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid rgba(197,160,89,0.2);
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .domain-tab {
+            padding: 0.8rem 1.8rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            transition: all 0.25s;
+            font-family: 'Inter', sans-serif;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+            white-space: nowrap;
+        }
+        .domain-tab:hover { color: var(--ivory); }
+        .domain-tab.active { color: var(--gold); border-bottom-color: var(--gold); }
+        .domain-pane { display: none; }
+        .domain-pane.active { display: block; }
+
+        /* Science Context */
+        .science-context {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            position: relative;
+        }
+        .science-context::before {
+            content: '\f0c3';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            top: 1.2rem;
+            right: 1.5rem;
+            font-size: 1.2rem;
+            color: var(--gold);
+            opacity: 0.15;
+        }
+        .science-context h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+        }
+        .science-context p {
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.8;
+            margin-bottom: 0;
+        }
+
+        /* Evidence Panel */
+        .evidence-panel {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-top: 2rem;
+        }
+        .evidence-panel h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            letter-spacing: 1px;
+        }
+        .evidence-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.8rem;
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.06);
+        }
+        .evidence-item:last-child { border-bottom: none; }
+        .ev-badge {
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            flex-shrink: 0;
+            margin-top: 3px;
+            font-weight: 600;
+        }
+        .ev-published { background: rgba(100,255,218,0.12); color: var(--green); }
+        .ev-operational { background: rgba(122,162,247,0.12); color: var(--blue); }
+        .ev-text {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 1.6;
+        }
+        .ev-text strong { color: var(--ivory); font-weight: 500; }
+
+        /* Problem Section */
+        .problem-section {
+            margin-bottom: 2rem;
+        }
+        .problem-section h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.1rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 0.8rem;
+            letter-spacing: 1px;
+        }
+        .problem-section p {
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.8;
+        }
+
+        /* Formulation */
+        .formulation-block {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 8px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            line-height: 1.9;
+            color: var(--slate-light);
+            overflow-x: auto;
+        }
+        .formulation-block .form-label {
+            color: var(--gold);
+            font-weight: 500;
+            display: block;
+            margin-bottom: 0.3rem;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .formulation-block .form-line {
+            color: var(--ivory);
+            margin-bottom: 0.2rem;
+        }
+        .formulation-block .form-comment {
+            color: var(--slate);
+            font-style: italic;
+        }
+
+        /* Solver Panel */
+        .solver-panel {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 10px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .solver-panel h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            font-weight: 500;
+            color: var(--gold);
+            margin-bottom: 1.2rem;
+            letter-spacing: 1px;
+        }
+        .solver-controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.8rem;
+            margin-bottom: 1.2rem;
+            align-items: flex-end;
+        }
+        .solver-controls label {
+            font-size: 0.75rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 0.3rem;
+        }
+        .solver-controls input[type="text"],
+        .solver-controls input[type="number"],
+        .solver-controls select {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--ivory);
+            padding: 0.45rem 0.7rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .solver-controls input:focus,
+        .solver-controls select:focus {
+            border-color: var(--gold);
+        }
+        .solver-controls input[type="range"] {
+            accent-color: var(--gold);
+            width: 100px;
+        }
+        .solver-btn {
+            background: transparent;
+            border: 1px solid var(--gold);
+            color: var(--gold);
+            padding: 0.45rem 1.2rem;
+            border-radius: 4px;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+        .preset-btn {
+            background: rgba(197, 160, 89, 0.08);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            color: var(--slate-light);
+            padding: 0.35rem 0.8rem;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-family: 'JetBrains Mono', monospace;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .preset-btn:hover {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .solver-canvas-wrap {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 6px;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            position: relative;
+            overflow: hidden;
+        }
+        .solver-canvas-wrap canvas {
+            display: block;
+            width: 100%;
+        }
+        .solver-results {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        .result-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 6px;
+            padding: 0.8rem 1rem;
+            text-align: center;
+        }
+        .result-card .result-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            color: var(--gold);
+            font-weight: 500;
+        }
+        .result-card .result-label {
+            font-size: 0.68rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 0.2rem;
+        }
+        .alignment-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 1.6;
+            background: var(--midnight);
+            border: 1px solid rgba(197,160,89,0.1);
+            border-radius: 6px;
+            padding: 1rem;
+            overflow-x: auto;
+            margin-top: 0.8rem;
+        }
+        .align-match { color: var(--green); }
+        .align-mismatch { color: var(--red); }
+        .align-gap { color: var(--slate); }
+
+        /* Protein residue dropdowns */
+        .residue-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            align-items: flex-end;
+        }
+        .residue-col {
+            text-align: center;
+        }
+        .residue-col label {
+            display: block;
+            font-size: 0.68rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.3rem;
+        }
+        .residue-col select {
+            background: var(--midnight);
+            border: 1px solid rgba(197,160,89,0.25);
+            border-radius: 4px;
+            color: var(--ivory);
+            padding: 0.4rem 0.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            outline: none;
+        }
+
+        /* CTA */
+        .cta-panel {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 10px;
+            padding: 2.5rem;
+            text-align: center;
+            margin: 3rem 0;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 400;
+            color: var(--ivory);
+            margin-bottom: 0.8rem;
+        }
+        .cta-panel p {
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            max-width: 550px;
+            margin: 0 auto 1.5rem;
+            line-height: 1.8;
+        }
+        .cta-links { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .cta-link {
+            display: inline-block;
+            padding: 0.6rem 1.5rem;
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* Disclaimer */
+        .disclaimer-box {
+            background: rgba(197, 160, 89, 0.04);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 6px;
+            padding: 1.2rem 1.5rem;
+            font-size: 0.78rem;
+            color: var(--slate);
+            line-height: 1.7;
+        }
+        .disclaimer-title {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+        }
+
+        /* Scroll Progress + Scroll-to-Top */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* Footer */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* Fade-in */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Theme Toggle */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel,
+        html[data-theme="light"] .formulation-block,
+        html[data-theme="light"] .science-context,
+        html[data-theme="light"] .evidence-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* Command Palette */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--slate);
+            transition: all 0.2s;
+            margin-left: 0.5rem;
+        }
+        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            color: var(--slate);
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 2.2rem; letter-spacing: 2px; }
+            .solver-controls { flex-direction: column; align-items: stretch; }
+            .domain-tab { padding: 0.6rem 1rem; font-size: 0.72rem; }
+            .solver-results { grid-template-columns: repeat(2, 1fr); }
+            .residue-row { gap: 0.4rem; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+            .hero-title { font-size: 1.8rem; }
+            .solver-results { grid-template-columns: 1fr 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&ShortUpArrow;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li style="color: var(--gold);">Genomics &amp; Bioinformatics</li>
+        </ol>
+    </div>
+</div>
+
+<main>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-dna"></i></div>
+        <h1 class="hero-title">Genomics &amp; <span>Bioinformatics</span></h1>
+        <p class="hero-subtitle">Operations Research in Molecular Biology</p>
+        <p class="hero-desc">
+            Three foundational NP-hard problems in computational biology &mdash; genome assembly from short reads,
+            multiple sequence alignment across gene families, and protein side-chain packing for structure prediction &mdash;
+            each yield to combinatorial optimisation techniques developed in the OR tradition.
+        </p>
+    </div>
+</section>
+
+<!-- Domain Introduction + Tabs -->
+<section class="section-block">
+    <div class="container">
+        <p class="domain-intro fade-in">
+            Molecular biology generates vast combinatorial search spaces: a human genome comprises 3 billion base pairs read
+            in overlapping fragments, protein families demand alignment of dozens of divergent sequences, and side-chain
+            conformations grow exponentially with chain length. In each case the underlying decision problem is NP-hard,
+            yet practical algorithms &mdash; de Bruijn graph traversal, progressive dynamic programming, and dead-end
+            elimination &mdash; exploit biological structure to achieve tractable solutions on real data.
+        </p>
+
+        <!-- Tab System -->
+        <div class="domain-tabs">
+            <button class="domain-tab active" onclick="switchTab(this, 'assembly')">Genome Assembly</button>
+            <button class="domain-tab" onclick="switchTab(this, 'msa')">Sequence Alignment</button>
+            <button class="domain-tab" onclick="switchTab(this, 'protein')">Protein Design</button>
+        </div>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- TAB 1: Genome Assembly                      -->
+        <!-- ════════════════════════════════════════════ -->
+        <div class="domain-pane active" id="assembly">
+
+            <div class="science-context fade-in">
+                <h4>Biological Context</h4>
+                <p>
+                    DNA sequencers cannot read entire chromosomes in one pass. Illumina platforms produce short reads of
+                    100&ndash;300 base pairs; Oxford Nanopore generates longer reads of 10,000&ndash;50,000 bp but with higher
+                    error rates. Genome assembly reconstructs the original sequence from these overlapping fragments &mdash;
+                    analogous to reassembling a shredded book where pages contain repeated paragraphs and some words are misspelled.
+                </p>
+            </div>
+
+            <div class="problem-section fade-in">
+                <h4>Computational Problem</h4>
+                <p>
+                    The overlap graph approach models each read as a node and each suffix-prefix overlap as a directed edge.
+                    Finding a path that visits every node exactly once is the Hamiltonian path problem &mdash; NP-hard.
+                    The key insight of Pevzner, Tang, and Waterman (2001) was to reformulate assembly using de Bruijn graphs:
+                    decompose reads into k-mers, build a graph where (k-1)-mer overlaps form edges, and seek an Eulerian path &mdash;
+                    solvable in O(|E|) time. This transformation converts an NP-hard problem into a polynomial one by changing
+                    the representation.
+                </p>
+            </div>
+
+            <div class="formulation-block fade-in">
+                <span class="form-label">Overlap Graph (NP-hard)</span>
+                <div class="form-line">G = (V, E) where V = {reads}, E = {(r_i, r_j) : suffix(r_i) overlaps prefix(r_j)}</div>
+                <div class="form-line">Find Hamiltonian path visiting every node exactly once</div>
+                <br>
+                <span class="form-label">de Bruijn Graph (Polynomial)</span>
+                <div class="form-line">Build k-mers from reads, create nodes for each (k-1)-mer</div>
+                <div class="form-line">Edge (u, v) exists iff u is prefix and v is suffix of some k-mer</div>
+                <div class="form-line">Find Eulerian path traversing every edge exactly once &mdash; O(|E|)</div>
+                <div class="form-comment">// Eulerian path exists iff graph is connected and at most 2 nodes have odd degree</div>
+            </div>
+
+            <!-- Solver: de Bruijn Graph Visualiser -->
+            <div class="solver-panel fade-in">
+                <h4><i class="fas fa-project-diagram" style="margin-right:0.5rem;opacity:0.7"></i> de Bruijn Graph Visualiser</h4>
+                <div class="solver-controls">
+                    <div>
+                        <label>DNA Sequence</label>
+                        <input type="text" id="asmSeqInput" value="ATCGATCG" style="width:220px" maxlength="30">
+                    </div>
+                    <div>
+                        <label>k-mer size (k): <span id="asmKVal">3</span></label>
+                        <input type="range" id="asmKSlider" min="2" max="4" value="3">
+                    </div>
+                    <button class="solver-btn" id="asmSolveBtn" type="button">Build Graph</button>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <button class="preset-btn" type="button" data-asm-preset="ATCG">ATCG</button>
+                    <button class="preset-btn" type="button" data-asm-preset="ATAGCTAGC">ATAGCTAGC</button>
+                    <button class="preset-btn" type="button" data-asm-preset="GCGCGCG">GCGCGCG</button>
+                </div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="asmCanvas" width="700" height="380"></canvas>
+                </div>
+                <div class="solver-results" id="asmResults"></div>
+            </div>
+
+            <div class="evidence-panel fade-in">
+                <h4>Key References</h4>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-operational">Operational</span>
+                    <div class="ev-text">
+                        <strong>Pevzner, P.A., Tang, H. &amp; Waterman, M.S.</strong> (2001).
+                        &ldquo;An Eulerian path approach to DNA fragment assembly.&rdquo;
+                        <em>Proceedings of the National Academy of Sciences</em>, 98(17), 9748&ndash;9753.
+                    </div>
+                </div>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-published">Published</span>
+                    <div class="ev-text">
+                        <strong>Nagarajan, N. &amp; Pop, M.</strong> (2009).
+                        &ldquo;Parametric complexity of sequence assembly: Theory and applications to next generation sequencing.&rdquo;
+                        <em>Journal of Computational Biology</em>, 16(7), 897&ndash;908.
+                    </div>
+                </div>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-published">Published</span>
+                    <div class="ev-text">
+                        <strong>Medvedev, P., Georgiou, K., Myers, G. &amp; Brudno, M.</strong> (2007).
+                        &ldquo;Computability of models for sequence assembly.&rdquo;
+                        <em>Algorithms in Bioinformatics (WABI 2007)</em>, Lecture Notes in Computer Science, vol 4645, 289&ndash;301.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- TAB 2: Multiple Sequence Alignment          -->
+        <!-- ════════════════════════════════════════════ -->
+        <div class="domain-pane" id="msa">
+
+            <div class="science-context fade-in">
+                <h4>Biological Context</h4>
+                <p>
+                    Aligning multiple DNA or protein sequences reveals evolutionary conservation, identifies gene family
+                    members, and anchors phylogenetic tree construction. Conserved positions indicate functional or structural
+                    constraints; variable regions suggest adaptive evolution or relaxed selection.
+                </p>
+            </div>
+
+            <div class="problem-section fade-in">
+                <h4>Computational Problem</h4>
+                <p>
+                    Pairwise alignment via Needleman-Wunsch dynamic programming runs in O(mn) time and is optimal.
+                    However, extending DP to n sequences requires an n-dimensional matrix with O(L^n) cells &mdash;
+                    Wang and Jiang (1994) proved that multiple sequence alignment (MSA) under the sum-of-pairs score is
+                    NP-hard for n &ge; 3. Practical heuristics include progressive alignment (ClustalW, which builds a guide
+                    tree then aligns pairs), iterative refinement (MUSCLE), and profile Hidden Markov Models (HMMER).
+                </p>
+            </div>
+
+            <div class="formulation-block fade-in">
+                <span class="form-label">Pairwise Alignment (Optimal, O(mn))</span>
+                <div class="form-line">F(i,j) = max { F(i-1,j-1) + s(a_i, b_j),</div>
+                <div class="form-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; F(i-1,j) + gap_penalty,</div>
+                <div class="form-line">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; F(i,j-1) + gap_penalty }</div>
+                <div class="form-comment">// Traceback from F(m,n) recovers optimal alignment</div>
+                <br>
+                <span class="form-label">Multiple Alignment (NP-hard for n &ge; 3)</span>
+                <div class="form-line">Score(A) = &Sigma;_{all pairs (i,j)} pairwise_score(A_i, A_j)</div>
+                <div class="form-line">Exact DP requires O(L^n) cells &mdash; intractable for n &gt; 3</div>
+                <div class="form-comment">// Proved NP-hard by Wang &amp; Jiang (1994), J Comp Bio 1(4)</div>
+            </div>
+
+            <!-- Solver: Needleman-Wunsch Pairwise Alignment -->
+            <div class="solver-panel fade-in">
+                <h4><i class="fas fa-align-left" style="margin-right:0.5rem;opacity:0.7"></i> Needleman-Wunsch Alignment</h4>
+                <div class="solver-controls">
+                    <div>
+                        <label>Sequence 1</label>
+                        <input type="text" id="msaSeq1" value="ATCGTTAG" style="width:180px;text-transform:uppercase" maxlength="30">
+                    </div>
+                    <div>
+                        <label>Sequence 2</label>
+                        <input type="text" id="msaSeq2" value="ATCGTCAG" style="width:180px;text-transform:uppercase" maxlength="30">
+                    </div>
+                    <button class="solver-btn" id="msaSolveBtn" type="button">Align</button>
+                </div>
+                <div class="solver-controls">
+                    <div>
+                        <label>Match: <span id="msaMatchVal">1</span></label>
+                        <input type="range" id="msaMatch" min="1" max="5" value="1">
+                    </div>
+                    <div>
+                        <label>Mismatch: <span id="msaMismatchVal">-1</span></label>
+                        <input type="range" id="msaMismatch" min="-5" max="-1" value="-1">
+                    </div>
+                    <div>
+                        <label>Gap: <span id="msaGapVal">-2</span></label>
+                        <input type="range" id="msaGap" min="-5" max="-1" value="-2">
+                    </div>
+                </div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <button class="preset-btn" type="button" data-msa-preset="ATCGTTAG|ATCGTCAG">ATCGTTAG / ATCGTCAG</button>
+                    <button class="preset-btn" type="button" data-msa-preset="GCATGCU|GATTACA">GCATGCU / GATTACA</button>
+                    <button class="preset-btn" type="button" data-msa-preset="AGTACGCA|TATGC">AGTACGCA / TATGC</button>
+                </div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="msaCanvas" width="700" height="400"></canvas>
+                </div>
+                <div class="alignment-display" id="msaAlignment"></div>
+                <div class="solver-results" id="msaResults"></div>
+            </div>
+
+            <div class="evidence-panel fade-in">
+                <h4>Key References</h4>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-published">Published</span>
+                    <div class="ev-text">
+                        <strong>Wang, L. &amp; Jiang, T.</strong> (1994).
+                        &ldquo;On the complexity of multiple sequence alignment.&rdquo;
+                        <em>Journal of Computational Biology</em>, 1(4), 337&ndash;348.
+                    </div>
+                </div>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-operational">Operational</span>
+                    <div class="ev-text">
+                        <strong>Edgar, R.C.</strong> (2004).
+                        &ldquo;MUSCLE: multiple sequence alignment with high accuracy and high throughput.&rdquo;
+                        <em>Nucleic Acids Research</em>, 32(5), 1792&ndash;1797.
+                    </div>
+                </div>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-operational">Operational</span>
+                    <div class="ev-text">
+                        <strong>Eddy, S.R.</strong> (1998).
+                        &ldquo;Profile hidden Markov models.&rdquo;
+                        <em>Bioinformatics</em>, 14(9), 755&ndash;763.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════ -->
+        <!-- TAB 3: Protein Side-Chain Packing           -->
+        <!-- ════════════════════════════════════════════ -->
+        <div class="domain-pane" id="protein">
+
+            <div class="science-context fade-in">
+                <h4>Biological Context</h4>
+                <p>
+                    Protein function is determined by three-dimensional structure. While the backbone fold defines the overall
+                    shape, side-chain conformations (rotamers) determine binding interfaces, catalytic sites, and stability.
+                    Each amino acid has a discrete set of preferred rotamer states; steric clashes and van der Waals
+                    interactions between neighbouring side chains must be minimised for a stable fold.
+                </p>
+            </div>
+
+            <div class="problem-section fade-in">
+                <h4>Computational Problem</h4>
+                <p>
+                    Given a fixed backbone, assign one rotamer per residue position to minimise the total pairwise
+                    interaction energy. With r rotamers per position and n residues, the brute-force search space is
+                    r^n &mdash; Pierce and Winfree (2002) proved this is NP-hard. Dead-End Elimination (DEE), introduced by
+                    Desmet et al. (1992), prunes rotamers that provably cannot participate in the global minimum energy
+                    conformation, often reducing the search space by orders of magnitude.
+                </p>
+            </div>
+
+            <div class="formulation-block fade-in">
+                <span class="form-label">Objective</span>
+                <div class="form-line">min E_total = &Sigma;_i E_self(i, r_i) + &Sigma;_{i&lt;j} E_pair(i, r_i, j, r_j)</div>
+                <div class="form-comment">// r_i is the rotamer assigned to residue i</div>
+                <br>
+                <span class="form-label">DEE Pruning Criterion (Desmet et al. 1992)</span>
+                <div class="form-line">Eliminate rotamer r at position i if there exists rotamer s at i such that:</div>
+                <div class="form-line">E_self(i,r) - E_self(i,s) + &Sigma;_{j &ne; i} min_{t} [E_pair(i,r,j,t) - E_pair(i,s,j,t)] &gt; 0</div>
+                <div class="form-comment">// Rotamer r is provably suboptimal &mdash; can never be in GMEC</div>
+            </div>
+
+            <!-- Solver: 5-Residue Toy Protein -->
+            <div class="solver-panel fade-in">
+                <h4><i class="fas fa-atom" style="margin-right:0.5rem;opacity:0.7"></i> Side-Chain Packing: 5-Residue Toy Protein</h4>
+                <div class="residue-row" id="protResidueRow"></div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1rem;">
+                    <button class="solver-btn" id="protSolveBtn" type="button">Solve</button>
+                </div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="protCanvas" width="700" height="340"></canvas>
+                </div>
+                <div class="solver-results" id="protResults"></div>
+            </div>
+
+            <div class="evidence-panel fade-in">
+                <h4>Key References</h4>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-published">Published</span>
+                    <div class="ev-text">
+                        <strong>Pierce, N.A. &amp; Winfree, E.</strong> (2002).
+                        &ldquo;Protein design is NP-hard.&rdquo;
+                        <em>Protein Engineering</em>, 15(10), 779&ndash;782.
+                    </div>
+                </div>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-published">Published</span>
+                    <div class="ev-text">
+                        <strong>Desmet, J., De Maeyer, M., Hazes, B. &amp; Lasters, I.</strong> (1992).
+                        &ldquo;The dead-end elimination theorem and its use in protein side-chain positioning.&rdquo;
+                        <em>Nature</em>, 356, 539&ndash;542.
+                    </div>
+                </div>
+                <div class="evidence-item">
+                    <span class="ev-badge ev-operational">Operational</span>
+                    <div class="ev-text">
+                        <strong>Leaver-Fay, A. et al.</strong> (2011).
+                        &ldquo;ROSETTA3: An object-oriented software suite for the simulation and design of macromolecules.&rdquo;
+                        <em>Methods in Enzymology</em>, 487, 545&ndash;574.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="cta-panel fade-in">
+            <h3>Exploring optimisation in computational biology?</h3>
+            <p>
+                From genome assembly pipelines to protein design workflows, combinatorial optimisation
+                techniques are essential tools in modern bioinformatics.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding:2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box" style="max-width:800px; margin:0 auto;">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            All examples are simplified for educational purposes. DNA sequences, alignment scores, and energy
+            values are illustrative and do not represent real experimental data. The solvers demonstrate
+            algorithmic principles rather than production-grade bioinformatics pipelines.
+        </div>
+    </div>
+</section>
+</main>
+
+<!-- Footer -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. All rights reserved.</p>
+    </div>
+</footer>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ══════════════════════════════════════════════════
+//  Tab Switching
+// ══════════════════════════════════════════════════
+function switchTab(tabEl, paneId) {
+    var tabs = document.querySelectorAll('.domain-tab');
+    var panes = document.querySelectorAll('.domain-pane');
+    for (var i = 0; i < tabs.length; i++) { tabs[i].classList.remove('active'); }
+    for (var i = 0; i < panes.length; i++) { panes[i].classList.remove('active'); }
+    tabEl.classList.add('active');
+    document.getElementById(paneId).classList.add('active');
+    // re-trigger fade-ins inside new pane
+    var fades = document.getElementById(paneId).querySelectorAll('.fade-in');
+    for (var f = 0; f < fades.length; f++) { fades[f].classList.add('visible'); }
+}
+
+// ══════════════════════════════════════════════════
+//  SOLVER 1: de Bruijn Graph Visualiser
+// ══════════════════════════════════════════════════
+(function() {
+    'use strict';
+    var seqInput = document.getElementById('asmSeqInput');
+    var kSlider = document.getElementById('asmKSlider');
+    var kValSpan = document.getElementById('asmKVal');
+    var solveBtn = document.getElementById('asmSolveBtn');
+    var canvas = document.getElementById('asmCanvas');
+    var ctx = canvas.getContext('2d');
+    var resultsDiv = document.getElementById('asmResults');
+
+    kSlider.addEventListener('input', function() { kValSpan.textContent = kSlider.value; });
+
+    var presetBtns = document.querySelectorAll('[data-asm-preset]');
+    for (var i = 0; i < presetBtns.length; i++) {
+        presetBtns[i].addEventListener('click', function() {
+            seqInput.value = this.getAttribute('data-asm-preset');
+            buildGraph();
+        });
+    }
+    solveBtn.addEventListener('click', buildGraph);
+
+    function clearContainer(el) {
+        while (el.firstChild) { el.removeChild(el.firstChild); }
+    }
+
+    function addResultCard(container, label, value, extraStyle) {
+        var card = document.createElement('div');
+        card.className = 'result-card';
+        var val = document.createElement('div');
+        val.className = 'result-value';
+        val.textContent = value;
+        if (extraStyle) { val.style.cssText = extraStyle; }
+        card.appendChild(val);
+        var lbl = document.createElement('div');
+        lbl.className = 'result-label';
+        lbl.textContent = label;
+        card.appendChild(lbl);
+        container.appendChild(card);
+    }
+
+    function buildGraph() {
+        var seq = seqInput.value.toUpperCase().replace(/[^ATCGN]/g, '');
+        if (seq.length < 2) return;
+        var k = parseInt(kSlider.value, 10);
+        if (k >= seq.length) k = seq.length - 1;
+
+        // extract k-mers
+        var kmers = [];
+        for (var i = 0; i <= seq.length - k; i++) {
+            kmers.push(seq.substring(i, i + k));
+        }
+
+        // build de Bruijn: nodes = (k-1)-mers, edges = k-mers
+        var nodeSet = {};
+        var edges = [];
+        for (var i = 0; i < kmers.length; i++) {
+            var prefix = kmers[i].substring(0, k - 1);
+            var suffix = kmers[i].substring(1);
+            nodeSet[prefix] = true;
+            nodeSet[suffix] = true;
+            edges.push({ from: prefix, to: suffix, kmer: kmers[i] });
+        }
+        var nodes = Object.keys(nodeSet);
+
+        // check Eulerian path: count in/out degree
+        var inDeg = {};
+        var outDeg = {};
+        for (var n = 0; n < nodes.length; n++) { inDeg[nodes[n]] = 0; outDeg[nodes[n]] = 0; }
+        for (var e = 0; e < edges.length; e++) {
+            outDeg[edges[e].from]++;
+            inDeg[edges[e].to]++;
+        }
+        var startNodes = 0;
+        var endNodes = 0;
+        var oddNodes = 0;
+        var eulerStart = nodes[0];
+        for (var n = 0; n < nodes.length; n++) {
+            var diff = outDeg[nodes[n]] - inDeg[nodes[n]];
+            if (diff === 1) { startNodes++; eulerStart = nodes[n]; }
+            else if (diff === -1) { endNodes++; }
+            else if (diff !== 0) { oddNodes++; }
+        }
+        var eulerianExists = (startNodes === 0 && endNodes === 0 && oddNodes === 0) ||
+                             (startNodes === 1 && endNodes === 1 && oddNodes === 0);
+
+        // find Eulerian path via Hierholzer
+        var path = [];
+        if (eulerianExists) {
+            var adjList = {};
+            for (var n = 0; n < nodes.length; n++) { adjList[nodes[n]] = []; }
+            for (var e = 0; e < edges.length; e++) {
+                adjList[edges[e].from].push(edges[e].to);
+            }
+            var edgeIdx = {};
+            for (var n = 0; n < nodes.length; n++) { edgeIdx[nodes[n]] = 0; }
+            var stack = [eulerStart];
+            var circuit = [];
+            while (stack.length > 0) {
+                var v = stack[stack.length - 1];
+                if (edgeIdx[v] < adjList[v].length) {
+                    var next = adjList[v][edgeIdx[v]];
+                    edgeIdx[v]++;
+                    stack.push(next);
+                } else {
+                    circuit.push(stack.pop());
+                }
+            }
+            circuit.reverse();
+            path = circuit;
+        }
+
+        // reconstruct sequence from path
+        var reconstructed = '';
+        if (path.length > 0) {
+            reconstructed = path[0];
+            for (var p = 1; p < path.length; p++) {
+                reconstructed += path[p].charAt(path[p].length - 1);
+            }
+        }
+
+        // layout nodes in circle
+        var dpr = window.devicePixelRatio || 1;
+        var cw = canvas.parentElement.clientWidth - 32;
+        var ch = 380;
+        canvas.width = cw * dpr;
+        canvas.height = ch * dpr;
+        canvas.style.width = cw + 'px';
+        canvas.style.height = ch + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cw, ch);
+
+        var cx = cw / 2;
+        var cy = ch / 2;
+        var radius = Math.min(cx, cy) - 60;
+        var nodePos = {};
+        for (var n = 0; n < nodes.length; n++) {
+            var angle = (2 * Math.PI * n / nodes.length) - Math.PI / 2;
+            nodePos[nodes[n]] = {
+                x: cx + radius * Math.cos(angle),
+                y: cy + radius * Math.sin(angle)
+            };
+        }
+
+        // draw edges
+        for (var e = 0; e < edges.length; e++) {
+            var from = nodePos[edges[e].from];
+            var to = nodePos[edges[e].to];
+            var isInPath = false;
+            if (path.length > 1) {
+                for (var p = 0; p < path.length - 1; p++) {
+                    if (path[p] === edges[e].from && path[p + 1] === edges[e].to) {
+                        isInPath = true;
+                        break;
+                    }
+                }
+            }
+
+            // self-loop
+            if (edges[e].from === edges[e].to) {
+                ctx.beginPath();
+                ctx.arc(from.x, from.y - 25, 18, 0, Math.PI * 2);
+                ctx.strokeStyle = isInPath ? '#64ffda' : 'rgba(197,160,89,0.3)';
+                ctx.lineWidth = isInPath ? 2.5 : 1.2;
+                ctx.stroke();
+                continue;
+            }
+
+            // curved edge with arrow
+            var mx = (from.x + to.x) / 2;
+            var my = (from.y + to.y) / 2;
+            var dx = to.x - from.x;
+            var dy = to.y - from.y;
+            var len = Math.sqrt(dx * dx + dy * dy);
+            var nx = -dy / len;
+            var ny = dx / len;
+            var bulge = 20;
+            var cpx = mx + nx * bulge;
+            var cpy = my + ny * bulge;
+
+            ctx.beginPath();
+            ctx.moveTo(from.x, from.y);
+            ctx.quadraticCurveTo(cpx, cpy, to.x, to.y);
+            ctx.strokeStyle = isInPath ? '#64ffda' : 'rgba(197,160,89,0.3)';
+            ctx.lineWidth = isInPath ? 2.5 : 1.2;
+            ctx.stroke();
+
+            // arrowhead
+            var t = 0.85;
+            var ax = (1 - t) * (1 - t) * from.x + 2 * (1 - t) * t * cpx + t * t * to.x;
+            var ay = (1 - t) * (1 - t) * from.y + 2 * (1 - t) * t * cpy + t * t * to.y;
+            var t2 = 0.82;
+            var bx = (1 - t2) * (1 - t2) * from.x + 2 * (1 - t2) * t2 * cpx + t2 * t2 * to.x;
+            var by = (1 - t2) * (1 - t2) * from.y + 2 * (1 - t2) * t2 * cpy + t2 * t2 * to.y;
+            var adx = ax - bx;
+            var ady = ay - by;
+            var al = Math.sqrt(adx * adx + ady * ady) || 1;
+            adx /= al;
+            ady /= al;
+            var arrowSize = 8;
+            ctx.beginPath();
+            ctx.moveTo(ax, ay);
+            ctx.lineTo(ax - arrowSize * adx - arrowSize * 0.4 * ady, ay - arrowSize * ady + arrowSize * 0.4 * adx);
+            ctx.lineTo(ax - arrowSize * adx + arrowSize * 0.4 * ady, ay - arrowSize * ady - arrowSize * 0.4 * adx);
+            ctx.closePath();
+            ctx.fillStyle = isInPath ? '#64ffda' : 'rgba(197,160,89,0.5)';
+            ctx.fill();
+        }
+
+        // draw nodes
+        for (var n = 0; n < nodes.length; n++) {
+            var pos = nodePos[nodes[n]];
+            var inPath = false;
+            for (var p = 0; p < path.length; p++) {
+                if (path[p] === nodes[n]) { inPath = true; break; }
+            }
+            ctx.beginPath();
+            ctx.arc(pos.x, pos.y, 22, 0, Math.PI * 2);
+            ctx.fillStyle = inPath ? 'rgba(100,255,218,0.15)' : 'rgba(197,160,89,0.08)';
+            ctx.fill();
+            ctx.strokeStyle = inPath ? '#64ffda' : 'rgba(197,160,89,0.5)';
+            ctx.lineWidth = inPath ? 2 : 1;
+            ctx.stroke();
+
+            ctx.fillStyle = inPath ? '#64ffda' : '#C5A059';
+            ctx.font = '500 12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(nodes[n], pos.x, pos.y);
+        }
+
+        // results
+        clearContainer(resultsDiv);
+        addResultCard(resultsDiv, 'K-mers', kmers.length);
+        addResultCard(resultsDiv, 'Nodes', nodes.length);
+        addResultCard(resultsDiv, 'Edges', edges.length);
+        addResultCard(resultsDiv, 'Eulerian Path', eulerianExists ? 'Yes' : 'No');
+        if (reconstructed) {
+            addResultCard(resultsDiv, 'Reconstructed', reconstructed, 'font-size:0.82rem;word-break:break-all');
+        }
+    }
+
+    // initial build
+    buildGraph();
+})();
+
+// ══════════════════════════════════════════════════
+//  SOLVER 2: Needleman-Wunsch Alignment
+// ══════════════════════════════════════════════════
+(function() {
+    'use strict';
+    var seq1Input = document.getElementById('msaSeq1');
+    var seq2Input = document.getElementById('msaSeq2');
+    var matchSlider = document.getElementById('msaMatch');
+    var mismatchSlider = document.getElementById('msaMismatch');
+    var gapSlider = document.getElementById('msaGap');
+    var matchVal = document.getElementById('msaMatchVal');
+    var mismatchVal = document.getElementById('msaMismatchVal');
+    var gapVal = document.getElementById('msaGapVal');
+    var solveBtn = document.getElementById('msaSolveBtn');
+    var canvas = document.getElementById('msaCanvas');
+    var ctx = canvas.getContext('2d');
+    var alignDiv = document.getElementById('msaAlignment');
+    var resultsDiv = document.getElementById('msaResults');
+
+    matchSlider.addEventListener('input', function() { matchVal.textContent = matchSlider.value; });
+    mismatchSlider.addEventListener('input', function() { mismatchVal.textContent = mismatchSlider.value; });
+    gapSlider.addEventListener('input', function() { gapVal.textContent = gapSlider.value; });
+
+    var presetBtns = document.querySelectorAll('[data-msa-preset]');
+    for (var i = 0; i < presetBtns.length; i++) {
+        presetBtns[i].addEventListener('click', function() {
+            var parts = this.getAttribute('data-msa-preset').split('|');
+            seq1Input.value = parts[0];
+            seq2Input.value = parts[1];
+            runAlignment();
+        });
+    }
+    solveBtn.addEventListener('click', runAlignment);
+
+    function clearContainer(el) {
+        while (el.firstChild) { el.removeChild(el.firstChild); }
+    }
+
+    function addResultCard(container, label, value) {
+        var card = document.createElement('div');
+        card.className = 'result-card';
+        var val = document.createElement('div');
+        val.className = 'result-value';
+        val.textContent = value;
+        card.appendChild(val);
+        var lbl = document.createElement('div');
+        lbl.className = 'result-label';
+        lbl.textContent = label;
+        card.appendChild(lbl);
+        container.appendChild(card);
+    }
+
+    function runAlignment() {
+        var s1 = seq1Input.value.toUpperCase().replace(/[^A-Z]/g, '');
+        var s2 = seq2Input.value.toUpperCase().replace(/[^A-Z]/g, '');
+        if (s1.length === 0 || s2.length === 0) return;
+        if (s1.length > 25) s1 = s1.substring(0, 25);
+        if (s2.length > 25) s2 = s2.substring(0, 25);
+
+        var matchScore = parseInt(matchSlider.value, 10);
+        var mismatchScore = parseInt(mismatchSlider.value, 10);
+        var gapPenalty = parseInt(gapSlider.value, 10);
+
+        var m = s1.length;
+        var n = s2.length;
+
+        // build DP matrix
+        var F = [];
+        for (var i = 0; i <= m; i++) {
+            F[i] = [];
+            for (var j = 0; j <= n; j++) {
+                F[i][j] = 0;
+            }
+        }
+        for (var i = 1; i <= m; i++) F[i][0] = i * gapPenalty;
+        for (var j = 1; j <= n; j++) F[0][j] = j * gapPenalty;
+
+        for (var i = 1; i <= m; i++) {
+            for (var j = 1; j <= n; j++) {
+                var sc = (s1[i - 1] === s2[j - 1]) ? matchScore : mismatchScore;
+                var diag = F[i - 1][j - 1] + sc;
+                var up = F[i - 1][j] + gapPenalty;
+                var left = F[i][j - 1] + gapPenalty;
+                F[i][j] = Math.max(diag, up, left);
+            }
+        }
+
+        // traceback
+        var align1 = '';
+        var align2 = '';
+        var ci = m;
+        var cj = n;
+        var traceI = [ci];
+        var traceJ = [cj];
+        while (ci > 0 || cj > 0) {
+            if (ci > 0 && cj > 0) {
+                var sc = (s1[ci - 1] === s2[cj - 1]) ? matchScore : mismatchScore;
+                if (F[ci][cj] === F[ci - 1][cj - 1] + sc) {
+                    align1 = s1[ci - 1] + align1;
+                    align2 = s2[cj - 1] + align2;
+                    ci--; cj--;
+                } else if (F[ci][cj] === F[ci - 1][cj] + gapPenalty) {
+                    align1 = s1[ci - 1] + align1;
+                    align2 = '-' + align2;
+                    ci--;
+                } else {
+                    align1 = '-' + align1;
+                    align2 = s2[cj - 1] + align2;
+                    cj--;
+                }
+            } else if (ci > 0) {
+                align1 = s1[ci - 1] + align1;
+                align2 = '-' + align2;
+                ci--;
+            } else {
+                align1 = '-' + align1;
+                align2 = s2[cj - 1] + align2;
+                cj--;
+            }
+            traceI.push(ci);
+            traceJ.push(cj);
+        }
+        traceI.reverse();
+        traceJ.reverse();
+
+        // draw heatmap
+        var dpr = window.devicePixelRatio || 1;
+        var cellSize = Math.min(28, Math.floor((canvas.parentElement.clientWidth - 80) / (n + 2)));
+        var headerOff = 40;
+        var cw = (n + 2) * cellSize + headerOff + 20;
+        var ch = (m + 2) * cellSize + headerOff + 20;
+        canvas.width = cw * dpr;
+        canvas.height = ch * dpr;
+        canvas.style.width = cw + 'px';
+        canvas.style.height = ch + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cw, ch);
+
+        // find min/max for colour mapping
+        var minVal = F[0][0];
+        var maxVal = F[0][0];
+        for (var i = 0; i <= m; i++) {
+            for (var j = 0; j <= n; j++) {
+                if (F[i][j] < minVal) minVal = F[i][j];
+                if (F[i][j] > maxVal) maxVal = F[i][j];
+            }
+        }
+        var range = maxVal - minVal || 1;
+
+        // traceback cells set
+        var traceSet = {};
+        for (var t = 0; t < traceI.length; t++) {
+            traceSet[traceI[t] + ',' + traceJ[t]] = true;
+        }
+
+        var ox = headerOff;
+        var oy = headerOff;
+
+        // column headers (s2)
+        ctx.font = '500 10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = '#C5A059';
+        ctx.fillText('-', ox + cellSize / 2, oy - 12);
+        for (var j = 0; j < n; j++) {
+            ctx.fillText(s2[j], ox + (j + 1) * cellSize + cellSize / 2, oy - 12);
+        }
+        // row headers (s1)
+        ctx.fillText('-', ox - 16, oy + cellSize / 2);
+        for (var i = 0; i < m; i++) {
+            ctx.fillText(s1[i], ox - 16, oy + (i + 1) * cellSize + cellSize / 2);
+        }
+
+        // cells
+        for (var i = 0; i <= m; i++) {
+            for (var j = 0; j <= n; j++) {
+                var x = ox + j * cellSize;
+                var y = oy + i * cellSize;
+                var norm = (F[i][j] - minVal) / range;
+                var onTrace = traceSet[i + ',' + j];
+
+                var r, g, b;
+                if (norm < 0.5) {
+                    var t2 = norm * 2;
+                    r = Math.round(10 + t2 * 16);
+                    g = Math.round(25 + t2 * 80);
+                    b = Math.round(47 + t2 * 50);
+                } else {
+                    var t2 = (norm - 0.5) * 2;
+                    r = Math.round(26 + t2 * 74);
+                    g = Math.round(105 + t2 * 150);
+                    b = Math.round(97 + t2 * 121);
+                }
+
+                ctx.fillStyle = 'rgb(' + r + ',' + g + ',' + b + ')';
+                ctx.fillRect(x, y, cellSize - 1, cellSize - 1);
+
+                if (onTrace) {
+                    ctx.strokeStyle = '#C5A059';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(x + 1, y + 1, cellSize - 3, cellSize - 3);
+                }
+
+                ctx.fillStyle = onTrace ? '#F8F9FA' : 'rgba(248,249,250,0.7)';
+                ctx.font = (onTrace ? '600' : '400') + ' ' + Math.max(8, cellSize * 0.35) + 'px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(String(F[i][j]), x + cellSize / 2, y + cellSize / 2);
+            }
+        }
+
+        // display alignment
+        clearContainer(alignDiv);
+        var line1 = document.createElement('div');
+        var line2 = document.createElement('div');
+        var line3 = document.createElement('div');
+
+        var matches = 0;
+        var mismatches = 0;
+        var gaps = 0;
+
+        for (var a = 0; a < align1.length; a++) {
+            var span1 = document.createElement('span');
+            var span2 = document.createElement('span');
+            var span3 = document.createElement('span');
+
+            span1.textContent = align1[a];
+            span2.textContent = align2[a];
+
+            if (align1[a] === '-' || align2[a] === '-') {
+                span1.className = 'align-gap';
+                span2.className = 'align-gap';
+                span3.textContent = ' ';
+                span3.className = 'align-gap';
+                gaps++;
+            } else if (align1[a] === align2[a]) {
+                span1.className = 'align-match';
+                span2.className = 'align-match';
+                span3.textContent = '|';
+                span3.className = 'align-match';
+                matches++;
+            } else {
+                span1.className = 'align-mismatch';
+                span2.className = 'align-mismatch';
+                span3.textContent = 'x';
+                span3.className = 'align-mismatch';
+                mismatches++;
+            }
+
+            line1.appendChild(span1);
+            line3.appendChild(span2);
+            line2.appendChild(span3);
+        }
+
+        alignDiv.appendChild(line1);
+        alignDiv.appendChild(line2);
+        alignDiv.appendChild(line3);
+
+        // results
+        clearContainer(resultsDiv);
+        addResultCard(resultsDiv, 'Score', F[m][n]);
+        addResultCard(resultsDiv, 'Matches', matches);
+        addResultCard(resultsDiv, 'Mismatches', mismatches);
+        addResultCard(resultsDiv, 'Gaps', gaps);
+        addResultCard(resultsDiv, 'Identity', (matches / align1.length * 100).toFixed(1) + '%');
+    }
+
+    runAlignment();
+})();
+
+// ══════════════════════════════════════════════════
+//  SOLVER 3: Protein Side-Chain Packing
+// ══════════════════════════════════════════════════
+(function() {
+    'use strict';
+    var residueRow = document.getElementById('protResidueRow');
+    var solveBtn = document.getElementById('protSolveBtn');
+    var canvas = document.getElementById('protCanvas');
+    var ctx = canvas.getContext('2d');
+    var resultsDiv = document.getElementById('protResults');
+
+    var aminoAcids = [
+        { name: 'Ala', full: 'Alanine', rotamers: 1, volume: 0.4 },
+        { name: 'Val', full: 'Valine', rotamers: 3, volume: 0.6 },
+        { name: 'Leu', full: 'Leucine', rotamers: 9, volume: 0.75 },
+        { name: 'Ile', full: 'Isoleucine', rotamers: 9, volume: 0.7 },
+        { name: 'Phe', full: 'Phenylalanine', rotamers: 6, volume: 0.9 }
+    ];
+
+    var selects = [];
+    var defaults = [1, 2, 0, 4, 3];
+    for (var r = 0; r < 5; r++) {
+        var col = document.createElement('div');
+        col.className = 'residue-col';
+        var lbl = document.createElement('label');
+        lbl.textContent = 'Res ' + (r + 1);
+        col.appendChild(lbl);
+        var sel = document.createElement('select');
+        for (var a = 0; a < aminoAcids.length; a++) {
+            var opt = document.createElement('option');
+            opt.value = a;
+            opt.textContent = aminoAcids[a].name;
+            sel.appendChild(opt);
+        }
+        sel.value = defaults[r];
+        col.appendChild(sel);
+        residueRow.appendChild(col);
+        selects.push(sel);
+    }
+
+    solveBtn.addEventListener('click', solveProtein);
+
+    function clearContainer(el) {
+        while (el.firstChild) { el.removeChild(el.firstChild); }
+    }
+
+    function addResultCard(container, label, value) {
+        var card = document.createElement('div');
+        card.className = 'result-card';
+        var val = document.createElement('div');
+        val.className = 'result-value';
+        val.textContent = value;
+        card.appendChild(val);
+        var lbl = document.createElement('div');
+        lbl.className = 'result-label';
+        lbl.textContent = label;
+        card.appendChild(lbl);
+        container.appendChild(card);
+    }
+
+    function selfEnergy(aaIdx, rotamer) {
+        var aa = aminoAcids[aaIdx];
+        return -2.0 + aa.volume * 0.5 + rotamer * 0.3 * (1 + Math.sin(rotamer * 1.7));
+    }
+
+    function pairEnergy(aa1Idx, rot1, aa2Idx, rot2, dist) {
+        var v1 = aminoAcids[aa1Idx].volume;
+        var v2 = aminoAcids[aa2Idx].volume;
+        var sigma = (v1 + v2) * 0.5;
+        var r = dist;
+        if (r < 0.1) r = 0.1;
+        var ratio = sigma / r;
+        var lj = 0.8 * (Math.pow(ratio, 4) - Math.pow(ratio, 2));
+        var clash = 0.2 * Math.abs(rot1 - rot2) * sigma;
+        return lj + clash;
+    }
+
+    function solveProtein() {
+        var chosen = [];
+        for (var r = 0; r < 5; r++) {
+            chosen.push(parseInt(selects[r].value, 10));
+        }
+
+        var positions = [0.0, 1.0, 2.0, 3.0, 4.0];
+
+        var rotCounts = [];
+        var totalCombinations = 1;
+        for (var r = 0; r < 5; r++) {
+            var count = aminoAcids[chosen[r]].rotamers;
+            rotCounts.push(count);
+            totalCombinations *= count;
+        }
+
+        // brute force
+        var bestEnergy = Infinity;
+        var bestAssignment = [0, 0, 0, 0, 0];
+
+        for (var r0 = 0; r0 < rotCounts[0]; r0++) {
+            for (var r1 = 0; r1 < rotCounts[1]; r1++) {
+                for (var r2 = 0; r2 < rotCounts[2]; r2++) {
+                    for (var r3 = 0; r3 < rotCounts[3]; r3++) {
+                        for (var r4 = 0; r4 < rotCounts[4]; r4++) {
+                            var assignment = [r0, r1, r2, r3, r4];
+                            var energy = 0;
+                            for (var i = 0; i < 5; i++) {
+                                energy += selfEnergy(chosen[i], assignment[i]);
+                            }
+                            for (var i = 0; i < 5; i++) {
+                                for (var j = i + 1; j < 5; j++) {
+                                    var dist = positions[j] - positions[i];
+                                    energy += pairEnergy(chosen[i], assignment[i], chosen[j], assignment[j], dist);
+                                }
+                            }
+                            if (energy < bestEnergy) {
+                                bestEnergy = energy;
+                                bestAssignment = assignment.slice();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // DEE pruning
+        var surviving = [];
+        for (var i = 0; i < 5; i++) {
+            surviving.push([]);
+            for (var r = 0; r < rotCounts[i]; r++) {
+                surviving[i].push(true);
+            }
+        }
+
+        var pruned = 0;
+        var changed = true;
+        while (changed) {
+            changed = false;
+            for (var i = 0; i < 5; i++) {
+                for (var r = 0; r < rotCounts[i]; r++) {
+                    if (!surviving[i][r]) continue;
+                    for (var s = 0; s < rotCounts[i]; s++) {
+                        if (s === r || !surviving[i][s]) continue;
+                        var diff = selfEnergy(chosen[i], r) - selfEnergy(chosen[i], s);
+                        for (var j = 0; j < 5; j++) {
+                            if (j === i) continue;
+                            var dist = Math.abs(positions[j] - positions[i]);
+                            var minPairDiff = Infinity;
+                            for (var t = 0; t < rotCounts[j]; t++) {
+                                if (!surviving[j][t]) continue;
+                                var pd = pairEnergy(chosen[i], r, chosen[j], t, dist) -
+                                         pairEnergy(chosen[i], s, chosen[j], t, dist);
+                                if (pd < minPairDiff) minPairDiff = pd;
+                            }
+                            diff += minPairDiff;
+                        }
+                        if (diff > 0) {
+                            surviving[i][r] = false;
+                            pruned++;
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        var totalRotamers = 0;
+        var deeSearchSpace = 1;
+        for (var i = 0; i < 5; i++) {
+            totalRotamers += rotCounts[i];
+            var sc = 0;
+            for (var r = 0; r < rotCounts[i]; r++) {
+                if (surviving[i][r]) sc++;
+            }
+            deeSearchSpace *= sc;
+        }
+
+        // draw energy heatmap
+        var dpr = window.devicePixelRatio || 1;
+        var cw = canvas.parentElement.clientWidth - 32;
+        var ch = 340;
+        canvas.width = cw * dpr;
+        canvas.height = ch * dpr;
+        canvas.style.width = cw + 'px';
+        canvas.style.height = ch + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cw, ch);
+
+        var matrixSize = 5;
+        var cellSize = Math.min(50, (Math.min(cw, ch) - 120) / matrixSize);
+        var matOx = 80;
+        var matOy = 60;
+
+        var pairMat = [];
+        var pairMin = Infinity;
+        var pairMax = -Infinity;
+        for (var i = 0; i < 5; i++) {
+            pairMat[i] = [];
+            for (var j = 0; j < 5; j++) {
+                if (i === j) {
+                    pairMat[i][j] = selfEnergy(chosen[i], bestAssignment[i]);
+                } else {
+                    var dist = Math.abs(positions[j] - positions[i]);
+                    pairMat[i][j] = pairEnergy(chosen[i], bestAssignment[i], chosen[j], bestAssignment[j], dist);
+                }
+                if (pairMat[i][j] < pairMin) pairMin = pairMat[i][j];
+                if (pairMat[i][j] > pairMax) pairMax = pairMat[i][j];
+            }
+        }
+        var pairRange = pairMax - pairMin || 1;
+
+        // title
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '500 12px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Energy Interaction Matrix (Optimal Assignment)', matOx, matOy - 20);
+
+        // labels
+        ctx.font = '500 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        for (var i = 0; i < 5; i++) {
+            var label = aminoAcids[chosen[i]].name + '[' + bestAssignment[i] + ']';
+            ctx.fillStyle = '#C5A059';
+            ctx.fillText(label, matOx + i * cellSize + cellSize / 2, matOy - 5);
+            ctx.save();
+            ctx.translate(matOx - 8, matOy + i * cellSize + cellSize / 2);
+            ctx.textAlign = 'right';
+            ctx.fillText(label, 0, 0);
+            ctx.restore();
+        }
+
+        // cells
+        for (var i = 0; i < 5; i++) {
+            for (var j = 0; j < 5; j++) {
+                var x = matOx + j * cellSize;
+                var y = matOy + i * cellSize;
+                var norm = (pairMat[i][j] - pairMin) / pairRange;
+
+                var cr, cg, cb;
+                if (norm < 0.5) {
+                    cr = Math.round(30 + norm * 2 * 170);
+                    cg = Math.round(200 - norm * 2 * 80);
+                    cb = Math.round(150 - norm * 2 * 100);
+                } else {
+                    cr = Math.round(200 + (norm - 0.5) * 2 * 55);
+                    cg = Math.round(120 - (norm - 0.5) * 2 * 80);
+                    cb = Math.round(50 - (norm - 0.5) * 2 * 30);
+                }
+
+                ctx.fillStyle = 'rgb(' + cr + ',' + cg + ',' + cb + ')';
+                ctx.fillRect(x, y, cellSize - 2, cellSize - 2);
+
+                ctx.fillStyle = '#F8F9FA';
+                ctx.font = '400 ' + Math.max(8, cellSize * 0.28) + 'px "JetBrains Mono", monospace';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(pairMat[i][j].toFixed(1), x + cellSize / 2, y + cellSize / 2);
+            }
+        }
+
+        // bar chart: brute force vs DEE
+        var barOx = matOx + matrixSize * cellSize + 80;
+        var barW = 60;
+        var barMaxH = matrixSize * cellSize;
+        var barOy = matOy;
+
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '500 12px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Search Space Comparison', barOx + barW + 20, matOy - 20);
+
+        var bfH = barMaxH;
+        var deeH = totalCombinations > 0 ? (deeSearchSpace / totalCombinations) * barMaxH : 0;
+        if (deeH < 4) deeH = 4;
+
+        ctx.fillStyle = 'rgba(255,107,107,0.6)';
+        ctx.fillRect(barOx, barOy + barMaxH - bfH, barW, bfH);
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(barOx, barOy + barMaxH - bfH, barW, bfH);
+
+        ctx.fillStyle = '#ff6b6b';
+        ctx.font = '600 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(totalCombinations), barOx + barW / 2, barOy + barMaxH - bfH - 8);
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '400 9px "Inter", sans-serif';
+        ctx.fillText('Brute', barOx + barW / 2, barOy + barMaxH + 15);
+
+        var deeBarX = barOx + barW + 30;
+        ctx.fillStyle = 'rgba(100,255,218,0.6)';
+        ctx.fillRect(deeBarX, barOy + barMaxH - deeH, barW, deeH);
+        ctx.strokeStyle = '#64ffda';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(deeBarX, barOy + barMaxH - deeH, barW, deeH);
+
+        ctx.fillStyle = '#64ffda';
+        ctx.font = '600 11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(String(deeSearchSpace), deeBarX + barW / 2, barOy + barMaxH - deeH - 8);
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '400 9px "Inter", sans-serif';
+        ctx.fillText('After DEE', deeBarX + barW / 2, barOy + barMaxH + 15);
+
+        // results
+        clearContainer(resultsDiv);
+        var speedup = totalCombinations > 0 ? (totalCombinations / deeSearchSpace) : 1;
+        addResultCard(resultsDiv, 'Total Energy', bestEnergy.toFixed(2));
+        addResultCard(resultsDiv, 'Brute Force', totalCombinations);
+        addResultCard(resultsDiv, 'After DEE', deeSearchSpace);
+        addResultCard(resultsDiv, 'Pruned', pruned + ' / ' + totalRotamers);
+        addResultCard(resultsDiv, 'Speedup', speedup.toFixed(1) + 'x');
+    }
+
+    solveProtein();
+})();
+
+// ══════════════════════════════════════════════════
+//  Shared: Theme, Command Palette, Particles, Scroll
+// ══════════════════════════════════════════════════
+(function() {
+    'use strict';
+
+    // ── 1. Theme Toggle ──
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ── 2. Command Palette ──
+    var SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: 'RCPSP, Flow Shop, Job Shop', icon: 'fa-industry', url: '../families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'Routing', subtitle: 'TSP, CVRP, VRPTW', icon: 'fa-route', url: '../families/routing.html', group: 'Families', badge: 'Family' },
+        { title: 'Packing & Cutting', subtitle: 'Knapsack, Bin Packing', icon: 'fa-box', url: '../families/packing.html', group: 'Families', badge: 'Family' },
+        { title: 'Genomics & Bioinformatics', subtitle: 'Assembly, Alignment, Protein', icon: 'fa-dna', url: 'genomics-bioinformatics.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Clinical Trial Planning', subtitle: 'RCPSP', icon: 'fa-flask', url: 'clinical-trial.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Portfolio Optimization', subtitle: 'Robust', icon: 'fa-chart-pie', url: 'portfolio.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'delivery-routing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Ambulance Placement', subtitle: 'p-Median', icon: 'fa-ambulance', url: 'ambulance-placement.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'construction-project.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Operating Room Scheduling', subtitle: 'Job Shop', icon: 'fa-hospital', url: 'operating-room.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Cargo Loading', subtitle: '0-1 Knapsack', icon: 'fa-ship', url: 'cargo-loading.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Steel Production', subtitle: 'No-Wait Flow Shop', icon: 'fa-fire', url: 'steel-production.html', group: 'Applications', badge: 'Demo' }
+    ];
+
+    var overlay = document.getElementById('cmdPalette');
+    var cmdInput = document.getElementById('cmdInput');
+    var cmdResultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function clearContainer(el) {
+        while (el.firstChild) { el.removeChild(el.firstChild); }
+    }
+
+    function openPalette() {
+        overlay.classList.add('open');
+        cmdInput.value = '';
+        cmdInput.focus();
+        renderCmdResults('');
+        activeIdx = -1;
+    }
+    function closePalette() {
+        overlay.classList.remove('open');
+        activeIdx = -1;
+    }
+
+    function fuzzyMatch(query, text) {
+        query = query.toLowerCase();
+        text = text.toLowerCase();
+        if (!query) return true;
+        if (text.indexOf(query) !== -1) return true;
+        var qi = 0;
+        for (var ti = 0; ti < text.length && qi < query.length; ti++) {
+            if (text[ti] === query[qi]) qi++;
+        }
+        return qi === query.length;
+    }
+
+    function renderCmdResults(query) {
+        clearContainer(cmdResultsDiv);
+        var groups = {};
+        var idx = 0;
+        for (var i = 0; i < SEARCH_DATA.length; i++) {
+            var item = SEARCH_DATA[i];
+            if (!fuzzyMatch(query, item.title + ' ' + item.subtitle)) continue;
+            if (!groups[item.group]) {
+                groups[item.group] = true;
+                var gLabel = document.createElement('div');
+                gLabel.className = 'cmd-group-label';
+                gLabel.textContent = item.group;
+                cmdResultsDiv.appendChild(gLabel);
+            }
+
+            var a = document.createElement('a');
+            a.className = 'cmd-result';
+            a.href = item.url;
+            a.setAttribute('data-idx', idx);
+
+            var iconDiv = document.createElement('div');
+            iconDiv.className = 'cmd-icon';
+            var iconI = document.createElement('i');
+            iconI.className = 'fas ' + item.icon;
+            iconDiv.appendChild(iconI);
+            a.appendChild(iconDiv);
+
+            var infoDiv = document.createElement('div');
+            infoDiv.className = 'cmd-info';
+            var titleDiv = document.createElement('div');
+            titleDiv.className = 'cmd-title';
+            titleDiv.textContent = item.title;
+            infoDiv.appendChild(titleDiv);
+            var subDiv = document.createElement('div');
+            subDiv.className = 'cmd-subtitle';
+            subDiv.textContent = item.subtitle;
+            infoDiv.appendChild(subDiv);
+            a.appendChild(infoDiv);
+
+            var badge = document.createElement('span');
+            badge.className = 'cmd-badge';
+            badge.textContent = item.badge;
+            badge.style.cssText = 'background:rgba(197,160,89,0.15);color:var(--gold);';
+            a.appendChild(badge);
+
+            cmdResultsDiv.appendChild(a);
+            idx++;
+        }
+
+        if (idx === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found';
+            cmdResultsDiv.appendChild(empty);
+        }
+    }
+
+    if (cmdInput) {
+        cmdInput.addEventListener('input', function() {
+            renderCmdResults(cmdInput.value);
+            activeIdx = -1;
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) closePalette();
+            else openPalette();
+            return;
+        }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+
+        var results = cmdResultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            activeIdx = Math.min(activeIdx + 1, results.length - 1);
+            for (var i = 0; i < results.length; i++) {
+                results[i].classList.toggle('active', i === activeIdx);
+            }
+            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            activeIdx = Math.max(activeIdx - 1, 0);
+            for (var i = 0; i < results.length; i++) {
+                results[i].classList.toggle('active', i === activeIdx);
+            }
+            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
+        } else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) {
+            e.preventDefault();
+            results[activeIdx].click();
+        }
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePalette();
+        });
+    }
+
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) {
+        searchTrigger.addEventListener('click', openPalette);
+    }
+
+    // ── 3. Particle Network Background ──
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+        var CONNECTION_DIST = 120;
+
+        function resizePCanvas() {
+            pCanvas.width = heroEl.offsetWidth;
+            pCanvas.height = heroEl.offsetHeight;
+        }
+        resizePCanvas();
+        window.addEventListener('resize', resizePCanvas);
+
+        function Particle() {
+            this.x = Math.random() * pCanvas.width;
+            this.y = Math.random() * pCanvas.height;
+            this.vx = (Math.random() - 0.5) * 0.4;
+            this.vy = (Math.random() - 0.5) * 0.4;
+            this.radius = Math.random() * 2 + 1;
+        }
+        Particle.prototype.update = function() {
+            this.x += this.vx;
+            this.y += this.vy;
+            if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1;
+            if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1;
+        };
+        Particle.prototype.draw = function() {
+            pCtx.beginPath();
+            pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+            pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)';
+            pCtx.fill();
+        };
+
+        for (var pi = 0; pi < PARTICLE_COUNT; pi++) particles.push(new Particle());
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                particles[i].update();
+                particles[i].draw();
+            }
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        pCtx.beginPath();
+                        pCtx.moveTo(particles[i].x, particles[i].y);
+                        pCtx.lineTo(particles[j].x, particles[j].y);
+                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / CONNECTION_DIST)) + ')';
+                        pCtx.lineWidth = 0.6;
+                        pCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── 4. Scroll Progress + Scroll-to-Top ──
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    function onScroll() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (scrollTopBtn) {
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        }
+    }
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+
+    // ── 5. Fade-in Observer ──
+    var fadeEls = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var fadeObs = new IntersectionObserver(function(entries) {
+            for (var i = 0; i < entries.length; i++) {
+                if (entries[i].isIntersecting) {
+                    entries[i].target.classList.add('visible');
+                }
+            }
+        }, { threshold: 0.1 });
+        for (var i = 0; i < fadeEls.length; i++) {
+            fadeObs.observe(fadeEls[i]);
+        }
+    } else {
+        for (var i = 0; i < fadeEls.length; i++) {
+            fadeEls[i].classList.add('visible');
+        }
+    }
+
+})();
+</script>
+
+</body>
+</html>

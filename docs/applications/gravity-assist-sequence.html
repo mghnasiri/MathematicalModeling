@@ -1,0 +1,2006 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gravity-Assist Trajectory Sequence Design | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive gravity-assist flyby sequence optimiser. NP-Hard combinatorial trajectory design with patched-conic Lambert arc approximation.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/gravity-assist-sequence.html">
+    <meta property="og:title" content="Gravity-Assist Trajectory Sequence Design | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive gravity-assist flyby sequence optimiser. NP-Hard combinatorial trajectory design with patched-conic Lambert arc approximation.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Gravity-Assist Trajectory Sequence Design | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive gravity-assist flyby sequence optimiser. NP-Hard combinatorial trajectory design with patched-conic Lambert arc approximation.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* -- Navigation -- */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* -- Search Trigger -- */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.75rem;
+            color: var(--slate);
+            transition: all 0.3s;
+            margin-right: 0.5rem;
+        }
+        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            color: var(--slate);
+        }
+
+        /* -- Breadcrumb -- */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* -- Hero Section -- */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* -- Section Headers -- */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* -- Content Blocks -- */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* -- Science Context Panel -- */
+        .science-context {
+            background: rgba(122, 162, 247, 0.06);
+            border-left: 3px solid rgba(122, 162, 247, 0.5);
+            border-radius: 0 4px 4px 0;
+            padding: 1.5rem 2rem;
+            margin: 2rem 0;
+            font-size: 0.92rem;
+            color: var(--slate-light);
+            line-height: 1.9;
+        }
+        .science-context .sc-title {
+            color: var(--blue);
+            font-weight: 600;
+            font-size: 0.95rem;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .science-context strong { color: var(--ivory); }
+
+        /* -- Evidence Panel -- */
+        .evidence-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.12);
+            border-radius: 4px;
+            padding: 2rem;
+            margin-top: 2rem;
+        }
+        .evidence-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 400;
+            color: var(--gold);
+            margin-bottom: 1.2rem;
+            letter-spacing: 1px;
+        }
+        .evidence-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 0.8rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.06);
+        }
+        .evidence-item:last-child { border-bottom: none; }
+        .evidence-num {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--gold);
+            min-width: 24px;
+            font-weight: 500;
+        }
+        .evidence-body {
+            flex: 1;
+        }
+        .evidence-body .ev-title {
+            font-size: 0.88rem;
+            color: var(--ivory);
+            font-weight: 500;
+            margin-bottom: 0.2rem;
+        }
+        .evidence-body .ev-detail {
+            font-size: 0.78rem;
+            color: var(--slate);
+        }
+        .ev-badge {
+            font-size: 0.6rem;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 500;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .ev-badge.published {
+            background: rgba(100, 255, 218, 0.1);
+            color: var(--green);
+            border: 1px solid rgba(100, 255, 218, 0.2);
+        }
+        .ev-badge.operational {
+            background: rgba(197, 160, 89, 0.1);
+            color: var(--gold);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+        }
+
+        /* -- Disclaimer Box -- */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* -- Formulation Block -- */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* -- Solver Panel -- */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-btn {
+            padding: 6px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+        }
+        .solver-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+        .solver-btn.primary {
+            border-color: var(--gold);
+            color: var(--gold);
+            padding: 10px 28px;
+            font-size: 0.8rem;
+        }
+        .solver-btn.primary:hover {
+            background: linear-gradient(135deg, var(--gold), var(--gold-light));
+            color: var(--midnight);
+        }
+        .solver-btn.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .solution-output {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            margin-top: 0.8rem;
+            padding: 0.8rem 1rem;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            line-height: 1.8;
+            max-height: 260px;
+            overflow-y: auto;
+        }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* -- Flyby builder -- */
+        .flyby-builder {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .planet-chip {
+            padding: 8px 16px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .planet-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .planet-chip.venus { border-color: rgba(224, 175, 104, 0.4); }
+        .planet-chip.venus:hover, .planet-chip.venus.in-seq { background: rgba(224, 175, 104, 0.15); color: #e0af68; border-color: #e0af68; }
+        .planet-chip.earth { border-color: rgba(100, 255, 218, 0.3); }
+        .planet-chip.earth:hover, .planet-chip.earth.in-seq { background: rgba(100, 255, 218, 0.1); color: var(--green); border-color: var(--green); }
+        .planet-chip.mars { border-color: rgba(255, 107, 107, 0.3); }
+        .planet-chip.mars:hover, .planet-chip.mars.in-seq { background: rgba(255, 107, 107, 0.1); color: var(--red); border-color: var(--red); }
+        .planet-chip.jupiter { border-color: rgba(187, 154, 247, 0.3); }
+        .planet-chip.jupiter:hover, .planet-chip.jupiter.in-seq { background: rgba(187, 154, 247, 0.1); color: #bb9af7; border-color: #bb9af7; }
+
+        .sequence-display {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            flex-wrap: wrap;
+            min-height: 38px;
+            padding: 0.5rem 0.8rem;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+        }
+        .seq-planet {
+            padding: 3px 10px;
+            border-radius: 3px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        .seq-arrow {
+            color: var(--slate);
+            font-size: 0.7rem;
+        }
+
+        .preset-btns {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .search-space-display {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--slate);
+            padding: 0.6rem 0.8rem;
+            background: rgba(122, 162, 247, 0.05);
+            border: 1px solid rgba(122, 162, 247, 0.1);
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.8rem;
+            margin-top: 1rem;
+        }
+        .result-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 4px;
+            padding: 0.8rem;
+            text-align: center;
+        }
+        .result-card .rc-label {
+            font-size: 0.65rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.3rem;
+        }
+        .result-card .rc-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+        .rc-value.good { color: var(--green); }
+        .rc-value.moderate { color: var(--gold); }
+        .rc-value.poor { color: var(--red); }
+
+        /* -- CTA -- */
+        .cta-panel {
+            max-width: 700px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 3rem 2rem;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            background: linear-gradient(135deg, rgba(197,160,89,0.04), transparent);
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.8rem;
+            font-weight: 400;
+            margin-bottom: 1rem;
+            letter-spacing: 2px;
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            margin-bottom: 1.5rem;
+            font-size: 0.92rem;
+        }
+        .cta-links { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.5rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* -- Back Link -- */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* -- Footer -- */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* -- Scroll Animations -- */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* -- Theme Toggle -- */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        /* Light theme */
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar.scrolled,
+        html[data-theme="light"] .navbar {
+            background: rgba(245, 241, 235, 0.95);
+        }
+        html[data-theme="light"] .solver-panel {
+            background: var(--midnight-light);
+        }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* -- Command Palette -- */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        /* -- Scroll Progress Bar + Scroll-to-Top -- */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* -- Responsive -- */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .section-header h2 { font-size: 1.8rem; }
+            .science-context { padding: 1rem 1.2rem; }
+            .formulation { padding: 1rem; font-size: 0.75rem; }
+            .results-grid { grid-template-columns: 1fr 1fr; }
+            .solver-body { padding: 1rem; }
+        }
+        @media (max-width: 375px) {
+            .hero h1 { font-size: 1.8rem; }
+            .results-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- -- Navigation -- -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/packing.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&lceil;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- -- Breadcrumb -- -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="#">Applications</a></li>
+            <li>Gravity-Assist Trajectory</li>
+        </ol>
+    </div>
+</div>
+
+<!-- -- 1. Hero -- -->
+<section class="hero">
+    <canvas class="hero-particles" id="heroParticles"></canvas>
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-rocket"></i></div>
+        <h1>Gravity-Assist Trajectory <span>Sequence Design</span></h1>
+        <p class="hero-subtitle">NP-Hard Combinatorial Optimisation &middot; ESA GASP Algorithm</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Interplanetary missions exploit planetary gravity assists to reach distant targets
+            with far less propellant than a direct transfer. Choosing the optimal sequence
+            of flyby bodies &mdash; which planets to visit, in what order, and when &mdash; is a
+            combinatorial optimisation problem proven to be <strong>NP-hard</strong>.
+        </p>
+    </div>
+</section>
+
+<!-- -- 2. Science Context -- -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Science <span>Context</span></h2>
+            <p>How gravity assists reshape interplanetary mission design</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="science-context">
+                <div class="sc-title"><i class="fas fa-satellite"></i> Gravity-Assist Manoeuvres</div>
+                <p>
+                    A gravity assist (or <strong>flyby</strong>) uses a planet's gravitational field
+                    to change a spacecraft's velocity and direction without expending propellant.
+                    By carefully timing the encounter geometry, mission designers can gain (or shed)
+                    kilometres per second of velocity for free &mdash; energy borrowed from the planet's
+                    orbital momentum.
+                </p>
+                <p>
+                    The <strong>Cassini</strong> mission to Saturn (launched 1997) used the sequence
+                    <strong>Venus &rarr; Venus &rarr; Earth &rarr; Jupiter &rarr; Saturn</strong> (VVEJGA),
+                    accumulating 16.6 km/s of free velocity change over 7 years. Without gravity assists,
+                    a direct transfer would have required roughly 15.7 km/s of propulsive &Delta;v &mdash;
+                    far beyond any chemical rocket's capability for the 5,700 kg spacecraft.
+                </p>
+                <p>
+                    The sequence order matters enormously. With <strong>8 candidate planets</strong> and up
+                    to <strong>6 flyby legs</strong> per trajectory, and continuous launch windows spanning
+                    a 10-year epoch, the combinatorial search space exceeds <strong>10<sup>12</sup></strong>
+                    candidate trajectories before even considering the continuous timing variables.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- -- 3. The Problem -- -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Minimising propellant cost over an astronomical search space</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                The gravity-assist sequence design problem asks: given a launch body (Earth),
+                a target body (e.g. Saturn, Jupiter), and a set of candidate flyby planets,
+                find the <strong>ordered sequence of planetary encounters</strong> plus the
+                <strong>departure epoch and leg transfer times</strong> that minimise the
+                total propulsive cost &Delta;v.
+            </p>
+            <p>
+                <strong>Decision variables</strong> include the discrete sequence of flyby
+                bodies (b<sub>1</sub>, b<sub>2</sub>, &hellip;, b<sub>n</sub>), the continuous
+                departure epoch t<sub>0</sub>, and the arrival/departure times at each encounter.
+                The <strong>objective</strong> is to minimise total &Delta;v: launch injection,
+                deep-space manoeuvres between legs, and final orbit insertion.
+            </p>
+            <p>
+                <strong>Izzo et al. (2007)</strong> proved this problem NP-hard via reduction
+                from the Travelling Salesman Problem. ESA's <strong>GASP algorithm</strong>
+                (Gravity Assist Space Pruning) achieves practical tractability by pruning the
+                search space by <strong>6 orders of magnitude</strong>, using V-infinity
+                matching constraints and Tisserand graphs to eliminate dynamically infeasible
+                sequences before the expensive Lambert-arc evaluation.
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Mathematical Formulation</span>
+<span class="keyword">Minimise</span>   <span class="variable">&Delta;v<sub>Launch</sub></span> + <span class="variable">&Sigma;<sub>i</sub> &Delta;v<sub>DSM<sub>i</sub></sub></span> + <span class="variable">&Delta;v<sub>Insertion</sub></span>
+
+<span class="keyword">subject to</span>
+  (<span class="variable">b<sub>1</sub></span>, <span class="variable">b<sub>2</sub></span>, &hellip;, <span class="variable">b<sub>n</sub></span>) &isin; PlanetSequences          <span class="comment">// discrete flyby order</span>
+  <span class="variable">t<sub>i</sub></span> &lt; <span class="variable">t<sub>i+1</sub></span>                                      <span class="comment">// chronological ordering</span>
+  |<span class="variable">v<sub>&infin;</sub></span>(<span class="variable">b<sub>i</sub></span>, <span class="variable">t<sub>i</sub></span>)| &le; <span class="variable">V<sub>&infin;max</sub></span>(<span class="variable">b<sub>i</sub></span>)             <span class="comment">// hyperbolic excess speed limit</span>
+  Keplerian(<span class="variable">b<sub>i</sub></span>, <span class="variable">t<sub>i</sub></span>, <span class="variable">b<sub>i+1</sub></span>, <span class="variable">t<sub>i+1</sub></span>) feasible  <span class="comment">// Lambert arc exists</span>
+  <span class="variable">t<sub>0</sub></span> &isin; LaunchWindow                              <span class="comment">// departure epoch constraint</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- -- 4. Interactive Solver -- -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>Solver</span></h2>
+            <p>Simplified 2D heliocentric patched-conic trajectory explorer</p>
+        </div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-satellite-dish"></i> Flyby Sequence Builder</h4>
+                <span style="font-size:0.72rem; color:var(--slate); letter-spacing:1px;">EARTH &rarr; ? &rarr; JUPITER</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Add Flyby Bodies (click to append)</div>
+                <div class="flyby-builder" id="flybyBuilder">
+                    <button type="button" class="planet-chip venus" data-planet="Venus">
+                        <i class="fas fa-globe" style="margin-right:4px;font-size:0.7rem"></i> Venus
+                    </button>
+                    <button type="button" class="planet-chip earth" data-planet="Earth">
+                        <i class="fas fa-globe-americas" style="margin-right:4px;font-size:0.7rem"></i> Earth
+                    </button>
+                    <button type="button" class="planet-chip mars" data-planet="Mars">
+                        <i class="fas fa-globe-europe" style="margin-right:4px;font-size:0.7rem"></i> Mars
+                    </button>
+                    <button type="button" class="planet-chip jupiter" data-planet="Jupiter">
+                        <i class="fas fa-circle" style="margin-right:4px;font-size:0.7rem"></i> Jupiter
+                    </button>
+                </div>
+
+                <div class="solver-section-label">Current Sequence</div>
+                <div class="sequence-display" id="sequenceDisplay">
+                    <span style="color:var(--slate);font-size:0.78rem;">Click planets above to build a flyby sequence</span>
+                </div>
+
+                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;flex-wrap:wrap;">
+                    <button type="button" class="solver-btn" id="btnClear">Clear</button>
+                    <button type="button" class="solver-btn" id="btnUndo">Undo</button>
+                    <button type="button" class="solver-btn primary" id="btnCalculate">
+                        <i class="fas fa-calculator" style="margin-right:4px"></i> Calculate Trajectory
+                    </button>
+                </div>
+
+                <div class="solver-section-label">Preset Sequences</div>
+                <div class="preset-btns" id="presetBtns">
+                    <button type="button" class="solver-btn" data-preset="direct">Direct to Jupiter</button>
+                    <button type="button" class="solver-btn" data-preset="vvej">VVEJGA (Cassini-like)</button>
+                    <button type="button" class="solver-btn" data-preset="evej">EVEJGA</button>
+                </div>
+
+                <div class="search-space-display" id="searchSpaceDisplay">
+                    Search space: select a sequence to see combinatorial analysis
+                </div>
+
+                <!-- Canvas -->
+                <div class="solver-canvas-wrap">
+                    <canvas id="trajectoryCanvas" width="800" height="500"></canvas>
+                </div>
+
+                <!-- Results -->
+                <div class="results-grid" id="resultsGrid" style="display:none;">
+                    <div class="result-card">
+                        <div class="rc-label">Total &Delta;v</div>
+                        <div class="rc-value" id="resDv">--</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="rc-label">Flight Time</div>
+                        <div class="rc-value" id="resTime">--</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="rc-label">Propellant Saved</div>
+                        <div class="rc-value" id="resSaved">--</div>
+                    </div>
+                    <div class="result-card">
+                        <div class="rc-label">Flyby Count</div>
+                        <div class="rc-value" id="resFlyby">--</div>
+                    </div>
+                </div>
+
+                <div class="solution-output" id="solutionOutput" style="display:none;"></div>
+                <div class="solver-status" id="solverStatus">Ready. Build a sequence or select a preset.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- -- 5. Evidence -- -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Supporting <span>Evidence</span></h2>
+            <p>Key references in gravity-assist trajectory optimisation</p>
+        </div>
+        <div class="evidence-panel fade-in" style="max-width:800px;margin:0 auto;">
+            <h3><i class="fas fa-book-open" style="margin-right:0.5rem;font-size:1rem;"></i> References</h3>
+
+            <div class="evidence-item">
+                <span class="evidence-num">01</span>
+                <div class="evidence-body">
+                    <div class="ev-title">Izzo, D., Becerra, V.M., Myatt, D.R., Nasuto, S.J. &amp; Bishop, J.M. (2007)</div>
+                    <div class="ev-detail">Search space pruning and global optimisation of multiple gravity assist spacecraft trajectories. <em>Journal of Global Optimization</em>, 38(2), 283&ndash;296.</div>
+                </div>
+                <span class="ev-badge published">Published</span>
+            </div>
+
+            <div class="evidence-item">
+                <span class="evidence-num">02</span>
+                <div class="evidence-body">
+                    <div class="ev-title">Ceriotti, M. (2010)</div>
+                    <div class="ev-detail">Global optimisation of multiple gravity assist trajectories. PhD thesis, University of Glasgow, School of Engineering.</div>
+                </div>
+                <span class="ev-badge published">Published</span>
+            </div>
+
+            <div class="evidence-item">
+                <span class="evidence-num">03</span>
+                <div class="evidence-body">
+                    <div class="ev-title">Peralta, F. &amp; Flanagan, S. (1995)</div>
+                    <div class="ev-detail">Cassini interplanetary trajectory design. <em>AAS/AIAA Astrodynamics Conference</em>, AAS 95-299.</div>
+                </div>
+                <span class="ev-badge published">Published</span>
+            </div>
+
+            <div class="evidence-item">
+                <span class="evidence-num">04</span>
+                <div class="evidence-body">
+                    <div class="ev-title">ESA Advanced Concepts Team</div>
+                    <div class="ev-detail">Global Trajectory Optimisation Competition (GTOC) annual series &mdash; benchmark problems for interplanetary trajectory design since 2005.</div>
+                </div>
+                <span class="ev-badge operational">Operational</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- -- 6. CTA -- -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Interested in combinatorial optimisation?</h3>
+            <p>
+                From trajectory design and resource allocation to scheduling and network flows,
+                mathematical optimisation transforms complex decisions into actionable solutions.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- -- Disclaimer -- -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box" style="max-width:800px; margin:0 auto;">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            This is a simplified 2D heliocentric model using circular coplanar orbits and
+            approximate Lambert-arc &Delta;v estimates for educational purposes. Real mission
+            design uses full 3D ephemerides, patched-conic propagation, and global optimisers
+            such as MIDACO or differential evolution. Numerical values are illustrative.
+        </div>
+    </div>
+</section>
+
+<!-- -- Footer -- -->
+<footer>
+    <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. All rights reserved.</p>
+</footer>
+
+<!-- -- Back to Top -- -->
+<a href="#" class="back-link"><i class="fas fa-arrow-up"></i> Top</a>
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ================================================================
+//  Gravity-Assist Trajectory Sequence — Interactive Solver
+// ================================================================
+
+(function() {
+    // Use var throughout as required
+    var AU = 149597870.7; // km
+    var MU_SUN = 1.327e11; // km^3/s^2 (gravitational parameter of Sun)
+
+    // Simplified circular coplanar orbits (semi-major axis in AU, colour, V_inf_max km/s)
+    var PLANETS = {
+        Venus:   { a: 0.723, color: '#e0af68', vInfMax: 7.0,  mu: 3.249e5,  rSOI: 616000 },
+        Earth:   { a: 1.000, color: '#64ffda', vInfMax: 5.0,  mu: 3.986e5,  rSOI: 929000 },
+        Mars:    { a: 1.524, color: '#ff6b6b', vInfMax: 6.0,  mu: 4.283e4,  rSOI: 577000 },
+        Jupiter: { a: 5.203, color: '#bb9af7', vInfMax: 12.0, mu: 1.267e8,  rSOI: 48200000 }
+    };
+
+    var PLANET_NAMES = ['Venus', 'Earth', 'Mars', 'Jupiter'];
+
+    // Current flyby sequence (not including Earth departure or Jupiter arrival)
+    var flybySequence = [];
+
+    // -- DOM refs --
+    var seqDisplay = document.getElementById('sequenceDisplay');
+    var searchSpaceEl = document.getElementById('searchSpaceDisplay');
+    var canvas = document.getElementById('trajectoryCanvas');
+    var ctx = canvas.getContext('2d');
+    var resultsGrid = document.getElementById('resultsGrid');
+    var solutionOutput = document.getElementById('solutionOutput');
+    var solverStatus = document.getElementById('solverStatus');
+
+    // -- Helper: circular orbital speed (km/s) --
+    function orbitalSpeed(a_au) {
+        var r = a_au * AU;
+        return Math.sqrt(MU_SUN / r);
+    }
+
+    // -- Simplified Lambert dv: Hohmann-like estimate between two circular orbits --
+    function hohmannDv(a1_au, a2_au) {
+        var r1 = a1_au * AU;
+        var r2 = a2_au * AU;
+        var v1 = Math.sqrt(MU_SUN / r1);
+        var v2 = Math.sqrt(MU_SUN / r2);
+        var aT = (r1 + r2) / 2;
+        var vT1 = Math.sqrt(MU_SUN * (2 / r1 - 1 / aT));
+        var vT2 = Math.sqrt(MU_SUN * (2 / r2 - 1 / aT));
+        var dv1 = Math.abs(vT1 - v1);
+        var dv2 = Math.abs(v2 - vT2);
+        return { dv1: dv1, dv2: dv2, total: dv1 + dv2, tof: Math.PI * Math.sqrt(aT * aT * aT / MU_SUN) };
+    }
+
+    // -- Gravity assist dv saving estimate --
+    // The turning angle at a flyby body reduces the required dv for the next leg
+    function flybyDvSaving(planetName, vInfIn) {
+        var p = PLANETS[planetName];
+        if (!p) return 0;
+        // Max turning angle: sin(delta/2) = 1/(1 + rp*vInf^2/mu)
+        // Use periapsis at 1.1 * planet radius (rough)
+        var rp = p.rSOI * 0.01; // rough periapsis
+        var sinHalf = 1.0 / (1.0 + rp * vInfIn * vInfIn / p.mu);
+        var turnAngle = 2.0 * Math.asin(Math.min(sinHalf, 1.0));
+        // dv saving ~ 2 * vInf * sin(delta/2)
+        var saving = 2.0 * vInfIn * Math.sin(turnAngle / 2);
+        return Math.min(saving, vInfIn * 0.8); // cap at 80% of vInf
+    }
+
+    // -- Compute trajectory for a given full sequence [Earth, ...flybys, Jupiter] --
+    function computeTrajectory(seq) {
+        var legs = [];
+        var totalDv = 0;
+        var totalTof = 0;
+        var dvSavings = 0;
+
+        for (var i = 0; i < seq.length - 1; i++) {
+            var from = seq[i];
+            var to = seq[i + 1];
+            var a1 = PLANETS[from].a;
+            var a2 = PLANETS[to].a;
+            var h = hohmannDv(a1, a2);
+
+            var legDv1 = h.dv1;
+            var legDv2 = h.dv2;
+
+            // Apply gravity assist savings at intermediate bodies
+            if (i > 0) {
+                // This body is a flyby — reduce departure dv
+                var prevTo = seq[i];
+                var vInf = h.dv1; // approximate v_infinity as the departure dv
+                var saving = flybyDvSaving(prevTo, vInf);
+                dvSavings += saving;
+                legDv1 = Math.max(0, legDv1 - saving);
+            }
+
+            // Only charge arrival dv at final destination
+            if (i < seq.length - 2) {
+                legDv2 = 0; // no insertion burn at flyby bodies
+            }
+
+            var legTotal = legDv1 + legDv2;
+            totalDv += legTotal;
+            totalTof += h.tof;
+
+            legs.push({
+                from: from,
+                to: to,
+                dvDepart: legDv1,
+                dvArrive: legDv2,
+                dvTotal: legTotal,
+                tof: h.tof,
+                tofYears: h.tof / (365.25 * 86400)
+            });
+        }
+
+        return {
+            sequence: seq,
+            legs: legs,
+            totalDv: totalDv,
+            totalTofSeconds: totalTof,
+            totalTofYears: totalTof / (365.25 * 86400),
+            dvSavings: dvSavings
+        };
+    }
+
+    // -- Compute direct Earth->Jupiter baseline --
+    var directResult = computeTrajectory(['Earth', 'Jupiter']);
+    var DIRECT_DV = directResult.totalDv;
+
+    // -- Update sequence display --
+    function renderSequence() {
+        while (seqDisplay.firstChild) { seqDisplay.removeChild(seqDisplay.firstChild); }
+
+        var fullSeq = buildFullSequence();
+
+        if (fullSeq.length < 2) {
+            var placeholder = document.createElement('span');
+            placeholder.style.cssText = 'color:var(--slate);font-size:0.78rem;';
+            placeholder.textContent = 'Click planets above to build a flyby sequence';
+            seqDisplay.appendChild(placeholder);
+            return;
+        }
+
+        for (var i = 0; i < fullSeq.length; i++) {
+            if (i > 0) {
+                var arrow = document.createElement('span');
+                arrow.className = 'seq-arrow';
+                arrow.textContent = '\u2192';
+                seqDisplay.appendChild(arrow);
+            }
+            var tag = document.createElement('span');
+            tag.className = 'seq-planet';
+            tag.textContent = fullSeq[i];
+            var pName = fullSeq[i];
+            if (PLANETS[pName]) {
+                tag.style.background = PLANETS[pName].color.replace(')', ',0.15)').replace('rgb', 'rgba').replace('#', '');
+                tag.style.background = hexToRgba(PLANETS[pName].color, 0.15);
+                tag.style.color = PLANETS[pName].color;
+                tag.style.border = '1px solid ' + hexToRgba(PLANETS[pName].color, 0.3);
+            }
+            seqDisplay.appendChild(tag);
+        }
+
+        updateSearchSpace();
+    }
+
+    function hexToRgba(hex, alpha) {
+        var r = parseInt(hex.slice(1, 3), 16);
+        var g = parseInt(hex.slice(3, 5), 16);
+        var b = parseInt(hex.slice(5, 7), 16);
+        return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+    }
+
+    function buildFullSequence() {
+        var seq = ['Earth'];
+        for (var i = 0; i < flybySequence.length; i++) {
+            seq.push(flybySequence[i]);
+        }
+        seq.push('Jupiter');
+        return seq;
+    }
+
+    function updateSearchSpace() {
+        var nPlanets = 4;
+        var maxLegs = 6;
+        var totalCombinations = 0;
+        for (var k = 0; k <= maxLegs; k++) {
+            totalCombinations += Math.pow(nPlanets, k);
+        }
+        var currentLegs = flybySequence.length + 1;
+        searchSpaceEl.textContent = 'Search space: ' + totalCombinations.toLocaleString() +
+            ' possible sequences (4 planets, up to 6 flybys) | Current trajectory: ' +
+            currentLegs + ' leg' + (currentLegs > 1 ? 's' : '') + ', ' +
+            flybySequence.length + ' flyby' + (flybySequence.length !== 1 ? 's' : '');
+    }
+
+    // -- Draw solar system and trajectory on canvas --
+    function drawTrajectory(result) {
+        var W = canvas.width;
+        var H = canvas.height;
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = canvas.offsetWidth * dpr;
+        canvas.height = 500 * dpr;
+        ctx.scale(dpr, dpr);
+        W = canvas.offsetWidth;
+        H = 500;
+
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var cx = W / 2;
+        var cy = H / 2 - 10;
+        var scale = Math.min(W, H) / 13; // AU to pixels
+
+        // Draw orbit circles
+        for (var name in PLANETS) {
+            var p = PLANETS[name];
+            var r = p.a * scale;
+            ctx.beginPath();
+            ctx.arc(cx, cy, r, 0, 2 * Math.PI);
+            ctx.strokeStyle = hexToRgba(p.color, 0.15);
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // Draw Sun
+        ctx.beginPath();
+        ctx.arc(cx, cy, 6, 0, 2 * Math.PI);
+        var sunGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 8);
+        sunGrad.addColorStop(0, '#FFD700');
+        sunGrad.addColorStop(1, 'rgba(255,215,0,0)');
+        ctx.fillStyle = sunGrad;
+        ctx.fill();
+        ctx.fillStyle = '#FFD700';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Sun', cx, cy + 18);
+
+        // Place planets at positions along their orbits (spaced for visibility)
+        var seq = result ? result.sequence : buildFullSequence();
+        var planetAngles = {};
+        var angleStep = (Math.PI * 1.4) / Math.max(seq.length, 2);
+        var startAngle = -Math.PI * 0.8;
+
+        for (var i = 0; i < seq.length; i++) {
+            planetAngles[seq[i] + '_' + i] = startAngle + i * angleStep;
+        }
+
+        // Draw planets at their orbit positions
+        var positions = [];
+        for (var i = 0; i < seq.length; i++) {
+            var pName = seq[i];
+            var p = PLANETS[pName];
+            var angle = startAngle + i * angleStep;
+            var px = cx + p.a * scale * Math.cos(angle);
+            var py = cy + p.a * scale * Math.sin(angle);
+            positions.push({ x: px, y: py, name: pName });
+
+            // Planet dot
+            var dotSize = pName === 'Jupiter' ? 8 : 5;
+            ctx.beginPath();
+            ctx.arc(px, py, dotSize, 0, 2 * Math.PI);
+            ctx.fillStyle = p.color;
+            ctx.fill();
+
+            // Planet label
+            ctx.fillStyle = p.color;
+            ctx.font = '11px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            var labelY = py - dotSize - 8;
+            if (i === 0) labelY = py + dotSize + 16;
+            ctx.fillText(pName, px, labelY);
+
+            // Flyby number label
+            if (i > 0 && i < seq.length - 1) {
+                ctx.fillStyle = hexToRgba(p.color, 0.7);
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.fillText('Flyby ' + i, px, labelY + 12);
+            }
+        }
+
+        // Draw trajectory arcs
+        if (result && positions.length > 1) {
+            for (var i = 0; i < positions.length - 1; i++) {
+                var from = positions[i];
+                var to = positions[i + 1];
+
+                // Curved arc via quadratic bezier
+                var midX = (from.x + to.x) / 2;
+                var midY = (from.y + to.y) / 2;
+                var dx = to.x - from.x;
+                var dy = to.y - from.y;
+                var cpX = midX - dy * 0.25;
+                var cpY = midY + dx * 0.25;
+
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                ctx.quadraticCurveTo(cpX, cpY, to.x, to.y);
+                ctx.strokeStyle = hexToRgba('#C5A059', 0.6);
+                ctx.lineWidth = 2;
+                ctx.setLineDash([6, 4]);
+                ctx.stroke();
+                ctx.setLineDash([]);
+
+                // Arrow at midpoint
+                var t = 0.5;
+                var mx = (1-t)*(1-t)*from.x + 2*(1-t)*t*cpX + t*t*to.x;
+                var my = (1-t)*(1-t)*from.y + 2*(1-t)*t*cpY + t*t*to.y;
+                var tx = 2*(1-t)*(cpX-from.x) + 2*t*(to.x-cpX);
+                var ty = 2*(1-t)*(cpY-from.y) + 2*t*(to.y-cpY);
+                var len = Math.sqrt(tx*tx + ty*ty);
+                if (len > 0) {
+                    tx /= len; ty /= len;
+                    ctx.beginPath();
+                    ctx.moveTo(mx + tx*6, my + ty*6);
+                    ctx.lineTo(mx - tx*4 - ty*4, my - ty*4 + tx*4);
+                    ctx.lineTo(mx - tx*4 + ty*4, my - ty*4 - tx*4);
+                    ctx.closePath();
+                    ctx.fillStyle = '#C5A059';
+                    ctx.fill();
+                }
+
+                // Leg dv label
+                if (result.legs[i]) {
+                    ctx.fillStyle = 'rgba(197,160,89,0.7)';
+                    ctx.font = '9px JetBrains Mono, monospace';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('\u0394v=' + result.legs[i].dvTotal.toFixed(1) + ' km/s', mx, my - 12);
+                }
+            }
+        }
+
+        // Title and summary at bottom
+        if (result) {
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '13px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(
+                'Total \u0394v: ' + result.totalDv.toFixed(2) + ' km/s  |  Flight: ' +
+                result.totalTofYears.toFixed(1) + ' years  |  Sequence: ' + result.sequence.join(' \u2192 '),
+                W / 2, H - 20
+            );
+        } else {
+            ctx.fillStyle = 'rgba(136,146,176,0.5)';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Build a flyby sequence and click Calculate', W / 2, H - 20);
+        }
+    }
+
+    // -- Display results --
+    function showResults(result) {
+        resultsGrid.style.display = 'grid';
+        solutionOutput.style.display = 'block';
+
+        var dvEl = document.getElementById('resDv');
+        var timeEl = document.getElementById('resTime');
+        var savedEl = document.getElementById('resSaved');
+        var flybyEl = document.getElementById('resFlyby');
+
+        dvEl.textContent = result.totalDv.toFixed(2) + ' km/s';
+        dvEl.className = 'rc-value ' + (result.totalDv < DIRECT_DV * 0.5 ? 'good' : result.totalDv < DIRECT_DV * 0.8 ? 'moderate' : 'poor');
+
+        timeEl.textContent = result.totalTofYears.toFixed(1) + ' yr';
+        timeEl.className = 'rc-value moderate';
+
+        var savedPct = ((1 - result.totalDv / DIRECT_DV) * 100);
+        savedEl.textContent = (savedPct > 0 ? '+' : '') + savedPct.toFixed(1) + '%';
+        savedEl.className = 'rc-value ' + (savedPct > 30 ? 'good' : savedPct > 0 ? 'moderate' : 'poor');
+
+        flybyEl.textContent = (result.sequence.length - 2).toString();
+        flybyEl.className = 'rc-value moderate';
+
+        // Build output text
+        var lines = [];
+        lines.push('=== Trajectory Analysis ===');
+        lines.push('Sequence: ' + result.sequence.join(' -> '));
+        lines.push('');
+        for (var i = 0; i < result.legs.length; i++) {
+            var leg = result.legs[i];
+            lines.push('Leg ' + (i + 1) + ': ' + leg.from + ' -> ' + leg.to);
+            lines.push('  Departure dv: ' + leg.dvDepart.toFixed(3) + ' km/s');
+            lines.push('  Arrival dv:   ' + leg.dvArrive.toFixed(3) + ' km/s');
+            lines.push('  Leg dv:       ' + leg.dvTotal.toFixed(3) + ' km/s');
+            lines.push('  Transfer time: ' + leg.tofYears.toFixed(2) + ' years');
+            lines.push('');
+        }
+        lines.push('--- Summary ---');
+        lines.push('Total dv:        ' + result.totalDv.toFixed(3) + ' km/s');
+        lines.push('Direct baseline: ' + DIRECT_DV.toFixed(3) + ' km/s (Earth -> Jupiter)');
+        lines.push('Saving:          ' + savedPct.toFixed(1) + '% vs direct');
+        lines.push('Total flight:    ' + result.totalTofYears.toFixed(2) + ' years');
+        lines.push('dv savings from flybys: ' + result.dvSavings.toFixed(3) + ' km/s');
+        lines.push('');
+        lines.push('Note: Cassini achieved ~2.0 km/s total dv using VVEJGA sequence.');
+
+        // Use textContent for safe DOM update
+        solutionOutput.textContent = lines.join('\n');
+
+        solverStatus.textContent = 'Calculation complete. Sequence: ' + result.sequence.join(' \u2192 ');
+    }
+
+    // -- Planet chip click handlers --
+    var chips = document.querySelectorAll('.planet-chip');
+    for (var i = 0; i < chips.length; i++) {
+        (function(chip) {
+            chip.addEventListener('click', function() {
+                var planet = chip.getAttribute('data-planet');
+                flybySequence.push(planet);
+                renderSequence();
+                drawTrajectory(null);
+            });
+        })(chips[i]);
+    }
+
+    // -- Clear / Undo --
+    document.getElementById('btnClear').addEventListener('click', function() {
+        flybySequence = [];
+        renderSequence();
+        resultsGrid.style.display = 'none';
+        solutionOutput.style.display = 'none';
+        solverStatus.textContent = 'Sequence cleared. Build a new trajectory.';
+        drawTrajectory(null);
+    });
+
+    document.getElementById('btnUndo').addEventListener('click', function() {
+        if (flybySequence.length > 0) {
+            flybySequence.pop();
+            renderSequence();
+            drawTrajectory(null);
+            solverStatus.textContent = 'Last flyby removed.';
+        }
+    });
+
+    // -- Calculate --
+    document.getElementById('btnCalculate').addEventListener('click', function() {
+        var fullSeq = buildFullSequence();
+        if (fullSeq.length < 2) {
+            solverStatus.textContent = 'Error: Need at least Earth and Jupiter in sequence.';
+            return;
+        }
+        solverStatus.textContent = 'Computing trajectory...';
+
+        var result = computeTrajectory(fullSeq);
+        drawTrajectory(result);
+        showResults(result);
+    });
+
+    // -- Presets --
+    var presets = {
+        direct: [],
+        vvej: ['Venus', 'Venus', 'Earth'],
+        evej: ['Venus', 'Earth']
+    };
+
+    var presetBtns = document.querySelectorAll('[data-preset]');
+    for (var i = 0; i < presetBtns.length; i++) {
+        (function(btn) {
+            btn.addEventListener('click', function() {
+                var key = btn.getAttribute('data-preset');
+                flybySequence = presets[key].slice();
+                renderSequence();
+                var fullSeq = buildFullSequence();
+                var result = computeTrajectory(fullSeq);
+                drawTrajectory(result);
+                showResults(result);
+            });
+        })(presetBtns[i]);
+    }
+
+    // -- Initial draw --
+    renderSequence();
+    drawTrajectory(null);
+    updateSearchSpace();
+
+    // -- Resize handler --
+    var resizeTimer;
+    window.addEventListener('resize', function() {
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function() {
+            drawTrajectory(null);
+        }, 150);
+    });
+
+    // -- Scroll Animations --
+    var observer = new IntersectionObserver(function(entries) {
+        for (var i = 0; i < entries.length; i++) {
+            if (entries[i].isIntersecting) {
+                entries[i].target.classList.add('visible');
+            }
+        }
+    }, { threshold: 0.1 });
+    var fadeEls = document.querySelectorAll('.fade-in');
+    for (var i = 0; i < fadeEls.length; i++) {
+        observer.observe(fadeEls[i]);
+    }
+
+    // -- Hero Particles --
+    var heroCanvas = document.getElementById('heroParticles');
+    if (heroCanvas) {
+        var hCtx = heroCanvas.getContext('2d');
+        var particles = [];
+        var particleCount = 40;
+
+        function initParticles() {
+            heroCanvas.width = heroCanvas.offsetWidth;
+            heroCanvas.height = heroCanvas.offsetHeight;
+            particles = [];
+            for (var i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * heroCanvas.width,
+                    y: Math.random() * heroCanvas.height,
+                    vx: (Math.random() - 0.5) * 0.3,
+                    vy: (Math.random() - 0.5) * 0.3,
+                    r: Math.random() * 1.5 + 0.5
+                });
+            }
+        }
+
+        function animateParticles() {
+            hCtx.clearRect(0, 0, heroCanvas.width, heroCanvas.height);
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+                if (p.x < 0) p.x = heroCanvas.width;
+                if (p.x > heroCanvas.width) p.x = 0;
+                if (p.y < 0) p.y = heroCanvas.height;
+                if (p.y > heroCanvas.height) p.y = 0;
+
+                hCtx.beginPath();
+                hCtx.arc(p.x, p.y, p.r, 0, 2 * Math.PI);
+                hCtx.fillStyle = 'rgba(197, 160, 89, 0.3)';
+                hCtx.fill();
+            }
+
+            // Draw connections
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        hCtx.beginPath();
+                        hCtx.moveTo(particles[i].x, particles[i].y);
+                        hCtx.lineTo(particles[j].x, particles[j].y);
+                        hCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.1 * (1 - dist / 120)) + ')';
+                        hCtx.lineWidth = 0.5;
+                        hCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+
+        initParticles();
+        animateParticles();
+        window.addEventListener('resize', initParticles);
+    }
+})();
+
+// ================================================================
+//  Interactivity Enhancements (theme, cmd palette, scroll)
+// ================================================================
+(function() {
+    'use strict';
+
+    // -- 1. Theme Toggle --
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // -- 2. Command Palette --
+    var SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: '6 problems', icon: 'fa-industry', url: '../families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'Routing', subtitle: '3 problems', icon: 'fa-route', url: '../families/routing.html', group: 'Families', badge: 'Family' },
+        { title: 'Packing & Cutting', subtitle: '3 problems', icon: 'fa-box', url: '../families/packing.html', group: 'Families', badge: 'Family' },
+        { title: 'Location & Network', subtitle: '6 problems', icon: 'fa-project-diagram', url: '../families/network.html', group: 'Families', badge: 'Family' },
+        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'delivery-routing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Cargo Container Loading', subtitle: '0-1 Knapsack', icon: 'fa-ship', url: 'cargo-loading.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Gravity-Assist Trajectory', subtitle: 'NP-Hard Sequence Design', icon: 'fa-rocket', url: 'gravity-assist-sequence.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Ambulance Placement', subtitle: 'p-Median', icon: 'fa-ambulance', url: 'ambulance-placement.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Investment Portfolio', subtitle: 'Robust Portfolio', icon: 'fa-chart-pie', url: 'portfolio.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Construction Planning', subtitle: 'RCPSP', icon: 'fa-hard-hat', url: 'construction-project.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Operating Room Scheduling', subtitle: 'Job Shop', icon: 'fa-hospital', url: 'operating-room.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Steel Production Line', subtitle: 'No-Wait Flow Shop', icon: 'fa-fire', url: 'steel-production.html', group: 'Applications', badge: 'Demo' }
+    ];
+
+    var overlay = document.getElementById('cmdPalette');
+    var cmdInput = document.getElementById('cmdInput');
+    var resultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() {
+        overlay.classList.add('open');
+        cmdInput.value = '';
+        cmdInput.focus();
+        renderCmdResults('');
+        activeIdx = -1;
+    }
+
+    function closePalette() {
+        overlay.classList.remove('open');
+    }
+
+    function renderCmdResults(query) {
+        while (resultsDiv.firstChild) { resultsDiv.removeChild(resultsDiv.firstChild); }
+        var q = query.toLowerCase().trim();
+        var filtered = SEARCH_DATA.filter(function(item) {
+            if (!q) return true;
+            return item.title.toLowerCase().indexOf(q) !== -1 ||
+                   item.subtitle.toLowerCase().indexOf(q) !== -1;
+        });
+
+        if (filtered.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found';
+            resultsDiv.appendChild(empty);
+            return;
+        }
+
+        var groups = {};
+        for (var i = 0; i < filtered.length; i++) {
+            var g = filtered[i].group;
+            if (!groups[g]) groups[g] = [];
+            groups[g].push(filtered[i]);
+        }
+
+        for (var groupName in groups) {
+            var label = document.createElement('div');
+            label.className = 'cmd-group-label';
+            label.textContent = groupName;
+            resultsDiv.appendChild(label);
+
+            var items = groups[groupName];
+            for (var j = 0; j < items.length; j++) {
+                var item = items[j];
+                var link = document.createElement('a');
+                link.className = 'cmd-result';
+                link.href = item.url;
+
+                var iconDiv = document.createElement('div');
+                iconDiv.className = 'cmd-icon';
+                var iconI = document.createElement('i');
+                iconI.className = 'fas ' + item.icon;
+                iconDiv.appendChild(iconI);
+
+                var infoDiv = document.createElement('div');
+                infoDiv.className = 'cmd-info';
+                var titleDiv = document.createElement('div');
+                titleDiv.className = 'cmd-title';
+                titleDiv.textContent = item.title;
+                var subDiv = document.createElement('div');
+                subDiv.className = 'cmd-subtitle';
+                subDiv.textContent = item.subtitle;
+                infoDiv.appendChild(titleDiv);
+                infoDiv.appendChild(subDiv);
+
+                var badge = document.createElement('span');
+                badge.className = 'cmd-badge';
+                badge.textContent = item.badge;
+                badge.style.background = 'rgba(197,160,89,0.1)';
+                badge.style.color = 'var(--gold)';
+
+                link.appendChild(iconDiv);
+                link.appendChild(infoDiv);
+                link.appendChild(badge);
+                resultsDiv.appendChild(link);
+            }
+        }
+    }
+
+    if (cmdInput) {
+        cmdInput.addEventListener('input', function() {
+            renderCmdResults(cmdInput.value);
+            activeIdx = -1;
+        });
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+            e.preventDefault();
+            if (overlay.classList.contains('open')) {
+                closePalette();
+            } else {
+                openPalette();
+            }
+        }
+        if (e.key === 'Escape' && overlay.classList.contains('open')) {
+            closePalette();
+        }
+    });
+
+    if (overlay) {
+        overlay.addEventListener('click', function(e) {
+            if (e.target === overlay) closePalette();
+        });
+    }
+
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) {
+        searchTrigger.addEventListener('click', openPalette);
+    }
+
+    // -- 3. Scroll Progress --
+    var scrollProgress = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    window.addEventListener('scroll', function() {
+        var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrollPct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+
+        if (scrollProgress) {
+            scrollProgress.style.width = scrollPct + '%';
+        }
+        if (scrollTopBtn) {
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add('visible');
+            } else {
+                scrollTopBtn.classList.remove('visible');
+            }
+        }
+    });
+
+    if (scrollTopBtn) {
+        scrollTopBtn.addEventListener('click', function() {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    }
+})();
+</script>
+
+</body>
+</html>
