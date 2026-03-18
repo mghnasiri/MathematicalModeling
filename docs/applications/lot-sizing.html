@@ -1,0 +1,2223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lot Sizing Optimization | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive DP demo for lot sizing optimization using Wagner-Whitin exact dynamic programming, Silver-Meal heuristic, and Lot-for-Lot baseline.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/lot-sizing.html">
+    <meta property="og:title" content="Lot Sizing Optimization | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive DP demo for lot sizing optimization using Wagner-Whitin exact dynamic programming, Silver-Meal heuristic, and Lot-for-Lot baseline.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Lot Sizing Optimization | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive DP demo for lot sizing optimization using Wagner-Whitin exact dynamic programming, Silver-Meal heuristic, and Lot-for-Lot baseline.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Decision Chain ── */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin: 2rem 0;
+            justify-content: center;
+        }
+        .chain-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 0.75rem 1.25rem;
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 6px;
+            font-size: 0.85rem;
+            color: var(--slate-light);
+            text-align: center;
+            transition: all 0.3s;
+            min-width: 120px;
+        }
+        .chain-step.active {
+            border-color: var(--gold);
+            background: rgba(197,160,89,0.1);
+            color: var(--gold);
+        }
+        .chain-sub {
+            font-size: 0.68rem;
+            color: var(--slate);
+            margin-top: 0.25rem;
+        }
+        .chain-step.active .chain-sub { color: var(--gold); opacity: 0.7; }
+        .chain-arrow { color: var(--gold); opacity: 0.5; font-size: 1.1rem; }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* ── Scenario Switcher ── */
+        .scenario-switcher {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+        }
+        .scenario-btn {
+            display: flex;
+            flex-direction: column;
+            padding: 0.75rem 1rem;
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            text-align: left;
+            transition: border-color 0.2s, background 0.2s;
+            gap: 0.25rem;
+        }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active {
+            border-color: var(--gold);
+            background: rgba(197,160,89,0.07);
+        }
+        .scn-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.82rem;
+            font-weight: 500;
+            color: var(--ivory);
+            letter-spacing: 0.02em;
+        }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc {
+            font-size: 0.72rem;
+            color: var(--slate);
+            line-height: 1.4;
+        }
+        .scenario-context {
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 1.6;
+            padding: 0.6rem 0.8rem;
+            border-left: 2px solid rgba(197,160,89,0.3);
+            margin-bottom: 1.2rem;
+            font-style: italic;
+        }
+
+        /* ── Algo Chip ── */
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* ── Business Translation Panel ── */
+        .business-panel {
+            margin-top: 1.5rem;
+            padding: 1.2rem;
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 8px;
+            background: rgba(197,160,89,0.04);
+        }
+        .business-controls {
+            display: flex;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            align-items: center;
+        }
+        .biz-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .biz-card {
+            background: rgba(10,25,47,0.4);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 6px;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .biz-val {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .biz-label-text {
+            font-size: 0.75rem;
+            color: var(--slate-light);
+            line-height: 1.4;
+        }
+        .biz-label-text small { color: var(--slate); }
+        .biz-disclaimer {
+            font-size: 0.72rem;
+            color: var(--slate);
+            font-style: italic;
+            margin: 0;
+        }
+
+        /* ── Revenue Counter ── */
+        .revenue-counter {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 0.8rem 1rem;
+            background: rgba(100, 255, 218, 0.06);
+            border: 1px solid rgba(100, 255, 218, 0.15);
+            border-radius: 6px;
+            margin-top: 0.8rem;
+        }
+        .revenue-counter .rev-label {
+            font-size: 0.72rem;
+            color: var(--slate);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+        }
+        .revenue-counter .rev-value {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--green);
+        }
+
+        /* ── Algorithm Cards ── */
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            color: var(--ivory);
+        }
+        .algo-card .algo-complexity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--green);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+        }
+        .algo-card .algo-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            border-radius: 2px;
+            font-size: 0.68rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Search Trigger ── */
+        .nav-search-trigger {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.35rem 0.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.05);
+            color: var(--slate);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-left: 0.5rem;
+            white-space: nowrap;
+        }
+        .nav-search-trigger:hover {
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .nav-search-trigger .search-shortcut {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.6rem;
+            padding: 1px 5px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 3px;
+            background: rgba(197, 160, 89, 0.05);
+        }
+
+        /* ── Scroll Progress + Scroll-to-Top ── */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* ── Hero Particles ── */
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* ── Command Palette ── */
+        .cmd-palette-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(8px);
+            z-index: 10000;
+            display: none;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 15vh;
+        }
+        .cmd-palette-overlay.open { display: flex; }
+        .cmd-palette {
+            width: 90%;
+            max-width: 580px;
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 12px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
+            overflow: hidden;
+            animation: cmdSlideIn 0.2s ease-out;
+        }
+        @keyframes cmdSlideIn {
+            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .cmd-input-wrap {
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.2rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+            gap: 0.8rem;
+        }
+        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
+        .cmd-input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--ivory);
+            font-family: 'Inter', sans-serif;
+            font-size: 1rem;
+            caret-color: var(--gold);
+        }
+        .cmd-input::placeholder { color: var(--slate); }
+        .cmd-kbd {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid rgba(197, 160, 89, 0.25);
+            border-radius: 4px;
+            color: var(--slate);
+            background: rgba(197, 160, 89, 0.05);
+        }
+        .cmd-results {
+            max-height: 340px;
+            overflow-y: auto;
+            padding: 0.5rem;
+        }
+        .cmd-results::-webkit-scrollbar { width: 4px; }
+        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
+        .cmd-group-label {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            padding: 0.6rem 0.8rem 0.3rem;
+            font-weight: 600;
+        }
+        .cmd-result {
+            display: flex;
+            align-items: center;
+            gap: 0.8rem;
+            padding: 0.6rem 0.8rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: var(--ivory);
+        }
+        .cmd-result:hover, .cmd-result.active {
+            background: rgba(197, 160, 89, 0.12);
+            color: var(--ivory);
+        }
+        .cmd-result .cmd-icon {
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 6px;
+            background: rgba(197, 160, 89, 0.08);
+            color: var(--gold);
+            font-size: 0.85rem;
+            flex-shrink: 0;
+        }
+        .cmd-result .cmd-info { flex: 1; min-width: 0; }
+        .cmd-result .cmd-title {
+            font-size: 0.88rem;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-subtitle {
+            font-size: 0.72rem;
+            color: var(--slate);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cmd-result .cmd-badge {
+            font-size: 0.6rem;
+            padding: 2px 6px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            flex-shrink: 0;
+        }
+        .cmd-empty {
+            padding: 2rem;
+            text-align: center;
+            color: var(--slate);
+            font-size: 0.88rem;
+        }
+        .cmd-footer {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.6rem 1.2rem;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+            font-size: 0.68rem;
+            color: var(--slate);
+        }
+        .cmd-footer-keys { display: flex; gap: 0.8rem; }
+        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .nav-search-trigger .search-shortcut { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- TODO: Add Python solver file (e.g., lot_sizing.py) -->
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/continuous.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger">
+                        <i class="fas fa-search" style="font-size:0.75rem"></i>
+                        <span>Search</span>
+                        <span class="search-shortcut">&#8984;K</span>
+                    </div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
+                        <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                        <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- ── Breadcrumb ── -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="manufacturing.html">Applications</a></li>
+            <li>Lot Sizing</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-boxes"></i></div>
+        <h1>Lot Sizing <span>Optimization</span></h1>
+        <p class="hero-subtitle">Wagner-Whitin / Silver-Meal &mdash; Dynamic Programming</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            A production planner must decide in which periods to produce and how many units
+            per batch, trading off fixed setup costs ($2,500 per run) against holding costs
+            ($45/unit/period). Over a 52-week horizon, poor lot sizing wastes 8&ndash;15% of
+            total production cost.
+        </p>
+    </div>
+</section>
+
+<!-- ── 2. Decision Chain ── -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>Manufacturing planning chain &mdash; the highlighted step is what this page optimizes</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">
+                Plant Location
+                <span class="chain-sub">Facility siting</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">
+                Production Planning
+                <span class="chain-sub">Lot sizing &amp; scheduling</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Shop Floor
+                <span class="chain-sub">Machine scheduling</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Assembly
+                <span class="chain-sub">Line balancing</span>
+            </div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">
+                Supply Chain
+                <span class="chain-sub">Distribution &amp; logistics</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. The Problem ── -->
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Minimizing total setup and holding cost over a finite horizon</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Consider a <strong>single product</strong> over a <strong>10-period</strong> planning
+                horizon. Each period <em>t</em> has a known demand <strong>d<sub>t</sub></strong>
+                that must be satisfied (no backlogging). The manufacturer incurs a
+                <strong>fixed setup cost K = $2,500</strong> each time a production run is initiated,
+                plus a <strong>holding cost h = $45 per unit per period</strong> for any inventory
+                carried from one period to the next.
+            </p>
+            <p>
+                The decision is: in which periods should we produce, and how much? Producing every
+                period avoids holding cost but incurs 10 setup costs ($25,000). Producing everything
+                in period 1 requires only one setup ($2,500) but maximizes holding cost. The optimal
+                policy balances these two opposing forces.
+            </p>
+            <p>
+                This is the classic <strong>uncapacitated lot-sizing problem</strong>, solvable exactly
+                by the <strong>Wagner-Whitin algorithm</strong> (1958) using dynamic programming in
+                O(n&sup2;) time, exploiting the zero-inventory ordering property: an optimal policy
+                only produces when starting inventory is zero.
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Wagner-Whitin DP Formulation</span>
+                <span class="keyword">minimize</span> &nbsp;
+                <span class="variable">&Sigma;<sub>t</sub> K &middot; y<sub>t</sub> + h &middot; I<sub>t</sub></span>
+                &nbsp; <span class="comment">// total cost = setup costs + holding costs</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">I<sub>t</sub> = I<sub>t-1</sub> + x<sub>t</sub> &minus; d<sub>t</sub></span>
+                &nbsp; <span class="comment">// inventory balance</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>t</sub> &le; M &middot; y<sub>t</sub></span>
+                &nbsp; <span class="comment">// production only if setup (y<sub>t</sub> &isin; {0,1})</span><br>
+                &nbsp;&nbsp;<span class="variable">I<sub>t</sub> &ge; 0</span>
+                &nbsp; <span class="comment">// no backlogging</span><br>
+                &nbsp;&nbsp;<span class="variable">I<sub>0</sub> = 0</span>
+                &nbsp; <span class="comment">// initial inventory</span><br><br>
+                <span class="comment">// DP recurrence: f(t) = min over j&le;t { f(j-1) + K + h &middot; &Sigma;<sub>k=j..t-1</sub> (t-k) &middot; d<sub>k</sub> }</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">y<sub>t</sub></span>
+                is the binary setup indicator,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">x<sub>t</sub></span>
+                is production quantity,
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">I<sub>t</sub></span>
+                is ending inventory, and
+                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>t</sub></span>
+                is the demand in period <em>t</em>.
+            </p>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Optimize a 10-period lot sizing schedule</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-boxes"></i> Lot Sizing Optimizer</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">K=$2,500 &middot; h=$45/unit/period</span>
+            </div>
+            <div class="solver-body">
+                <!-- Scenarios -->
+                <div class="solver-section-label">Demand Scenario</div>
+                <div class="scenario-switcher" id="scenario-switcher">
+                    <button class="scenario-btn active" data-scenario="0" onclick="loadScenario(0)">
+                        <span class="scn-name">Uniform Demand</span>
+                        <span class="scn-desc">100 units every period &mdash; steady-state baseline</span>
+                    </button>
+                    <button class="scenario-btn" data-scenario="1" onclick="loadScenario(1)">
+                        <span class="scn-name">Lumpy Demand</span>
+                        <span class="scn-desc">Sporadic large orders with zero-demand gaps</span>
+                    </button>
+                    <button class="scenario-btn" data-scenario="2" onclick="loadScenario(2)">
+                        <span class="scn-name">High Holding Cost</span>
+                        <span class="scn-desc">Perishable goods &mdash; holding cost rises to $120/unit</span>
+                    </button>
+                </div>
+                <div class="scenario-context" id="scenario-context">
+                    Uniform demand of 100 units per period. A classic textbook scenario where the trade-off between setup frequency and holding cost is most transparent. EOQ-like patterns emerge.
+                </div>
+
+                <!-- Algorithm Selection -->
+                <div class="solver-section-label">Algorithm</div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip selected" data-algo="ww" onclick="selectAlgo('ww')">Wagner-Whitin (Exact DP)</button>
+                    <button class="algo-chip" data-algo="sm" onclick="selectAlgo('sm')">Silver-Meal</button>
+                    <button class="algo-chip" data-algo="lfl" onclick="selectAlgo('lfl')">Lot-for-Lot</button>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip active" onclick="solveAll()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                </button>
+
+                <!-- Visualization -->
+                <div class="solver-section-label">Production &amp; Inventory Visualization</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="lotCanvas" width="900" height="480"></canvas>
+                </div>
+
+                <!-- Cost Counter -->
+                <div class="revenue-counter" id="cost-counter" style="display:none;">
+                    <span class="rev-label">Total Cost</span>
+                    <span class="rev-value" id="cost-value">$0</span>
+                </div>
+
+                <p class="solver-status" id="solver-status">Ready. Click &ldquo;Solve &amp; Compare All Algorithms&rdquo; to run.</p>
+
+                <!-- Results -->
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Comparison</div>
+                        <table class="results-table" id="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Setups</th>
+                                    <th>Setup Cost</th>
+                                    <th>Holding Cost</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody id="results-body">
+                                <tr><td colspan="5" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Click Solve &amp; Compare All Algorithms</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Period-by-Period Schedule</div>
+                        <div id="schedule-output" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--slate-light);padding:0.8rem 1rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.08);border-radius:4px;line-height:1.8;max-height:200px;overflow-y:auto;">
+                            Period schedule will appear here after solving.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Business Translation Panel -->
+                <div class="business-panel" id="business-panel" style="display:none">
+                    <div class="solver-section-label" style="margin-top:0;margin-bottom:0.8rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">
+                        <i class="fas fa-chart-line" style="color:var(--gold);margin-right:0.5rem"></i>
+                        What this means for your operation
+                    </div>
+                    <div class="business-controls">
+                        <label style="display:flex;align-items:center;gap:0.4rem;">
+                            Cost per setup ($)
+                            <input type="number" id="biz-setup" value="2500" min="100" max="50000" step="100"
+                                   style="width:80px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()">
+                        </label>
+                        <label style="display:flex;align-items:center;gap:0.4rem;">
+                            Setups per year
+                            <input type="number" id="biz-setups-yr" value="52" min="1" max="365" step="1"
+                                   style="width:70px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()">
+                        </label>
+                    </div>
+                    <div class="biz-cards" id="biz-cards-container"></div>
+                    <p class="biz-disclaimer">Values are illustrative estimates based on the scenario above. Adjust inputs to model your operation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Three approaches to dynamic lot sizing</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="algo-card">
+                <div class="algo-tag">Exact</div>
+                <h3>Wagner-Whitin (Dynamic Programming)</h3>
+                <span class="algo-complexity">O(n&sup2;) &nbsp;|&nbsp; Guarantees global optimum</span>
+                <p>
+                    The Wagner-Whitin algorithm exploits the <em>zero-inventory ordering</em> property:
+                    in an optimal solution, production only occurs when beginning inventory is zero.
+                    This reduces the search space from exponential to O(n&sup2;). For each period
+                    <em>t</em>, it considers all possible last-production periods <em>j &le; t</em>
+                    and picks the one minimizing cumulative cost. The DP recurrence builds the
+                    optimal solution forward, and backtracking recovers the production schedule.
+                    This is the gold standard for uncapacitated single-item lot sizing.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>Silver-Meal</h3>
+                <span class="algo-complexity">O(n) &nbsp;|&nbsp; Greedy cost-per-period minimizer</span>
+                <p>
+                    The Silver-Meal heuristic adds periods to the current production lot as long as
+                    the average cost per period (setup cost amortized plus accumulated holding cost)
+                    is decreasing. Once adding the next period would increase the average, the lot
+                    is closed and a new lot begins. This forward-looking greedy strategy typically
+                    achieves within 1&ndash;3% of optimal for smooth demand patterns but can deviate
+                    more significantly with lumpy or highly variable demand.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Baseline</div>
+                <h3>Lot-for-Lot</h3>
+                <span class="algo-complexity">O(n) &nbsp;|&nbsp; Zero inventory, maximum setups</span>
+                <p>
+                    The simplest policy: produce exactly the demand for each period, every period.
+                    This eliminates all holding cost but incurs a setup cost in every period with
+                    nonzero demand. Lot-for-Lot serves as an upper bound on setup cost and a
+                    lower bound on holding cost, making it a useful baseline for comparison.
+                    It is optimal only when holding cost is so high that carrying any inventory
+                    is more expensive than an additional setup.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. Real-World Complexity ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why production lot sizing goes beyond a simple DP</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-cogs"></i> Beyond the Basic Model</h3>
+                <ul class="complexity-list">
+                    <li><strong>Capacity constraints</strong> &mdash; Production capacity limits per period make the problem NP-hard; requires Lagrangian relaxation or MIP solvers</li>
+                    <li><strong>Multiple products</strong> &mdash; Shared setups, joint replenishment, and resource contention across product families add combinatorial complexity</li>
+                    <li><strong>Stochastic demand</strong> &mdash; Uncertain demand requires safety stock calculations and robust or stochastic programming formulations</li>
+                    <li><strong>Setup carry-over</strong> &mdash; If the same product was produced last period, setup may be avoided (sequence-dependent setups)</li>
+                    <li><strong>Quantity discounts</strong> &mdash; Volume-based pricing from suppliers creates nonlinear cost structures that break DP optimality</li>
+                    <li><strong>Perishability</strong> &mdash; Shelf-life constraints limit how far ahead production can cover future demand</li>
+                    <li><strong>Multi-level BOM</strong> &mdash; Component dependencies in multi-echelon production (MRP) couple lot-sizing decisions across levels</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational works in lot sizing optimization</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Wagner, H. M. &amp; Whitin, T. M.</span> (1958).
+                    <span class="ref-title">&ldquo;Dynamic version of the economic lot size model.&rdquo;</span>
+                    <span class="ref-journal">Management Science, 5(1), 89&ndash;96.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Silver, E. A. &amp; Meal, H. C.</span> (1973).
+                    <span class="ref-title">&ldquo;A heuristic for selecting lot size quantities for the case of a deterministic time-varying demand rate and discrete opportunities for replenishment.&rdquo;</span>
+                    <span class="ref-journal">Production and Inventory Management, 14(2), 64&ndash;74.</span>
+                </li>
+                <li>
+                    <span class="ref-author">Pochet, Y. &amp; Wolsey, L. A.</span> (2006).
+                    <span class="ref-title">&ldquo;Production Planning by Mixed Integer Programming.&rdquo;</span>
+                    <span class="ref-journal">Springer Series in Operations Research and Financial Engineering.</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 8. CTA ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize production planning?</h3>
+            <p>
+                From single-item lot sizing to multi-product, multi-level production scheduling,
+                mathematical modeling can transform manufacturing operations.
+                Let&rsquo;s discuss how Operations Research can work for you.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Disclaimer ── -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. Demand profiles, cost parameters, and production figures are
+            representative scenarios for educational purposes and do not reflect any specific
+            manufacturer or product line.
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Lot Sizing Optimization — Wagner-Whitin / Silver-Meal Demo
+// ═══════════════════════════════════════════════════════════════
+
+var canvas = document.getElementById('lotCanvas');
+var ctx = canvas.getContext('2d');
+
+// Hi-DPI support
+var dpr = window.devicePixelRatio || 1;
+var CW = 900, CH = 480;
+canvas.width = CW * dpr;
+canvas.height = CH * dpr;
+canvas.style.width = CW + 'px';
+canvas.style.height = CH + 'px';
+ctx.scale(dpr, dpr);
+
+// ── Cost Parameters ──
+var K = 2500;       // setup cost
+var H = 45;         // holding cost per unit per period
+
+// ── Scenarios ──
+var SCENARIOS = [
+    {
+        name: 'Uniform Demand',
+        desc: 'Uniform demand of 100 units per period. A classic textbook scenario where the trade-off between setup frequency and holding cost is most transparent. EOQ-like patterns emerge.',
+        demand: [100, 100, 100, 100, 100, 100, 100, 100, 100, 100],
+        K: 2500,
+        H: 45
+    },
+    {
+        name: 'Lumpy Demand',
+        desc: 'Sporadic large orders interspersed with zero-demand periods. Common in make-to-order environments. Wagner-Whitin exploits the gaps to batch production efficiently.',
+        demand: [0, 300, 0, 200, 0, 0, 400, 0, 150, 0],
+        K: 2500,
+        H: 45
+    },
+    {
+        name: 'High Holding Cost',
+        desc: 'Perishable or high-value goods with holding cost of $120/unit/period. The elevated carrying charge pushes the optimal policy toward more frequent, smaller lots.',
+        demand: [80, 120, 90, 110, 70, 130, 100, 60, 140, 95],
+        K: 2500,
+        H: 120
+    }
+];
+
+var currentScenario = 0;
+var currentAlgo = 'ww';
+var solveResults = {};
+var currentDemand = SCENARIOS[0].demand.slice();
+
+function loadScenario(idx) {
+    currentScenario = idx;
+    currentDemand = SCENARIOS[idx].demand.slice();
+    K = SCENARIOS[idx].K;
+    H = SCENARIOS[idx].H;
+    document.getElementById('configSummary').textContent = 'K=$' + K.toLocaleString() + ' \u00B7 h=$' + H + '/unit/period';
+    document.querySelectorAll('.scenario-btn').forEach(function(btn, i) {
+        btn.classList.toggle('active', i === idx);
+    });
+    document.getElementById('scenario-context').textContent = SCENARIOS[idx].desc;
+    solveResults = {};
+    clearCanvas();
+    document.getElementById('solver-status').textContent = 'Scenario loaded. Click "Solve & Compare All Algorithms" to run.';
+    document.getElementById('cost-counter').style.display = 'none';
+    document.getElementById('business-panel').style.display = 'none';
+    var tbody = document.getElementById('results-body');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    var placeholder = document.createElement('tr');
+    var td = document.createElement('td');
+    td.setAttribute('colspan', '5');
+    td.style.cssText = 'text-align:center;color:var(--slate);font-family:Inter,sans-serif;';
+    td.textContent = 'Click Solve & Compare All Algorithms';
+    placeholder.appendChild(td);
+    tbody.appendChild(placeholder);
+    document.getElementById('schedule-output').textContent = 'Period schedule will appear here after solving.';
+}
+
+function selectAlgo(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('[data-algo]').forEach(function(btn) {
+        btn.classList.toggle('selected', btn.dataset.algo === algo);
+    });
+    if (solveResults[algo]) {
+        animateDispatch(solveResults[algo]);
+        showSchedule(solveResults[algo]);
+        showCost(solveResults[algo].totalCost);
+    }
+}
+
+// ── Wagner-Whitin (Exact DP) ──
+function solveWagnerWhitin(demand) {
+    var t0 = performance.now();
+    var n = demand.length;
+    var f = new Array(n + 1).fill(Infinity);
+    var split = new Array(n + 1).fill(0);
+    f[0] = 0;
+
+    for (var t = 1; t <= n; t++) {
+        for (var j = 1; j <= t; j++) {
+            var holdCost = 0;
+            for (var k = j; k <= t; k++) {
+                holdCost += H * (k - j) * demand[k - 1];
+            }
+            var cost = f[j - 1] + K + holdCost;
+            if (cost < f[t]) {
+                f[t] = cost;
+                split[t] = j;
+            }
+        }
+    }
+
+    // Backtrack to find production periods
+    var production = new Array(n).fill(0);
+    var inventory = new Array(n + 1).fill(0);
+    var t = n;
+    var setups = 0;
+    while (t > 0) {
+        var j = split[t];
+        var qty = 0;
+        for (var k = j; k <= t; k++) qty += demand[k - 1];
+        production[j - 1] = qty;
+        setups++;
+        t = j - 1;
+    }
+
+    // Calculate inventory levels
+    var setupCost = 0;
+    var holdCost = 0;
+    for (var i = 0; i < n; i++) {
+        inventory[i + 1] = inventory[i] + production[i] - demand[i];
+        if (production[i] > 0) setupCost += K;
+        holdCost += H * inventory[i + 1];
+    }
+
+    return {
+        name: 'Wagner-Whitin (Exact DP)',
+        production: production,
+        inventory: inventory,
+        demand: demand,
+        setups: setups,
+        setupCost: setupCost,
+        holdCost: holdCost,
+        totalCost: setupCost + holdCost,
+        time: performance.now() - t0
+    };
+}
+
+// ── Silver-Meal Heuristic ──
+function solveSilverMeal(demand) {
+    var t0 = performance.now();
+    var n = demand.length;
+    var production = new Array(n).fill(0);
+    var inventory = new Array(n + 1).fill(0);
+
+    var i = 0;
+    var setups = 0;
+    while (i < n) {
+        // Skip zero-demand periods at start of lot
+        if (demand[i] === 0) { i++; continue; }
+
+        var lot = demand[i];
+        var holdAcc = 0;
+        var periods = 1;
+        var avgCost = K / periods;
+
+        var j = i + 1;
+        while (j < n) {
+            var newHold = holdAcc + H * (j - i) * demand[j];
+            var newAvg = (K + newHold) / (periods + 1);
+            if (newAvg >= avgCost) break;
+            holdAcc = newHold;
+            lot += demand[j];
+            periods++;
+            avgCost = newAvg;
+            j++;
+        }
+
+        production[i] = lot;
+        setups++;
+        i = j;
+    }
+
+    // Calculate inventory levels
+    var setupCost = 0;
+    var holdCost = 0;
+    for (var t = 0; t < n; t++) {
+        inventory[t + 1] = inventory[t] + production[t] - demand[t];
+        if (production[t] > 0) setupCost += K;
+        holdCost += H * inventory[t + 1];
+    }
+
+    return {
+        name: 'Silver-Meal',
+        production: production,
+        inventory: inventory,
+        demand: demand,
+        setups: setups,
+        setupCost: setupCost,
+        holdCost: holdCost,
+        totalCost: setupCost + holdCost,
+        time: performance.now() - t0
+    };
+}
+
+// ── Lot-for-Lot ──
+function solveLotForLot(demand) {
+    var t0 = performance.now();
+    var n = demand.length;
+    var production = new Array(n).fill(0);
+    var inventory = new Array(n + 1).fill(0);
+    var setups = 0;
+
+    for (var t = 0; t < n; t++) {
+        if (demand[t] > 0) {
+            production[t] = demand[t];
+            setups++;
+        }
+        inventory[t + 1] = inventory[t] + production[t] - demand[t];
+    }
+
+    var setupCost = setups * K;
+    var holdCost = 0;
+    for (var t = 0; t < n; t++) holdCost += H * inventory[t + 1];
+
+    return {
+        name: 'Lot-for-Lot',
+        production: production,
+        inventory: inventory,
+        demand: demand,
+        setups: setups,
+        setupCost: setupCost,
+        holdCost: holdCost,
+        totalCost: setupCost + holdCost,
+        time: performance.now() - t0
+    };
+}
+
+function solveAll() {
+    var demand = currentDemand;
+    var wwResult = solveWagnerWhitin(demand);
+    var smResult = solveSilverMeal(demand);
+    var lflResult = solveLotForLot(demand);
+
+    solveResults = { ww: wwResult, sm: smResult, lfl: lflResult };
+    var allResults = [wwResult, smResult, lflResult];
+    var bestCost = Math.min.apply(null, allResults.map(function(r) { return r.totalCost; }));
+
+    var tbody = document.getElementById('results-body');
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+    allResults.forEach(function(r) {
+        var isBest = Math.abs(r.totalCost - bestCost) < 1;
+        var tr = document.createElement('tr');
+        tr.style.cursor = 'pointer';
+        tr.addEventListener('click', function() { selectAlgoByName(r.name); });
+
+        var tdName = document.createElement('td');
+        tdName.className = 'algo-label';
+        tdName.textContent = r.name;
+        tr.appendChild(tdName);
+
+        var tdSetups = document.createElement('td');
+        tdSetups.textContent = r.setups;
+        tr.appendChild(tdSetups);
+
+        var tdSetupCost = document.createElement('td');
+        tdSetupCost.textContent = '$' + r.setupCost.toLocaleString();
+        tr.appendChild(tdSetupCost);
+
+        var tdHoldCost = document.createElement('td');
+        tdHoldCost.textContent = '$' + r.holdCost.toLocaleString();
+        tr.appendChild(tdHoldCost);
+
+        var tdTotal = document.createElement('td');
+        if (isBest) tdTotal.className = 'best-val';
+        tdTotal.textContent = '$' + r.totalCost.toLocaleString();
+        tr.appendChild(tdTotal);
+
+        tbody.appendChild(tr);
+    });
+
+    var activeResult = solveResults[currentAlgo];
+    animateDispatch(activeResult);
+    showSchedule(activeResult);
+    showCost(activeResult.totalCost);
+
+    document.getElementById('solver-status').textContent =
+        'Solved all 3 algorithms. Click algorithm chips or table rows to compare.';
+
+    document.getElementById('business-panel').style.display = 'block';
+    updateBusinessPanel();
+}
+
+function selectAlgoByName(name) {
+    var map = { 'Wagner-Whitin (Exact DP)': 'ww', 'Silver-Meal': 'sm', 'Lot-for-Lot': 'lfl' };
+    var algo = map[name];
+    if (algo) selectAlgo(algo);
+}
+
+function showCost(cost) {
+    var counter = document.getElementById('cost-counter');
+    counter.style.display = 'flex';
+    document.getElementById('cost-value').textContent = '$' + cost.toLocaleString();
+}
+
+function showSchedule(result) {
+    var lines = [];
+    for (var t = 0; t < result.demand.length; t++) {
+        var action = '';
+        if (result.production[t] > 0) action = 'PRODUCE ' + result.production[t] + ' units';
+        else action = 'NO PRODUCTION';
+        var period = 'P' + (t + 1).toString().padStart(2, ' ');
+        lines.push(period + '  Demand:' + result.demand[t].toString().padStart(4) +
+            '  Inv:' + result.inventory[t + 1].toString().padStart(5) + '  ' + action);
+    }
+    document.getElementById('schedule-output').textContent = lines.join('\n');
+}
+
+function updateBusinessPanel() {
+    if (!solveResults.ww) return;
+    var setupCostInput = parseFloat(document.getElementById('biz-setup').value) || 2500;
+    var setupsYr = parseFloat(document.getElementById('biz-setups-yr').value) || 52;
+    var bestResult = solveResults.ww;
+    var worstResult = solveResults.lfl;
+    var savingsPerCycle = worstResult.totalCost - bestResult.totalCost;
+    var savingsRatio = bestResult.totalCost > 0 ? ((worstResult.totalCost - bestResult.totalCost) / worstResult.totalCost * 100) : 0;
+
+    var container = document.getElementById('biz-cards-container');
+    while (container.firstChild) container.removeChild(container.firstChild);
+
+    var cards = [
+        { val: '$' + bestResult.totalCost.toLocaleString(), label: 'Optimal 10-period cost', sub: 'Wagner-Whitin solution' },
+        { val: '$' + savingsPerCycle.toLocaleString(), label: 'Savings vs Lot-for-Lot', sub: savingsRatio.toFixed(1) + '% reduction' },
+        { val: bestResult.setups.toString(), label: 'Optimal setups (10 periods)', sub: 'vs ' + worstResult.setups + ' with Lot-for-Lot' },
+        { val: '$' + Math.round(savingsPerCycle * setupsYr / 10 * setupCostInput / K).toLocaleString() + '/yr', label: 'Annualized savings', sub: 'at configured parameters' }
+    ];
+
+    cards.forEach(function(c) {
+        var card = document.createElement('div');
+        card.className = 'biz-card';
+
+        var valSpan = document.createElement('span');
+        valSpan.className = 'biz-val';
+        valSpan.textContent = c.val;
+        card.appendChild(valSpan);
+
+        var labelSpan = document.createElement('span');
+        labelSpan.className = 'biz-label-text';
+        labelSpan.textContent = c.label;
+        var small = document.createElement('small');
+        small.textContent = c.sub;
+        var br = document.createElement('br');
+        labelSpan.appendChild(br);
+        labelSpan.appendChild(small);
+        card.appendChild(labelSpan);
+
+        container.appendChild(card);
+    });
+}
+
+// ── Canvas Drawing with Animation ──
+var animationId = null;
+var animFrame = 0;
+var animResult = null;
+
+function clearCanvas() {
+    if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'rgba(197,160,89,0.3)';
+    ctx.font = '14px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Select a scenario and click Solve to visualize lot sizing', CW / 2, CH / 2);
+}
+
+function animateDispatch(result) {
+    if (animationId) { cancelAnimationFrame(animationId); animationId = null; }
+    animResult = result;
+    animFrame = 0;
+    var totalFrames = 40;
+
+    function step() {
+        animFrame++;
+        var progress = Math.min(animFrame / totalFrames, 1);
+        var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+        drawLotSizing(result, eased);
+        if (animFrame < totalFrames) {
+            animationId = requestAnimationFrame(step);
+        }
+    }
+    animationId = requestAnimationFrame(step);
+}
+
+function drawLotSizing(result, progress) {
+    var PAD = { t: 50, r: 60, b: 60, l: 70 };
+    var W = CW - PAD.l - PAD.r;
+    var n = result.demand.length;
+    var barW = W / n;
+
+    ctx.fillStyle = '#112240';
+    ctx.fillRect(0, 0, CW, CH);
+
+    // Find max values for scaling
+    var maxDemand = Math.max.apply(null, result.demand) || 1;
+    var maxProd = Math.max.apply(null, result.production) || 1;
+    var maxBar = Math.max(maxDemand, maxProd);
+    var maxInv = Math.max.apply(null, result.inventory) || 1;
+
+    var barAreaH = (CH - PAD.t - PAD.b) * 0.55;
+    var invAreaH = (CH - PAD.t - PAD.b) * 0.35;
+    var gap = 20;
+    var barTop = PAD.t;
+    var invTop = barTop + barAreaH + gap;
+
+    // ── Title ──
+    ctx.textAlign = 'center';
+    ctx.font = '11px Inter';
+    ctx.fillStyle = 'rgba(197,160,89,0.7)';
+    ctx.fillText(result.name + '  |  Total Cost: $' + result.totalCost.toLocaleString() + '  |  Setups: ' + result.setups, CW / 2, 20);
+
+    // ── Bar Chart: Demand (grey) + Production (gold) ──
+    ctx.fillStyle = 'rgba(197,160,89,0.5)';
+    ctx.font = '9px Inter';
+    ctx.textAlign = 'left';
+    ctx.fillText('DEMAND & PRODUCTION (units)', PAD.l, barTop - 5);
+
+    // Y-axis labels
+    ctx.textAlign = 'right';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(136,146,176,0.6)';
+    [0, Math.round(maxBar / 2), maxBar].forEach(function(v) {
+        var y = barTop + barAreaH - (v / maxBar) * (barAreaH - 10);
+        ctx.fillText(v.toString(), PAD.l - 5, y + 3);
+        ctx.beginPath();
+        ctx.moveTo(PAD.l, y);
+        ctx.lineTo(PAD.l + W, y);
+        ctx.strokeStyle = 'rgba(197,160,89,0.06)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
+
+    // Bars
+    for (var t = 0; t < n; t++) {
+        var x = PAD.l + t * barW;
+        var halfW = (barW - 8) / 2;
+
+        // Demand bar (grey)
+        if (result.demand[t] > 0) {
+            var dH = (result.demand[t] / maxBar) * (barAreaH - 10) * progress;
+            var dY = barTop + barAreaH - dH;
+            ctx.fillStyle = 'rgba(136,146,176,0.4)';
+            ctx.fillRect(x + 3, dY, halfW, dH);
+            ctx.strokeStyle = 'rgba(136,146,176,0.6)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 3, dY, halfW, dH);
+        }
+
+        // Production bar (gold)
+        if (result.production[t] > 0) {
+            var pH = (result.production[t] / maxBar) * (barAreaH - 10) * progress;
+            var pY = barTop + barAreaH - pH;
+            ctx.fillStyle = 'rgba(197,160,89,0.5)';
+            ctx.fillRect(x + 3 + halfW + 2, pY, halfW, pH);
+            ctx.strokeStyle = 'rgba(197,160,89,0.8)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 3 + halfW + 2, pY, halfW, pH);
+
+            // Production value label
+            if (progress >= 1) {
+                ctx.fillStyle = 'rgba(197,160,89,0.9)';
+                ctx.font = '8px JetBrains Mono';
+                ctx.textAlign = 'center';
+                ctx.fillText(result.production[t].toString(), x + 3 + halfW + 2 + halfW / 2, pY - 4);
+            }
+        }
+    }
+
+    // Legend
+    ctx.textAlign = 'right';
+    ctx.font = '9px Inter';
+    // Demand legend
+    ctx.fillStyle = 'rgba(136,146,176,0.6)';
+    ctx.fillRect(PAD.l + W - 120, barTop - 12, 10, 10);
+    ctx.fillStyle = 'rgba(136,146,176,0.8)';
+    ctx.fillText('Demand', PAD.l + W - 60, barTop - 3);
+    // Production legend
+    ctx.fillStyle = 'rgba(197,160,89,0.5)';
+    ctx.fillRect(PAD.l + W - 55, barTop - 12, 10, 10);
+    ctx.fillStyle = 'rgba(197,160,89,0.9)';
+    ctx.textAlign = 'left';
+    ctx.fillText('Production', PAD.l + W - 42, barTop - 3);
+
+    // ── Inventory Line (green) ──
+    ctx.fillStyle = 'rgba(197,160,89,0.5)';
+    ctx.font = '9px Inter';
+    ctx.textAlign = 'left';
+    ctx.fillText('ENDING INVENTORY (units)', PAD.l, invTop - 5);
+
+    // Y-axis labels for inventory
+    ctx.textAlign = 'right';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(136,146,176,0.6)';
+    [0, Math.round(maxInv / 2), maxInv].forEach(function(v) {
+        var y = invTop + invAreaH - (v / maxInv) * (invAreaH - 10);
+        ctx.fillText(v.toString(), PAD.l - 5, y + 3);
+        ctx.beginPath();
+        ctx.moveTo(PAD.l, y);
+        ctx.lineTo(PAD.l + W, y);
+        ctx.strokeStyle = 'rgba(197,160,89,0.06)';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+    });
+
+    // Inventory area fill
+    ctx.beginPath();
+    ctx.moveTo(PAD.l, invTop + invAreaH);
+    for (var t = 0; t <= n; t++) {
+        var x = PAD.l + (t / n) * W;
+        var invVal = result.inventory[t] * progress;
+        var y = invTop + invAreaH - (invVal / maxInv) * (invAreaH - 10);
+        ctx.lineTo(x, y);
+    }
+    ctx.lineTo(PAD.l + W, invTop + invAreaH);
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(100,255,218,0.06)';
+    ctx.fill();
+
+    // Inventory line
+    ctx.beginPath();
+    for (var t = 0; t <= n; t++) {
+        var x = PAD.l + (t / n) * W;
+        var invVal = result.inventory[t] * progress;
+        var y = invTop + invAreaH - (invVal / maxInv) * (invAreaH - 10);
+        if (t === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = 'rgba(100,255,218,0.8)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Inventory dots
+    for (var t = 0; t <= n; t++) {
+        var x = PAD.l + (t / n) * W;
+        var invVal = result.inventory[t] * progress;
+        var y = invTop + invAreaH - (invVal / maxInv) * (invAreaH - 10);
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = '#64ffda';
+        ctx.fill();
+    }
+
+    // Inventory value labels at end
+    if (progress >= 1) {
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillStyle = 'rgba(100,255,218,0.8)';
+        ctx.textAlign = 'center';
+        for (var t = 1; t <= n; t++) {
+            if (result.inventory[t] > 0) {
+                var x = PAD.l + (t / n) * W;
+                var y = invTop + invAreaH - (result.inventory[t] / maxInv) * (invAreaH - 10);
+                ctx.fillText(result.inventory[t].toString(), x, y - 6);
+            }
+        }
+    }
+
+    // ── Period labels ──
+    ctx.textAlign = 'center';
+    ctx.font = '9px JetBrains Mono';
+    ctx.fillStyle = 'rgba(136,146,176,0.7)';
+    for (var t = 0; t < n; t++) {
+        var x = PAD.l + t * barW + barW / 2;
+        ctx.fillText('P' + (t + 1), x, CH - PAD.b + 15);
+    }
+
+    // ── Y-axis label (rotated) ──
+    ctx.save();
+    ctx.translate(15, barTop + barAreaH / 2);
+    ctx.rotate(-Math.PI / 2);
+    ctx.fillStyle = 'rgba(197,160,89,0.6)';
+    ctx.font = '10px Inter';
+    ctx.textAlign = 'center';
+    ctx.fillText('Units', 0, 0);
+    ctx.restore();
+}
+
+// ── Scroll Animations ──
+var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
+
+// ── Initialize ──
+clearCanvas();
+</script>
+
+<!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
+
+<!-- Scroll Progress Bar -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Scroll to Top Button -->
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
+    <i class="fas fa-chevron-up"></i>
+</button>
+
+<!-- Command Palette Overlay -->
+<div class="cmd-palette-overlay" id="cmdPalette">
+    <div class="cmd-palette">
+        <div class="cmd-input-wrap">
+            <i class="fas fa-search"></i>
+            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
+            <span class="cmd-kbd">ESC</span>
+        </div>
+        <div class="cmd-results" id="cmdResults"></div>
+        <div class="cmd-footer">
+            <div class="cmd-footer-keys">
+                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
+                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
+            </div>
+            <span>Search across all problems</span>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    'use strict';
+
+    // ── 1. Theme Toggle ──
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // ── 2. Command Palette ──
+    var SEARCH_DATA = [
+        { title: 'Scheduling', subtitle: '6 problems', icon: 'fa-industry', url: 'families/scheduling.html', group: 'Families', badge: 'Family' },
+        { title: 'Routing', subtitle: '3 problems', icon: 'fa-route', url: 'families/routing.html', group: 'Families', badge: 'Family' },
+        { title: 'Packing & Cutting', subtitle: '3 problems', icon: 'fa-box', url: 'families/packing.html', group: 'Families', badge: 'Family' },
+        { title: 'Location & Network', subtitle: '6 problems', icon: 'fa-project-diagram', url: 'families/network.html', group: 'Families', badge: 'Family' },
+        { title: 'Stochastic & Robust', subtitle: '9 problems', icon: 'fa-chart-area', url: 'families/stochastic.html', group: 'Families', badge: 'Family' },
+        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'applications/delivery-routing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'applications/warehouse-packing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Storage Dispatch', subtitle: 'LP/MIP \u00b7 Energy', icon: 'fa-battery-three-quarters', url: 'applications/energy-storage-dispatch.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Lot Sizing', subtitle: 'Wagner-Whitin DP', icon: 'fa-boxes', url: 'applications/lot-sizing.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Crop Selection', subtitle: 'Robust Portfolio', icon: 'fa-seedling', url: 'applications/crop-selection.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Investment Portfolio', subtitle: 'Mean-Variance', icon: 'fa-chart-pie', url: 'applications/portfolio.html', group: 'Applications', badge: 'Demo' },
+        { title: 'Ambulance Placement', subtitle: 'p-Median', icon: 'fa-ambulance', url: 'applications/ambulance-placement.html', group: 'Applications', badge: 'Demo' }
+    ];
+
+    var path = window.location.pathname;
+    var depth = (path.match(/families\/|applications\//)) ? '../' : '';
+    var overlay = document.getElementById('cmdPalette');
+    var input = document.getElementById('cmdInput');
+    var resultsDiv = document.getElementById('cmdResults');
+    var activeIdx = -1;
+
+    function openPalette() { overlay.classList.add('open'); input.value = ''; input.focus(); renderResults(''); activeIdx = -1; }
+    function closePalette() { overlay.classList.remove('open'); activeIdx = -1; }
+
+    function fuzzyMatch(query, text) {
+        query = query.toLowerCase(); text = text.toLowerCase();
+        if (!query) return true;
+        if (text.includes(query)) return true;
+        var qi = 0;
+        for (var i = 0; i < text.length && qi < query.length; i++) { if (text[i] === query[qi]) qi++; }
+        return qi === query.length;
+    }
+
+    function renderResults(query) {
+        var filtered = SEARCH_DATA.filter(function(item) {
+            return fuzzyMatch(query, item.title) || fuzzyMatch(query, item.subtitle) || fuzzyMatch(query, item.group);
+        });
+        while (resultsDiv.firstChild) resultsDiv.removeChild(resultsDiv.firstChild);
+        if (filtered.length === 0) {
+            var empty = document.createElement('div');
+            empty.className = 'cmd-empty';
+            empty.textContent = 'No results found';
+            resultsDiv.appendChild(empty);
+            return;
+        }
+        var groups = {};
+        var order = ['Families', 'Applications'];
+        filtered.forEach(function(item) { if (!groups[item.group]) groups[item.group] = []; groups[item.group].push(item); });
+        var idx = 0;
+        order.forEach(function(g) {
+            if (!groups[g]) return;
+            var label = document.createElement('div');
+            label.className = 'cmd-group-label';
+            label.textContent = g;
+            resultsDiv.appendChild(label);
+            groups[g].forEach(function(item) {
+                var a = document.createElement('a');
+                a.href = depth + item.url;
+                a.className = 'cmd-result';
+                a.setAttribute('data-idx', idx);
+                var iconDiv = document.createElement('div');
+                iconDiv.className = 'cmd-icon';
+                var icon = document.createElement('i');
+                icon.className = 'fas ' + item.icon;
+                iconDiv.appendChild(icon);
+                a.appendChild(iconDiv);
+                var info = document.createElement('div');
+                info.className = 'cmd-info';
+                var title = document.createElement('div');
+                title.className = 'cmd-title';
+                title.textContent = item.title;
+                info.appendChild(title);
+                var sub = document.createElement('div');
+                sub.className = 'cmd-subtitle';
+                sub.textContent = item.subtitle;
+                info.appendChild(sub);
+                a.appendChild(info);
+                var badge = document.createElement('span');
+                badge.className = 'cmd-badge';
+                badge.textContent = item.badge;
+                a.appendChild(badge);
+                resultsDiv.appendChild(a);
+                idx++;
+            });
+        });
+    }
+
+    if (input) { input.addEventListener('input', function() { renderResults(input.value); activeIdx = -1; }); }
+
+    document.addEventListener('keydown', function(e) {
+        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); if (overlay.classList.contains('open')) closePalette(); else openPalette(); return; }
+        if (!overlay.classList.contains('open')) return;
+        if (e.key === 'Escape') { closePalette(); return; }
+        var results = resultsDiv.querySelectorAll('.cmd-result');
+        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, results.length - 1); results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); }); if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' }); }
+        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); }); if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' }); }
+        else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) { e.preventDefault(); results[activeIdx].click(); }
+    });
+
+    if (overlay) { overlay.addEventListener('click', function(e) { if (e.target === overlay) closePalette(); }); }
+    var searchTrigger = document.getElementById('navSearchTrigger');
+    if (searchTrigger) { searchTrigger.addEventListener('click', openPalette); }
+
+    // ── 3. Particle Network Background ──
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [];
+        var PARTICLE_COUNT = 40;
+        var CONNECTION_DIST = 120;
+
+        function resizeParticleCanvas() { pCanvas.width = heroEl.offsetWidth; pCanvas.height = heroEl.offsetHeight; }
+        resizeParticleCanvas();
+        window.addEventListener('resize', resizeParticleCanvas);
+
+        function Particle() {
+            this.x = Math.random() * pCanvas.width; this.y = Math.random() * pCanvas.height;
+            this.vx = (Math.random() - 0.5) * 0.4; this.vy = (Math.random() - 0.5) * 0.4;
+            this.radius = Math.random() * 2 + 1;
+        }
+        Particle.prototype.update = function() { this.x += this.vx; this.y += this.vy; if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1; if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1; };
+        Particle.prototype.draw = function() { pCtx.beginPath(); pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)'; pCtx.fill(); };
+
+        for (var i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
+
+        function animateParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+            particles.forEach(function(p) { p.update(); p.draw(); });
+            for (var i = 0; i < particles.length; i++) {
+                for (var j = i + 1; j < particles.length; j++) {
+                    var dx = particles[i].x - particles[j].x;
+                    var dy = particles[i].y - particles[j].y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < CONNECTION_DIST) {
+                        pCtx.beginPath(); pCtx.moveTo(particles[i].x, particles[i].y); pCtx.lineTo(particles[j].x, particles[j].y);
+                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / CONNECTION_DIST)) + ')';
+                        pCtx.lineWidth = 0.6; pCtx.stroke();
+                    }
+                }
+            }
+            requestAnimationFrame(animateParticles);
+        }
+        animateParticles();
+    }
+
+    // ── 4. Scroll Progress + Scroll-to-Top ──
+    var progressBar = document.getElementById('scrollProgress');
+    var scrollTopBtn = document.getElementById('scrollTopBtn');
+
+    function onScroll() {
+        var scrollTop = window.scrollY;
+        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+        if (progressBar) progressBar.style.width = progress + '%';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('visible', scrollTop > 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    if (scrollTopBtn) { scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); }); }
+})();
+</script>
+</body>
+</html>

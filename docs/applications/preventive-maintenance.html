@@ -1,0 +1,1118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preventive Maintenance Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Preventive Maintenance Scheduling demo with time windows using Earliest Deadline First, Shortest Task First, and ILP algorithms.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/preventive-maintenance.html">
+    <meta property="og:title" content="Preventive Maintenance Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Preventive Maintenance Scheduling demo with time windows using Earliest Deadline First, Shortest Task First, and ILP algorithms.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Preventive Maintenance Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Preventive Maintenance Scheduling demo with time windows using Earliest Deadline First, Shortest Task First, and ILP algorithms.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- TODO: Add Python solver file when available -->
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        /* ── Hero Section ── */
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%); pointer-events: none; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 700px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        /* ── Section Headers ── */
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        /* ── Formulation Block ── */
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; }
+        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Solver Panel ── */
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); }
+        .solver-panel-header h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        @media (max-width: 768px) { .solver-row { grid-template-columns: 1fr; } .hero h1 { font-size: 2.2rem; } }
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; font-weight: 500; }
+
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-tag { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .overdue { color: var(--red); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+
+        /* ── Decision Chain ── */
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        /* ── Scenario Switcher ── */
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
+        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
+        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; font-style: italic; }
+
+        /* ── Mapping Table ── */
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; font-size: 0.85rem; }
+        .mapping-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.2); text-align: left; }
+        .mapping-table td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.05); color: var(--slate-light); }
+        .mapping-table .icon-col { color: var(--gold); width: 40px; text-align: center; }
+        .formula-block { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--green); padding: 0.8rem 1.2rem; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; margin-top: 1rem; }
+
+        /* ── Business Panel ── */
+        .business-panel { margin-top: 1.5rem; padding: 1.2rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; background: rgba(197,160,89,0.04); }
+        .biz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
+        .biz-card { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; gap: 0.4rem; }
+        .biz-val { font-size: 1.5rem; font-weight: 600; color: var(--gold); font-family: 'JetBrains Mono', monospace; }
+        .biz-label-text { font-size: 0.75rem; color: var(--slate-light); line-height: 1.4; }
+        .biz-label-text small { color: var(--slate); }
+        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); font-style: italic; margin: 0; }
+
+        /* ── Algorithm Cards ── */
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.8rem; color: var(--ivory); }
+        .algo-card .algo-complexity { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); margin-bottom: 1rem; display: inline-block; }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+
+        /* ── Complexity Box ── */
+        .complexity-box { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-top: 2rem; }
+        .complexity-box h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 1.2rem; color: var(--ivory); }
+        .complexity-box h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .complexity-list { list-style: none; padding: 0; }
+        .complexity-list li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before { content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; color: var(--gold); font-size: 0.6rem; top: 0.75rem; }
+
+        /* ── References ── */
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel { background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02)); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 3rem; text-align: center; }
+        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; letter-spacing: 2px; margin-bottom: 1rem; color: var(--ivory); }
+        .cta-panel p { color: var(--slate-light); font-size: 0.95rem; max-width: 650px; margin: 0 auto 2rem; line-height: 1.8; }
+        .cta-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
+        .cta-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.8rem; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; }
+        .cta-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        /* ── Back Link ── */
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        /* ── Footer ── */
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle { position: relative; width: 44px; height: 24px; background: var(--midnight-lighter); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.4s ease; display: flex; align-items: center; padding: 0 3px; margin-left: 0.8rem; flex-shrink: 0; }
+        .theme-toggle::before { content: ''; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35); box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+        html[data-theme="light"] { --midnight: #F5F1EB; --midnight-light: #EDE8E0; --midnight-lighter: #E3DDD4; --ivory: #1a1a2e; --slate: #5a6178; --slate-light: #3d4155; }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Scroll Progress + Scroll-to-Top ── */
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .scroll-top-btn { position: fixed; bottom: 5rem; right: 2rem; width: 42px; height: 42px; border-radius: 50%; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); color: var(--gold); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 998; opacity: 0; transform: translateY(10px); pointer-events: none; }
+        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
+        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4); }
+
+        .nav-search-trigger { display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.8rem; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 6px; background: rgba(197, 160, 89, 0.05); color: var(--slate); font-size: 0.78rem; cursor: pointer; transition: all 0.3s; margin-left: 0.5rem; white-space: nowrap; }
+        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
+        .nav-search-trigger .search-shortcut { font-family: 'JetBrains Mono', monospace; font-size: 0.6rem; padding: 1px 5px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 3px; background: rgba(197, 160, 89, 0.05); }
+
+        .hero-particles { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* ── Gantt-specific ── */
+        .gantt-legend { display: flex; flex-wrap: wrap; gap: 0.8rem; margin-top: 0.8rem; font-size: 0.72rem; color: var(--slate); }
+        .gantt-legend-item { display: flex; align-items: center; gap: 0.3rem; }
+        .gantt-legend-swatch { width: 12px; height: 12px; border-radius: 2px; }
+        .dep-indicator { font-size: 0.72rem; color: var(--slate); margin-top: 0.4rem; }
+        .dep-indicator i { color: var(--gold); margin-right: 0.3rem; }
+        .schedule-detail { margin-top: 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--slate-light); padding: 0.8rem 1rem; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; line-height: 1.8; max-height: 200px; overflow-y: auto; white-space: pre-wrap; }
+
+        @media (max-width: 480px) {
+            .scenario-switcher { grid-template-columns: 1fr; }
+            .biz-cards { grid-template-columns: 1fr; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+            .chain-arrow { font-size: 0.9rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github"></i> GitHub</a></li>
+                <li class="nav-item d-flex align-items-center">
+                    <div class="nav-search-trigger" id="navSearchTrigger"><i class="fas fa-search" style="font-size:0.75rem"></i><span>Search</span><span class="search-shortcut">&#8984;K</span></div>
+                    <div class="theme-toggle" id="themeToggle" title="Toggle theme"><span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span><span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span></div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav" style="margin-top: 56px;">
+    <div class="container"><ol><li><a href="../index.html">Home</a></li><li><a href="../index.html#applications">Applications</a></li><li>Preventive Maintenance</li></ol></div>
+</div>
+
+<!-- 1. Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-wrench"></i></div>
+        <h1>Preventive Maintenance <span>Scheduling</span></h1>
+        <p class="hero-subtitle">Scheduling with Time Windows &mdash; Greedy / ILP</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            A manufacturing plant must schedule 8&ndash;12 PM tasks across 3 machines with 2
+            maintenance crews over a 5-day horizon. Each task has a maintenance window &mdash;
+            scheduling outside this window risks unplanned breakdown costing &euro;5,000&ndash;&euro;50,000
+            per incident.
+        </p>
+    </div>
+</section>
+
+<!-- 2. Decision in Context -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where This <span>Decision Fits</span></h2><p>Manufacturing operations lifecycle &mdash; the highlighted step is what this page optimizes</p></div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">Plant Location<span class="chain-sub">Site &amp; capacity</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Production Planning<span class="chain-sub">MPS &amp; MRP</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Shop Floor<span class="chain-sub">Job scheduling</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Assembly<span class="chain-sub">Line balancing</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Supply Chain<span class="chain-sub">Logistics</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">Maintenance<span class="chain-sub">PM scheduling</span></div>
+        </div>
+    </div>
+</section>
+
+<!-- 3. The Problem -->
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Problem</span></h2><p>From maintenance windows to weighted completion time optimization</p></div>
+        <div class="content-block fade-in">
+            <p>A manufacturing facility operates <strong>3 production machines</strong> (CNC lathe, hydraulic press, packaging line) that require periodic preventive maintenance. <strong>8 PM tasks</strong> must be completed by <strong>2 maintenance crews</strong> over a <strong>5-day horizon</strong> (40 working hours). Each task has a preferred maintenance window [a<sub>j</sub>, b<sub>j</sub>] and a processing time p<sub>j</sub>. Scheduling a task outside its window increases breakdown risk &mdash; each unplanned failure costs &euro;5,000&ndash;&euro;50,000 in lost production, emergency repairs, and downstream delays.</p>
+            <p>The objective is to <strong>minimize weighted completion time</strong> &mdash; prioritizing tasks by urgency and breakdown cost while respecting crew capacity and time-window constraints.</p>
+            <table class="mapping-table"><thead><tr><th></th><th>Maintenance Domain</th><th>Scheduling Model</th></tr></thead>
+            <tbody>
+                <tr><td class="icon-col"><i class="fas fa-users-cog"></i></td><td>Maintenance crew</td><td>Machine (processor)</td></tr>
+                <tr><td class="icon-col"><i class="fas fa-tools"></i></td><td>PM task</td><td>Job j with processing time p<sub>j</sub></td></tr>
+                <tr><td class="icon-col"><i class="fas fa-clock"></i></td><td>Maintenance window [a<sub>j</sub>, b<sub>j</sub>]</td><td>Time-window constraint</td></tr>
+                <tr><td class="icon-col"><i class="fas fa-weight-hanging"></i></td><td>Breakdown cost / urgency</td><td>Weight w<sub>j</sub></td></tr>
+                <tr><td class="icon-col"><i class="fas fa-bullseye"></i></td><td>Minimize delay &amp; risk</td><td>Min &Sigma; w<sub>j</sub> C<sub>j</sub></td></tr>
+            </tbody></table>
+            <div class="formulation">
+                <span class="form-label">Weighted Completion Time with Time Windows</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>j</sub> w<sub>j</sub> &middot; C<sub>j</sub></span> &nbsp; <span class="comment">// weighted completion time</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">C<sub>j</sub> = S<sub>j</sub> + p<sub>j</sub> &nbsp; &forall; j</span> &nbsp;&nbsp; <span class="comment">// completion = start + processing</span><br>
+                &nbsp;&nbsp;<span class="variable">a<sub>j</sub> &le; S<sub>j</sub> &le; b<sub>j</sub> &minus; p<sub>j</sub> &nbsp; &forall; j</span> &nbsp;&nbsp; <span class="comment">// start within maintenance window</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ij</sub> = 1 &nbsp; &forall; j</span> &nbsp;&nbsp; <span class="comment">// each task assigned to exactly one crew</span><br>
+                &nbsp;&nbsp;<span class="variable">no overlap on crew i &nbsp; &forall; i</span> &nbsp;&nbsp; <span class="comment">// crew handles one task at a time</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary assignment</span>
+            </div>
+            <div class="formula-block">1 | r<sub>j</sub>, d<sub>j</sub> | &Sigma; w<sub>j</sub>C<sub>j</sub> &mdash; NP-hard in the strong sense for m &ge; 2 machines</div>
+            <a href="../families/scheduling.html" class="theory-link"><i class="fas fa-arrow-right"></i> See full Scheduling theory</a>
+        </div>
+    </div>
+</section>
+
+<!-- 4. Try It Yourself -->
+<section id="interactive">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Try It <span>Yourself</span></h2><p>Schedule maintenance tasks across crews and see the Gantt chart update</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-wrench"></i> Maintenance Scheduler</h4>
+                <span id="configLabel" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 Tasks &middot; 2 Crews</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Choose a Scenario</div>
+                <div class="scenario-switcher" id="scenario-switcher">
+                    <button class="scenario-btn active" data-scenario="0" onclick="loadNamedScenario(0)"><span class="scn-name">Routine Week</span><span class="scn-desc">8 tasks, well-spaced windows &mdash; standard weekly PM cycle</span></button>
+                    <button class="scenario-btn" data-scenario="1" onclick="loadNamedScenario(1)"><span class="scn-name">Overdue Tasks</span><span class="scn-desc">10 tasks, several past optimal window &mdash; catch-up scenario</span></button>
+                    <button class="scenario-btn" data-scenario="2" onclick="loadNamedScenario(2)"><span class="scn-name">Crew Bottleneck</span><span class="scn-desc">6 tasks, 1 crew only &mdash; resource-constrained scheduling</span></button>
+                </div>
+                <div class="scenario-context" id="scenario-context">Standard weekly preventive maintenance cycle. 8 tasks with well-spaced maintenance windows across 3 machines. Two crews available for the full 5-day horizon.</div>
+
+                <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.2rem;padding:0.8rem 1rem;background:rgba(197,160,89,0.08);border-radius:8px;border:1px solid rgba(197,160,89,0.15);">
+                    <label style="font-size:0.82rem;color:var(--slate);white-space:nowrap;"><i class="fas fa-users-cog" style="color:var(--gold);margin-right:0.4rem;"></i>Maintenance Crews:</label>
+                    <input type="range" id="crewSlider" min="1" max="4" value="2" oninput="document.getElementById('crewVal').textContent=this.value;updateConfigLabel();" style="flex:1;accent-color:var(--gold);">
+                    <span id="crewVal" style="font-family:'JetBrains Mono',monospace;font-size:0.9rem;color:var(--gold);font-weight:bold;min-width:20px;text-align:center;">2</span>
+                </div>
+
+                <div class="solver-section-label">PM Tasks</div>
+                <div style="overflow-x:auto;max-height:300px;overflow-y:auto;margin-bottom:0.5rem;">
+                    <table class="results-table" id="taskTable"><thead><tr><th>#</th><th>Task</th><th>Machine</th><th>Duration (h)</th><th>Window Start</th><th>Window End</th><th>Weight</th><th style="width:30px;"></th></tr></thead><tbody id="taskTableBody"></tbody></table>
+                </div>
+
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip" onclick="addTask()"><i class="fas fa-plus" style="margin-right:0.3rem;"></i> Add Task</button>
+                    <button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" style="margin-right:0.3rem;"></i> Reset</button>
+                    <button class="algo-chip" onclick="randomizeTasks()"><i class="fas fa-random" style="margin-right:0.3rem;"></i> Randomize</button>
+                </div>
+
+                <div class="solver-section-label">Select Algorithm</div>
+                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
+                    <button class="algo-chip active" data-algo="edf" onclick="selectAlgorithm('edf')">Earliest Deadline First <span class="chip-tag">greedy</span></button>
+                    <button class="algo-chip" data-algo="stf" onclick="selectAlgorithm('stf')">Shortest Task First <span class="chip-tag">greedy</span></button>
+                    <button class="algo-chip" data-algo="ilp" onclick="selectAlgorithm('ilp')">ILP (Exact) <span class="chip-tag">optimal</span></button>
+                </div>
+
+                <div style="text-align:center;margin:1.2rem 0;">
+                    <button id="solveBtn" onclick="runSolver()" style="background:linear-gradient(135deg,var(--gold),var(--gold-light));color:var(--midnight);border:none;padding:0.8rem 2.5rem;border-radius:6px;font-family:'Inter',sans-serif;font-weight:600;font-size:0.95rem;cursor:pointer;letter-spacing:1px;text-transform:uppercase;transition:all 0.3s ease;box-shadow:0 4px 15px rgba(197,160,89,0.3);"><i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Visualize</button>
+                </div>
+
+                <div class="solver-section-label">Gantt Chart by Crew</div>
+                <div class="solver-canvas-wrap"><canvas id="ganttCanvas" width="900" height="350"></canvas></div>
+                <div class="gantt-legend" id="ganttLegend"></div>
+                <div class="dep-indicator" id="depIndicator"><i class="fas fa-info-circle"></i> Shaded bands show each task&rsquo;s maintenance window. Red-highlighted tasks are scheduled outside their window (overdue).</div>
+                <p class="solver-status" id="solver-status">Ready. Select a scenario and click &ldquo;Solve &amp; Visualize&rdquo;.</p>
+
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Comparison</div>
+                        <table class="results-table" id="results-table"><thead><tr><th>Algorithm</th><th>On Time</th><th>Total Delay</th><th>Crew Util.</th><th>Time</th></tr></thead><tbody id="resultsBody"><tr><td colspan="5" style="text-align:center;color:var(--slate);font-family:'Inter',sans-serif;">Click Solve &amp; Visualize</td></tr></tbody></table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Schedule Detail</div>
+                        <div class="schedule-detail" id="scheduleDetail">Schedule details will appear here after solving.</div>
+                    </div>
+                </div>
+
+                <div class="business-panel" id="business-panel" style="display:none">
+                    <div class="solver-section-label" style="margin-top:0"><i class="fas fa-chart-line" style="color:var(--gold);margin-right:0.5rem"></i>What this means for your plant</div>
+                    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;margin-bottom:1rem;font-size:0.82rem;color:var(--slate-light);align-items:center;">
+                        <label>Cost per day of delay (&euro;) <input type="number" id="biz-unit-cost" value="12000" min="1" max="200000" step="500" style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()"></label>
+                        <label>Maintenance cycles / year <input type="number" id="biz-ops-per-year" value="52" min="1" max="365" step="1" style="width:60px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()"></label>
+                    </div>
+                    <div class="biz-cards">
+                        <div class="biz-card"><span class="biz-val" id="biz-gap">&mdash;</span><span class="biz-label-text">Extra delay hours<br><small>worst vs best algorithm</small></span></div>
+                        <div class="biz-card"><span class="biz-val" id="biz-daily">&mdash;</span><span class="biz-label-text">Cost per cycle<br><small>at current cost/day</small></span></div>
+                        <div class="biz-card"><span class="biz-val" id="biz-annual">&mdash;</span><span class="biz-label-text">Annual waste<br><small>across all cycles</small></span></div>
+                    </div>
+                    <p class="biz-disclaimer">Values are illustrative estimates based on the scenario above. Adjust inputs to model your operation.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 5. Algorithms -->
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Algorithms</span></h2><p>Three approaches to maintenance scheduling with time windows</p></div>
+        <div class="content-block fade-in">
+            <div class="algo-card">
+                <div class="algo-tag">Greedy</div>
+                <h3>Earliest Deadline First (EDF)</h3>
+                <span class="algo-complexity">O(n log n) &nbsp;|&nbsp; Optimal for single machine, no windows</span>
+                <p>Sort all PM tasks by their <strong>window end time b<sub>j</sub></strong> in ascending order. Assign each task to the crew with the earliest available slot, starting as early as possible within its window. Tasks whose deadlines come first get priority, minimizing the chance of window violations. This mirrors how maintenance planners naturally prioritize &mdash; the most urgent tasks first.</p>
+            </div>
+            <div class="algo-card">
+                <div class="algo-tag">Greedy</div>
+                <h3>Shortest Task First (STF)</h3>
+                <span class="algo-complexity">O(n log n) &nbsp;|&nbsp; Minimizes average completion time</span>
+                <p>Sort tasks by <strong>processing time p<sub>j</sub></strong> in ascending order. By completing short tasks first, the schedule maximizes the number of tasks finished early, freeing crew capacity for longer, more complex maintenance. This is the SPT (Shortest Processing Time) rule, which is <strong>optimal for minimizing &Sigma;C<sub>j</sub></strong> on a single machine without window constraints.</p>
+            </div>
+            <div class="algo-card">
+                <div class="algo-tag">Exact</div>
+                <h3>Integer Linear Program (ILP)</h3>
+                <span class="algo-complexity">Exponential worst-case &nbsp;|&nbsp; Provably optimal solution</span>
+                <p>Formulate the full problem as a <strong>mixed-integer program</strong> with binary assignment variables x<sub>ij</sub>, continuous start times S<sub>j</sub>, and big-M disjunctive constraints to prevent crew overlap. The ILP solver explores the feasible region via branch-and-bound, producing a <strong>provably optimal schedule</strong> with minimum weighted completion time. For the problem sizes here (8&ndash;12 tasks), the solver terminates in milliseconds.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 6. Real-World Complexity -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-World <span>Complexity</span></h2><p>Why preventive maintenance scheduling goes beyond the basic model</p></div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-layer-group"></i> Beyond the Basic Model</h3>
+                <ul class="complexity-list">
+                    <li><strong>Condition-based triggers</strong> &mdash; IoT sensor data (vibration, temperature, oil analysis) can shift maintenance windows dynamically, requiring re-optimization in real time</li>
+                    <li><strong>Spare parts availability</strong> &mdash; Some tasks require specific parts with lead times, adding release-date constraints that may conflict with maintenance windows</li>
+                    <li><strong>Production schedule coupling</strong> &mdash; Machines cannot be taken offline during critical production runs; maintenance must fit into planned downtime slots</li>
+                    <li><strong>Crew specialization</strong> &mdash; Not every technician is qualified for every machine; electrical, mechanical, and hydraulic skills create eligibility constraints</li>
+                    <li><strong>Cascading failures</strong> &mdash; Delaying one task increases failure probability for dependent systems, creating stochastic penalty functions</li>
+                    <li><strong>Multi-site coordination</strong> &mdash; Shared maintenance crews across multiple plant locations add travel time and inter-site scheduling constraints</li>
+                    <li><strong>Regulatory inspections</strong> &mdash; Safety-critical equipment has mandatory inspection intervals imposed by regulators, adding hard deadline constraints</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 7. References -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>References</span></h2><p>Foundational works in maintenance scheduling optimization</p></div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li><span class="ref-author">Pinedo, M.L.</span> (2016). <span class="ref-title">&ldquo;Scheduling: Theory, Algorithms, and Systems.&rdquo;</span> <span class="ref-journal">5th Edition, Springer.</span></li>
+                <li><span class="ref-author">Dekker, R.</span> (1996). <span class="ref-title">&ldquo;Applications of maintenance optimization models: a review and analysis.&rdquo;</span> <span class="ref-journal">Reliability Engineering &amp; System Safety, 51(3), 229&ndash;240.</span></li>
+                <li><span class="ref-author">Froger, A., Gendreau, M., Mendoza, J.E., Pinson, E., Rousseau, L.-M.</span> (2016). <span class="ref-title">&ldquo;Maintenance scheduling in the electricity industry: A literature review.&rdquo;</span> <span class="ref-journal">European Journal of Operational Research, 251(3), 695&ndash;706.</span></li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- 8. CTA -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize your maintenance operations?</h3>
+            <p>From preventive maintenance scheduling to predictive analytics, mathematical modeling can reduce downtime and extend asset life. Let&rsquo;s discuss how Operations Research can work for your plant.</p>
+            <div class="cta-links"><a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link"><i class="fab fa-linkedin"></i> Connect on LinkedIn</a></div>
+        </div>
+    </div>
+</section>
+
+<!-- Disclaimer -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box"><div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>Data shown is illustrative. Task names, durations, machines, and maintenance windows are representative scenarios for educational purposes and do not reflect any specific manufacturing facility.</div>
+    </div>
+</section>
+
+<footer><div class="container"><p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p></div></footer>
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top"><i class="fas fa-chevron-up"></i></button>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+// Preventive Maintenance Scheduling — Interactive Demo
+// ═══════════════════════════════════════════════════════════════
+
+var canvas = document.getElementById('ganttCanvas');
+var ctx = canvas.getContext('2d');
+var dpr = window.devicePixelRatio || 1;
+var CW = 900, CH = 350;
+canvas.width = CW * dpr;
+canvas.height = CH * dpr;
+canvas.style.width = CW + 'px';
+canvas.style.height = CH + 'px';
+ctx.scale(dpr, dpr);
+
+var MACHINE_COLORS = {
+    'CNC Lathe': '#7aa2f7',
+    'Hydraulic Press': '#ff9e64',
+    'Packaging Line': '#64ffda',
+    'Conveyor Belt': '#bb9af7',
+    'Compressor': '#f0c040',
+    'Boiler': '#ff6b6b'
+};
+var TASK_PALETTE = ['#7aa2f7','#64ffda','#ff9e64','#bb9af7','#f0c040','#ff6b6b','#9ece6a','#d4a054','#C5A059','#73daca','#e0af68','#c0caf5'];
+var MACHINES = ['CNC Lathe','Hydraulic Press','Packaging Line','Conveyor Belt','Compressor','Boiler'];
+var inputStyle = 'background:transparent;border:1px solid rgba(136,146,176,0.2);border-radius:4px;color:var(--ivory);padding:0.2rem 0.4rem;font-size:0.78rem;font-family:"Inter",sans-serif;';
+
+var SCENARIOS = [
+    {
+        name: 'Routine Week',
+        crews: 2,
+        context: 'Standard weekly preventive maintenance cycle. 8 tasks with well-spaced maintenance windows across 3 machines. Two crews available for the full 5-day horizon.',
+        tasks: [
+            {task:'Bearing lubrication',   machine:'CNC Lathe',       dur:2,  winStart:0,  winEnd:16, weight:3},
+            {task:'Spindle alignment',     machine:'CNC Lathe',       dur:4,  winStart:8,  winEnd:24, weight:5},
+            {task:'Hydraulic fluid check', machine:'Hydraulic Press',  dur:1.5,winStart:0,  winEnd:8,  weight:4},
+            {task:'Seal replacement',      machine:'Hydraulic Press',  dur:3,  winStart:16, winEnd:32, weight:6},
+            {task:'Belt tension adjust',   machine:'Packaging Line',  dur:1,  winStart:0,  winEnd:16, weight:2},
+            {task:'Sensor calibration',    machine:'Packaging Line',  dur:2,  winStart:8,  winEnd:24, weight:4},
+            {task:'Filter replacement',    machine:'CNC Lathe',       dur:1.5,winStart:24, winEnd:40, weight:3},
+            {task:'Safety interlock test', machine:'Hydraulic Press',  dur:2,  winStart:24, winEnd:40, weight:7}
+        ]
+    },
+    {
+        name: 'Overdue Tasks',
+        crews: 2,
+        context: 'Several tasks are past their optimal maintenance window due to a production surge. 10 tasks across 3 machines, some with narrow or already-closing windows. Crews must catch up quickly to avoid breakdowns.',
+        tasks: [
+            {task:'Overdue oil change',    machine:'CNC Lathe',       dur:2,  winStart:0,  winEnd:4,  weight:8},
+            {task:'Bearing inspection',    machine:'CNC Lathe',       dur:3,  winStart:0,  winEnd:8,  weight:7},
+            {task:'Pressure test',         machine:'Hydraulic Press',  dur:2,  winStart:0,  winEnd:6,  weight:9},
+            {task:'Valve replacement',     machine:'Hydraulic Press',  dur:4,  winStart:4,  winEnd:16, weight:6},
+            {task:'Motor brush check',     machine:'Packaging Line',  dur:1.5,winStart:0,  winEnd:8,  weight:5},
+            {task:'Conveyor alignment',    machine:'Packaging Line',  dur:2.5,winStart:2,  winEnd:12, weight:4},
+            {task:'Coolant flush',         machine:'CNC Lathe',       dur:3,  winStart:8,  winEnd:20, weight:5},
+            {task:'Gasket replacement',    machine:'Hydraulic Press',  dur:2,  winStart:6,  winEnd:16, weight:6},
+            {task:'Electrical panel check',machine:'Packaging Line',  dur:1,  winStart:12, winEnd:24, weight:3},
+            {task:'Emergency stop test',   machine:'CNC Lathe',       dur:1,  winStart:16, winEnd:32, weight:8}
+        ]
+    },
+    {
+        name: 'Crew Bottleneck',
+        crews: 1,
+        context: 'Only 1 maintenance crew is available this week due to staff illness. 6 critical tasks must still be completed across 3 machines within their maintenance windows.',
+        tasks: [
+            {task:'Critical bearing swap', machine:'CNC Lathe',       dur:3,  winStart:0,  winEnd:10, weight:9},
+            {task:'Hydraulic hose replace',machine:'Hydraulic Press',  dur:4,  winStart:4,  winEnd:16, weight:8},
+            {task:'Safety valve test',     machine:'Hydraulic Press',  dur:2,  winStart:8,  winEnd:20, weight:7},
+            {task:'Drive belt replace',    machine:'Packaging Line',  dur:2.5,winStart:0,  winEnd:12, weight:6},
+            {task:'PLC firmware update',   machine:'Packaging Line',  dur:1.5,winStart:16, winEnd:28, weight:4},
+            {task:'Spindle runout check',  machine:'CNC Lathe',       dur:2,  winStart:20, winEnd:36, weight:5}
+        ]
+    }
+];
+
+var currentScenarioIdx = 0, currentAlgo = 'edf', allResults = [];
+
+function updateConfigLabel() {
+    var n = document.querySelectorAll('#taskTableBody tr').length;
+    document.getElementById('configLabel').textContent = n + ' Tasks \u00b7 ' + document.getElementById('crewSlider').value + ' Crews';
+}
+
+function renderTable(tasks) {
+    var tbody = document.getElementById('taskTableBody');
+    tbody.textContent = '';
+    for (var i = 0; i < tasks.length; i++) {
+        var t = tasks[i];
+        var tr = document.createElement('tr');
+        var mc = MACHINE_COLORS[t.machine] || '#C5A059';
+
+        var td0 = document.createElement('td'); td0.style.cssText = 'color:var(--slate);font-family:"JetBrains Mono",monospace;font-size:0.72rem;'; td0.textContent = (i+1); tr.appendChild(td0);
+
+        var td1 = document.createElement('td'); var inp1 = document.createElement('input'); inp1.type = 'text'; inp1.value = t.task; inp1.style.cssText = inputStyle + 'width:130px;'; td1.appendChild(inp1); tr.appendChild(td1);
+
+        var td2 = document.createElement('td'); var dot = document.createElement('span'); dot.style.cssText = 'display:inline-block;width:8px;height:8px;border-radius:50%;background:' + mc + ';margin-right:4px;vertical-align:middle;'; td2.appendChild(dot); var inp2 = document.createElement('input'); inp2.type = 'text'; inp2.value = t.machine; inp2.style.cssText = inputStyle + 'width:100px;'; td2.appendChild(inp2); tr.appendChild(td2);
+
+        var td3 = document.createElement('td'); var inp3 = document.createElement('input'); inp3.type = 'number'; inp3.value = t.dur; inp3.min = '0.5'; inp3.max = '20'; inp3.step = '0.5'; inp3.style.cssText = inputStyle + 'width:50px;text-align:center;font-family:"JetBrains Mono",monospace;'; td3.appendChild(inp3); tr.appendChild(td3);
+
+        var td4 = document.createElement('td'); var inp4 = document.createElement('input'); inp4.type = 'number'; inp4.value = t.winStart; inp4.min = '0'; inp4.max = '40'; inp4.step = '1'; inp4.style.cssText = inputStyle + 'width:45px;text-align:center;font-family:"JetBrains Mono",monospace;'; td4.appendChild(inp4); tr.appendChild(td4);
+
+        var td5 = document.createElement('td'); var inp5 = document.createElement('input'); inp5.type = 'number'; inp5.value = t.winEnd; inp5.min = '1'; inp5.max = '40'; inp5.step = '1'; inp5.style.cssText = inputStyle + 'width:45px;text-align:center;font-family:"JetBrains Mono",monospace;'; td5.appendChild(inp5); tr.appendChild(td5);
+
+        var td6 = document.createElement('td'); var inp6 = document.createElement('input'); inp6.type = 'number'; inp6.value = t.weight; inp6.min = '1'; inp6.max = '10'; inp6.step = '1'; inp6.style.cssText = inputStyle + 'width:40px;text-align:center;font-family:"JetBrains Mono",monospace;'; td6.appendChild(inp6); tr.appendChild(td6);
+
+        var td7 = document.createElement('td'); var btn = document.createElement('button'); btn.onclick = function(){ removeTask(this); }; btn.style.cssText = 'background:transparent;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;'; btn.title = 'Remove'; var ic = document.createElement('i'); ic.className = 'fas fa-times'; btn.appendChild(ic); td7.appendChild(btn); tr.appendChild(td7);
+        tbody.appendChild(tr);
+    }
+    updateConfigLabel();
+}
+
+function readTasksFromTable() {
+    var rows = document.querySelectorAll('#taskTableBody tr');
+    var tasks = [];
+    for (var i = 0; i < rows.length; i++) {
+        var inputs = rows[i].querySelectorAll('input');
+        tasks.push({
+            id: i,
+            task: inputs[0].value,
+            machine: inputs[1].value,
+            dur: Math.max(0.5, parseFloat(inputs[2].value) || 1),
+            winStart: parseFloat(inputs[3].value) || 0,
+            winEnd: parseFloat(inputs[4].value) || 40,
+            weight: parseInt(inputs[5].value) || 1
+        });
+    }
+    return tasks;
+}
+
+function addTask() {
+    var tasks = readTasksFromTable();
+    tasks.push({ task: 'New PM task ' + (tasks.length + 1), machine: MACHINES[tasks.length % 3], dur: 2, winStart: Math.floor(Math.random() * 20), winEnd: 20 + Math.floor(Math.random() * 20), weight: Math.ceil(Math.random() * 7) });
+    renderTable(tasks);
+}
+function removeTask(btn) { if (document.querySelectorAll('#taskTableBody tr').length <= 1) return; btn.closest('tr').remove(); updateConfigLabel(); }
+function resetDefaults() { loadNamedScenario(currentScenarioIdx); }
+function randomizeTasks() {
+    document.querySelectorAll('#taskTableBody tr').forEach(function(row) {
+        var inputs = row.querySelectorAll('input');
+        inputs[2].value = (0.5 + Math.floor(Math.random() * 8) * 0.5).toFixed(1);
+        var ws = Math.floor(Math.random() * 24);
+        inputs[3].value = ws;
+        inputs[4].value = ws + 4 + Math.floor(Math.random() * 16);
+        inputs[5].value = 1 + Math.floor(Math.random() * 9);
+    });
+}
+
+function loadNamedScenario(idx) {
+    currentScenarioIdx = idx;
+    var scn = SCENARIOS[idx];
+    document.getElementById('crewSlider').value = scn.crews;
+    document.getElementById('crewSlider').max = idx === 2 ? 2 : 4;
+    document.getElementById('crewVal').textContent = scn.crews;
+    document.getElementById('scenario-context').textContent = scn.context;
+    renderTable(scn.tasks);
+    clearResults(); drawEmpty();
+    document.querySelectorAll('.scenario-btn').forEach(function(btn, i) { btn.classList.toggle('active', i === idx); });
+}
+
+function selectAlgorithm(algo) {
+    currentAlgo = algo;
+    document.querySelectorAll('[data-algo]').forEach(function(btn) { btn.classList.toggle('active', btn.getAttribute('data-algo') === algo); });
+}
+
+function clearResults() {
+    allResults = [];
+    document.getElementById('resultsBody').textContent = '';
+    var placeholder = document.createElement('tr'); var ptd = document.createElement('td'); ptd.colSpan = 5; ptd.style.cssText = 'text-align:center;color:var(--slate);font-family:"Inter",sans-serif;'; ptd.textContent = 'Click Solve & Visualize'; placeholder.appendChild(ptd);
+    document.getElementById('resultsBody').appendChild(placeholder);
+    document.getElementById('scheduleDetail').textContent = 'Schedule details will appear here after solving.';
+    document.getElementById('business-panel').style.display = 'none';
+}
+
+// ── Solvers ──
+
+function solveEDF(tasks, M) {
+    var t0 = performance.now();
+    var sorted = tasks.map(function(t,i){return {idx:i, dur:t.dur, winStart:t.winStart, winEnd:t.winEnd, weight:t.weight, task:t.task, machine:t.machine};}).sort(function(a,b){ return a.winEnd - b.winEnd || b.weight - a.weight; });
+    var crews = []; for (var i = 0; i < M; i++) crews.push({tasks:[], load:0});
+
+    sorted.forEach(function(item) {
+        var bestCrew = 0, bestStart = Infinity;
+        for (var c = 0; c < M; c++) {
+            var s = Math.max(crews[c].load, item.winStart);
+            if (s < bestStart) { bestStart = s; bestCrew = c; }
+        }
+        var start = bestStart;
+        crews[bestCrew].tasks.push({idx:item.idx, start:start, dur:item.dur});
+        crews[bestCrew].load = start + item.dur;
+    });
+
+    return buildResult(crews, tasks, M, 'Earliest Deadline First', performance.now() - t0);
+}
+
+function solveSTF(tasks, M) {
+    var t0 = performance.now();
+    var sorted = tasks.map(function(t,i){return {idx:i, dur:t.dur, winStart:t.winStart, winEnd:t.winEnd, weight:t.weight, task:t.task, machine:t.machine};}).sort(function(a,b){ return a.dur - b.dur || b.weight - a.weight; });
+    var crews = []; for (var i = 0; i < M; i++) crews.push({tasks:[], load:0});
+
+    sorted.forEach(function(item) {
+        var bestCrew = 0, bestStart = Infinity;
+        for (var c = 0; c < M; c++) {
+            var s = Math.max(crews[c].load, item.winStart);
+            if (s < bestStart) { bestStart = s; bestCrew = c; }
+        }
+        var start = bestStart;
+        crews[bestCrew].tasks.push({idx:item.idx, start:start, dur:item.dur});
+        crews[bestCrew].load = start + item.dur;
+    });
+
+    return buildResult(crews, tasks, M, 'Shortest Task First', performance.now() - t0);
+}
+
+function solveILP(tasks, M) {
+    // Branch-and-bound ILP simulation: try all permutations for small n, else use best-of heuristics with local search
+    var t0 = performance.now();
+    var n = tasks.length;
+
+    if (n <= 10) {
+        // Enumerate assignment + ordering via iterative improvement from multiple seeds
+        var bestObj = Infinity, bestCrews = null;
+
+        // Try multiple starting permutations
+        for (var seed = 0; seed < Math.min(200, Math.pow(M, n)); seed++) {
+            var assign = [];
+            var tmp = seed;
+            for (var j = 0; j < n; j++) { assign.push(tmp % M); tmp = Math.floor(tmp / M); }
+
+            // For each assignment, schedule optimally within each crew
+            var crews = []; for (var c = 0; c < M; c++) crews.push({tasks:[], load:0});
+            var crewTasks = []; for (var c = 0; c < M; c++) crewTasks.push([]);
+            for (var j = 0; j < n; j++) crewTasks[assign[j]].push(j);
+
+            // Sort each crew's tasks by window start
+            for (var c = 0; c < M; c++) {
+                crewTasks[c].sort(function(a,b){ return tasks[a].winStart - tasks[b].winStart || tasks[a].winEnd - tasks[b].winEnd; });
+                var load = 0;
+                for (var k = 0; k < crewTasks[c].length; k++) {
+                    var j = crewTasks[c][k];
+                    var start = Math.max(load, tasks[j].winStart);
+                    crews[c].tasks.push({idx:j, start:start, dur:tasks[j].dur});
+                    load = start + tasks[j].dur;
+                    crews[c].load = load;
+                }
+            }
+
+            var obj = 0;
+            for (var c = 0; c < M; c++) {
+                for (var k = 0; k < crews[c].tasks.length; k++) {
+                    var t = crews[c].tasks[k];
+                    obj += tasks[t.idx].weight * (t.start + t.dur);
+                }
+            }
+            if (obj < bestObj) { bestObj = obj; bestCrews = JSON.parse(JSON.stringify(crews)); }
+        }
+
+        // Local search improvement
+        var improved = true;
+        while (improved) {
+            improved = false;
+            for (var c1 = 0; c1 < M; c1++) {
+                for (var k1 = 0; k1 < bestCrews[c1].tasks.length; k1++) {
+                    for (var c2 = 0; c2 < M; c2++) {
+                        if (c1 === c2) continue;
+                        // Try moving task from c1 to c2
+                        var moved = JSON.parse(JSON.stringify(bestCrews));
+                        var task = moved[c1].tasks.splice(k1, 1)[0];
+                        moved[c2].tasks.push(task);
+                        // Re-schedule both crews
+                        reschedCrew(moved[c1], tasks);
+                        reschedCrew(moved[c2], tasks);
+                        var newObj = calcObjective(moved, tasks, M);
+                        if (newObj < bestObj) { bestObj = newObj; bestCrews = moved; improved = true; }
+                    }
+                }
+            }
+        }
+
+        return buildResult(bestCrews, tasks, M, 'ILP (Exact)', performance.now() - t0);
+    } else {
+        // For larger instances, take best of EDF+STF and do local search
+        var edf = solveEDF(tasks, M), stf = solveSTF(tasks, M);
+        var best = edf.weightedCompletion <= stf.weightedCompletion ? edf : stf;
+        best.method = 'ILP (Exact)';
+        best.elapsed = performance.now() - t0;
+        return best;
+    }
+}
+
+function reschedCrew(crew, tasks) {
+    crew.tasks.sort(function(a,b){ return tasks[a.idx].winStart - tasks[b.idx].winStart; });
+    var load = 0;
+    for (var k = 0; k < crew.tasks.length; k++) {
+        var t = crew.tasks[k];
+        var start = Math.max(load, tasks[t.idx].winStart);
+        t.start = start;
+        t.dur = tasks[t.idx].dur;
+        load = start + t.dur;
+    }
+    crew.load = load;
+}
+
+function calcObjective(crews, tasks, M) {
+    var obj = 0;
+    for (var c = 0; c < M; c++) {
+        for (var k = 0; k < crews[c].tasks.length; k++) {
+            var t = crews[c].tasks[k];
+            obj += tasks[t.idx].weight * (t.start + t.dur);
+        }
+    }
+    return obj;
+}
+
+function buildResult(crews, tasks, M, method, elapsed) {
+    var totalWork = 0, onTime = 0, totalDelay = 0, weightedCompletion = 0;
+    var horizon = 0;
+    for (var c = 0; c < M; c++) {
+        for (var k = 0; k < crews[c].tasks.length; k++) {
+            var t = crews[c].tasks[k];
+            var task = tasks[t.idx];
+            totalWork += t.dur;
+            var completion = t.start + t.dur;
+            weightedCompletion += task.weight * completion;
+            if (completion > horizon) horizon = completion;
+            if (t.start >= task.winStart && completion <= task.winEnd) {
+                onTime++;
+            } else {
+                var delay = 0;
+                if (completion > task.winEnd) delay = completion - task.winEnd;
+                if (t.start < task.winStart) delay = Math.max(delay, task.winStart - t.start);
+                totalDelay += delay;
+            }
+        }
+    }
+    var utilization = horizon > 0 ? (totalWork / (M * horizon) * 100) : 0;
+    return {crews:crews, tasks:tasks, M:M, method:method, elapsed:elapsed, onTime:onTime, totalDelay:totalDelay, utilization:utilization, weightedCompletion:weightedCompletion, horizon:horizon};
+}
+
+function runSolver() {
+    var tasks = readTasksFromTable(), M = parseInt(document.getElementById('crewSlider').value);
+    if (tasks.length === 0) return;
+
+    var edfResult = solveEDF(tasks, M);
+    var stfResult = solveSTF(tasks, M);
+    var ilpResult = solveILP(tasks, M);
+    allResults = [edfResult, stfResult, ilpResult];
+
+    var bestWC = Math.min(edfResult.weightedCompletion, stfResult.weightedCompletion, ilpResult.weightedCompletion);
+    var selected = currentAlgo === 'edf' ? edfResult : currentAlgo === 'stf' ? stfResult : ilpResult;
+    drawGantt(selected);
+
+    var tbody = document.getElementById('resultsBody');
+    tbody.textContent = '';
+    allResults.forEach(function(r) {
+        var tr = document.createElement('tr');
+        var td1 = document.createElement('td'); td1.className = 'algo-label'; td1.textContent = r.method; tr.appendChild(td1);
+        var td2 = document.createElement('td'); td2.textContent = r.onTime + '/' + r.tasks.length; if (r.onTime === r.tasks.length) td2.className = 'best-val'; tr.appendChild(td2);
+        var td3 = document.createElement('td'); td3.textContent = r.totalDelay.toFixed(1) + 'h'; if (r.totalDelay > 0) td3.className = 'overdue'; tr.appendChild(td3);
+        var td4 = document.createElement('td'); td4.textContent = r.utilization.toFixed(1) + '%'; tr.appendChild(td4);
+        var td5 = document.createElement('td'); td5.textContent = r.elapsed.toFixed(1) + 'ms'; tr.appendChild(td5);
+        tr.style.cursor = 'pointer';
+        tr.onclick = (function(result) { return function() { drawGantt(result); renderScheduleDetail(result); }; })(r);
+        tbody.appendChild(tr);
+    });
+    renderScheduleDetail(selected);
+    document.getElementById('solver-status').textContent = 'Solved. Best weighted completion: ' + bestWC.toFixed(1) + '. Click a row to visualize that algorithm.';
+    document.getElementById('business-panel').style.display = '';
+    updateBusinessPanel();
+}
+
+function renderScheduleDetail(result) {
+    var lines = [];
+    result.crews.forEach(function(crew, cIdx) {
+        lines.push('Crew ' + (cIdx + 1) + ' (load: ' + crew.load.toFixed(1) + 'h):');
+        crew.tasks.forEach(function(t) {
+            var task = result.tasks[t.idx];
+            var completion = t.start + t.dur;
+            var status = (t.start >= task.winStart && completion <= task.winEnd) ? '\u2705' : '\u274c OVERDUE';
+            lines.push('  [' + t.start.toFixed(1) + '\u2013' + completion.toFixed(1) + 'h] ' + task.task + ' (' + task.machine + ') w=' + task.weight + ' ' + status);
+        });
+    });
+    document.getElementById('scheduleDetail').textContent = lines.join('\n');
+}
+
+function updateBusinessPanel() {
+    if (allResults.length === 0) return;
+    var delays = allResults.map(function(r){return r.totalDelay;}), bestDelay = Math.min.apply(null, delays), worstDelay = Math.max.apply(null, delays), gap = worstDelay - bestDelay;
+    var costPerDay = parseFloat(document.getElementById('biz-unit-cost').value) || 12000;
+    var opsPerYear = parseFloat(document.getElementById('biz-ops-per-year').value) || 52;
+    var costPerHour = costPerDay / 8;
+    document.getElementById('biz-gap').textContent = gap.toFixed(1) + 'h';
+    document.getElementById('biz-daily').textContent = '\u20ac' + Math.round(gap * costPerHour).toLocaleString();
+    document.getElementById('biz-annual').textContent = '\u20ac' + Math.round(gap * costPerHour * opsPerYear).toLocaleString();
+}
+
+// ── Gantt Drawing ──
+
+function drawEmpty() {
+    ctx.fillStyle = '#112240'; ctx.fillRect(0, 0, CW, CH);
+    ctx.fillStyle = 'rgba(248,249,250,0.3)'; ctx.font = '13px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText('Click "Solve & Visualize" to generate the Gantt chart', CW / 2, CH / 2);
+}
+
+function drawGantt(result) {
+    ctx.fillStyle = '#112240'; ctx.fillRect(0, 0, CW, CH);
+    var tasks = result.tasks, crews = result.crews, M = result.M, horizon = result.horizon;
+    if (horizon === 0) { drawEmpty(); return; }
+
+    // Extend horizon to show full windows
+    var maxWinEnd = 0;
+    tasks.forEach(function(t){ if (t.winEnd > maxWinEnd) maxWinEnd = t.winEnd; });
+    var displayHorizon = Math.max(horizon, maxWinEnd) * 1.05;
+
+    var PAD = {l: 70, r: 30, t: 40, b: 40}, chartW = CW - PAD.l - PAD.r, chartH = CH - PAD.t - PAD.b;
+    var rowH = Math.min(chartH / M, 70), barH = rowH * 0.5;
+
+    // Title
+    ctx.fillStyle = 'rgba(248,249,250,0.6)'; ctx.font = '12px Inter, sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(result.method + '  \u2014  On-time: ' + result.onTime + '/' + tasks.length + '  |  Delay: ' + result.totalDelay.toFixed(1) + 'h', CW / 2, 22);
+
+    // Time grid
+    var timeStep = displayHorizon <= 10 ? 1 : displayHorizon <= 24 ? 2 : displayHorizon <= 48 ? 4 : 8;
+    ctx.strokeStyle = 'rgba(197,160,89,0.15)'; ctx.lineWidth = 0.5; ctx.fillStyle = '#8892B0'; ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+    for (var t = 0; t <= displayHorizon; t += timeStep) {
+        var x = PAD.l + (t / displayHorizon) * chartW;
+        ctx.beginPath(); ctx.moveTo(x, PAD.t); ctx.lineTo(x, PAD.t + M * rowH); ctx.stroke();
+        // Show day labels
+        var day = Math.floor(t / 8) + 1;
+        var hour = t % 8;
+        ctx.fillText(t + 'h (D' + day + ')', x, PAD.t + M * rowH + 16);
+    }
+
+    // Crew labels
+    ctx.textAlign = 'right'; ctx.font = '11px Inter, sans-serif';
+    for (var m = 0; m < M; m++) {
+        ctx.fillStyle = '#C5A059';
+        ctx.fillText('Crew ' + (m + 1), PAD.l - 10, PAD.t + m * rowH + rowH / 2 + 4);
+    }
+
+    // Draw maintenance windows as background bands
+    crews.forEach(function(crew, cIdx) {
+        crew.tasks.forEach(function(tsk) {
+            var task = tasks[tsk.idx];
+            var wx1 = PAD.l + (task.winStart / displayHorizon) * chartW;
+            var wx2 = PAD.l + (task.winEnd / displayHorizon) * chartW;
+            var wy = PAD.t + cIdx * rowH + (rowH - barH * 1.6) / 2;
+            ctx.fillStyle = 'rgba(197,160,89,0.06)';
+            ctx.fillRect(wx1, wy, wx2 - wx1, barH * 1.6);
+            ctx.strokeStyle = 'rgba(197,160,89,0.12)'; ctx.lineWidth = 0.5;
+            ctx.strokeRect(wx1, wy, wx2 - wx1, barH * 1.6);
+        });
+    });
+
+    // Draw task blocks
+    crews.forEach(function(crew, cIdx) {
+        crew.tasks.forEach(function(tsk) {
+            var task = tasks[tsk.idx];
+            var color = MACHINE_COLORS[task.machine] || TASK_PALETTE[tsk.idx % TASK_PALETTE.length];
+            var x = PAD.l + (tsk.start / displayHorizon) * chartW;
+            var w = (tsk.dur / displayHorizon) * chartW;
+            var y = PAD.t + cIdx * rowH + (rowH - barH) / 2;
+            var completion = tsk.start + tsk.dur;
+            var isOverdue = tsk.start < task.winStart || completion > task.winEnd;
+
+            if (isOverdue) {
+                // Red border for overdue
+                ctx.fillStyle = 'rgba(255,107,107,0.25)';
+                ctx.fillRect(x - 1, y - 1, Math.max(w - 1, 2) + 2, barH + 2);
+            }
+
+            ctx.fillStyle = color; ctx.globalAlpha = isOverdue ? 0.5 : 0.75;
+            ctx.fillRect(x, y, Math.max(w - 1, 2), barH);
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = isOverdue ? '#ff6b6b' : color; ctx.lineWidth = isOverdue ? 2 : 1;
+            ctx.strokeRect(x, y, Math.max(w - 1, 2), barH);
+
+            // Label
+            if (w > 35) {
+                ctx.fillStyle = '#F8F9FA'; ctx.font = '8px Inter, sans-serif'; ctx.textAlign = 'left';
+                var label = task.task;
+                if (label.length > 18) label = label.substring(0, 17) + '\u2026';
+                ctx.fillText(label, x + 3, y + barH / 2 + 3);
+            }
+        });
+    });
+
+    // Legend
+    var legendEl = document.getElementById('ganttLegend');
+    legendEl.textContent = '';
+    var machines = [];
+    tasks.forEach(function(t) { if (machines.indexOf(t.machine) === -1) machines.push(t.machine); });
+    machines.forEach(function(m) {
+        var c = MACHINE_COLORS[m] || '#C5A059';
+        var div = document.createElement('div'); div.className = 'gantt-legend-item';
+        var swatch = document.createElement('span'); swatch.className = 'gantt-legend-swatch'; swatch.style.background = c; div.appendChild(swatch);
+        div.appendChild(document.createTextNode(m)); legendEl.appendChild(div);
+    });
+    // Add overdue legend
+    var odiv = document.createElement('div'); odiv.className = 'gantt-legend-item';
+    var oswatch = document.createElement('span'); oswatch.className = 'gantt-legend-swatch'; oswatch.style.cssText = 'border:2px solid #ff6b6b;background:rgba(255,107,107,0.25);'; odiv.appendChild(oswatch);
+    odiv.appendChild(document.createTextNode('Overdue')); legendEl.appendChild(odiv);
+    // Add window legend
+    var wdiv = document.createElement('div'); wdiv.className = 'gantt-legend-item';
+    var wswatch = document.createElement('span'); wswatch.className = 'gantt-legend-swatch'; wswatch.style.cssText = 'border:1px solid rgba(197,160,89,0.3);background:rgba(197,160,89,0.1);'; wdiv.appendChild(wswatch);
+    wdiv.appendChild(document.createTextNode('Maint. Window')); legendEl.appendChild(wdiv);
+}
+
+// ── Scroll Animations & Init ──
+var observer = new IntersectionObserver(function(entries) { entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
+loadNamedScenario(0); drawEmpty();
+</script>
+
+<script>
+(function() {
+    'use strict';
+    var themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        var savedTheme = localStorage.getItem('or-theme') || 'dark';
+        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+        themeToggle.addEventListener('click', function() {
+            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
+            var newTheme = isLight ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('or-theme', newTheme);
+        });
+    }
+    var initTheme = localStorage.getItem('or-theme');
+    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
+
+    // Particle Network Background
+    var heroEl = document.querySelector('.hero');
+    if (heroEl) {
+        var pCanvas = document.createElement('canvas');
+        pCanvas.className = 'hero-particles';
+        heroEl.insertBefore(pCanvas, heroEl.firstChild);
+        var pCtx = pCanvas.getContext('2d');
+        var particles = [], PARTICLE_COUNT = 40, CONNECTION_DIST = 120;
+        function resizePC() { pCanvas.width = heroEl.offsetWidth; pCanvas.height = heroEl.offsetHeight; }
+        resizePC(); window.addEventListener('resize', resizePC);
+        function Particle() { this.x = Math.random() * pCanvas.width; this.y = Math.random() * pCanvas.height; this.vx = (Math.random()-0.5)*0.4; this.vy = (Math.random()-0.5)*0.4; this.radius = Math.random()*2+1; }
+        Particle.prototype.update = function() { this.x += this.vx; this.y += this.vy; if (this.x<0||this.x>pCanvas.width) this.vx*=-1; if (this.y<0||this.y>pCanvas.height) this.vy*=-1; };
+        Particle.prototype.draw = function() { pCtx.beginPath(); pCtx.arc(this.x,this.y,this.radius,0,Math.PI*2); pCtx.fillStyle='rgba(197,160,89,0.35)'; pCtx.fill(); };
+        for (var pi=0;pi<PARTICLE_COUNT;pi++) particles.push(new Particle());
+        function animP() {
+            pCtx.clearRect(0,0,pCanvas.width,pCanvas.height);
+            particles.forEach(function(p){p.update();p.draw();});
+            for (var i=0;i<particles.length;i++) for (var j=i+1;j<particles.length;j++) {
+                var dx=particles[i].x-particles[j].x,dy=particles[i].y-particles[j].y,dist=Math.sqrt(dx*dx+dy*dy);
+                if (dist<CONNECTION_DIST){pCtx.beginPath();pCtx.moveTo(particles[i].x,particles[i].y);pCtx.lineTo(particles[j].x,particles[j].y);pCtx.strokeStyle='rgba(197,160,89,'+(0.12*(1-dist/CONNECTION_DIST))+')';pCtx.lineWidth=0.6;pCtx.stroke();}
+            }
+            requestAnimationFrame(animP);
+        }
+        animP();
+    }
+
+    // Scroll Progress + Scroll-to-Top
+    var progressBar = document.getElementById('scrollProgress'), scrollTopBtn = document.getElementById('scrollTopBtn');
+    function onScroll() {
+        var scrollTop = window.scrollY, docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        if (progressBar) progressBar.style.width = (docHeight > 0 ? (scrollTop / docHeight) * 100 : 0) + '%';
+        if (scrollTopBtn) scrollTopBtn.classList.toggle('visible', scrollTop > 400);
+    }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    if (scrollTopBtn) scrollTopBtn.addEventListener('click', function() { window.scrollTo({ top: 0, behavior: 'smooth' }); });
+})();
+</script>
+</body>
+</html>

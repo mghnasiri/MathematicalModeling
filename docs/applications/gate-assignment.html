@@ -1,0 +1,2382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Airport Gate Assignment | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive Linear Assignment Problem (LAP) demo for airport gate assignment using Random, Greedy, and Hungarian algorithms to minimize passenger walking distance.">
+    <!-- Open Graph / Social Sharing -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/gate-assignment.html">
+    <meta property="og:title" content="Airport Gate Assignment | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive Linear Assignment Problem (LAP) demo for airport gate assignment using Random, Greedy, and Hungarian algorithms to minimize passenger walking distance.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Airport Gate Assignment | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Interactive Linear Assignment Problem (LAP) demo for airport gate assignment using Random, Greedy, and Hungarian algorithms to minimize passenger walking distance.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* ── Navigation ── */
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+            transition: color 0.3s ease;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        /* ── Breadcrumb ── */
+        .breadcrumb-nav {
+            padding: 1rem 0;
+            background: var(--midnight-light);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .breadcrumb-nav ol {
+            list-style: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0;
+            padding: 0;
+        }
+        .breadcrumb-nav li {
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+        }
+        .breadcrumb-nav li a {
+            color: var(--gold);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before {
+            content: '/';
+            margin-right: 0.5rem;
+            color: var(--slate);
+            opacity: 0.5;
+        }
+
+        /* ── Hero Section ── */
+        .hero {
+            padding: 6rem 2rem 4rem;
+            text-align: center;
+            position: relative;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.06) 0%, transparent 70%);
+            pointer-events: none;
+        }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            opacity: 0.8;
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 300;
+            letter-spacing: 4px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 1.05rem;
+            color: var(--slate);
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            margin-bottom: 1.5rem;
+        }
+        .gold-line {
+            width: 60px;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.5rem auto;
+        }
+        .hero-desc {
+            max-width: 700px;
+            margin: 0 auto 2.5rem;
+            color: var(--slate-light);
+            font-size: 1rem;
+            line-height: 1.8;
+        }
+
+        /* ── Decision Chain ── */
+        .decision-chain {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.3rem;
+            margin-bottom: 2rem;
+            flex-wrap: wrap;
+        }
+        .chain-step {
+            padding: 0.4rem 1rem;
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 2px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--slate);
+            transition: all 0.3s;
+        }
+        .chain-step.active-step {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+        .chain-arrow {
+            color: var(--slate);
+            font-size: 0.6rem;
+            opacity: 0.4;
+        }
+
+        /* ── Section Headers ── */
+        .section-header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.5rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+        }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        /* ── Content Blocks ── */
+        .content-block {
+            max-width: 800px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.9;
+        }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        /* ── Disclaimer Box ── */
+        .disclaimer-box {
+            background: rgba(122, 162, 247, 0.08);
+            border: 1px solid rgba(122, 162, 247, 0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.5rem;
+            margin: 2rem 0;
+            font-size: 0.88rem;
+            color: var(--slate-light);
+            line-height: 1.7;
+        }
+        .disclaimer-box .disclaimer-title {
+            color: var(--blue);
+            font-weight: 500;
+            margin-bottom: 0.3rem;
+            font-size: 0.9rem;
+        }
+
+        /* ── Formulation Block ── */
+        .formulation {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 1.5rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            color: var(--slate-light);
+            line-height: 2;
+            overflow-x: auto;
+        }
+        .formulation .form-label {
+            color: var(--gold);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.8rem;
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+        }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        /* ── Theory Link ── */
+        .theory-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.4rem;
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+            margin-top: 1rem;
+        }
+        .theory-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Mapping Table ── */
+        .mapping-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+            margin: 1.5rem 0;
+        }
+        .mapping-table th {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .mapping-table td {
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.85rem;
+        }
+        .mapping-table td:first-child {
+            color: var(--ivory);
+            font-weight: 500;
+            white-space: nowrap;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+
+        /* ── Insight Box ── */
+        .insight-box {
+            background: rgba(197, 160, 89, 0.06);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 1.5rem 2rem;
+            margin-bottom: 2rem;
+            font-size: 0.92rem;
+            line-height: 1.8;
+        }
+        .insight-title {
+            color: var(--gold);
+            font-weight: 600;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 0.5rem;
+        }
+
+        /* ── Solver Panel ── */
+        .solver-panel {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        .solver-panel-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.5rem;
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
+            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
+        }
+        .solver-panel-header h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin: 0;
+            color: var(--gold);
+        }
+        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+
+        .solver-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .solver-section-label {
+            font-size: 0.72rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.8rem;
+            font-weight: 500;
+        }
+
+        .solver-canvas-wrap {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197, 160, 89, 0.1);
+            border-radius: 4px;
+            padding: 0.5rem;
+            position: relative;
+        }
+        .solver-canvas-wrap canvas {
+            width: 100%;
+            display: block;
+            border-radius: 2px;
+        }
+
+        /* ── Algorithm Chips ── */
+        .algo-chip {
+            padding: 6px 14px;
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 2px;
+            background: transparent;
+            color: var(--slate-light);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-family: 'Inter', sans-serif;
+            user-select: none;
+        }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected, .algo-chip.active {
+            background: rgba(197, 160, 89, 0.15);
+            border-color: var(--gold);
+            color: var(--gold);
+        }
+
+        /* ── Scenario Chips ── */
+        .scenario-chips {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+
+        /* ── Results Table ── */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .results-table thead th {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--gold);
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: left;
+        }
+        .results-table tbody td {
+            padding: 0.5rem 0.8rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+        }
+        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+
+        .solver-status {
+            font-size: 0.78rem;
+            color: var(--slate);
+            margin-top: 0.5rem;
+            font-style: italic;
+        }
+
+        /* ── Business Panel ── */
+        .business-panel {
+            margin-top: 1rem;
+            padding: 1rem 1.2rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .business-panel-title {
+            font-size: 0.65rem;
+            color: var(--gold);
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            font-weight: 600;
+            margin-bottom: 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+        .business-panel-title i { font-size: 0.7rem; }
+        .business-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.25rem 0;
+            font-size: 0.78rem;
+            color: var(--slate-light);
+        }
+        .business-row .biz-val {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold);
+            font-weight: 500;
+        }
+
+        /* ── Gate Load Bars ── */
+        .workload-panel {
+            margin-top: 1rem;
+            padding: 0.8rem 1rem;
+            background: rgba(10, 25, 47, 0.4);
+            border: 1px solid rgba(197, 160, 89, 0.08);
+            border-radius: 6px;
+        }
+        .wl-bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-bottom: 0.35rem;
+        }
+        .wl-bar-row:last-child { margin-bottom: 0; }
+        .wl-bar-label {
+            font-size: 0.68rem;
+            color: var(--slate);
+            min-width: 80px;
+            font-family: 'Inter', sans-serif;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .wl-bar-track {
+            flex: 1;
+            height: 14px;
+            background: rgba(197, 160, 89, 0.06);
+            border-radius: 2px;
+            overflow: hidden;
+        }
+        .wl-bar-fill {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 0.6s ease;
+        }
+        .wl-bar-fill.high { background: linear-gradient(90deg, #64ffda, #50fa7b); }
+        .wl-bar-fill.mid { background: linear-gradient(90deg, #e0af68, #C5A059); }
+        .wl-bar-fill.low { background: linear-gradient(90deg, #ff6b6b, #f7768e); }
+        .wl-bar-val {
+            font-size: 0.65rem;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--slate-light);
+            min-width: 40px;
+            text-align: right;
+        }
+
+        /* ── Cost Matrix ── */
+        .cost-matrix {
+            border-collapse: collapse;
+            font-size: 0.75rem;
+            width: 100%;
+        }
+        .cost-matrix th {
+            font-size: 0.62rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            padding: 0.4rem 0.3rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
+            text-align: center;
+            white-space: nowrap;
+        }
+        .cost-matrix td {
+            padding: 0.2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.03);
+        }
+        .cost-matrix td:first-child {
+            text-align: left;
+            font-size: 0.68rem;
+            color: var(--slate-light);
+            white-space: nowrap;
+            padding-right: 0.5rem;
+        }
+        .cost-matrix input {
+            width: 42px;
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 2px;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.72rem;
+            text-align: center;
+            padding: 2px 2px;
+        }
+        .cost-matrix input:focus {
+            outline: none;
+            border-color: var(--gold);
+        }
+        .cost-cell-highlight {
+            background: rgba(197, 160, 89, 0.12) !important;
+        }
+        .cost-cell-highlight input {
+            border-color: var(--gold) !important;
+            color: var(--ivory) !important;
+        }
+
+        /* ── Complexity Box ── */
+        .complexity-box {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-top: 2rem;
+        }
+        .complexity-box h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 1.2rem;
+            color: var(--ivory);
+        }
+        .complexity-box h3 i {
+            color: var(--gold);
+            margin-right: 0.5rem;
+        }
+        .complexity-list {
+            list-style: none;
+            padding: 0;
+        }
+        .complexity-list li {
+            padding: 0.5rem 0;
+            padding-left: 1.5rem;
+            position: relative;
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+        }
+        .complexity-list li:last-child { border-bottom: none; }
+        .complexity-list li::before {
+            content: '\f054';
+            font-family: 'Font Awesome 6 Free';
+            font-weight: 900;
+            position: absolute;
+            left: 0;
+            color: var(--gold);
+            font-size: 0.6rem;
+            top: 0.75rem;
+        }
+
+        /* ── Algorithm Cards ── */
+        .algo-card {
+            background: var(--midnight);
+            border: 1px solid rgba(197, 160, 89, 0.15);
+            border-radius: 4px;
+            padding: 2rem 2.5rem;
+            margin-bottom: 1.5rem;
+        }
+        .algo-card h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 500;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+            color: var(--ivory);
+        }
+        .algo-card .algo-complexity {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.78rem;
+            color: var(--green);
+            margin-bottom: 1rem;
+            display: inline-block;
+        }
+        .algo-card p {
+            color: var(--slate-light);
+            font-size: 0.9rem;
+            line-height: 1.8;
+            margin-bottom: 0.5rem;
+        }
+        .algo-card .algo-tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border: 1px solid rgba(122, 162, 247, 0.3);
+            border-radius: 2px;
+            font-size: 0.68rem;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 0.8rem;
+        }
+
+        /* ── References ── */
+        .reference-list {
+            list-style: none;
+            padding: 0;
+        }
+        .reference-list li {
+            padding: 0.6rem 0;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
+            color: var(--slate-light);
+            font-size: 0.88rem;
+            line-height: 1.6;
+        }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+
+        /* ── CTA Panel ── */
+        .cta-panel {
+            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
+            border: 1px solid rgba(197, 160, 89, 0.2);
+            border-radius: 4px;
+            padding: 3rem;
+            text-align: center;
+        }
+        .cta-panel h3 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 400;
+            letter-spacing: 2px;
+            margin-bottom: 1rem;
+            color: var(--ivory);
+        }
+        .cta-panel p {
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            max-width: 650px;
+            margin: 0 auto 2rem;
+            line-height: 1.8;
+        }
+        .cta-links {
+            display: flex;
+            justify-content: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+        .cta-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.7rem 1.8rem;
+            border: 1px solid rgba(197, 160, 89, 0.4);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.82rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            transition: all 0.3s;
+        }
+        .cta-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            border-color: var(--gold);
+        }
+
+        /* ── Back Link ── */
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 4px;
+            color: var(--gold);
+            text-decoration: none;
+            font-size: 0.78rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover {
+            background: var(--gold);
+            color: var(--midnight);
+        }
+
+        /* ── Footer ── */
+        footer {
+            padding: 3rem 0;
+            text-align: center;
+            border-top: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        footer p {
+            color: var(--slate);
+            font-size: 0.82rem;
+            letter-spacing: 1px;
+        }
+        footer a { color: var(--gold); text-decoration: none; }
+        footer a:hover { color: var(--gold-light); }
+
+        /* ── Scroll Animations ── */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* ── Theme Toggle ── */
+        .theme-toggle {
+            position: relative;
+            width: 44px;
+            height: 24px;
+            background: var(--midnight-lighter);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.4s ease;
+            display: flex;
+            align-items: center;
+            padding: 0 3px;
+            margin-left: 0.8rem;
+            flex-shrink: 0;
+        }
+        .theme-toggle::before {
+            content: '';
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: var(--gold);
+            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .theme-toggle .toggle-icon {
+            position: absolute;
+            font-size: 0.6rem;
+            transition: opacity 0.3s;
+        }
+        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
+        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
+
+        html[data-theme="light"] {
+            --midnight: #F5F1EB;
+            --midnight-light: #EDE8E0;
+            --midnight-lighter: #E3DDD4;
+            --ivory: #1a1a2e;
+            --slate: #5a6178;
+            --slate-light: #3d4155;
+        }
+        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
+        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
+        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
+        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
+        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
+        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+
+        /* ── Scroll Progress ── */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            transition: width 0.1s linear;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 5rem;
+            right: 2rem;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: rgba(10, 25, 47, 0.9);
+            border: 1px solid rgba(197, 160, 89, 0.3);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            z-index: 998;
+            opacity: 0;
+            transform: translateY(10px);
+            pointer-events: none;
+        }
+        .scroll-top-btn.visible {
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
+        }
+        .scroll-top-btn:hover {
+            background: var(--gold);
+            color: var(--midnight);
+            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
+        }
+
+        /* ── Hero Particles ── */
+        .hero-particles {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+
+        /* ── Responsive ── */
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; }
+        }
+        @media (max-width: 576px) {
+            .scroll-top-btn { bottom: 4rem; right: 1rem; }
+            .decision-chain { gap: 0.2rem; }
+            .chain-step { padding: 0.3rem 0.5rem; font-size: 0.6rem; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Scroll Progress -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- Navigation -->
+<nav class="navbar navbar-expand-lg sticky-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">MM &amp; OR</a>
+        <div class="d-flex align-items-center">
+            <div class="theme-toggle" id="themeToggle">
+                <span class="toggle-icon icon-sun"><i class="fas fa-sun"></i></span>
+                <span class="toggle-icon icon-moon"><i class="fas fa-moon"></i></span>
+            </div>
+        </div>
+    </div>
+</nav>
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li>Gate Assignment</li>
+        </ol>
+    </div>
+</div>
+
+<!-- ── 1. Hero ── -->
+<section class="hero">
+    <canvas class="hero-particles" id="heroParticles"></canvas>
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-door-open"></i></div>
+        <h1>Airport Gate <span>Assignment</span></h1>
+        <p class="hero-subtitle">Assignment Problem &middot; Hungarian Algorithm O(n&sup3;)</p>
+        <div class="gold-line"></div>
+
+        <!-- Decision Chain -->
+        <div class="decision-chain">
+            <span class="chain-step">Network Design</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step">Fleet Planning</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step active-step">Routing</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step">Crew Scheduling</span>
+            <span class="chain-arrow"><i class="fas fa-chevron-right"></i></span>
+            <span class="chain-step">Dynamic Ops</span>
+        </div>
+
+        <p class="hero-desc">
+            An airport operations centre assigns 6 arriving flights to 6 terminal gates,
+            minimizing total passenger walking distance for connections. At major airports,
+            poor gate assignment adds 5&ndash;8 minutes per connection, costing airlines
+            &euro;500&ndash;&euro;2,000 per missed connection.
+        </p>
+    </div>
+</section>
+
+<!-- ── 2. The Problem ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Airport Operations &middot; Gate Assignment</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Every flight bank at a hub airport triggers a combinatorial puzzle: which gate should
+                each arriving aircraft use? The objective is to minimize the <strong>total weighted
+                walking distance</strong> for connecting passengers. Each flight carries passengers
+                transferring to other flights in the bank, and the walking distance between any two
+                gates varies from 50&nbsp;m (adjacent gates) to over 800&nbsp;m (cross-terminal).
+            </p>
+            <p>
+                This is the <strong>Linear Assignment Problem (LAP)</strong> &mdash; a square cost
+                matrix where 6 flights must be assigned to 6 gates, one-to-one. The cost
+                <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">c<sub>ij</sub></span>
+                of assigning flight <em>i</em> to gate <em>j</em> equals the sum of walking distances
+                weighted by passenger counts for all connections involving flight <em>i</em> when parked
+                at gate <em>j</em>. Additional <strong>compatibility constraints</strong> ensure
+                wide-body aircraft are only assigned to gates with jet bridges that accommodate their
+                fuselage width.
+            </p>
+
+            <!-- Mapping Table -->
+            <table class="mapping-table">
+                <thead>
+                    <tr>
+                        <th>OR Concept</th>
+                        <th>Airport Mapping</th>
+                    </tr>
+                </thead>
+                <tbody id="mappingBody"></tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">Linear Assignment Problem Formulation</span>
+                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>i</sub> &Sigma;<sub>j</sub> c<sub>ij</sub> &middot; x<sub>ij</sub></span> &nbsp; <span class="comment">// total weighted walking distance</span><br>
+                <span class="keyword">subject to</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>j</sub> x<sub>ij</sub> = 1</span> &nbsp;&nbsp;&forall; i &nbsp; <span class="comment">// each flight assigned to exactly one gate</span><br>
+                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ij</sub> = 1</span> &nbsp;&nbsp;&forall; j &nbsp; <span class="comment">// each gate assigned to exactly one flight</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary assignment decision</span><br>
+                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> = 0</span> &nbsp; <span class="comment">// if gate j incompatible with flight i (narrow/wide body)</span>
+            </div>
+
+            <p>
+                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">c<sub>ij</sub></span>
+                is the total weighted walking distance when flight <em>i</em> is assigned to gate <em>j</em>,
+                computed from the connection passenger matrix and the gate-to-gate distance matrix.
+            </p>
+
+            <a href="../families/assignment.html" class="theory-link">
+                <i class="fas fa-arrow-right"></i> See full Assignment Problem theory
+            </a>
+        </div>
+    </div>
+</section>
+
+<!-- ── 3. Try It Yourself ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Assign flights to gates and compare algorithms</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h4><i class="fas fa-door-open"></i> Gate Assignment Optimizer</h4>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Flights &middot; 6 Gates</span>
+            </div>
+            <div class="solver-body">
+                <!-- Scenario Chips -->
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-chips" id="scenarioChips"></div>
+
+                <!-- Cost Matrix -->
+                <div class="solver-section-label">Cost Matrix (editable &middot; flight &times; gate &middot; walking distance units)</div>
+                <div style="overflow-x:auto;margin-bottom:1rem;">
+                    <table class="cost-matrix" id="costMatrix"></table>
+                </div>
+
+                <!-- Business Parameters -->
+                <div style="display:flex;gap:1rem;flex-wrap:wrap;align-items:center;margin-bottom:1rem;">
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <label style="font-size:0.72rem;color:var(--slate);white-space:nowrap;">Cost per minute walking (&euro;)</label>
+                        <input type="number" id="costPerMinute" value="12" min="1" max="100" step="1"
+                               style="width:55px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:2px;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-align:center;padding:3px 4px;">
+                    </div>
+                    <div style="display:flex;align-items:center;gap:0.5rem;">
+                        <label style="font-size:0.72rem;color:var(--slate);white-space:nowrap;">Daily flight banks</label>
+                        <input type="number" id="dailyBanks" value="8" min="1" max="20" step="1"
+                               style="width:50px;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:2px;color:var(--gold);font-family:'JetBrains Mono',monospace;font-size:0.78rem;text-align:center;padding:3px 4px;">
+                    </div>
+                </div>
+
+                <!-- Solve Button -->
+                <button class="algo-chip active" id="solveBtn" type="button" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
+                    <i class="fas fa-play" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                </button>
+
+                <!-- Canvas Visualization -->
+                <div class="solver-section-label">Terminal Diagram</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="assignCanvas" width="900" height="520"></canvas>
+                </div>
+                <p class="solver-status" id="solverStatus">Ready. Select a scenario and click Solve.</p>
+
+                <!-- Results -->
+                <div class="solver-row" style="margin-top:1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Algorithm Comparison</div>
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th>Algorithm</th>
+                                    <th>Total Cost</th>
+                                    <th>vs Random</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody"></tbody>
+                        </table>
+
+                        <!-- Business Panel -->
+                        <div class="business-panel" id="businessPanel" style="display:none;">
+                            <div class="business-panel-title"><i class="fas fa-chart-line"></i> Business Impact</div>
+                            <div id="businessContent"></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Assignment Details</div>
+                        <div id="assignDetails" style="font-family:'JetBrains Mono',monospace;font-size:0.75rem;color:var(--slate-light);padding:0.8rem 1rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.08);border-radius:4px;line-height:1.8;max-height:260px;overflow-y:auto;">
+                            Assignment details will appear here after solving.
+                        </div>
+
+                        <!-- Gate Utilization Bars -->
+                        <div class="workload-panel" id="workloadPanel" style="display:none;">
+                            <div class="solver-section-label" style="margin-bottom:0.5rem;">Gate Walking Cost Distribution</div>
+                            <div id="workloadBars"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 4. Algorithms ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>From random baseline to polynomial-time exact solution</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="insight-box">
+                <div class="insight-title"><i class="fas fa-lightbulb" style="margin-right:0.4rem;"></i> Key Insight</div>
+                Unlike the Generalized Assignment Problem (NP-hard), the Linear Assignment Problem
+                has a <strong>polynomial-time exact solution</strong>. The Hungarian algorithm solves
+                it in O(n&sup3;), making it practical for real-time gate assignment at even the
+                busiest hub airports. The key is that each flight gets exactly one gate and each gate
+                gets exactly one flight &mdash; a perfect matching on a bipartite graph.
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Baseline</div>
+                <h3>Random Assignment</h3>
+                <span class="algo-complexity">O(n) &nbsp;|&nbsp; No optimality guarantee</span>
+                <p>
+                    Randomly permute the gate indices and assign each flight to the next available gate.
+                    This serves as a <strong>baseline</strong> to quantify the value of optimization.
+                    In practice, random assignment at a 6-gate bank typically produces walking costs
+                    40&ndash;80% higher than optimal, translating to thousands of extra passenger-minutes
+                    per day.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Heuristic</div>
+                <h3>Greedy (Cheapest Gate First)</h3>
+                <span class="algo-complexity">O(n&sup2;) &nbsp;|&nbsp; Good but not optimal</span>
+                <p>
+                    Sort all flight-gate pairs by ascending cost. Iterate through the sorted list:
+                    assign a flight to a gate if neither the flight nor the gate has been assigned yet.
+                    Greedy typically achieves within 5&ndash;15% of optimal for well-distributed cost
+                    matrices, but can perform poorly when multiple flights compete for the same
+                    low-cost gate.
+                </p>
+            </div>
+
+            <div class="algo-card">
+                <div class="algo-tag">Exact &middot; Optimal</div>
+                <h3>Hungarian Algorithm (Kuhn-Munkres)</h3>
+                <span class="algo-complexity">O(n&sup3;) &nbsp;|&nbsp; Guaranteed optimal</span>
+                <p>
+                    The Hungarian algorithm finds the <strong>minimum-cost perfect matching</strong>
+                    in a bipartite graph. It works by maintaining dual variables (potentials) for
+                    rows and columns, then iteratively finding augmenting paths along zero-reduced-cost
+                    edges. For the 6&times;6 gate assignment, it runs in microseconds and guarantees
+                    the globally optimal assignment.
+                </p>
+                <p>
+                    Originally published by Harold Kuhn in 1955 (based on earlier work by Hungarian
+                    mathematicians K&ouml;nig and Egerv&aacute;ry), and refined by James Munkres in
+                    1957, this algorithm remains the gold standard for balanced assignment problems
+                    in airline operations.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 5. Real-World Complexity ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-World <span>Complexity</span></h2>
+            <p>Why airport gate assignment goes beyond a simple cost matrix</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-plane-arrival"></i> Beyond the Assignment Matrix</h3>
+                <ul class="complexity-list">
+                    <li><strong>Aircraft compatibility</strong> &mdash; Wide-body aircraft (B777, A350) require specific gates with appropriate jet bridge configurations; narrow-body gates cannot accommodate them</li>
+                    <li><strong>Temporal overlap</strong> &mdash; Real schedules have flights arriving and departing throughout the day; gate assignment becomes a scheduling problem with time windows and turnaround buffers</li>
+                    <li><strong>Towing costs</strong> &mdash; When gates are scarce, aircraft may be towed to remote stands between flights, adding operational cost and delay risk</li>
+                    <li><strong>Airline preferences</strong> &mdash; Airlines lease gate zones within terminals; cross-airline gate swaps require inter-airline coordination and contractual agreements</li>
+                    <li><strong>Disruption recovery</strong> &mdash; Weather delays, mechanical issues, and diversions force real-time gate reassignment, often cascading across the entire terminal</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── 6. References ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>References</span></h2>
+            <p>Foundational works in assignment and airport operations</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li>
+                    <span class="ref-author">Kuhn, H.W.</span> (1955).
+                    <span class="ref-title">&ldquo;The Hungarian method for the assignment problem.&rdquo;</span>
+                    <span class="ref-journal">Naval Research Logistics, 2(1-2), 83&ndash;97. DOI: 10.1002/nav.3800020109</span>
+                </li>
+                <li>
+                    <span class="ref-author">Munkres, J.</span> (1957).
+                    <span class="ref-title">&ldquo;Algorithms for the assignment and transportation problems.&rdquo;</span>
+                    <span class="ref-journal">SIAM Journal, 5(1), 32&ndash;38. DOI: 10.1137/0105003</span>
+                </li>
+                <li>
+                    <span class="ref-author">Ding, H., Lim, A., Rodrigues, B. &amp; Zhu, Y.</span> (2005).
+                    <span class="ref-title">&ldquo;The over-constrained airport gate assignment problem.&rdquo;</span>
+                    <span class="ref-journal">Computers &amp; Operations Research, 32(7), 1867&ndash;1880. DOI: 10.1016/j.cor.2003.12.007</span>
+                </li>
+                <li>
+                    <span class="ref-author">Dorndorf, U., Drexl, A., Nikulin, Y. &amp; Pesch, E.</span> (2007).
+                    <span class="ref-title">&ldquo;Flight gate scheduling: State-of-the-art and recent developments.&rdquo;</span>
+                    <span class="ref-journal">Omega, 35(3), 326&ndash;334. DOI: 10.1016/j.omega.2005.07.001</span>
+                </li>
+                <li>
+                    <span class="ref-author">Bihr, R.A.</span> (1990).
+                    <span class="ref-title">&ldquo;A conceptual solution to the aircraft gate assignment problem using 0,1 linear programming.&rdquo;</span>
+                    <span class="ref-journal">Computers &amp; Industrial Engineering, 19(1-4), 280&ndash;284. DOI: 10.1016/0360-8352(90)90121-2</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<!-- ── 7. CTA ── -->
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to optimize your airport operations?</h3>
+            <p>
+                From gate assignment to crew scheduling and disruption recovery,
+                mathematical modeling can transform hub efficiency.
+                Let&rsquo;s discuss how Operations Research can work for your organization.
+            </p>
+            <div class="cta-links">
+                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
+                    <i class="fab fa-linkedin"></i> Connect on LinkedIn
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Disclaimer ── -->
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle"></i> Disclaimer</div>
+            Data shown is illustrative. Flight numbers, gate layouts, passenger counts, and walking
+            distances are representative scenarios for educational purposes and do not reflect any
+            specific airport or airline operational data.
+        </div>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="../index.html" class="back-link"><i class="fas fa-arrow-left"></i> Back</a>
+
+<!-- Scroll-to-top -->
+<div class="scroll-top-btn" id="scrollTopBtn"><i class="fas fa-arrow-up"></i></div>
+
+<!-- TODO: Add Python solver implementation (Case D — no Python file yet) -->
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// ===================================================================
+// Airport Gate Assignment — Linear Assignment Problem Interactive Demo
+// ===================================================================
+
+(function() {
+    "use strict";
+
+    // ── Canvas Setup ──
+    var canvas = document.getElementById("assignCanvas");
+    var ctx = canvas.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var CW = 900, CH = 520;
+    canvas.width = CW * dpr;
+    canvas.height = CH * dpr;
+    canvas.style.width = CW + "px";
+    canvas.style.height = CH + "px";
+    ctx.scale(dpr, dpr);
+
+    // ── Colors ──
+    var GATE_COLORS = [
+        "#C5A059", "#7aa2f7", "#64ffda", "#ff6b6b",
+        "#bb9af7", "#e0af68", "#9ece6a", "#f7768e",
+        "#73daca", "#b4f9f8"
+    ];
+
+    // ── Gate distance matrix (meters between gates) ──
+    // 6 gates arranged in a terminal concourse
+    function gateDistance(g1, g2) {
+        // Approximate walking distances (meters) between gates
+        var distMatrix = [
+            [  0,  80, 160, 300, 450, 600],
+            [ 80,   0,  80, 220, 370, 520],
+            [160,  80,   0, 140, 290, 440],
+            [300, 220, 140,   0, 150, 300],
+            [450, 370, 290, 150,   0, 150],
+            [600, 520, 440, 300, 150,   0]
+        ];
+        return distMatrix[g1][g2];
+    }
+
+    // ── Aircraft types ──
+    var AIRCRAFT_TYPES = {
+        narrow: { label: "Narrow", abbr: "NB", gates: [0,1,2,3,4,5] },
+        wide:   { label: "Wide",   abbr: "WB", gates: [0,1,4,5] } // Only some gates handle wide-body
+    };
+
+    // ── Scenario Data ──
+    var SCENARIOS = {
+        morning: {
+            name: "Morning Bank \u2014 High Connections",
+            difficulty: "hard",
+            flights: [
+                { name: "LH 401", origin: "FRA", pax: 280, type: "wide",   connections: [0, 45, 30, 20, 55, 15] },
+                { name: "BA 902", origin: "LHR", pax: 180, type: "narrow", connections: [45, 0, 25, 35, 40, 10] },
+                { name: "AF 118", origin: "CDG", pax: 210, type: "narrow", connections: [30, 25, 0, 50, 20, 30] },
+                { name: "KL 635", origin: "AMS", pax: 190, type: "narrow", connections: [20, 35, 50, 0, 30, 25] },
+                { name: "EK 042", origin: "DXB", pax: 350, type: "wide",   connections: [55, 40, 20, 30, 0, 60] },
+                { name: "SK 811", origin: "CPH", pax: 140, type: "narrow", connections: [15, 10, 30, 25, 60, 0] }
+            ],
+            gates: [
+                { name: "Gate A1", terminal: "A", position: 0, widebody: true },
+                { name: "Gate A2", terminal: "A", position: 1, widebody: true },
+                { name: "Gate A3", terminal: "A", position: 2, widebody: false },
+                { name: "Gate B1", terminal: "B", position: 3, widebody: false },
+                { name: "Gate B2", terminal: "B", position: 4, widebody: true },
+                { name: "Gate B3", terminal: "B", position: 5, widebody: true }
+            ]
+        },
+        lowconn: {
+            name: "Low Connectivity \u2014 Few Connections",
+            difficulty: "easy",
+            flights: [
+                { name: "RY 214", origin: "STN", pax: 189, type: "narrow", connections: [0, 5, 8, 3, 2, 0] },
+                { name: "EJ 501", origin: "LGW", pax: 174, type: "narrow", connections: [5, 0, 4, 6, 0, 3] },
+                { name: "W6 330", origin: "BUD", pax: 180, type: "narrow", connections: [8, 4, 0, 2, 5, 1] },
+                { name: "VY 812", origin: "BCN", pax: 168, type: "narrow", connections: [3, 6, 2, 0, 4, 7] },
+                { name: "U2 403", origin: "GVA", pax: 156, type: "narrow", connections: [2, 0, 5, 4, 0, 3] },
+                { name: "FR 119", origin: "DUB", pax: 189, type: "narrow", connections: [0, 3, 1, 7, 3, 0] }
+            ],
+            gates: [
+                { name: "Gate C1", terminal: "C", position: 0, widebody: false },
+                { name: "Gate C2", terminal: "C", position: 1, widebody: false },
+                { name: "Gate C3", terminal: "C", position: 2, widebody: false },
+                { name: "Gate C4", terminal: "C", position: 3, widebody: false },
+                { name: "Gate C5", terminal: "C", position: 4, widebody: false },
+                { name: "Gate C6", terminal: "C", position: 5, widebody: false }
+            ]
+        },
+        mixed: {
+            name: "Mixed Fleet \u2014 Wide-Body Gates Scarce",
+            difficulty: "medium",
+            flights: [
+                { name: "SQ 026", origin: "SIN", pax: 380, type: "wide",   connections: [0, 60, 35, 25, 40, 50] },
+                { name: "QF 002", origin: "SYD", pax: 360, type: "wide",   connections: [60, 0, 45, 30, 55, 20] },
+                { name: "CX 250", origin: "HKG", pax: 340, type: "wide",   connections: [35, 45, 0, 40, 25, 35] },
+                { name: "TK 710", origin: "IST", pax: 200, type: "narrow", connections: [25, 30, 40, 0, 20, 15] },
+                { name: "LX 055", origin: "ZRH", pax: 165, type: "narrow", connections: [40, 55, 25, 20, 0, 30] },
+                { name: "AZ 601", origin: "FCO", pax: 175, type: "narrow", connections: [50, 20, 35, 15, 30, 0] }
+            ],
+            gates: [
+                { name: "Gate D1", terminal: "D", position: 0, widebody: true },
+                { name: "Gate D2", terminal: "D", position: 1, widebody: true },
+                { name: "Gate D3", terminal: "D", position: 2, widebody: false },
+                { name: "Gate D4", terminal: "D", position: 3, widebody: false },
+                { name: "Gate D5", terminal: "D", position: 4, widebody: false },
+                { name: "Gate D6", terminal: "D", position: 5, widebody: true }
+            ]
+        }
+    };
+
+    var currentScenario = "morning";
+    var currentResults = null;
+    var N = 6; // fixed 6x6
+
+    // ── Compute assignment cost for flight i at gate j ──
+    // Cost = sum over all other flights k: connections[i][k] * distance(gate_j, gate_assigned_k)
+    // Since we don't know other assignments yet, we compute a proxy:
+    // cost_ij = sum_k connections[i][k] * avgDistFromGate_j
+    // Actually for LAP, we precompute the full cost matrix c[i][j]
+    function buildCostMatrix(flights, gates) {
+        var n = flights.length;
+        var matrix = [];
+        for (var i = 0; i < n; i++) {
+            var row = [];
+            for (var j = 0; j < n; j++) {
+                // Cost of placing flight i at gate j:
+                // Sum of (connecting passengers between i and k) * (distance from gate j to gate k)
+                // averaged/summed across all possible gate assignments for k
+                // Simplified: total connecting pax * distance from gate j to center of mass
+                var cost = 0;
+                for (var k = 0; k < n; k++) {
+                    if (k === i) continue;
+                    // Use distance from gate j to gate k as proxy
+                    cost += flights[i].connections[k] * gateDistance(gates[j].position, gates[k].position) / 100;
+                }
+                // Compatibility: wide-body needs wide-body gate
+                if (flights[i].type === "wide" && !gates[j].widebody) {
+                    cost = 9999; // infeasible
+                }
+                row.push(Math.round(cost));
+            }
+            matrix.push(row);
+        }
+        return matrix;
+    }
+
+    // ── Read cost matrix from DOM ──
+    function readCostMatrix() {
+        var matrix = [];
+        for (var i = 0; i < N; i++) {
+            var row = [];
+            for (var j = 0; j < N; j++) {
+                var inp = document.getElementById("cost_" + i + "_" + j);
+                if (inp) {
+                    row.push(Math.max(0, parseInt(inp.value) || 0));
+                } else {
+                    row.push(0);
+                }
+            }
+            matrix.push(row);
+        }
+        return matrix;
+    }
+
+    // ── Render cost matrix table (with heatmap coloring) ──
+    function renderCostMatrix() {
+        var sc = SCENARIOS[currentScenario];
+        var flights = sc.flights;
+        var gates = sc.gates;
+        var matrix = buildCostMatrix(flights, gates);
+
+        var table = document.getElementById("costMatrix");
+        while (table.firstChild) table.removeChild(table.firstChild);
+
+        // Find min/max for heatmap
+        var allVals = [];
+        for (var ii = 0; ii < N; ii++) {
+            for (var jj = 0; jj < N; jj++) {
+                if (matrix[ii][jj] < 9000) allVals.push(matrix[ii][jj]);
+            }
+        }
+        var minVal = Math.min.apply(null, allVals);
+        var maxVal = Math.max.apply(null, allVals);
+
+        // Header
+        var thead = document.createElement("thead");
+        var headerRow = document.createElement("tr");
+        var corner = document.createElement("th");
+        corner.textContent = "Flight \\ Gate";
+        headerRow.appendChild(corner);
+        for (var j = 0; j < N; j++) {
+            var th = document.createElement("th");
+            th.textContent = gates[j].name;
+            th.title = gates[j].name + (gates[j].widebody ? " (Wide-Body)" : " (Narrow-Body)");
+            headerRow.appendChild(th);
+        }
+        thead.appendChild(headerRow);
+        table.appendChild(thead);
+
+        // Body
+        var tbody = document.createElement("tbody");
+        for (var i = 0; i < N; i++) {
+            var tr = document.createElement("tr");
+            var labelTd = document.createElement("td");
+            var typeTag = flights[i].type === "wide" ? " [WB]" : " [NB]";
+            labelTd.textContent = flights[i].name + " " + flights[i].origin + typeTag;
+            tr.appendChild(labelTd);
+            for (var j2 = 0; j2 < N; j2++) {
+                var td = document.createElement("td");
+                var inp = document.createElement("input");
+                inp.type = "number";
+                inp.id = "cost_" + i + "_" + j2;
+                inp.value = matrix[i][j2];
+                inp.min = "0";
+                inp.max = "9999";
+                // Heatmap background
+                if (matrix[i][j2] >= 9000) {
+                    td.style.background = "rgba(255,107,107,0.15)";
+                    inp.style.color = "var(--red)";
+                } else {
+                    var ratio = maxVal > minVal ? (matrix[i][j2] - minVal) / (maxVal - minVal) : 0;
+                    var r = Math.round(10 + ratio * 60);
+                    var g = Math.round(25 + (1 - ratio) * 30);
+                    var b = Math.round(47 + ratio * 20);
+                    td.style.background = "rgba(" + r + "," + g + "," + b + ",0.3)";
+                }
+                td.appendChild(inp);
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+
+        document.getElementById("configSummary").textContent =
+            N + " Flights \u00b7 " + N + " Gates";
+    }
+
+    // ══════════════════════════════════════════
+    // ALGORITHM 1: Random Assignment
+    // ══════════════════════════════════════════
+    function randomAssignment(costMatrix) {
+        var perm = [];
+        for (var i = 0; i < N; i++) perm.push(i);
+        // Fisher-Yates shuffle
+        for (var i2 = N - 1; i2 > 0; i2--) {
+            var j = Math.floor(Math.random() * (i2 + 1));
+            var tmp = perm[i2];
+            perm[i2] = perm[j];
+            perm[j] = tmp;
+        }
+        var totalCost = 0;
+        var conflicts = 0;
+        for (var k = 0; k < N; k++) {
+            totalCost += costMatrix[k][perm[k]];
+            if (costMatrix[k][perm[k]] >= 9000) conflicts++;
+        }
+        return { assignment: perm, totalCost: totalCost, conflicts: conflicts };
+    }
+
+    // ══════════════════════════════════════════
+    // ALGORITHM 2: Greedy (Cheapest Gate First)
+    // ══════════════════════════════════════════
+    function greedyAssignment(costMatrix) {
+        var pairs = [];
+        for (var i = 0; i < N; i++) {
+            for (var j = 0; j < N; j++) {
+                pairs.push({ i: i, j: j, cost: costMatrix[i][j] });
+            }
+        }
+        pairs.sort(function(a, b) { return a.cost - b.cost; });
+
+        var assignment = new Array(N).fill(-1);
+        var gateUsed = new Array(N).fill(false);
+        var assigned = 0;
+
+        for (var k = 0; k < pairs.length && assigned < N; k++) {
+            var fi = pairs[k].i;
+            var gj = pairs[k].j;
+            if (assignment[fi] !== -1 || gateUsed[gj]) continue;
+            assignment[fi] = gj;
+            gateUsed[gj] = true;
+            assigned++;
+        }
+
+        var totalCost = 0;
+        var conflicts = 0;
+        for (var m = 0; m < N; m++) {
+            if (assignment[m] >= 0) {
+                totalCost += costMatrix[m][assignment[m]];
+                if (costMatrix[m][assignment[m]] >= 9000) conflicts++;
+            }
+        }
+        return { assignment: assignment, totalCost: totalCost, conflicts: conflicts };
+    }
+
+    // ══════════════════════════════════════════
+    // ALGORITHM 3: Hungarian (Kuhn-Munkres) — Exact
+    // ══════════════════════════════════════════
+    function hungarianExact(costMatrix) {
+        var n = costMatrix.length;
+        var C = [];
+        for (var i = 0; i < n; i++) {
+            C.push(costMatrix[i].slice());
+        }
+
+        var u = new Array(n + 1).fill(0);
+        var v = new Array(n + 1).fill(0);
+        var p = new Array(n + 1).fill(0);
+        var way = new Array(n + 1).fill(0);
+
+        for (var i1 = 1; i1 <= n; i1++) {
+            p[0] = i1;
+            var j0 = 0;
+            var minv = new Array(n + 1).fill(Infinity);
+            var used = new Array(n + 1).fill(false);
+
+            do {
+                used[j0] = true;
+                var i0 = p[j0];
+                var delta = Infinity;
+                var j1 = -1;
+
+                for (var j = 1; j <= n; j++) {
+                    if (!used[j]) {
+                        var cur = C[i0 - 1][j - 1] - u[i0] - v[j];
+                        if (cur < minv[j]) {
+                            minv[j] = cur;
+                            way[j] = j0;
+                        }
+                        if (minv[j] < delta) {
+                            delta = minv[j];
+                            j1 = j;
+                        }
+                    }
+                }
+
+                for (var j2 = 0; j2 <= n; j2++) {
+                    if (used[j2]) {
+                        u[p[j2]] += delta;
+                        v[j2] -= delta;
+                    } else {
+                        minv[j2] -= delta;
+                    }
+                }
+
+                j0 = j1;
+            } while (p[j0] !== 0);
+
+            do {
+                var j1b = way[j0];
+                p[j0] = p[j1b];
+                j0 = j1b;
+            } while (j0);
+        }
+
+        // Extract assignment: for each row i, find which column j
+        var assignment = new Array(n).fill(-1);
+        for (var j3 = 1; j3 <= n; j3++) {
+            if (p[j3] !== 0) {
+                assignment[p[j3] - 1] = j3 - 1;
+            }
+        }
+
+        var totalCost = 0;
+        var conflicts = 0;
+        for (var i4 = 0; i4 < n; i4++) {
+            totalCost += costMatrix[i4][assignment[i4]];
+            if (costMatrix[i4][assignment[i4]] >= 9000) conflicts++;
+        }
+
+        return { assignment: assignment, totalCost: totalCost, conflicts: conflicts };
+    }
+
+    // ── Solve all algorithms ──
+    function solveAll() {
+        var matrix = readCostMatrix();
+        var sc = SCENARIOS[currentScenario];
+
+        var t0 = performance.now();
+        var randResult = randomAssignment(matrix);
+        var t1 = performance.now();
+        var greedyResult = greedyAssignment(matrix);
+        var t2 = performance.now();
+        var hunResult = hungarianExact(matrix);
+        var t3 = performance.now();
+
+        var results = [
+            {
+                name: "Random",
+                assignment: randResult.assignment,
+                totalCost: randResult.totalCost,
+                conflicts: randResult.conflicts,
+                time: (t1 - t0).toFixed(2)
+            },
+            {
+                name: "Greedy (cheapest gate)",
+                assignment: greedyResult.assignment,
+                totalCost: greedyResult.totalCost,
+                conflicts: greedyResult.conflicts,
+                time: (t2 - t1).toFixed(2)
+            },
+            {
+                name: "Hungarian (exact)",
+                assignment: hunResult.assignment,
+                totalCost: hunResult.totalCost,
+                conflicts: hunResult.conflicts,
+                time: (t3 - t2).toFixed(2)
+            }
+        ];
+
+        currentResults = results;
+
+        renderResultsTable(results);
+        // Show Hungarian (best) by default
+        var bestIdx = 2;
+        renderAssignmentDetails(results[bestIdx], sc, matrix);
+        renderCanvas(results[bestIdx], sc, matrix);
+        renderBusinessPanel(results, sc);
+        renderGateDistribution(results[bestIdx], sc, matrix);
+        highlightCostMatrix(results[bestIdx].assignment);
+
+        document.getElementById("solverStatus").textContent =
+            "Solved in " + ((t3 - t0).toFixed(2)) + " ms. Optimal (Hungarian): " +
+            results[2].totalCost + " cost" + (results[2].conflicts > 0 ? " (" + results[2].conflicts + " conflicts)" : "");
+    }
+
+    // ── Render results table ──
+    function renderResultsTable(results) {
+        var tbody = document.getElementById("resultsBody");
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+
+        var bestCost = Infinity;
+        for (var k = 0; k < results.length; k++) {
+            if (results[k].totalCost < bestCost) bestCost = results[k].totalCost;
+        }
+        var randomCost = results[0].totalCost;
+
+        for (var i = 0; i < results.length; i++) {
+            var r = results[i];
+            var tr = document.createElement("tr");
+            tr.style.cursor = "pointer";
+
+            var tdName = document.createElement("td");
+            tdName.className = "algo-label";
+            tdName.textContent = r.name;
+            tr.appendChild(tdName);
+
+            var tdCost = document.createElement("td");
+            tdCost.textContent = r.totalCost + (r.conflicts > 0 ? " (" + r.conflicts + " conflicts)" : "");
+            if (r.totalCost === bestCost) tdCost.className = "best-val";
+            tr.appendChild(tdCost);
+
+            var tdVsRandom = document.createElement("td");
+            var pctVsRandom = randomCost > 0 ? (((r.totalCost - randomCost) / randomCost) * 100).toFixed(1) : "0.0";
+            tdVsRandom.textContent = (pctVsRandom >= 0 ? "" : "") + pctVsRandom + "%";
+            tdVsRandom.style.color = pctVsRandom < 0 ? "var(--green)" : (pctVsRandom > 0 ? "var(--red)" : "var(--slate)");
+            tr.appendChild(tdVsRandom);
+
+            var tdTime = document.createElement("td");
+            tdTime.textContent = r.time + " ms";
+            tr.appendChild(tdTime);
+
+            (function(idx) {
+                tr.addEventListener("click", function() {
+                    var scn = SCENARIOS[currentScenario];
+                    var mat = readCostMatrix();
+                    renderAssignmentDetails(results[idx], scn, mat);
+                    renderCanvas(results[idx], scn, mat);
+                    renderGateDistribution(results[idx], scn, mat);
+                    highlightCostMatrix(results[idx].assignment);
+                });
+            })(i);
+
+            tbody.appendChild(tr);
+        }
+    }
+
+    // ── Render assignment details ──
+    function renderAssignmentDetails(result, sc, matrix) {
+        var div = document.getElementById("assignDetails");
+        while (div.firstChild) div.removeChild(div.firstChild);
+
+        var flights = sc.flights;
+        var gates = sc.gates;
+
+        for (var i = 0; i < N; i++) {
+            var gj = result.assignment[i];
+            var line = document.createElement("div");
+            line.style.padding = "0.3rem 0";
+            line.style.borderBottom = "1px solid rgba(197,160,89,0.1)";
+
+            var flightSpan = document.createElement("span");
+            flightSpan.style.color = GATE_COLORS[gj >= 0 ? gj % GATE_COLORS.length : 3];
+            flightSpan.style.fontWeight = "600";
+            flightSpan.textContent = flights[i].name + " (" + flights[i].origin + ")";
+            line.appendChild(flightSpan);
+
+            var arrow = document.createElement("span");
+            arrow.style.color = "var(--slate)";
+            arrow.style.margin = "0 0.5rem";
+            arrow.textContent = "\u2192";
+            line.appendChild(arrow);
+
+            var gateSpan = document.createElement("span");
+            gateSpan.style.color = "var(--ivory)";
+            gateSpan.textContent = gj >= 0 ? gates[gj].name : "UNASSIGNED";
+            line.appendChild(gateSpan);
+
+            if (gj >= 0) {
+                var costSpan = document.createElement("span");
+                var cost = matrix[i][gj];
+                costSpan.style.color = cost >= 9000 ? "var(--red)" : (cost > 150 ? "var(--gold)" : "var(--green)");
+                costSpan.style.marginLeft = "0.5rem";
+                costSpan.style.fontSize = "0.7rem";
+                costSpan.textContent = cost >= 9000 ? "INCOMPATIBLE" : "cost:" + cost;
+                line.appendChild(costSpan);
+
+                // Type compatibility indicator
+                if (flights[i].type === "wide" && !gates[gj].widebody) {
+                    var warn = document.createElement("span");
+                    warn.style.color = "var(--red)";
+                    warn.style.marginLeft = "0.4rem";
+                    warn.style.fontSize = "0.68rem";
+                    warn.textContent = "\u26a0 WB\u2192NB";
+                    line.appendChild(warn);
+                }
+            }
+
+            div.appendChild(line);
+        }
+    }
+
+    // ── Highlight cost matrix ──
+    function highlightCostMatrix(assignment) {
+        for (var i = 0; i < N; i++) {
+            for (var j = 0; j < N; j++) {
+                var inp = document.getElementById("cost_" + i + "_" + j);
+                if (inp) {
+                    var td = inp.parentElement;
+                    if (assignment[i] === j) {
+                        td.className = "cost-cell-highlight";
+                    } else {
+                        td.className = "";
+                    }
+                }
+            }
+        }
+    }
+
+    // ── Animation state ──
+    var animFrame = 0;
+    var animId = null;
+
+    // ── Render Canvas: Terminal diagram ──
+    function renderCanvas(result, sc, matrix) {
+        if (animId) cancelAnimationFrame(animId);
+
+        var flights = sc.flights;
+        var gates = sc.gates;
+        var assignment = result.assignment;
+
+        // Layout: gates as a row at top, flights as a row at bottom
+        var gateY = 100;
+        var flightY = 420;
+        var leftPad = 100;
+        var rightPad = 100;
+        var gateSpacing = (CW - leftPad - rightPad) / Math.max(N - 1, 1);
+
+        animFrame = 0;
+        var maxFrames = 60;
+
+        function drawFrame() {
+            animFrame++;
+            var progress = Math.min(animFrame / maxFrames, 1);
+            var eased = 1 - Math.pow(1 - progress, 3);
+
+            ctx.clearRect(0, 0, CW, CH);
+
+            // Title
+            ctx.fillStyle = "#C5A059";
+            ctx.font = "500 13px 'Inter', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText(result.name + " \u2014 Total Cost: " + result.totalCost +
+                (result.conflicts > 0 ? " (" + result.conflicts + " conflicts)" : ""), CW / 2, 30);
+
+            // Terminal outline
+            ctx.strokeStyle = "rgba(197, 160, 89, 0.15)";
+            ctx.lineWidth = 1;
+            ctx.setLineDash([4, 4]);
+            ctx.strokeRect(leftPad - 40, gateY - 40, CW - leftPad - rightPad + 80, flightY - gateY + 80);
+            ctx.setLineDash([]);
+
+            // "TERMINAL" label
+            ctx.fillStyle = "rgba(197, 160, 89, 0.25)";
+            ctx.font = "600 10px 'Inter', sans-serif";
+            ctx.textAlign = "left";
+            ctx.fillText("TERMINAL " + gates[0].terminal, leftPad - 30, gateY - 48);
+
+            // Column labels
+            ctx.fillStyle = "#8892B0";
+            ctx.font = "600 10px 'Inter', sans-serif";
+            ctx.textAlign = "center";
+            ctx.fillText("GATES", CW / 2, gateY - 22);
+            ctx.fillText("FLIGHTS", CW / 2, flightY + 55);
+
+            // Draw gate nodes
+            for (var g = 0; g < N; g++) {
+                var gx = leftPad + g * gateSpacing;
+
+                // Gate rectangle
+                var isAssigned = false;
+                var assignedFlight = -1;
+                for (var f = 0; f < N; f++) {
+                    if (assignment[f] === g) { isAssigned = true; assignedFlight = f; break; }
+                }
+
+                ctx.fillStyle = isAssigned ? "rgba(197, 160, 89, 0.12)" : "rgba(136, 146, 176, 0.06)";
+                ctx.strokeStyle = isAssigned ? "rgba(197, 160, 89, 0.4)" : "rgba(136, 146, 176, 0.15)";
+                ctx.lineWidth = 1.5;
+                ctx.beginPath();
+                ctx.roundRect(gx - 35, gateY - 15, 70, 30, 4);
+                ctx.fill();
+                ctx.stroke();
+
+                // Gate label
+                ctx.fillStyle = isAssigned ? "#C5A059" : "#8892B0";
+                ctx.font = "500 10px 'Inter', sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(gates[g].name, gx, gateY + 4);
+
+                // Wide-body indicator
+                if (gates[g].widebody) {
+                    ctx.fillStyle = "rgba(100, 255, 218, 0.5)";
+                    ctx.font = "400 7px 'JetBrains Mono', monospace";
+                    ctx.fillText("WB", gx, gateY + 25);
+                } else {
+                    ctx.fillStyle = "rgba(136, 146, 176, 0.4)";
+                    ctx.font = "400 7px 'JetBrains Mono', monospace";
+                    ctx.fillText("NB", gx, gateY + 25);
+                }
+            }
+
+            // Draw flight nodes
+            for (var f2 = 0; f2 < N; f2++) {
+                var fx = leftPad + f2 * gateSpacing;
+                var gateIdx = assignment[f2];
+                var flightColor = gateIdx >= 0 ? GATE_COLORS[gateIdx % GATE_COLORS.length] : "#ff6b6b";
+
+                // Aircraft shape (simplified)
+                ctx.fillStyle = flightColor;
+                ctx.globalAlpha = 0.8;
+                ctx.beginPath();
+                ctx.moveTo(fx, flightY - 14);
+                ctx.lineTo(fx + 12, flightY + 6);
+                ctx.lineTo(fx - 12, flightY + 6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.globalAlpha = 1;
+
+                // Flight label
+                ctx.fillStyle = "#F8F9FA";
+                ctx.font = "500 9px 'Inter', sans-serif";
+                ctx.textAlign = "center";
+                ctx.fillText(flights[f2].name, fx, flightY + 22);
+
+                // Origin
+                ctx.fillStyle = "#8892B0";
+                ctx.font = "400 7px 'JetBrains Mono', monospace";
+                ctx.fillText(flights[f2].origin + " " + flights[f2].pax + "pax", fx, flightY + 34);
+
+                // Type
+                ctx.fillStyle = flights[f2].type === "wide" ? "rgba(100,255,218,0.5)" : "rgba(136,146,176,0.4)";
+                ctx.fillText(flights[f2].type === "wide" ? "WB" : "NB", fx, flightY + 44);
+            }
+
+            // Draw assignment lines (animated)
+            for (var f3 = 0; f3 < N; f3++) {
+                var gi = assignment[f3];
+                if (gi < 0) continue;
+
+                var startX = leftPad + f3 * gateSpacing;
+                var startY2 = flightY - 14;
+                var endX = leftPad + gi * gateSpacing;
+                var endY = gateY + 15;
+
+                var cost = matrix[f3][gi];
+                var lineColor;
+                if (cost >= 9000) lineColor = "rgba(255, 107, 107, 0.7)";
+                else if (cost <= 60) lineColor = "rgba(100, 255, 218, 0.6)";
+                else if (cost <= 120) lineColor = "rgba(197, 160, 89, 0.5)";
+                else if (cost <= 200) lineColor = "rgba(224, 175, 104, 0.5)";
+                else lineColor = "rgba(255, 107, 107, 0.5)";
+
+                ctx.globalAlpha = eased;
+                ctx.strokeStyle = lineColor;
+                ctx.lineWidth = 2;
+                ctx.setLineDash([]);
+                ctx.beginPath();
+
+                var cp1Y = startY2 - (startY2 - endY) * 0.3;
+                var cp2Y = endY + (startY2 - endY) * 0.3;
+                var animProgress = eased;
+                var currentEndX = startX + (endX - startX) * animProgress;
+                var currentEndY = startY2 + (endY - startY2) * animProgress;
+
+                ctx.moveTo(startX, startY2);
+                ctx.bezierCurveTo(
+                    startX, cp1Y,
+                    currentEndX, cp2Y * animProgress + cp1Y * (1 - animProgress),
+                    currentEndX, currentEndY
+                );
+                ctx.stroke();
+                ctx.globalAlpha = 1;
+
+                // Cost label
+                if (progress >= 1) {
+                    var midX = (startX + endX) / 2;
+                    var midY2 = (startY2 + endY) / 2;
+                    ctx.fillStyle = "rgba(10, 25, 47, 0.9)";
+                    ctx.fillRect(midX - 16, midY2 - 8, 32, 16);
+                    ctx.fillStyle = cost >= 9000 ? "#ff6b6b" : (cost <= 60 ? "#64ffda" : "#C5A059");
+                    ctx.font = "500 9px 'JetBrains Mono', monospace";
+                    ctx.textAlign = "center";
+                    ctx.fillText(cost >= 9000 ? "INF" : cost.toString(), midX, midY2 + 4);
+                }
+            }
+
+            // Legend
+            if (progress >= 1) {
+                var legendY = CH - 14;
+                ctx.font = "400 8px 'Inter', sans-serif";
+                ctx.textAlign = "left";
+                var legendItems = [
+                    { color: "rgba(100,255,218,0.6)", label: "Low (\u226460)" },
+                    { color: "rgba(197,160,89,0.5)", label: "Med (61-120)" },
+                    { color: "rgba(224,175,104,0.5)", label: "High (121-200)" },
+                    { color: "rgba(255,107,107,0.5)", label: "Critical (>200)" }
+                ];
+                var lx = 40;
+                for (var li = 0; li < legendItems.length; li++) {
+                    ctx.fillStyle = legendItems[li].color;
+                    ctx.fillRect(lx, legendY - 5, 18, 3);
+                    ctx.fillStyle = "#8892B0";
+                    ctx.fillText(legendItems[li].label, lx + 22, legendY);
+                    lx += 130;
+                }
+            }
+
+            if (animFrame < maxFrames) {
+                animId = requestAnimationFrame(drawFrame);
+            }
+        }
+
+        drawFrame();
+    }
+
+    // ── Business Panel ──
+    function renderBusinessPanel(results, sc) {
+        var panel = document.getElementById("businessPanel");
+        panel.style.display = "block";
+        var content = document.getElementById("businessContent");
+        while (content.firstChild) content.removeChild(content.firstChild);
+
+        var costPerMinute = parseInt(document.getElementById("costPerMinute").value) || 12;
+        var dailyBanks = parseInt(document.getElementById("dailyBanks").value) || 8;
+
+        var randomCost = results[0].totalCost;
+        var hungarianCost = results[2].totalCost;
+        var greedyCost = results[1].totalCost;
+
+        var savingsVsRandom = randomCost - hungarianCost;
+        var savingsPct = randomCost > 0 ? ((savingsVsRandom / randomCost) * 100).toFixed(1) : "0.0";
+
+        var rows = [
+            { label: "Hungarian (optimal) cost", val: hungarianCost + " units" },
+            { label: "Random baseline cost", val: randomCost + " units" },
+            { label: "Greedy cost", val: greedyCost + " units" },
+            { label: "Improvement vs random", val: savingsVsRandom + " units (" + savingsPct + "%)" },
+            { label: "Cost per minute walking", val: "\u20AC" + costPerMinute },
+            { label: "Daily banks", val: dailyBanks },
+            { label: "Daily savings vs random", val: "\u20AC" + (savingsVsRandom * costPerMinute * dailyBanks) },
+            { label: "Annual savings (365 days)", val: "\u20AC" + (savingsVsRandom * costPerMinute * dailyBanks * 365).toLocaleString() }
+        ];
+
+        for (var r = 0; r < rows.length; r++) {
+            var row = document.createElement("div");
+            row.className = "business-row";
+            var lbl = document.createElement("span");
+            lbl.textContent = rows[r].label;
+            row.appendChild(lbl);
+            var val = document.createElement("span");
+            val.className = "biz-val";
+            val.textContent = rows[r].val;
+            row.appendChild(val);
+            content.appendChild(row);
+        }
+    }
+
+    // ── Gate Distribution Bars ──
+    function renderGateDistribution(result, sc, matrix) {
+        var panel = document.getElementById("workloadPanel");
+        panel.style.display = "block";
+        var container = document.getElementById("workloadBars");
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var gates = sc.gates;
+        var maxCost = 0;
+        var gateCosts = [];
+
+        for (var g = 0; g < N; g++) {
+            var costAtGate = 0;
+            for (var f = 0; f < N; f++) {
+                if (result.assignment[f] === g) {
+                    costAtGate = matrix[f][g];
+                    break;
+                }
+            }
+            gateCosts.push(costAtGate);
+            if (costAtGate < 9000 && costAtGate > maxCost) maxCost = costAtGate;
+        }
+
+        for (var g2 = 0; g2 < N; g2++) {
+            var row = document.createElement("div");
+            row.className = "wl-bar-row";
+
+            var label = document.createElement("div");
+            label.className = "wl-bar-label";
+            label.textContent = gates[g2].name;
+            row.appendChild(label);
+
+            var track = document.createElement("div");
+            track.className = "wl-bar-track";
+            var fill = document.createElement("div");
+            fill.className = "wl-bar-fill";
+            var pct = maxCost > 0 ? Math.min((gateCosts[g2] / maxCost) * 100, 100) : 0;
+            fill.style.width = pct + "%";
+            if (gateCosts[g2] >= 9000) fill.classList.add("low");
+            else if (pct >= 70) fill.classList.add("mid");
+            else fill.classList.add("high");
+            track.appendChild(fill);
+            row.appendChild(track);
+
+            var val = document.createElement("div");
+            val.className = "wl-bar-val";
+            val.textContent = gateCosts[g2] >= 9000 ? "INF" : gateCosts[g2];
+            row.appendChild(val);
+
+            container.appendChild(row);
+        }
+    }
+
+    // ── Scenario Chips ──
+    function renderScenarioChips() {
+        var container = document.getElementById("scenarioChips");
+        while (container.firstChild) container.removeChild(container.firstChild);
+
+        var keys = Object.keys(SCENARIOS);
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            var sc = SCENARIOS[key];
+            var chip = document.createElement("button");
+            chip.type = "button";
+            chip.className = "algo-chip" + (key === currentScenario ? " selected" : "");
+
+            var dot = document.createElement("span");
+            dot.style.display = "inline-block";
+            dot.style.width = "6px";
+            dot.style.height = "6px";
+            dot.style.borderRadius = "50%";
+            dot.style.marginRight = "6px";
+            if (sc.difficulty === "easy") dot.style.background = "var(--green)";
+            else if (sc.difficulty === "medium") dot.style.background = "var(--gold)";
+            else dot.style.background = "var(--red)";
+            chip.appendChild(dot);
+
+            var text = document.createTextNode(sc.name);
+            chip.appendChild(text);
+
+            (function(k) {
+                chip.addEventListener("click", function() {
+                    currentScenario = k;
+                    currentResults = null;
+                    renderScenarioChips();
+                    renderCostMatrix();
+                    clearResults();
+                });
+            })(key);
+
+            container.appendChild(chip);
+        }
+    }
+
+    // ── Mapping Table ──
+    function renderMappingTable() {
+        var tbody = document.getElementById("mappingBody");
+        var mappings = [
+            ["Agents (i)", "Arriving flights in the bank (6 flights with origin, passenger count, and aircraft type)"],
+            ["Tasks (j)", "Terminal gates (6 gates with position, terminal, and wide/narrow-body compatibility)"],
+            ["Cost c_ij", "Total weighted walking distance for connecting passengers when flight i parks at gate j"],
+            ["Constraint 1", "Each flight assigned to exactly one gate (one-to-one)"],
+            ["Constraint 2", "Each gate assigned to exactly one flight (one-to-one)"],
+            ["Compatibility", "Wide-body aircraft can only use wide-body-capable gates"],
+            ["Objective", "Minimize total passenger walking distance across all connections"]
+        ];
+        for (var i = 0; i < mappings.length; i++) {
+            var tr = document.createElement("tr");
+            var td1 = document.createElement("td");
+            td1.textContent = mappings[i][0];
+            tr.appendChild(td1);
+            var td2 = document.createElement("td");
+            td2.textContent = mappings[i][1];
+            tr.appendChild(td2);
+            tbody.appendChild(tr);
+        }
+    }
+
+    // ── Clear results ──
+    function clearResults() {
+        var tbody = document.getElementById("resultsBody");
+        while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+        var tr = document.createElement("tr");
+        var td = document.createElement("td");
+        td.setAttribute("colspan", "4");
+        td.style.textAlign = "center";
+        td.style.color = "var(--slate)";
+        td.style.fontFamily = "'Inter', sans-serif";
+        td.textContent = "Click Solve & Compare All Algorithms";
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+
+        var details = document.getElementById("assignDetails");
+        while (details.firstChild) details.removeChild(details.firstChild);
+        details.textContent = "Assignment details will appear here after solving.";
+
+        document.getElementById("businessPanel").style.display = "none";
+        document.getElementById("workloadPanel").style.display = "none";
+        document.getElementById("solverStatus").textContent = "Ready. Select a scenario and click Solve.";
+
+        if (animId) cancelAnimationFrame(animId);
+        ctx.clearRect(0, 0, CW, CH);
+        ctx.fillStyle = "#8892B0";
+        ctx.font = "400 14px 'Inter', sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("Select a scenario and click Solve to visualize assignments", CW / 2, CH / 2);
+    }
+
+    // ── Hero Particles (animated canvas) ──
+    function initHeroParticles() {
+        var pCanvas = document.getElementById("heroParticles");
+        var pCtx = pCanvas.getContext("2d");
+        var particles = [];
+        var numParticles = 40;
+
+        function resize() {
+            pCanvas.width = pCanvas.offsetWidth;
+            pCanvas.height = pCanvas.offsetHeight;
+        }
+        resize();
+        window.addEventListener("resize", resize);
+
+        for (var i = 0; i < numParticles; i++) {
+            particles.push({
+                x: Math.random() * pCanvas.width,
+                y: Math.random() * pCanvas.height,
+                vx: (Math.random() - 0.5) * 0.3,
+                vy: (Math.random() - 0.5) * 0.3,
+                r: Math.random() * 2 + 1
+            });
+        }
+
+        function drawParticles() {
+            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
+
+            for (var i = 0; i < particles.length; i++) {
+                var p = particles[i];
+                p.x += p.vx;
+                p.y += p.vy;
+
+                if (p.x < 0) p.x = pCanvas.width;
+                if (p.x > pCanvas.width) p.x = 0;
+                if (p.y < 0) p.y = pCanvas.height;
+                if (p.y > pCanvas.height) p.y = 0;
+
+                pCtx.fillStyle = "rgba(197, 160, 89, 0.15)";
+                pCtx.beginPath();
+                pCtx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+                pCtx.fill();
+
+                // Draw connections
+                for (var j = i + 1; j < particles.length; j++) {
+                    var q = particles[j];
+                    var dx = p.x - q.x;
+                    var dy = p.y - q.y;
+                    var dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 120) {
+                        pCtx.strokeStyle = "rgba(197, 160, 89, " + (0.06 * (1 - dist / 120)) + ")";
+                        pCtx.lineWidth = 0.5;
+                        pCtx.beginPath();
+                        pCtx.moveTo(p.x, p.y);
+                        pCtx.lineTo(q.x, q.y);
+                        pCtx.stroke();
+                    }
+                }
+            }
+
+            requestAnimationFrame(drawParticles);
+        }
+
+        drawParticles();
+    }
+
+    // ── Scroll Animations ──
+    function initScrollAnimations() {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add("visible");
+                }
+            });
+        }, { threshold: 0.1 });
+
+        var elements = document.querySelectorAll(".fade-in");
+        elements.forEach(function(el) { observer.observe(el); });
+    }
+
+    // ── Scroll Progress ──
+    function initScrollProgress() {
+        var progressBar = document.getElementById("scrollProgress");
+        var scrollTopBtn = document.getElementById("scrollTopBtn");
+
+        window.addEventListener("scroll", function() {
+            var scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            var docHeight = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+            var scrollPct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+            progressBar.style.width = scrollPct + "%";
+
+            if (scrollTop > 400) {
+                scrollTopBtn.classList.add("visible");
+            } else {
+                scrollTopBtn.classList.remove("visible");
+            }
+        });
+
+        scrollTopBtn.addEventListener("click", function() {
+            window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+    }
+
+    // ── Theme Toggle ──
+    function initThemeToggle() {
+        var toggle = document.getElementById("themeToggle");
+        var saved = localStorage.getItem("mm-theme");
+        if (saved === "light") {
+            document.documentElement.setAttribute("data-theme", "light");
+        }
+        toggle.addEventListener("click", function() {
+            var current = document.documentElement.getAttribute("data-theme");
+            if (current === "light") {
+                document.documentElement.removeAttribute("data-theme");
+                localStorage.setItem("mm-theme", "dark");
+            } else {
+                document.documentElement.setAttribute("data-theme", "light");
+                localStorage.setItem("mm-theme", "light");
+            }
+        });
+    }
+
+    // ── Initialize ──
+    document.getElementById("solveBtn").addEventListener("click", solveAll);
+
+    renderMappingTable();
+    renderScenarioChips();
+    renderCostMatrix();
+    clearResults();
+    initScrollAnimations();
+    initScrollProgress();
+    initThemeToggle();
+    initHeroParticles();
+
+})();
+</script>
+</body>
+</html>
