@@ -202,6 +202,108 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// Stackelberg Security Game Solver
+var targets=[
+    {id:'Gate-North', Udc:5, Udu:-10, Uac:-8, Uau:12},
+    {id:'Gate-East',  Udc:3, Udu:-6,  Uac:-5, Uau:8},
+    {id:'Gate-South', Udc:4, Udu:-15, Uac:-6, Uau:18},
+    {id:'Gate-West',  Udc:6, Udu:-8,  Uac:-9, Uau:10},
+    {id:'Rooftop',    Udc:2, Udu:-12, Uac:-4, Uau:15}
+];
+var m=2; // total coverage budget
+
+function defenderUtility(t,ct){return ct*targets[t].Udc+(1-ct)*targets[t].Udu;}
+function attackerUtility(t,ct){return ct*targets[t].Uac+(1-ct)*targets[t].Uau;}
+
+function solveSSE(method){
+    var coverage=[];
+    var body=document.getElementById('sseBody');
+
+    if(method==='uniform'){
+        // Uniform: ct = m/|T| for all t
+        var cUniform=m/targets.length;
+        for(var t=0;t<targets.length;t++) coverage.push(cUniform);
+    } else {
+        // LP optimal via iterative adjustment
+        // The maximin LP: max d s.t. d ≤ ct*Udc + (1-ct)*Udu for all t, Σct ≤ m, 0≤ct≤1
+        // Rewrite: d ≤ ct*(Udc-Udu) + Udu → ct ≥ (d-Udu)/(Udc-Udu) for each t
+        // At optimum, all binding constraints give same d
+        // Binary search on d
+        var lo=-20, hi=10;
+        for(var iter=0;iter<50;iter++){
+            var mid=(lo+hi)/2;
+            var totalC=0;
+            for(var t=0;t<targets.length;t++){
+                var range=targets[t].Udc-targets[t].Udu;
+                if(range<=0){totalC+=0; continue;} // should not happen with our data
+                var ct=(mid-targets[t].Udu)/range;
+                ct=Math.max(0,Math.min(1,ct));
+                totalC+=ct;
+            }
+            if(totalC<=m) lo=mid; else hi=mid;
+        }
+        var d=lo;
+        coverage=[];
+        for(var t=0;t<targets.length;t++){
+            var range=targets[t].Udc-targets[t].Udu;
+            var ct=(d-targets[t].Udu)/range;
+            ct=Math.max(0,Math.min(1,ct));
+            coverage.push(ct);
+        }
+    }
+
+    // Find attacker best response
+    var bestAtk=-1, bestAtkUtil=-Infinity;
+    for(var t=0;t<targets.length;t++){
+        var au=attackerUtility(t,coverage[t]);
+        if(au>bestAtkUtil){bestAtkUtil=au;bestAtk=t;}
+    }
+
+    var defUtil=defenderUtility(bestAtk,coverage[bestAtk]);
+
+    // Draw bar chart
+    drawBars(coverage,bestAtk,method);
+
+    // Results table
+    var tr=document.createElement('tr');
+    var covStr=coverage.map(function(c,i){return targets[i].id.split('-')[1]+':'+c.toFixed(2);}).join(' ');
+    var cells=[method==='lp'?'LP Optimal':'Uniform', covStr, targets[bestAtk].id, defUtil.toFixed(2)];
+    for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+    body.appendChild(tr);
+    document.getElementById('sseResults').style.display='table';
+
+    var note=document.getElementById('sseNote');note.style.display='block';
+    var totalCov=0;for(var t=0;t<coverage.length;t++)totalCov+=coverage[t];
+    note.style.color=method==='lp'?'var(--green)':'var(--gold)';
+    note.textContent=method.toUpperCase()+': defender utility = '+defUtil.toFixed(2)+' | total coverage = '+totalCov.toFixed(2)+'/'+m+' | attacker targets '+targets[bestAtk].id;
+}
+
+function drawBars(coverage,attackTarget,method){
+    var chart=document.getElementById('barChart');
+    while(chart.firstChild) chart.removeChild(chart.firstChild);
+    var maxH=160;
+    for(var t=0;t<targets.length;t++){
+        var col=document.createElement('div');col.className='bar-col';
+        var val=document.createElement('div');val.className='bar-val';val.textContent=coverage[t].toFixed(2);
+        col.appendChild(val);
+        var fill=document.createElement('div');fill.className='bar-fill';
+        fill.style.height=Math.max(2,coverage[t]*maxH)+'px';
+        fill.style.background=t===attackTarget?'var(--red)':'var(--gold)';
+        col.appendChild(fill);
+        var label=document.createElement('div');label.className='bar-label';
+        label.textContent=targets[t].id;
+        if(t===attackTarget){
+            var atk=document.createElement('div');
+            atk.style.fontSize='0.65rem';atk.style.color='var(--red)';atk.style.marginTop='0.2rem';
+            atk.textContent='\u2191 ATTACK';
+            col.appendChild(label);col.appendChild(atk);
+        } else {
+            col.appendChild(label);
+        }
+        chart.appendChild(col);
+    }
+}
 </script>
 </body>
 </html>
