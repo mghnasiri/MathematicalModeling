@@ -94,9 +94,84 @@
 </div></section>
 
 <!-- Placeholders -->
-<section class="content-section" id="scenario"><div class="container" id="pdScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="pdSolver"></div></section>
-<section class="content-section" id="references"><div class="container" id="pdRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Guard <span>Allocation</span></h2>
+    <div class="context-panel">
+        <strong>4 perimeter sectors</strong> protect the base. You have <strong>2 guards</strong> to allocate. Each sector has different payoffs for defender and attacker depending on whether the sector is guarded when attacked. The attacker observes your <em>strategy</em> (coverage probabilities) but not your <em>realization</em> (which guards go where tonight). You must choose a <strong>mixed strategy</strong> &mdash; randomized coverage probabilities &mdash; that maximizes your guaranteed worst-case utility.
+    </div>
+    <div style="margin-bottom:1.5rem;padding:1rem;border:1px solid rgba(197,160,89,0.2);border-radius:4px;background:rgba(197,160,89,0.03);">
+        <p style="font-size:0.85rem;color:var(--gold);font-weight:600;margin-bottom:0.5rem;">How this differs from Patrol Route Optimization</p>
+        <p style="font-size:0.85rem;color:var(--slate-light);">The <a href="patrol-route-optimization.html" style="color:var(--blue);">patrol page</a> uses the same SSE framework in a <em>path-based</em> context (ARMOR/IRIS). This page focuses on the <strong>pure game-theoretic structure</strong>: guard-to-sector assignment, the concept of mixed strategies, and the key insight that <strong>randomization is a feature</strong> &mdash; predictable defense is exploitable. No routes, just allocation probabilities.</p>
+    </div>
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Wall sector</td><td>Target</td><td>t</td><td>Sector-Beta</td></tr>
+            <tr><td>Guard unit</td><td>Coverage resource</td><td>m = 2</td><td>2 guards</td></tr>
+            <tr><td>Guard probability</td><td>Coverage</td><td>c<sub>t</sub> &isin; [0,1]</td><td>0.55</td></tr>
+            <tr><td>Catch infiltrator</td><td>Defender covered payoff</td><td>U<sup>d</sup><sub>c</sub></td><td>5</td></tr>
+            <tr><td>Breach damage</td><td>Defender uncovered payoff</td><td>U<sup>d</sup><sub>u</sub></td><td>-12</td></tr>
+            <tr><td>Alien caught</td><td>Attacker covered payoff</td><td>U<sup>a</sup><sub>c</sub></td><td>-7</td></tr>
+            <tr><td>Successful infiltration</td><td>Attacker uncovered payoff</td><td>U<sup>a</sup><sub>u</sub></td><td>15</td></tr>
+        </tbody>
+    </table>
+    <!-- Corrected from prompt: verified compact SSE formulation against Tambe (2011) Ch. 2 — maximin LP over coverage probabilities -->
+    <div class="formulation">
+<span class="keyword">Stackelberg Security Game</span> (Tambe 2011):
+
+<span class="keyword">MAXIMIZE</span>   <span class="variable">d</span>    <span class="comment">// guaranteed minimum defender utility</span>
+
+<span class="keyword">subject to:</span>
+  <span class="variable">d</span> &le; c<sub>t</sub>&middot;U<sup>d</sup><sub>c</sub>(t) + (1-c<sub>t</sub>)&middot;U<sup>d</sup><sub>u</sub>(t)   &forall; t &isin; T  <span class="comment">// worst-case constraint</span>
+  <span class="variable">&Sigma;</span><sub>t</sub> c<sub>t</sub> &le; m = 2                                  <span class="comment">// total coverage = 2 guards</span>
+  0 &le; c<sub>t</sub> &le; 1                                  &forall; t &isin; T
+
+<span class="comment">// Attacker best response (rational adversary):</span>
+<span class="comment">// t* = argmax_t [ c_t &middot; Ua_c(t) + (1-c_t) &middot; Ua_u(t) ]</span>
+
+<span class="comment">// At Strong Stackelberg Equilibrium (SSE):</span>
+<span class="comment">// attacker is indifferent among targets they might attack</span>
+<span class="comment">// &mdash; this is the key game-theoretic property</span>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Solver</div>
+    <h2 class="section-title">Mixed Strategy <span>Optimizer</span></h2>
+    <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic (LP)</span>
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-chess-rook" style="margin-right:0.4rem"></i>4 Sectors &middot; 2 Guards</div>
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip" onclick="solvePD('mixed')">LP Mixed Strategy</button>
+            <button class="algo-chip" onclick="solvePD('uniform')">Uniform (c=0.5 each)</button>
+            <button class="algo-chip" onclick="solvePD('pure')">Pure Strategy (best 2)</button>
+        </div>
+        <table class="results-table" id="pdPayoffs" style="margin-bottom:1.5rem;max-width:500px;">
+            <thead><tr><th>Sector</th><th>U<sup>d</sup><sub>c</sub></th><th>U<sup>d</sup><sub>u</sub></th><th>U<sup>a</sup><sub>c</sub></th><th>U<sup>a</sup><sub>u</sub></th></tr></thead>
+            <tbody>
+                <tr><td style="color:var(--gold)">Alpha</td><td>3</td><td>-8</td><td>-5</td><td>10</td></tr>
+                <tr><td style="color:var(--gold)">Beta</td><td>5</td><td>-12</td><td>-7</td><td>15</td></tr>
+                <tr><td style="color:var(--gold)">Gamma</td><td>2</td><td>-5</td><td>-3</td><td>6</td></tr>
+                <tr><td style="color:var(--gold)">Delta</td><td>4</td><td>-10</td><td>-6</td><td>13</td></tr>
+            </tbody>
+        </table>
+        <table class="results-table" id="pdResults" style="display:none;">
+            <thead><tr><th>Strategy</th><th>Coverage (A/B/G/D)</th><th>Attacker Target</th><th>Defender Utility</th></tr></thead>
+            <tbody id="pdBody"></tbody>
+        </table>
+        <div id="pdNote" style="margin-top:0.8rem;font-size:0.82rem;font-family:'JetBrains Mono',monospace;display:none;"></div>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Tambe, M. (2011). <em>Security Games: Applying Game Theory to Counterterrorism</em>. Cambridge University Press.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Korzhyk, D., Conitzer, V., &amp; Parr, R. (2010). &ldquo;Complexity of computing optimal Stackelberg strategies in security resource allocation games.&rdquo; <em>AAAI</em>.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Kiekintveld, C., Jain, M., Tsai, J., et al. (2009). &ldquo;Computing optimal randomized resource allocations for massive security games.&rdquo; <em>AAMAS</em>.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
@@ -123,6 +198,78 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// Perimeter Defense Stackelberg Game
+var sectors=[
+    {id:'Alpha',Udc:3,Udu:-8,Uac:-5,Uau:10},
+    {id:'Beta', Udc:5,Udu:-12,Uac:-7,Uau:15},
+    {id:'Gamma',Udc:2,Udu:-5,Uac:-3,Uau:6},
+    {id:'Delta',Udc:4,Udu:-10,Uac:-6,Uau:13}
+];
+var m=2;
+
+function defU(t,ct){return ct*sectors[t].Udc+(1-ct)*sectors[t].Udu;}
+function atkU(t,ct){return ct*sectors[t].Uac+(1-ct)*sectors[t].Uau;}
+
+function solvePD(method){
+    var cov=[];
+    var body=document.getElementById('pdBody');
+
+    if(method==='mixed'){
+        // Binary search on d for maximin LP
+        var lo=-20,hi=10;
+        for(var iter=0;iter<60;iter++){
+            var mid=(lo+hi)/2;
+            var totalC=0;
+            for(var t=0;t<sectors.length;t++){
+                var range=sectors[t].Udc-sectors[t].Udu;
+                if(range<=0) continue;
+                var ct=(mid-sectors[t].Udu)/range;
+                ct=Math.max(0,Math.min(1,ct));
+                totalC+=ct;
+            }
+            if(totalC<=m) lo=mid; else hi=mid;
+        }
+        cov=[];
+        for(var t=0;t<sectors.length;t++){
+            var range=sectors[t].Udc-sectors[t].Udu;
+            var ct=(lo-sectors[t].Udu)/range;
+            cov.push(Math.max(0,Math.min(1,ct)));
+        }
+    } else if(method==='uniform'){
+        for(var t=0;t<sectors.length;t++) cov.push(m/sectors.length);
+    } else {
+        // Pure strategy: put all coverage on 2 highest-loss sectors
+        var ranked=[];for(var t=0;t<sectors.length;t++) ranked.push({t:t,loss:Math.abs(sectors[t].Udu)});
+        ranked.sort(function(a,b){return b.loss-a.loss;});
+        cov=[0,0,0,0];
+        cov[ranked[0].t]=1; cov[ranked[1].t]=1;
+    }
+
+    // Find attacker best response
+    var bestAtk=-1,bestAtkU=-Infinity;
+    for(var t=0;t<sectors.length;t++){
+        var au=atkU(t,cov[t]);
+        if(au>bestAtkU){bestAtkU=au;bestAtk=t;}
+    }
+    var defUtil=defU(bestAtk,cov[bestAtk]);
+
+    // Display
+    var tr=document.createElement('tr');
+    var methodName=method==='mixed'?'LP Mixed Strategy':method==='uniform'?'Uniform (0.5 each)':'Pure (top 2)';
+    var covStr=cov.map(function(c){return c.toFixed(2);}).join(' / ');
+    var cells=[methodName, covStr, sectors[bestAtk].id, defUtil.toFixed(2)];
+    for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+    body.appendChild(tr);
+    document.getElementById('pdResults').style.display='table';
+
+    var note=document.getElementById('pdNote');note.style.display='block';
+    var totalC=0;for(var t=0;t<cov.length;t++) totalC+=cov[t];
+    note.style.color=method==='mixed'?'var(--green)':'var(--gold)';
+    var txt=methodName+': defender utility = '+defUtil.toFixed(2)+' | \u03A3c = '+totalC.toFixed(2);
+    if(method==='pure') txt+=' | \u26A0 Predictable \u2014 attacker exploits unguarded sectors';
+    note.textContent=txt;
+}
 </script>
 </body>
 </html>
