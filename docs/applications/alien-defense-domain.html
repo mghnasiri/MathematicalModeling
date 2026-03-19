@@ -202,10 +202,54 @@
     </div>
 </section>
 
-<!-- TAB 1: WTA — content will be added in next commit -->
+<!-- TAB 1: Weapon-Target Assignment -->
 <div class="tab-content active" id="tab-wta">
     <div class="container">
-        <p style="color:var(--slate);font-style:italic;">Loading solver...</p>
+        <div class="context-panel">
+            <strong>Weapon-Target Assignment (WTA)</strong> is one of the oldest problems in military OR, first formulated by Manne (1958). Given m weapons (interceptors) and n targets (incoming threats), each with a threat value V&#x2C7;, and single-shot kill probabilities p&#x1D62;&#x2C7; for each weapon-target pair, assign weapons to targets to <strong>minimize expected surviving threat value</strong>. The objective &#x2211;&#x2C7; V&#x2C7; &middot; &#x220F;&#x1D62; (1-p&#x1D62;&#x2C7;)&#x207F;&#x1D62;&#x2C7; is nonlinear &mdash; making this NP-hard even for identical weapons.
+        </div>
+
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--ivory);margin-bottom:1rem;">OR Mapping</h3>
+        <table class="mapping-table">
+            <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Example</th></tr></thead>
+            <tbody>
+                <tr><td>Orbital laser</td><td>Weapon i</td><td>Laser Alpha (3 shots)</td></tr>
+                <tr><td>Alien missile</td><td>Target j</td><td>Mothership Scout (V=100)</td></tr>
+                <tr><td>Hit chance</td><td>Kill probability p&#x1D62;&#x2C7;</td><td>0.8</td></tr>
+                <tr><td>Ammo count</td><td>Weapon capacity W&#x1D62;</td><td>3 shots</td></tr>
+                <tr><td>Survival chance</td><td>&#x220F;(1-p)&#x207F;</td><td>0.04 (two hits at p=0.8)</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Corrected from prompt: Using the standard WTA formulation from Manne (1958) with integer assignments -->
+        <div class="formulation">
+<span class="keyword">MINIMIZE</span>   <span class="variable">&#x2211;&#x2C7;</span> V&#x2C7; &middot; <span class="variable">&#x220F;&#x1D62;</span> (1 - p&#x1D62;&#x2C7;)<sup>x&#x1D62;&#x2C7;</sup>
+
+<span class="keyword">subject to:</span>
+  <span class="variable">&#x2211;&#x2C7;</span> x&#x1D62;&#x2C7; &le; W&#x1D62;   &forall; i &isin; Weapons   <span class="comment">// weapon capacity</span>
+  x&#x1D62;&#x2C7; &isin; &#x2124;&#x207A;          &forall; i,j           <span class="comment">// non-negative integer</span>
+        </div>
+
+        <div class="solver-panel">
+            <div class="solver-label"><i class="fas fa-crosshairs" style="margin-right:0.4rem"></i>Mini-Demo: Greedy WTA</div>
+            <span class="realism-badge realism-heuristic">&#x2605;&#x2605;&#x2606; Heuristic</span>
+            <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">3 weapons &times; 4 targets. Greedy assigns the highest-kill-probability weapon to the highest-value remaining target.</p>
+            <button class="algo-chip active" onclick="runWtaGreedy()" style="padding:0.5rem 1.5rem;">
+                <i class="fas fa-play" style="margin-right:0.4rem"></i>Run Greedy Assignment
+            </button>
+            <table class="results-table" id="wtaResults" style="display:none;">
+                <thead><tr><th>Target</th><th>Value</th><th>Assigned Weapon</th><th>Kill Prob</th><th>Survival</th><th>Expected Loss</th></tr></thead>
+                <tbody id="wtaBody"></tbody>
+            </table>
+            <div id="wtaSummary" style="margin-top:0.8rem;color:var(--green);font-family:'JetBrains Mono',monospace;font-size:0.85rem;display:none;"></div>
+            <a href="interceptor-assignment.html" class="see-full">See Full Application &rarr; 3 algorithms including Branch &amp; Bound</a>
+        </div>
+
+        <div class="evidence-panel">
+            <div class="evidence-panel-title"><i class="fas fa-book-open"></i> Key References</div>
+            <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Manne, A.S. (1958). &ldquo;A Target-Assignment Problem.&rdquo; <em>Operations Research</em>, 6(3), 346&ndash;351.</div>
+            <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Ahuja, R.K., Kumar, A., Jha, K.C., &amp; Orlin, J.B. (2007). &ldquo;Exact and Heuristic Algorithms for the Weapon-Target Assignment Problem.&rdquo; <em>Operations Research</em>, 55(6), 1136&ndash;1146.</div>
+        </div>
     </div>
 </div>
 
@@ -361,6 +405,52 @@ window.addEventListener('scroll', function(){
     if(btn) btn.classList.toggle('visible', window.scrollY > 400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+
+// WTA Greedy Mini-Solver
+function runWtaGreedy() {
+    var weapons = [{name:'Laser Alpha',cap:3},{name:'Laser Beta',cap:2},{name:'Ground Gamma',cap:4}];
+    var targets = [{name:'Mothership Scout',val:100},{name:'Drone Cluster',val:80},{name:'Supply Pod',val:60},{name:'Recon Probe',val:40}];
+    var kp = [[0.8,0.6,0.7,0.9],[0.7,0.8,0.5,0.6],[0.6,0.5,0.8,0.7]];
+    var remaining = [weapons[0].cap, weapons[1].cap, weapons[2].cap];
+    var assignments = [];
+    var order = [0,1,2,3];
+    order.sort(function(a,b){ return targets[b].val - targets[a].val; });
+    for(var ti=0; ti<order.length; ti++){
+        var j = order[ti];
+        var bestW = -1, bestP = 0;
+        for(var i=0; i<weapons.length; i++){
+            if(remaining[i] > 0 && kp[i][j] > bestP){ bestP = kp[i][j]; bestW = i; }
+        }
+        if(bestW >= 0){ remaining[bestW]--; assignments.push({t:j,w:bestW,p:bestP}); }
+        else { assignments.push({t:j,w:-1,p:0}); }
+    }
+    var body = document.getElementById('wtaBody');
+    while(body.firstChild) body.removeChild(body.firstChild);
+    var totalLoss = 0;
+    for(var k=0; k<assignments.length; k++){
+        var a = assignments[k];
+        var surv = a.w >= 0 ? (1 - a.p) : 1;
+        var loss = targets[a.t].val * surv;
+        totalLoss += loss;
+        var tr = document.createElement('tr');
+        var cells = [
+            targets[a.t].name, targets[a.t].val,
+            a.w >= 0 ? weapons[a.w].name : '(none)',
+            a.w >= 0 ? a.p.toFixed(1) : '\u2014',
+            surv.toFixed(2), loss.toFixed(1)
+        ];
+        for(var c=0; c<cells.length; c++){
+            var td = document.createElement('td');
+            td.textContent = cells[c];
+            tr.appendChild(td);
+        }
+        body.appendChild(tr);
+    }
+    document.getElementById('wtaResults').style.display = 'table';
+    var sum = document.getElementById('wtaSummary');
+    sum.style.display = 'block';
+    sum.textContent = 'Total expected surviving value: ' + totalLoss.toFixed(1) + ' (lower is better)';
+}
 </script>
 </body>
 </html>
