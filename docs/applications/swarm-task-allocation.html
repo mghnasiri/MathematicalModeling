@@ -258,6 +258,108 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// GAP Solver
+var units=['Mech-A','Mech-B','Tank-C','Drone-D','Infantry-E','Sniper-F'];
+var locs=['North Shield','Central Hub','South Gate'];
+var cap=[10,8,12];
+var val=[[8,5,6],[7,9,4],[6,7,8],[5,3,9],[4,8,3],[9,4,7]];
+var wt=[[4,3,5],[5,4,3],[6,5,4],[3,2,6],[2,4,2],[5,3,4]];
+
+function solveGAP(method){
+    var assign=[];for(var i=0;i<6;i++)assign.push(-1);
+    var used=[0,0,0];
+    var totalVal=0;
+    var body=document.getElementById('gapResultsBody');
+
+    if(method==='greedy'){
+        // Build all (unit,loc) pairs sorted by v/w ratio
+        var pairs=[];
+        for(var i=0;i<6;i++){
+            for(var j=0;j<3;j++){
+                pairs.push({i:i,j:j,ratio:val[i][j]/wt[i][j],v:val[i][j],w:wt[i][j]});
+            }
+        }
+        pairs.sort(function(a,b){return b.ratio-a.ratio;});
+        for(var p=0;p<pairs.length;p++){
+            var pr=pairs[p];
+            if(assign[pr.i]>=0) continue;
+            if(used[pr.j]+pr.w<=cap[pr.j]){
+                assign[pr.i]=pr.j;
+                used[pr.j]+=pr.w;
+                totalVal+=pr.v;
+            }
+        }
+        showGAPResult('Greedy (v/w ratio)',assign,totalVal,used);
+    } else if(method==='lp'){
+        // Simplified LP relaxation: allow fractional, compute upper bound
+        // Then round to integer solution
+        var frac=[];for(var i=0;i<6;i++){var row=[];for(var j=0;j<3;j++)row.push(0);frac.push(row);}
+        var remCap=cap.slice();
+        var lpVal=0;
+        // Build pairs sorted by v/w ratio (same as greedy)
+        var pairs=[];
+        for(var i=0;i<6;i++){
+            for(var j=0;j<3;j++){
+                pairs.push({i:i,j:j,ratio:val[i][j]/wt[i][j],v:val[i][j],w:wt[i][j]});
+            }
+        }
+        pairs.sort(function(a,b){return b.ratio-a.ratio;});
+        var unitUsed=[];for(var i=0;i<6;i++)unitUsed.push(0);
+        for(var p=0;p<pairs.length;p++){
+            var pr=pairs[p];
+            if(unitUsed[pr.i]>=1) continue;
+            var canAssign=Math.min(1-unitUsed[pr.i], remCap[pr.j]/pr.w);
+            if(canAssign>0.001){
+                frac[pr.i][pr.j]=canAssign;
+                unitUsed[pr.i]+=canAssign;
+                remCap[pr.j]-=canAssign*pr.w;
+                lpVal+=canAssign*pr.v;
+            }
+        }
+        // Round: assign each unit to its max fractional location
+        assign=[];for(var i=0;i<6;i++)assign.push(-1);
+        used=[0,0,0];totalVal=0;
+        for(var i=0;i<6;i++){
+            var bestJ=-1,bestF=0;
+            for(var j=0;j<3;j++){if(frac[i][j]>bestF){bestF=frac[i][j];bestJ=j;}}
+            if(bestJ>=0 && used[bestJ]+wt[i][bestJ]<=cap[bestJ]){
+                assign[i]=bestJ; used[bestJ]+=wt[i][bestJ]; totalVal+=val[i][bestJ];
+            }
+        }
+        // Show LP bound
+        var noteEl=document.getElementById('gapNote');
+        noteEl.style.display='block';
+        noteEl.style.color='var(--blue)';
+        noteEl.textContent='LP relaxation upper bound: '+lpVal.toFixed(1)+' | Integer solution: '+totalVal+' | Integrality gap: '+(lpVal-totalVal).toFixed(1);
+        showGAPResult('LP Relaxation + Round',assign,totalVal,used);
+    }
+}
+
+function showGAPResult(methodName,assign,totalVal,used){
+    var body=document.getElementById('gapResultsBody');
+    var tr=document.createElement('tr');
+    var assignStr=[];
+    for(var i=0;i<6;i++){
+        if(assign[i]>=0) assignStr.push(units[i]+' \u2192 '+locs[assign[i]]);
+        else assignStr.push(units[i]+' \u2192 unassigned');
+    }
+    var cells=[methodName, assignStr.join(', '), totalVal, used[0]+'/'+cap[0]+', '+used[1]+'/'+cap[1]+', '+used[2]+'/'+cap[2]];
+    for(var c=0;c<cells.length;c++){
+        var td=document.createElement('td');
+        td.textContent=cells[c];
+        if(c===1) td.style.fontSize='0.75rem';
+        tr.appendChild(td);
+    }
+    body.appendChild(tr);
+    document.getElementById('gapResultsTable').style.display='table';
+    if(!document.getElementById('gapNote').textContent){
+        var noteEl=document.getElementById('gapNote');
+        noteEl.style.display='block';
+        noteEl.style.color='var(--green)';
+        noteEl.textContent='Total defensive effectiveness: '+totalVal;
+    }
+}
 </script>
 </body>
 </html>
