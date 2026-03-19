@@ -141,8 +141,22 @@
     <div class="container">
         <div class="section-label">The Scenario</div>
         <h2 class="section-title">Orbital <span>Defense</span></h2>
-        <!-- Content added in next commit -->
-        <div id="scenarioContent"></div>
+        <div class="context-panel">
+            Earth's orbital defense grid consists of <strong>3 laser platforms</strong> with limited ammunition and varying accuracy against different threat types. An incoming wave of <strong>4 alien missiles</strong> has been detected, each with a different threat value reflecting the damage it would cause if it reaches Earth. The commander must decide how to allocate laser shots to missiles &mdash; assigning too many shots to one target wastes resources, while leaving a high-value target unengaged risks catastrophic damage.
+        </div>
+
+        <table class="mapping-table">
+            <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+            <tbody>
+                <tr><td>Orbital laser</td><td>Weapon</td><td>i &isin; {1,...,m}</td><td>Laser Alpha (3 shots)</td></tr>
+                <tr><td>Alien missile</td><td>Target</td><td>j &isin; {1,...,n}</td><td>Mothership Scout (V=100)</td></tr>
+                <tr><td>Threat level</td><td>Target value</td><td>V&#x2C7;</td><td>100 (mothership)</td></tr>
+                <tr><td>Hit chance</td><td>Kill probability</td><td>p&#x1D62;&#x2C7;</td><td>0.8</td></tr>
+                <tr><td>Ammo count</td><td>Weapon capacity</td><td>W&#x1D62;</td><td>3 shots</td></tr>
+                <tr><td>Assignment</td><td>Decision variable</td><td>x&#x1D62;&#x2C7; &isin; &#x2124;&#x207A;</td><td>2 shots at target</td></tr>
+                <tr><td>Survival chance</td><td>Objective term</td><td>&#x220F;(1-p)&#x207F;</td><td>0.04</td></tr>
+            </tbody>
+        </table>
     </div>
 </section>
 
@@ -151,7 +165,25 @@
     <div class="container">
         <div class="section-label">Mathematical Model</div>
         <h2 class="section-title">WTA <span>Formulation</span></h2>
-        <div id="formulationContent"></div>
+        <!-- Corrected from prompt: verified against Manne (1958) — the standard WTA uses integer xij representing number of times weapon i engages target j -->
+        <div class="formulation">
+<span class="keyword">MINIMIZE</span>   <span class="variable">&Sigma;&#x2C7;</span> V&#x2C7; &middot; <span class="variable">&Pi;&#x1D62;</span> (1 - p&#x1D62;&#x2C7;)<sup>x&#x1D62;&#x2C7;</sup>
+
+<span class="keyword">subject to:</span>
+  <span class="variable">&Sigma;&#x2C7;</span> x&#x1D62;&#x2C7; &le; W&#x1D62;        &forall; i &isin; {1,...,m}   <span class="comment">// weapon i has W&#x1D62; shots</span>
+  x&#x1D62;&#x2C7; &isin; &#x2124;&#x207A;              &forall; i,j              <span class="comment">// non-negative integer</span>
+
+<span class="comment">// Objective is nonlinear: the product (1-p&#x1D62;&#x2C7;)^x&#x1D62;&#x2C7; represents the</span>
+<span class="comment">// probability that target j survives all x&#x1D62;&#x2C7; shots from weapon i.</span>
+<span class="comment">// Multiple weapons engaging the same target:</span>
+<span class="comment">//   survival&#x2C7; = &Pi;&#x1D62; (1-p&#x1D62;&#x2C7;)^x&#x1D62;&#x2C7;</span>
+<span class="comment">// Expected damage = &Sigma;&#x2C7; V&#x2C7; &times; survival&#x2C7;</span>
+        </div>
+
+        <div style="margin-top:1.5rem;">
+            <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--ivory);margin-bottom:0.8rem;">Why is this hard?</h3>
+            <p style="color:var(--slate-light);font-size:0.9rem;line-height:1.8;">The WTA is <strong>NP-hard</strong> even for identical weapons (Manne, 1958). The nonlinear objective means we cannot use standard linear or integer programming solvers directly. A logarithmic transformation converts the product to a sum: log(&Pi;(1-p)&#x207F;) = &Sigma; x&middot;log(1-p), but the resulting problem remains a nonlinear integer program. Ahuja et al. (2007) developed exact branch-and-bound algorithms exploiting the problem&rsquo;s structure, solving instances with 200 weapons and 200 targets.</p>
+        </div>
     </div>
 </section>
 
@@ -169,14 +201,54 @@
     <div class="container">
         <div class="section-label">Solution Methods</div>
         <h2 class="section-title">The <span>Algorithms</span></h2>
-        <div id="algoContent"></div>
+        <div class="algo-card">
+            <h4>1. Greedy by Threat Value <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic</span></h4>
+            <div class="complexity">O(n &middot; m) per pass</div>
+            <p>Sort targets by value V&#x2C7; descending. For each target, assign the weapon with the highest kill probability that still has capacity remaining. Simple and fast, but ignores diminishing returns from multiple engagements.</p>
+            <ol>
+                <li>Sort all alien missiles by threat value (highest first)</li>
+                <li>For the highest-value unassigned target, find the laser with the best kill probability and remaining ammo</li>
+                <li>Assign one shot from that laser to that target</li>
+                <li>Repeat until all weapon capacity is exhausted or all targets are assigned</li>
+            </ol>
+        </div>
+
+        <div class="algo-card">
+            <h4>2. Maximum Marginal Return (MMR) <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic</span></h4>
+            <div class="complexity">O(n &middot; m) per iteration, &Sigma;W&#x1D62; iterations total</div>
+            <p>At each step, evaluate every possible (weapon, target) pairing and choose the one yielding the largest <em>marginal reduction</em> in expected surviving value. This accounts for diminishing returns: adding a second shot to a target already engaged is less valuable than engaging a new target.</p>
+            <ol>
+                <li>Compute current expected surviving value for all targets</li>
+                <li>For every (laser, missile) pair with remaining capacity, compute the marginal improvement from one additional shot</li>
+                <li>Select the pair with the maximum marginal reduction</li>
+                <li>Update survival probabilities and remaining capacity</li>
+                <li>Repeat until all capacity is exhausted</li>
+            </ol>
+        </div>
+
+        <div class="algo-card">
+            <h4>3. Branch &amp; Bound (Exact) <span class="realism-badge realism-exact">&starf;&starf;&starf; Exact</span></h4>
+            <div class="complexity">O(W<sup>n</sup>) worst case &mdash; feasible for &le;5 weapons, &le;8 targets</div>
+            <p>Enumerate all feasible assignments using depth-first search with pruning. At each node, compute a lower bound on the expected surviving value using a relaxation. Prune branches that cannot improve on the current best solution. Guarantees optimality for small instances.</p>
+            <ol>
+                <li>Root node: no assignments made, full weapon capacities</li>
+                <li>Branch: assign 0, 1, 2, ... shots from weapon i to target j</li>
+                <li>Bound: compute a lower bound by assuming remaining weapons can achieve their best possible kill rates</li>
+                <li>Prune: if lower bound &ge; current best, skip this subtree</li>
+                <li>Leaf: all weapons assigned &mdash; update best if improved</li>
+            </ol>
+        </div>
     </div>
 </section>
 
 <!-- REFERENCES -->
 <section class="content-section" id="references">
     <div class="container">
-        <div id="referencesContent"></div>
+        <div class="evidence-panel">
+            <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+            <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Manne, A.S. (1958). &ldquo;A Target-Assignment Problem.&rdquo; <em>Operations Research</em>, 6(3), 346&ndash;351. &mdash; Original formulation of the WTA as a nonlinear integer program.</div>
+            <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Ahuja, R.K., Kumar, A., Jha, K.C., &amp; Orlin, J.B. (2007). &ldquo;Exact and Heuristic Algorithms for the Weapon-Target Assignment Problem.&rdquo; <em>Operations Research</em>, 55(6), 1136&ndash;1146. &mdash; Branch-and-bound + network flow heuristics; solved 200&times;200 instances.</div>
+        </div>
     </div>
 </section>
 
