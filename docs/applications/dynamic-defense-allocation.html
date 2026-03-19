@@ -105,9 +105,83 @@
 </div></section>
 
 <!-- Content placeholders — filled in next commit -->
-<section class="content-section" id="scenario"><div class="container" id="adpScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="adpSolver"></div></section>
-<section class="content-section" id="references"><div class="container" id="adpRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Wave <span>Defense</span></h2>
+    <div class="context-panel">
+        Alien attacks arrive in <strong>4 waves</strong>, each bringing 2&ndash;3 new threats. You command <strong>3 weapons</strong> with limited ammunition. After each assignment, engagement outcomes are <strong>stochastic</strong> &mdash; a shot with p=0.8 kill probability still misses 20% of the time. Between waves, you see your remaining ammo and surviving threats, then must decide how to allocate for the next wave. This sequential decision-making under uncertainty is a <strong>Markov Decision Process (MDP)</strong>.
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Current battle state</td><td>State</td><td>s = (ammo, threats, time)</td><td>(3,2,4, active threats, wave 2)</td></tr>
+            <tr><td>Assignment this turn</td><td>Action</td><td>a = {(i,j)}</td><td>Laser-1 &rarr; Scout-3</td></tr>
+            <tr><td>Engagement outcomes</td><td>Transition</td><td>P(s&prime;|s,a)</td><td>Hit with prob 0.8</td></tr>
+            <tr><td>Threat value destroyed</td><td>Reward</td><td>R(s,a)</td><td>100 points</td></tr>
+            <tr><td>Future value</td><td>Value function</td><td>V(s)</td><td>Expected total reward</td></tr>
+            <tr><td>Time horizon</td><td>Discount factor</td><td>&gamma; = 0.9</td><td>Future rewards discounted</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: verified Bellman equation structure against Bertsekas (2012) Ch. 1 -->
+    <div class="formulation">
+<span class="keyword">Bellman Equation</span> (Bertsekas 2012):
+
+<span class="variable">V*(s)</span> = max<sub>a&isin;A(s)</sub> { <span class="variable">R(s,a)</span> + &gamma; &middot; <span class="variable">&Sigma;</span><sub>s&prime;</sub> P(s&prime;|s,a) &middot; V*(s&prime;) }
+
+<span class="comment">// State space: |S| = &Pi;(W&#x1D62;+1) &times; &Pi;(2) &times; T</span>
+<span class="comment">//   For 3 weapons with 4 ammo each, 8 targets, 4 waves:</span>
+<span class="comment">//   |S| = 5&sup3; &times; 2&sup8; &times; 4 = 128,000 states</span>
+<span class="comment">//   This is SMALL. Real problems have millions.</span>
+
+<span class="keyword">Curse of Dimensionality:</span>
+<span class="comment">// State space grows exponentially with m (weapons) + n (targets)</span>
+<span class="comment">// Exact DP infeasible for m &gt; ~5, n &gt; ~10</span>
+
+<span class="keyword">Myopic Policy</span> (what this demo implements):
+  a* = argmax<sub>a</sub> <span class="variable">R(s,a)</span>  <span class="comment">// maximize IMMEDIATE reward only</span>
+  <span class="comment">// Ignores future waves entirely</span>
+  <span class="comment">// Fast but suboptimal: may waste ammo on low-value targets</span>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(122,162,247,0.2);border-radius:4px;background:rgba(122,162,247,0.03);">
+        <p style="font-size:0.85rem;color:var(--blue);font-weight:600;margin-bottom:0.5rem;">&#x2605;&#x2606;&#x2606; Educational Demo</p>
+        <p style="font-size:0.85rem;color:var(--slate-light);">This is a <strong>simplified simulation</strong> demonstrating the sequential decision structure of an MDP. The &ldquo;Myopic AI&rdquo; uses one-step lookahead only &mdash; it does NOT solve the full Bellman equation. A true ADP solver would use value function approximation (e.g., linear basis functions or neural networks) to estimate V*(s), which is far beyond the scope of a browser demo. See Bertsekas (2012) and Powell (2011) for full treatments.</p>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Simulation</div>
+    <h2 class="section-title">Wave <span>Simulator</span></h2>
+    <span class="realism-badge realism-demo">&starf;&#x2606;&#x2606; Educational Demo</span>
+
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-sync-alt" style="margin-right:0.4rem"></i>4-Wave Defense Simulation</div>
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">3 weapons (ammo: 3, 3, 4). Threats arrive in waves. Compare your manual decisions against the myopic AI.</p>
+
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip active" onclick="runSimulation('myopic')" id="myopicBtn">Run Myopic AI</button>
+            <button class="algo-chip" onclick="runSimulation('random')">Run Random Policy</button>
+            <button class="algo-chip" onclick="resetSim()">Reset</button>
+        </div>
+
+        <div id="simDisplay" style="min-height:200px;"></div>
+
+        <table class="results-table" id="simResultsTable" style="display:none;">
+            <thead><tr><th>Policy</th><th>Total Score</th><th>Threats Neutralized</th><th>Ammo Remaining</th><th>Waves Survived</th></tr></thead>
+            <tbody id="simResultsBody"></tbody>
+        </table>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Bertsekas, D.P. (2012). <em>Dynamic Programming and Optimal Control</em>, Vol. II, 4th ed. Athena Scientific. &mdash; Comprehensive treatment of exact and approximate DP; Bellman equation, rollout policies, and value function approximation.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Powell, W.B. (2011). <em>Approximate Dynamic Programming: Solving the Curses of Dimensionality</em>, 2nd ed. Wiley. &mdash; Practical ADP methods for large-scale sequential decision problems.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
