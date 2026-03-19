@@ -105,10 +105,126 @@
     <p class="hero-desc">Assign heterogeneous defense units to shield generator locations across the city. Each unit has different effectiveness and resource consumption at each location, and each location has limited capacity. Maximize total defensive effectiveness &mdash; a classical GAP, NP-hard in general.</p>
 </div></section>
 
-<section class="content-section" id="scenario"><div class="container" id="gapScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="gapSolver"></div></section>
-<section class="content-section" id="algorithms"><div class="container" id="gapAlgos"></div></section>
-<section class="content-section" id="references"><div class="container" id="gapRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Shield Generator <span>Defense</span></h2>
+    <div class="context-panel">
+        The city has <strong>3 shield generator stations</strong> (North Shield, Central Hub, South Gate), each with limited power capacity. <strong>6 heterogeneous defense units</strong> (mechs, tanks, drones, infantry, snipers) must be assigned to these stations. Each unit has different combat effectiveness and energy consumption at each location. The goal: maximize total defensive effectiveness without exceeding any station's power capacity. This is the <strong>Generalized Assignment Problem (GAP)</strong> &mdash; NP-hard in general (Ross &amp; Soland, 1975).
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Defense unit</td><td>Item (agent)</td><td>i &isin; {1,...,6}</td><td>Mech-A</td></tr>
+            <tr><td>Shield location</td><td>Bin (task)</td><td>j &isin; {1,...,3}</td><td>North Shield</td></tr>
+            <tr><td>Combat effectiveness</td><td>Value</td><td>v&#x1D62;&#x2C7;</td><td>8</td></tr>
+            <tr><td>Energy/space used</td><td>Weight</td><td>w&#x1D62;&#x2C7;</td><td>4</td></tr>
+            <tr><td>Station power limit</td><td>Capacity</td><td>C&#x2C7;</td><td>10</td></tr>
+            <tr><td>Deploy decision</td><td>Binary variable</td><td>x&#x1D62;&#x2C7; &isin; {0,1}</td><td>1 = assigned</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: verified against Ross & Soland (1975) — standard GAP has ≤1 assignment per item and knapsack constraint per bin. This matches the prompt direction. -->
+    <div class="formulation">
+<span class="keyword">MAXIMIZE</span>   <span class="variable">&Sigma;&#x1D62;</span> <span class="variable">&Sigma;&#x2C7;</span> v&#x1D62;&#x2C7; &middot; x&#x1D62;&#x2C7;
+
+<span class="keyword">subject to:</span>
+  <span class="variable">&Sigma;&#x2C7;</span> x&#x1D62;&#x2C7; &le; 1         &forall; i &isin; Units       <span class="comment">// each unit assigned at most once</span>
+  <span class="variable">&Sigma;&#x1D62;</span> w&#x1D62;&#x2C7; &middot; x&#x1D62;&#x2C7; &le; C&#x2C7;   &forall; j &isin; Locations  <span class="comment">// location capacity</span>
+  x&#x1D62;&#x2C7; &isin; {0,1}             &forall; i,j
+
+<span class="comment">// NP-hard in general (Ross &amp; Soland 1975)</span>
+<span class="comment">// LP relaxation provides upper bound; gap indicates hardness</span>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--ivory);margin-bottom:0.8rem;">Why is this hard?</h3>
+        <p style="color:var(--slate-light);font-size:0.9rem;line-height:1.8;">The GAP generalizes the knapsack problem: each location is a knapsack with its own capacity, and items have location-dependent values and weights. Even with a single location (one knapsack), the problem is NP-hard. With multiple locations, the assignment constraint (each unit to at most one location) adds combinatorial structure that makes it harder still. The LP relaxation is typically tight enough to guide heuristics but may have a non-zero integrality gap.</p>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Solver</div>
+    <h2 class="section-title">Assignment <span>Optimizer</span></h2>
+    <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic</span>
+
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-shield-alt" style="margin-right:0.4rem"></i>6 Units &times; 3 Locations</div>
+
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:0.5rem;">Value matrix (effectiveness) and weight matrix (energy consumption):</p>
+        <div style="display:flex;gap:2rem;flex-wrap:wrap;margin-bottom:1.5rem;">
+            <div>
+                <div style="font-size:0.72rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.3rem;">VALUES v&#x1D62;&#x2C7;</div>
+                <table class="results-table" style="max-width:280px;"><thead><tr><th></th><th>North</th><th>Central</th><th>South</th></tr></thead><tbody>
+                    <tr><td style="color:var(--gold)">Mech-A</td><td>8</td><td>5</td><td>6</td></tr>
+                    <tr><td style="color:var(--gold)">Mech-B</td><td>7</td><td>9</td><td>4</td></tr>
+                    <tr><td style="color:var(--gold)">Tank-C</td><td>6</td><td>7</td><td>8</td></tr>
+                    <tr><td style="color:var(--gold)">Drone-D</td><td>5</td><td>3</td><td>9</td></tr>
+                    <tr><td style="color:var(--gold)">Infantry-E</td><td>4</td><td>8</td><td>3</td></tr>
+                    <tr><td style="color:var(--gold)">Sniper-F</td><td>9</td><td>4</td><td>7</td></tr>
+                </tbody></table>
+            </div>
+            <div>
+                <div style="font-size:0.72rem;color:var(--gold);letter-spacing:1px;margin-bottom:0.3rem;">WEIGHTS w&#x1D62;&#x2C7; &middot; Capacities: N=10, C=8, S=12</div>
+                <table class="results-table" style="max-width:280px;"><thead><tr><th></th><th>North</th><th>Central</th><th>South</th></tr></thead><tbody>
+                    <tr><td style="color:var(--gold)">Mech-A</td><td>4</td><td>3</td><td>5</td></tr>
+                    <tr><td style="color:var(--gold)">Mech-B</td><td>5</td><td>4</td><td>3</td></tr>
+                    <tr><td style="color:var(--gold)">Tank-C</td><td>6</td><td>5</td><td>4</td></tr>
+                    <tr><td style="color:var(--gold)">Drone-D</td><td>3</td><td>2</td><td>6</td></tr>
+                    <tr><td style="color:var(--gold)">Infantry-E</td><td>2</td><td>4</td><td>2</td></tr>
+                    <tr><td style="color:var(--gold)">Sniper-F</td><td>5</td><td>3</td><td>4</td></tr>
+                </tbody></table>
+            </div>
+        </div>
+
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip" onclick="solveGAP('greedy')">Greedy (value/weight ratio)</button>
+            <button class="algo-chip" onclick="solveGAP('lp')">LP Relaxation + Rounding</button>
+        </div>
+
+        <table class="results-table" id="gapResultsTable" style="display:none;">
+            <thead><tr><th>Method</th><th>Assignments</th><th>Total Value</th><th>Capacity Used (N/C/S)</th></tr></thead>
+            <tbody id="gapResultsBody"></tbody>
+        </table>
+        <div id="gapNote" style="margin-top:0.8rem;font-size:0.82rem;font-family:'JetBrains Mono',monospace;display:none;"></div>
+    </div>
+</div></section>
+
+<section class="content-section" id="algorithms"><div class="container">
+    <div class="section-label">Solution Methods</div>
+    <h2 class="section-title">The <span>Algorithms</span></h2>
+    <div class="algo-card">
+        <h4>1. Greedy by Value-to-Weight Ratio</h4>
+        <div class="complexity">O(n&middot;m&middot;log(n&middot;m))</div>
+        <p>For each (unit, location) pair, compute the ratio v&#x1D62;&#x2C7;/w&#x1D62;&#x2C7;. Sort all pairs by ratio descending. Assign greedily: accept the assignment if the unit is unassigned and the location has remaining capacity.</p>
+        <ol>
+            <li>Compute v&#x1D62;&#x2C7;/w&#x1D62;&#x2C7; for all 18 pairs</li>
+            <li>Sort by ratio descending</li>
+            <li>For each pair: if unit i unassigned AND w&#x1D62;&#x2C7; &le; remaining capacity of j, assign</li>
+            <li>Stop when all units assigned or no feasible pair remains</li>
+        </ol>
+    </div>
+    <div class="algo-card">
+        <h4>2. LP Relaxation + Rounding</h4>
+        <div class="complexity">O(n&middot;m) LP variables &mdash; provides upper bound</div>
+        <p>Relax x&#x1D62;&#x2C7; &isin; {0,1} to x&#x1D62;&#x2C7; &isin; [0,1]. Solve the continuous LP (here via a simplified greedy LP approximation). Round fractional solutions. The LP value is an upper bound on the true integer optimum; the gap shows how much the rounding costs.</p>
+        <ol>
+            <li>Allow fractional assignments x&#x1D62;&#x2C7; &isin; [0,1]</li>
+            <li>Fill each location with highest-ratio fractional amounts up to capacity</li>
+            <li>LP value = upper bound on integer optimal</li>
+            <li>Round: assign each unit to the location where it has the largest fractional assignment</li>
+            <li>Repair any capacity violations by removing lowest-value assignments</li>
+        </ol>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Ross, G.T. &amp; Soland, R.M. (1975). &ldquo;A Branch and Bound Algorithm for the Generalized Assignment Problem.&rdquo; <em>Mathematical Programming</em>, 8, 91&ndash;103. &mdash; Original B&amp;B formulation; NP-hardness established.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Martello, S. &amp; Toth, P. (1990). <em>Knapsack Problems: Algorithms and Computer Implementations</em>. Wiley. &mdash; Comprehensive treatment including GAP heuristics and exact methods.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
