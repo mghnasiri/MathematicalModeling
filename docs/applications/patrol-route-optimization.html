@@ -101,9 +101,79 @@
 </div></section>
 
 <!-- Placeholders filled next commit -->
-<section class="content-section" id="scenario"><div class="container" id="sseScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="sseSolver"></div></section>
-<section class="content-section" id="references"><div class="container" id="sseRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Randomized <span>Defense</span></h2>
+    <div class="context-panel">
+        A perimeter has <strong>5 vulnerable sectors</strong> (gates, rooftop access). You have <strong>m = 2 patrol units</strong>. If a patrol covers a sector when an alien attacks it, the defender gains utility U<sup>d</sup><sub>c</sub>; if not, the defender suffers loss U<sup>d</sup><sub>u</sub>. The attacker observes your patrol <em>probabilities</em> (not actual positions) and picks the target maximizing their payoff. You must choose coverage probabilities c<sub>t</sub> that maximize your <strong>guaranteed worst-case utility</strong>. This is a <strong>Stackelberg Security Game</strong> &mdash; deployed operationally in ARMOR (LAX airport) and IRIS (US Federal Air Marshals).
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Perimeter sector</td><td>Target</td><td>t &isin; T</td><td>Gate-South</td></tr>
+            <tr><td>Patrol unit</td><td>Coverage resource</td><td>m = 2</td><td>2 guards</td></tr>
+            <tr><td>Patrol probability</td><td>Coverage</td><td>c<sub>t</sub> &isin; [0,1]</td><td>0.45</td></tr>
+            <tr><td>Reward if caught</td><td>Defender covered payoff</td><td>U<sup>d</sup><sub>c</sub></td><td>4</td></tr>
+            <tr><td>Loss if missed</td><td>Defender uncovered payoff</td><td>U<sup>d</sup><sub>u</sub></td><td>-15</td></tr>
+            <tr><td>Alien penalty</td><td>Attacker covered payoff</td><td>U<sup>a</sup><sub>c</sub></td><td>-6</td></tr>
+            <tr><td>Alien gain</td><td>Attacker uncovered payoff</td><td>U<sup>a</sup><sub>u</sub></td><td>18</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: using compact coverage-based LP formulation rather than route enumeration, verified against Tambe (2011) Ch. 2 -->
+    <div class="formulation">
+<span class="keyword">Compact Coverage LP</span> (Tambe 2011, avoids route enumeration):
+
+<span class="keyword">MAXIMIZE</span>   <span class="variable">d</span>    <span class="comment">// guaranteed minimum defender utility</span>
+
+<span class="keyword">subject to:</span>
+  <span class="variable">d</span> &le; c<sub>t</sub>&middot;U<sup>d</sup><sub>c</sub>(t) + (1-c<sub>t</sub>)&middot;U<sup>d</sup><sub>u</sub>(t)    &forall; t &isin; T   <span class="comment">// worst case</span>
+  <span class="variable">&Sigma;</span><sub>t</sub> c<sub>t</sub> &le; m                                       <span class="comment">// total coverage = m patrols</span>
+  0 &le; c<sub>t</sub> &le; 1                                    &forall; t &isin; T
+
+<span class="comment">// Attacker best response (rational adversary):</span>
+<span class="comment">// t* = argmax_t [ c_t &middot; Ua_c(t) + (1-c_t) &middot; Ua_u(t) ]</span>
+
+<span class="comment">// At SSE: attacker is indifferent among targets they might attack</span>
+<span class="comment">// Real deployments (ARMOR, IRIS) use column generation for route constraints</span>
+    </div>
+
+    <div style="margin-top:1.5rem;">
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--ivory);margin-bottom:0.8rem;">Real-World Deployments</h3>
+        <p style="color:var(--slate-light);font-size:0.9rem;line-height:1.8;"><strong>ARMOR</strong> (2007): Deployed at Los Angeles International Airport to randomize checkpoint deployments across terminals. <strong>IRIS</strong> (2009): Used by the US Federal Air Marshal Service to schedule air marshals on flights. Both systems solve Stackelberg security games to generate unpredictable but strategically optimal schedules. The key insight: pure randomness (uniform coverage) is suboptimal because high-value targets should receive more coverage than low-value ones.</p>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Solver</div>
+    <h2 class="section-title">Coverage <span>Optimizer</span></h2>
+    <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic (LP-based)</span>
+
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-route" style="margin-right:0.4rem"></i>5 Targets &middot; m=2 Patrol Units</div>
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">Payoff structure: higher |U<sup>d</sup><sub>u</sub>| means more loss if uncovered. The LP allocates coverage proportional to vulnerability.</p>
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip" onclick="solveSSE('lp')">LP Optimal Coverage</button>
+            <button class="algo-chip" onclick="solveSSE('uniform')">Uniform Baseline</button>
+        </div>
+        <div id="barChart" class="bar-chart"></div>
+        <table class="results-table" id="sseResults" style="display:none;">
+            <thead><tr><th>Method</th><th>Coverage Distribution</th><th>Attacker Target</th><th>Defender Utility</th></tr></thead>
+            <tbody id="sseBody"></tbody>
+        </table>
+        <div id="sseNote" style="margin-top:0.8rem;font-size:0.82rem;font-family:'JetBrains Mono',monospace;display:none;"></div>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Tambe, M. (2011). <em>Security Games: Applying Game Theory to Counterterrorism</em>. Cambridge University Press. &mdash; Comprehensive treatment of Stackelberg security games and deployed systems.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-operational">Operational</span> Pita, J., Jain, M., Marecki, J., et al. (2008). &ldquo;Deployed ARMOR protection: the application of a game theoretic model for security at LAX.&rdquo; <em>AAMAS</em>. &mdash; First deployed security game system.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Paruchuri, P., Pearce, J.P., Marecki, J., et al. (2008). &ldquo;Playing games for security: an efficient exact algorithm for solving Bayesian Stackelberg games.&rdquo; <em>AAMAS</em>. &mdash; DOBSS algorithm for computing SSE.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
