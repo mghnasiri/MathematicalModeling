@@ -208,6 +208,114 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// Tri-Level Fortification Solver
+var plants=[{id:'Plant-A',cap:30,serves:[0,1]},{id:'Plant-B',cap:25,serves:[1,2]},{id:'Plant-C',cap:20,serves:[2,3]},{id:'Plant-D',cap:35,serves:[3,4,0]}];
+var demands=[15,20,10,25,12]; // S1-S5, total=82
+var sectorNames=['S1','S2','S3','S4','S5'];
+
+function computeDemandServed(surviving){
+    // Greedy: each surviving plant serves its connected sectors up to capacity
+    var served=[0,0,0,0,0];
+    for(var p=0;p<surviving.length;p++){
+        var pl=plants[surviving[p]];
+        var remCap=pl.cap;
+        for(var s=0;s<pl.serves.length;s++){
+            var sec=pl.serves[s];
+            var need=demands[sec]-served[sec];
+            if(need>0){
+                var give=Math.min(need,remCap);
+                served[sec]+=give;
+                remCap-=give;
+            }
+        }
+    }
+    var total=0;for(var s=0;s<5;s++)total+=served[s];
+    return total;
+}
+
+function solveFort(){
+    var body=document.getElementById('fortBody');
+    while(body.firstChild) body.removeChild(body.firstChild);
+    var results=[];
+
+    // Enumerate all fortify (4 choices) x attack (3 remaining) = 12 combos
+    for(var f=0;f<4;f++){
+        for(var a=0;a<4;a++){
+            if(a===f) continue; // cannot attack fortified plant
+            var surviving=[];
+            for(var p=0;p<4;p++){if(p!==a) surviving.push(p);}
+            var served=computeDemandServed(surviving);
+            results.push({fortify:f,attack:a,surviving:surviving,served:served});
+        }
+    }
+
+    // For each fortification choice, find attacker's best response (min served)
+    var fortResults=[];
+    for(var f=0;f<4;f++){
+        var worstServed=Infinity, worstAttack=-1;
+        for(var r=0;r<results.length;r++){
+            if(results[r].fortify===f && results[r].served<worstServed){
+                worstServed=results[r].served;
+                worstAttack=results[r].attack;
+            }
+        }
+        fortResults.push({fortify:f,worstAttack:worstAttack,worstServed:worstServed});
+    }
+
+    // Optimal: maximize worst-case
+    var optFort=-1, optServed=0;
+    for(var f=0;f<fortResults.length;f++){
+        if(fortResults[f].worstServed>optServed){
+            optServed=fortResults[f].worstServed;
+            optFort=f;
+        }
+    }
+
+    // Display all 12 rows
+    for(var r=0;r<results.length;r++){
+        var res=results[r];
+        var tr=document.createElement('tr');
+        var isOptRow=res.fortify===optFort && res.attack===fortResults[optFort].worstAttack;
+        if(isOptRow) tr.className='best';
+
+        var survNames=res.surviving.map(function(p){return plants[p].id;}).join(', ');
+        var isWorstCase=false;
+        for(var f=0;f<fortResults.length;f++){
+            if(fortResults[f].fortify===res.fortify && fortResults[f].worstAttack===res.attack) isWorstCase=true;
+        }
+
+        var cells=[plants[res.fortify].id, plants[res.attack].id, survNames, res.served+'/82', isWorstCase?'\u2190 Attacker best response':''];
+        for(var c=0;c<cells.length;c++){
+            var td=document.createElement('td');
+            td.textContent=cells[c];
+            if(c===4 && isWorstCase) td.style.color='var(--red)';
+            tr.appendChild(td);
+        }
+        body.appendChild(tr);
+    }
+
+    document.getElementById('fortTable').style.display='table';
+
+    var summary=document.getElementById('fortSummary');
+    summary.style.display='block';
+    var line1=document.createElement('div');
+    line1.style.color='var(--green)';
+    line1.textContent='\u2714 Optimal strategy: Fortify '+plants[optFort].id+' (worst-case served: '+optServed+'/82)';
+    summary.appendChild(line1);
+    var line2=document.createElement('div');
+    line2.style.color='var(--slate)';
+    line2.style.marginTop='0.5rem';
+    line2.textContent='Attacker best response: destroy '+plants[fortResults[optFort].worstAttack].id;
+    summary.appendChild(line2);
+    var line3=document.createElement('div');
+    line3.style.color='var(--slate)';
+    line3.style.fontSize='0.78rem';
+    line3.style.marginTop='0.5rem';
+    var altResults=fortResults.filter(function(fr){return fr.fortify!==optFort;}).map(function(fr){return 'Fortify '+plants[fr.fortify].id+' \u2192 worst='+fr.worstServed;});
+    line3.textContent='Alternatives: '+altResults.join(' | ');
+    summary.appendChild(line3);
+}
 </script>
 </body>
 </html>
