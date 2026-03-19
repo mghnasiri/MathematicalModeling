@@ -253,10 +253,54 @@
     </div>
 </div>
 
-<!-- TAB 2: Swarm — content will be added -->
+<!-- TAB 2: Drone Swarm Coordination -->
 <div class="tab-content" id="tab-swarm">
     <div class="container">
-        <p style="color:var(--slate);font-style:italic;">Loading solver...</p>
+        <div class="context-panel">
+            <strong>Multi-Agent Path Planning (MAPP)</strong> coordinates multiple autonomous agents moving through shared space toward individual goals while avoiding collisions. The optimal control formulation is computationally intractable for more than a handful of agents. In practice, <strong>Reynolds flocking rules</strong> (1987) &mdash; separation, alignment, cohesion, and goal-seeking &mdash; provide a decentralized heuristic that produces emergent coordinated behavior without centralized optimization.
+        </div>
+
+        <h3 style="font-family:'Cormorant Garamond',serif;font-size:1.4rem;color:var(--ivory);margin-bottom:1rem;">OR Mapping</h3>
+        <table class="mapping-table">
+            <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Example</th></tr></thead>
+            <tbody>
+                <tr><td>Defense drone</td><td>Agent i with position p&#x1D62;</td><td>Drone Delta-3</td></tr>
+                <tr><td>Alien scout pod</td><td>Goal position g&#x1D62;</td><td>Pod at (320, 180)</td></tr>
+                <tr><td>Collision zone</td><td>Safety distance d_safe</td><td>25 px</td></tr>
+                <tr><td>Steering force</td><td>Control input u&#x1D62;</td><td>Reynolds weighted sum</td></tr>
+                <tr><td>Swarm behavior</td><td>Emergent coordination</td><td>No central controller</td></tr>
+            </tbody>
+        </table>
+
+        <div class="formulation">
+<span class="comment">// Reynolds Flocking (what the demo actually implements):</span>
+<span class="variable">u&#x1D62;(t)</span> = w&#x2081;&middot;<span class="keyword">separation</span>(i) + w&#x2082;&middot;<span class="keyword">alignment</span>(i) + w&#x2083;&middot;<span class="keyword">cohesion</span>(i) + w&#x2084;&middot;<span class="keyword">goal_seek</span>(i)
+
+<span class="keyword">separation</span>(i) = <span class="variable">&#x2211;</span>&#x2C7;&#x2208;N&#x1D62; (p&#x1D62; - p&#x2C7;) / ||p&#x1D62; - p&#x2C7;||&sup2;
+<span class="keyword">cohesion</span>(i)   = avg(p&#x2C7; for j &isin; N&#x1D62;) - p&#x1D62;
+<span class="keyword">goal_seek</span>(i) = (g&#x1D62; - p&#x1D62;) / ||g&#x1D62; - p&#x1D62;||
+        </div>
+
+        <div class="solver-panel">
+            <div class="solver-label"><i class="fas fa-drone" style="margin-right:0.4rem"></i>Mini-Demo: Reynolds Swarm Simulation</div>
+            <span class="realism-badge realism-demo">&#x2605;&#x2606;&#x2606; Educational Demo</span>
+            <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">8 drones pursue 4 alien scout pods using Reynolds flocking rules. This is a <em>simulation</em>, not an optimization solver.</p>
+            <button class="algo-chip active" onclick="startSwarm()" id="swarmBtn" style="padding:0.5rem 1.5rem;">
+                <i class="fas fa-play" style="margin-right:0.4rem"></i>Start Simulation
+            </button>
+            <button class="algo-chip" onclick="resetSwarm()" style="padding:0.5rem 1.5rem;">
+                <i class="fas fa-redo" style="margin-right:0.4rem"></i>Reset
+            </button>
+            <canvas id="swarmCanvas" width="600" height="350" style="width:100%;max-width:600px;display:block;margin:1rem 0;background:var(--midnight);border:1px solid rgba(197,160,89,0.15);border-radius:4px;"></canvas>
+            <div id="swarmStatus" style="font-size:0.82rem;color:var(--slate);font-family:'JetBrains Mono',monospace;"></div>
+            <a href="drone-swarm-coordination.html" class="see-full">See Full Application &rarr; adjustable flocking weights &amp; velocity obstacles</a>
+        </div>
+
+        <div class="evidence-panel">
+            <div class="evidence-panel-title"><i class="fas fa-book-open"></i> Key References</div>
+            <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Reynolds, C.W. (1987). &ldquo;Flocks, herds and schools: A distributed behavioral model.&rdquo; <em>SIGGRAPH Computer Graphics</em>, 21(4), 25&ndash;34.</div>
+            <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Olfati-Saber, R. (2006). &ldquo;Flocking for multi-agent dynamic systems.&rdquo; <em>IEEE TAC</em>, 51(3), 401&ndash;420.</div>
+        </div>
     </div>
 </div>
 
@@ -405,6 +449,78 @@ window.addEventListener('scroll', function(){
     if(btn) btn.classList.toggle('visible', window.scrollY > 400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click', function(){ window.scrollTo({top:0,behavior:'smooth'}); });
+
+// Swarm Simulation
+var swarmRunning = false, swarmFrame = null;
+var drones = [], pods = [], swarmCanvas, swarmCtx;
+function initSwarmData() {
+    drones = [];
+    for(var i=0;i<8;i++) drones.push({x:50+Math.random()*100,y:100+Math.random()*150,vx:0,vy:0,goal:i%4});
+    pods = [{x:450,y:60},{x:500,y:180},{x:420,y:280},{x:520,y:140}];
+}
+function startSwarm(){
+    if(swarmRunning) return;
+    swarmRunning = true;
+    swarmCanvas = document.getElementById('swarmCanvas');
+    swarmCtx = swarmCanvas.getContext('2d');
+    if(!drones.length) initSwarmData();
+    document.getElementById('swarmBtn').textContent = 'Running...';
+    animateSwarm();
+}
+function resetSwarm(){
+    swarmRunning = false;
+    if(swarmFrame) cancelAnimationFrame(swarmFrame);
+    initSwarmData();
+    var c = document.getElementById('swarmCanvas');
+    var ctx = c.getContext('2d');
+    ctx.clearRect(0,0,c.width,c.height);
+    document.getElementById('swarmBtn').textContent = '\u25B6 Start Simulation';
+    document.getElementById('swarmStatus').textContent = '';
+}
+function animateSwarm(){
+    if(!swarmRunning) return;
+    var ctx = swarmCtx, W=swarmCanvas.width, H=swarmCanvas.height;
+    ctx.fillStyle = '#0A192F'; ctx.fillRect(0,0,W,H);
+    // Draw pods
+    for(var p=0;p<pods.length;p++){
+        ctx.beginPath(); ctx.arc(pods[p].x,pods[p].y,8,0,Math.PI*2);
+        ctx.fillStyle='rgba(255,107,107,0.7)'; ctx.fill();
+        ctx.strokeStyle='rgba(255,107,107,0.3)'; ctx.lineWidth=1; ctx.stroke();
+    }
+    // Update drones with Reynolds rules
+    var captured = 0;
+    for(var i=0;i<drones.length;i++){
+        var d=drones[i], g=pods[d.goal];
+        var sep={x:0,y:0}, coh={x:0,y:0}, cnt=0;
+        for(var j=0;j<drones.length;j++){
+            if(i===j) continue;
+            var dx=d.x-drones[j].x, dy=d.y-drones[j].y;
+            var dist=Math.sqrt(dx*dx+dy*dy);
+            if(dist<60 && dist>0.1){ sep.x+=dx/(dist*dist)*30; sep.y+=dy/(dist*dist)*30; coh.x+=drones[j].x; coh.y+=drones[j].y; cnt++; }
+        }
+        if(cnt>0){ coh.x=coh.x/cnt-d.x; coh.y=coh.y/cnt-d.y; }
+        var gx=g.x-d.x, gy=g.y-d.y, gd=Math.sqrt(gx*gx+gy*gy);
+        if(gd>0.1){ gx/=gd; gy/=gd; }
+        if(gd<12) captured++;
+        d.vx += sep.x*1.5 + coh.x*0.02 + gx*0.8;
+        d.vy += sep.y*1.5 + coh.y*0.02 + gy*0.8;
+        var spd=Math.sqrt(d.vx*d.vx+d.vy*d.vy);
+        if(spd>3){ d.vx*=3/spd; d.vy*=3/spd; }
+        d.x+=d.vx; d.y+=d.vy;
+        d.x=Math.max(5,Math.min(W-5,d.x)); d.y=Math.max(5,Math.min(H-5,d.y));
+        // Draw drone as triangle
+        var angle=Math.atan2(d.vy,d.vx);
+        ctx.save(); ctx.translate(d.x,d.y); ctx.rotate(angle);
+        ctx.beginPath(); ctx.moveTo(8,0); ctx.lineTo(-5,-4); ctx.lineTo(-5,4); ctx.closePath();
+        ctx.fillStyle='rgba(100,255,218,0.8)'; ctx.fill(); ctx.restore();
+        // Velocity line
+        ctx.beginPath(); ctx.moveTo(d.x,d.y); ctx.lineTo(d.x+d.vx*5,d.y+d.vy*5);
+        ctx.strokeStyle='rgba(100,255,218,0.3)'; ctx.lineWidth=1; ctx.stroke();
+    }
+    document.getElementById('swarmStatus').textContent = 'Drones near target: '+captured+'/8';
+    swarmFrame = requestAnimationFrame(animateSwarm);
+}
+initSwarmData();
 
 // WTA Greedy Mini-Solver
 function runWtaGreedy() {
