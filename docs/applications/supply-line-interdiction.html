@@ -107,9 +107,91 @@
 </div></section>
 
 <!-- CONTENT — filled in next commit -->
-<section class="content-section" id="scenario"><div class="container" id="intScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="intSolver"></div></section>
-<section class="content-section" id="references"><div class="container" id="intRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Supply Route <span>Disruption</span></h2>
+
+    <div class="safety-note">
+        <strong>&#x26A0; Educational context:</strong> This toy example is designed for educational clarity. Real network interdiction problems involve orders of magnitude more complexity and are subject to strict legal and ethical review.
+    </div>
+
+    <div class="context-panel">
+        An alien supply chain runs through a network of <strong>6 relay stations</strong> connecting their forward base to an isolated Earth outpost. Earth's defense force can destroy up to <strong>k = 2 relay links</strong>. The goal: choose which 2 arcs to interdict so that the alien's shortest remaining supply route is maximized &mdash; buying time for evacuation.
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th></tr></thead>
+        <tbody>
+            <tr><td>Alien supply base</td><td>Source node</td><td>s = AlienBase</td></tr>
+            <tr><td>Earth outpost</td><td>Sink node</td><td>t = EarthOutpost</td></tr>
+            <tr><td>Transit relay</td><td>Intermediate node</td><td>Relay1, Junction, ...</td></tr>
+            <tr><td>Supply route</td><td>Arc with cost</td><td>(i,j) with c&#x1D62;&#x2C7;</td></tr>
+            <tr><td>Disruption budget</td><td>Interdiction limit</td><td>k = 2</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: verified against Israeli & Wood (2002) — the bi-level formulation and its single-level MIP reformulation via LP duality -->
+    <div class="formulation">
+<span class="comment">// Bi-Level Formulation (Israeli &amp; Wood, 2002):</span>
+
+<span class="keyword">MAXIMIZE</span> (leader/defender)
+  <span class="keyword">MINIMIZE</span> (follower/attacker)  <span class="variable">&Sigma;</span><sub>(i,j)&isin;A</sub> c&#x1D62;&#x2C7; &middot; f&#x1D62;&#x2C7;
+
+<span class="keyword">follower subject to:</span>
+  <span class="variable">&Sigma;</span><sub>j</sub> f&#x1D62;&#x2C7; - <span class="variable">&Sigma;</span><sub>j</sub> f&#x2C7;&#x1D62; = b&#x1D62;  &forall; i    <span class="comment">// flow conservation</span>
+    where b&#x1D62; = 1 if i=s, -1 if i=t, 0 otherwise
+  0 &le; f&#x1D62;&#x2C7; &le; 1 - x&#x1D62;&#x2C7;                <span class="comment">// arc removed if interdicted</span>
+
+<span class="keyword">leader subject to:</span>
+  <span class="variable">&Sigma;</span> x&#x1D62;&#x2C7; &le; k                     <span class="comment">// interdiction budget</span>
+  x&#x1D62;&#x2C7; &isin; {0,1}
+
+<span class="comment">// Single-level MIP reformulation (via LP duality of follower):</span>
+<span class="keyword">MAXIMIZE</span>  <span class="variable">&pi;</span>&#x209C; - <span class="variable">&pi;</span>&#x209B;
+  <span class="variable">&pi;</span>&#x2C7; - <span class="variable">&pi;</span>&#x1D62; &le; c&#x1D62;&#x2C7; + M&#x1D62;&#x2C7;&middot;x&#x1D62;&#x2C7;  &forall;(i,j)  <span class="comment">// dual + big-M</span>
+  <span class="variable">&Sigma;</span> x&#x1D62;&#x2C7; &le; k
+
+<span class="comment">// &#x26A0; M&#x1D62;&#x2C7; must = (longest simple s-t path) - c&#x1D62;&#x2C7; + 1</span>
+<span class="comment">// NOT an arbitrary large number (causes numerical issues)</span>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Solver</div>
+    <h2 class="section-title">Network <span>Interdiction</span></h2>
+
+    <div>
+        <span class="realism-badge realism-exact">&starf;&starf;&starf; Exact (enumeration, small k)</span>
+        <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic (greedy)</span>
+    </div>
+
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-project-diagram" style="margin-right:0.4rem"></i>6-Node Network &middot; Budget k=2</div>
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">Enumerate all C(7,2) = 21 arc pairs. Find the interdiction that maximizes the attacker's shortest remaining path.</p>
+
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip" onclick="solveInterdiction('exact')">Exact Enumeration (all 21 pairs)</button>
+            <button class="algo-chip" onclick="solveInterdiction('greedy')">Greedy Arc Removal</button>
+        </div>
+
+        <canvas id="netCanvas" width="650" height="320" style="width:100%;max-width:650px;display:block;margin:1rem 0;background:var(--midnight);border:1px solid rgba(197,160,89,0.15);border-radius:4px;"></canvas>
+
+        <table class="results-table" id="intResultsTable" style="display:none;">
+            <thead><tr><th>Method</th><th>Interdicted Arcs</th><th>New Shortest Path</th><th>Increase</th></tr></thead>
+            <tbody id="intResultsBody"></tbody>
+        </table>
+        <div id="intNote" style="margin-top:0.8rem;font-size:0.82rem;color:var(--green);font-family:'JetBrains Mono',monospace;display:none;"></div>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Israeli, E. &amp; Wood, R.K. (2002). &ldquo;Shortest-path network interdiction.&rdquo; <em>Networks</em>, 40(2), 97&ndash;111. &mdash; Bi-level formulation + single-level MIP via LP duality.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Wood, R.K. (2011). &ldquo;Bilevel Network Interdiction Models.&rdquo; <em>Wiley Encyclopedia of Operations Research</em>. &mdash; Survey of interdiction formulations and extensions.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Cormican, K.J., Morton, D.P., &amp; Wood, R.K. (1998). &ldquo;Stochastic network interdiction.&rdquo; <em>Operations Research</em>, 46(2), 184&ndash;197. &mdash; Extension to uncertain arc capacities.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
@@ -143,6 +225,132 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// Network Interdiction Solver
+var nodes=['AlienBase','Relay1','Relay2','Relay3','Junction','EarthOutpost'];
+var arcs=[{f:0,t:1,c:5},{f:0,t:2,c:8},{f:1,t:3,c:4},{f:1,t:4,c:6},{f:2,t:4,c:3},{f:3,t:5,c:7},{f:4,t:5,c:5}];
+var nodePos=[{x:60,y:160},{x:210,y:60},{x:210,y:260},{x:400,y:60},{x:400,y:190},{x:580,y:160}];
+
+function dijkstra(blocked){
+    var n=6,dist=[],prev=[];
+    for(var i=0;i<n;i++){dist.push(Infinity);prev.push(-1);}
+    dist[0]=0;
+    var visited=[];for(var i=0;i<n;i++)visited.push(false);
+    for(var step=0;step<n;step++){
+        var u=-1,best=Infinity;
+        for(var i=0;i<n;i++){if(!visited[i]&&dist[i]<best){best=dist[i];u=i;}}
+        if(u<0)break;visited[u]=true;
+        for(var a=0;a<arcs.length;a++){
+            if(blocked[a])continue;
+            if(arcs[a].f===u){var v=arcs[a].t;if(dist[u]+arcs[a].c<dist[v]){dist[v]=dist[u]+arcs[a].c;prev[v]=a;}}
+        }
+    }
+    var path=[];
+    if(dist[5]<Infinity){var cur=5;while(cur!==0){for(var a=0;a<arcs.length;a++){if(prev[cur]===a){path.unshift(a);cur=arcs[a].f;break;}}if(prev[cur]===-1&&cur!==0)break;}}
+    return{dist:dist[5],pathArcs:path};
+}
+
+function drawNetwork(blocked,pathArcs,interdicted){
+    var c=document.getElementById('netCanvas'),ctx=c.getContext('2d');
+    ctx.fillStyle='#0A192F';ctx.fillRect(0,0,c.width,c.height);
+    // Draw arcs
+    for(var a=0;a<arcs.length;a++){
+        var p1=nodePos[arcs[a].f],p2=nodePos[arcs[a].t];
+        ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
+        if(interdicted&&interdicted.indexOf(a)>=0){
+            ctx.strokeStyle='rgba(255,107,107,0.7)';ctx.lineWidth=3;ctx.setLineDash([6,4]);
+        } else if(pathArcs&&pathArcs.indexOf(a)>=0){
+            ctx.strokeStyle='rgba(100,255,218,0.8)';ctx.lineWidth=3;ctx.setLineDash([]);
+        } else {
+            ctx.strokeStyle='rgba(197,160,89,0.25)';ctx.lineWidth=1.5;ctx.setLineDash([]);
+        }
+        ctx.stroke();ctx.setLineDash([]);
+        // Cost label
+        var mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
+        ctx.fillStyle=(interdicted&&interdicted.indexOf(a)>=0)?'rgba(255,107,107,0.9)':'rgba(197,160,89,0.7)';
+        ctx.font='12px JetBrains Mono';ctx.textAlign='center';ctx.fillText(arcs[a].c,mx+8,my-6);
+        if(interdicted&&interdicted.indexOf(a)>=0){
+            ctx.fillStyle='rgba(255,107,107,1)';ctx.font='bold 16px Inter';ctx.fillText('\u2717',mx-10,my+5);
+        }
+    }
+    // Draw nodes
+    for(var i=0;i<6;i++){
+        ctx.beginPath();ctx.arc(nodePos[i].x,nodePos[i].y,16,0,Math.PI*2);
+        ctx.fillStyle=i===0?'rgba(255,107,107,0.15)':i===5?'rgba(100,255,218,0.15)':'rgba(197,160,89,0.08)';
+        ctx.fill();
+        ctx.strokeStyle=i===0?'rgba(255,107,107,0.5)':i===5?'rgba(100,255,218,0.5)':'rgba(197,160,89,0.25)';
+        ctx.lineWidth=1.5;ctx.stroke();
+        ctx.fillStyle=i===0?'rgba(255,107,107,0.9)':i===5?'rgba(100,255,218,0.9)':'var(--ivory)';
+        ctx.font='9px Inter';ctx.textAlign='center';
+        var label=nodes[i].length>8?nodes[i].substring(0,8)+'..':nodes[i];
+        ctx.fillText(label,nodePos[i].x,nodePos[i].y+4);
+    }
+    ctx.textAlign='start';
+}
+
+// Draw initial network
+drawNetwork([false,false,false,false,false,false,false],null,null);
+
+function solveInterdiction(method){
+    var N=arcs.length,k=2;
+    var baseline=dijkstra([false,false,false,false,false,false,false]);
+    var body=document.getElementById('intResultsBody');
+    while(body.firstChild)body.removeChild(body.firstChild);
+
+    if(method==='exact'){
+        var bestDist=0,bestPair=[-1,-1];
+        for(var i=0;i<N;i++){
+            for(var j=i+1;j<N;j++){
+                var bl=[];for(var x=0;x<N;x++)bl.push(x===i||x===j);
+                var r=dijkstra(bl);
+                if(r.dist>bestDist){bestDist=r.dist;bestPair=[i,j];}
+            }
+        }
+        var afterBl=[];for(var x=0;x<N;x++)afterBl.push(x===bestPair[0]||x===bestPair[1]);
+        var result=dijkstra(afterBl);
+        drawNetwork(afterBl,result.pathArcs,bestPair);
+
+        var tr=document.createElement('tr');
+        var cells=['Exact Enumeration',
+            nodes[arcs[bestPair[0]].f]+'\u2192'+nodes[arcs[bestPair[0]].t]+', '+nodes[arcs[bestPair[1]].f]+'\u2192'+nodes[arcs[bestPair[1]].t],
+            bestDist<Infinity?bestDist:'NO PATH',
+            '+'+(bestDist-baseline.dist)+' ('+(((bestDist-baseline.dist)/baseline.dist)*100).toFixed(0)+'%)'];
+        for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+        body.appendChild(tr);
+    } else {
+        // Greedy: iteratively remove arc on current shortest path
+        var blocked=[];for(var x=0;x<N;x++)blocked.push(false);
+        var removed=[];
+        for(var iter=0;iter<k;iter++){
+            var r=dijkstra(blocked);
+            if(r.pathArcs.length===0)break;
+            // Remove arc on current shortest path that causes max disruption
+            var bestA=-1,bestNewDist=0;
+            for(var p=0;p<r.pathArcs.length;p++){
+                var a=r.pathArcs[p];
+                var testBl=blocked.slice();testBl[a]=true;
+                var nr=dijkstra(testBl);
+                if(nr.dist>bestNewDist){bestNewDist=nr.dist;bestA=a;}
+            }
+            if(bestA>=0){blocked[bestA]=true;removed.push(bestA);}
+        }
+        var finalR=dijkstra(blocked);
+        drawNetwork(blocked,finalR.pathArcs,removed);
+
+        var tr=document.createElement('tr');
+        var names=removed.map(function(a){return nodes[arcs[a].f]+'\u2192'+nodes[arcs[a].t];}).join(', ');
+        var newD=finalR.dist<Infinity?finalR.dist:'NO PATH';
+        var inc=finalR.dist<Infinity?'+'+(finalR.dist-baseline.dist)+' ('+(((finalR.dist-baseline.dist)/baseline.dist)*100).toFixed(0)+'%)':'Complete disruption';
+        var cells=['Greedy',names,newD,inc];
+        for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+        body.appendChild(tr);
+    }
+    document.getElementById('intResultsTable').style.display='table';
+    var note=document.getElementById('intNote');note.style.display='block';
+    note.textContent='Baseline shortest path: '+baseline.dist+' | After interdiction: '+(method==='exact'?dijkstra(function(){var bl=[];for(var x=0;x<N;x++)bl.push(false);return bl;}()).dist:'see table');
+    // Fix note with proper baseline
+    note.textContent='Baseline shortest path = '+baseline.dist;
+}
 </script>
 </body>
 </html>
