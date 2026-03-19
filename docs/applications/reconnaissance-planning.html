@@ -188,6 +188,152 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// POMDP Grid World
+var G=4, pDetect=0.8, pFalsePos=0.1;
+var agentPos={r:0,c:0}, aliens=[], belief=[], score=0, steps=0, found=0, logLines=[];
+
+function initPOMDP(){
+    // Place 2 aliens randomly (not at agent start)
+    aliens=[];
+    while(aliens.length<2){
+        var r=Math.floor(Math.random()*G), c=Math.floor(Math.random()*G);
+        if(r===0&&c===0) continue;
+        var dup=false;for(var i=0;i<aliens.length;i++){if(aliens[i].r===r&&aliens[i].c===c)dup=true;}
+        if(!dup) aliens.push({r:r,c:c,found:false});
+    }
+    // Uniform prior belief: each cell has 2/15 probability (2 aliens in 15 non-start cells)
+    belief=[];
+    for(var r=0;r<G;r++){var row=[];for(var c=0;c<G;c++){row.push((r===0&&c===0)?0:2/(G*G-1));}belief.push(row);}
+    agentPos={r:0,c:0}; score=0; steps=0; found=0; logLines=[];
+    renderGrid(); updateStatus();
+}
+
+function renderGrid(){
+    var disp=document.getElementById('gridDisplay');
+    while(disp.firstChild) disp.removeChild(disp.firstChild);
+    for(var r=0;r<G;r++){
+        for(var c=0;c<G;c++){
+            var cell=document.createElement('div');
+            cell.className='grid-cell';
+            var b=belief[r][c];
+            var intensity=Math.min(255,Math.floor(b*800));
+            cell.style.background='rgba(255,107,107,'+Math.min(0.6,b*3).toFixed(2)+')';
+            if(agentPos.r===r&&agentPos.c===c){
+                cell.style.border='2px solid var(--green)';
+                var icon=document.createElement('div');icon.textContent='\uD83D\uDEF8';icon.style.fontSize='1.2rem';icon.style.marginTop='8px';
+                cell.appendChild(icon);
+            }
+            // Show found aliens
+            for(var a=0;a<aliens.length;a++){
+                if(aliens[a].found&&aliens[a].r===r&&aliens[a].c===c){
+                    var icon2=document.createElement('div');icon2.textContent='\uD83D\uDC7D';icon2.style.fontSize='1.2rem';icon2.style.marginTop='4px';
+                    cell.appendChild(icon2);
+                }
+            }
+            var bv=document.createElement('div');bv.className='belief-val';bv.style.color=b>0.15?'var(--red)':'var(--slate)';
+            bv.textContent=b.toFixed(2);cell.appendChild(bv);
+            cell.style.display='inline-block';
+            disp.appendChild(cell);
+        }
+        var br=document.createElement('br');disp.appendChild(br);
+    }
+}
+
+function updateStatus(){
+    var el=document.getElementById('pomdpStatus');
+    el.textContent='Step: '+steps+' | Score: '+score+' | Found: '+found+'/2 | Agent: ('+agentPos.r+','+agentPos.c+')';
+}
+
+function addLog(msg){
+    logLines.push('['+ steps+'] '+msg);
+    var logEl=document.getElementById('pomdpLog');
+    while(logEl.firstChild) logEl.removeChild(logEl.firstChild);
+    for(var i=logLines.length-1;i>=Math.max(0,logLines.length-8);i--){
+        var div=document.createElement('div');div.textContent=logLines[i];logEl.appendChild(div);
+    }
+}
+
+function pomdpAction(action){
+    steps++;
+    if(action==='scan'){
+        // Scan current cell and adjacent
+        var scannedCells=[[agentPos.r,agentPos.c]];
+        var dirs=[[-1,0],[1,0],[0,-1],[0,1]];
+        for(var d=0;d<dirs.length;d++){
+            var nr=agentPos.r+dirs[d][0],nc=agentPos.c+dirs[d][1];
+            if(nr>=0&&nr<G&&nc>=0&&nc<G) scannedCells.push([nr,nc]);
+        }
+        for(var s=0;s<scannedCells.length;s++){
+            var sr=scannedCells[s][0],sc=scannedCells[s][1];
+            var hasAlien=false;
+            for(var a=0;a<aliens.length;a++){
+                if(!aliens[a].found&&aliens[a].r===sr&&aliens[a].c===sc) hasAlien=true;
+            }
+            var detected;
+            if(hasAlien) detected=Math.random()<pDetect;
+            else detected=Math.random()<pFalsePos;
+            // Bayesian update for this cell
+            if(detected){
+                belief[sr][sc]=belief[sr][sc]*pDetect / (belief[sr][sc]*pDetect + (1-belief[sr][sc])*pFalsePos);
+                addLog('Scan ('+sr+','+sc+'): SIGNAL \u26A0 belief \u2191 '+belief[sr][sc].toFixed(3));
+            } else {
+                belief[sr][sc]=belief[sr][sc]*(1-pDetect) / (belief[sr][sc]*(1-pDetect) + (1-belief[sr][sc])*(1-pFalsePos));
+                addLog('Scan ('+sr+','+sc+'): clear \u2713 belief \u2193 '+belief[sr][sc].toFixed(3));
+            }
+            // Check if we found an alien at agent position
+            if(sr===agentPos.r&&sc===agentPos.c&&hasAlien&&detected){
+                for(var a=0;a<aliens.length;a++){
+                    if(!aliens[a].found&&aliens[a].r===sr&&aliens[a].c===sc){aliens[a].found=true;found++;score+=50;belief[sr][sc]=0;addLog('ALIEN FOUND at ('+sr+','+sc+')! +50');}
+                }
+            }
+        }
+    } else {
+        // Move
+        var dr=0,dc=0;
+        if(action==='up')dr=-1; else if(action==='down')dr=1; else if(action==='left')dc=-1; else if(action==='right')dc=1;
+        var nr=agentPos.r+dr,nc=agentPos.c+dc;
+        if(nr>=0&&nr<G&&nc>=0&&nc<G){agentPos.r=nr;agentPos.c=nc;addLog('Move '+action+' to ('+nr+','+nc+')');}
+        else{addLog('Move '+action+' blocked (wall)');}
+        score-=1; // movement cost
+    }
+    renderGrid(); updateStatus();
+}
+
+function runHeuristic(type){
+    // Run 5 steps of the chosen heuristic
+    for(var step=0;step<5;step++){
+        if(found>=2) break;
+        if(type==='mls'){
+            // Move toward highest-belief cell
+            var bestR=0,bestC=0,bestB=0;
+            for(var r=0;r<G;r++){for(var c=0;c<G;c++){if(belief[r][c]>bestB){bestB=belief[r][c];bestR=r;bestC=c;}}}
+            if(bestR<agentPos.r) pomdpAction('up');
+            else if(bestR>agentPos.r) pomdpAction('down');
+            else if(bestC<agentPos.c) pomdpAction('left');
+            else if(bestC>agentPos.c) pomdpAction('right');
+            else pomdpAction('scan');
+        } else {
+            // Info-gathering: scan first, then move to highest-uncertainty cell
+            if(steps%2===0) pomdpAction('scan');
+            else {
+                var bestR=0,bestC=0,bestH=-1;
+                for(var r=0;r<G;r++){for(var c=0;c<G;c++){
+                    var p=belief[r][c];var h=(p>0&&p<1)?-p*Math.log(p)-(1-p)*Math.log(1-p):0;
+                    if(h>bestH){bestH=h;bestR=r;bestC=c;}
+                }}
+                if(bestR<agentPos.r) pomdpAction('up');
+                else if(bestR>agentPos.r) pomdpAction('down');
+                else if(bestC<agentPos.c) pomdpAction('left');
+                else if(bestC>agentPos.c) pomdpAction('right');
+                else pomdpAction('scan');
+            }
+        }
+    }
+}
+
+function resetPOMDP(){initPOMDP();}
+initPOMDP();
 </script>
 </body>
 </html>
