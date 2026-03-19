@@ -93,9 +93,75 @@
 </div></section>
 
 <!-- Placeholders -->
-<section class="content-section" id="scenario"><div class="container" id="pomdpScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="pomdpSolver"></div></section>
-<section class="content-section" id="references"><div class="container" id="pomdpRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Fog of <span>War</span></h2>
+    <div class="context-panel">
+        A <strong>4&times;4 grid</strong> represents the reconnaissance zone. <strong>2 aliens</strong> are hiding in unknown cells. Your scout drone starts at position (0,0) and can <strong>move</strong> (up/down/left/right) or <strong>scan</strong> adjacent cells. Scanning is imperfect: it detects an alien with <strong>80% probability</strong> (true positive) and falsely reports one with <strong>10% probability</strong> (false positive). After each action, your <strong>belief</strong> &mdash; a probability distribution over all possible alien positions &mdash; is updated via Bayes&rsquo; rule.
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Alien position</td><td>Hidden state</td><td>s</td><td>Alien in cell (2,3)</td></tr>
+            <tr><td>Scout movement</td><td>Action</td><td>a &isin; A</td><td>Move north</td></tr>
+            <tr><td>Sensor reading</td><td>Observation</td><td>o</td><td>&ldquo;Detected&rdquo;</td></tr>
+            <tr><td>Intel estimate</td><td>Belief</td><td>b(s)</td><td>0.35 probability</td></tr>
+            <tr><td>Sensor accuracy</td><td>Observation model</td><td>O(o|s&prime;,a)</td><td>80% detection</td></tr>
+            <tr><td>Mission value</td><td>Reward</td><td>R(s,a)</td><td>+50 per alien found</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: verified POMDP formulation against Kaelbling et al. (1998) — standard belief-space MDP formulation -->
+    <div class="formulation">
+<span class="keyword">MAXIMIZE</span>   E[ <span class="variable">&Sigma;</span><sub>t=0</sub><sup>&infin;</sup> &gamma;<sup>t</sup> &middot; R(s<sub>t</sub>, a<sub>t</sub>) ]
+  over policy &pi;: b &rarr; a  <span class="comment">// maps beliefs to actions</span>
+
+<span class="keyword">Belief update</span> (Bayes' rule):
+  b&prime;(s&prime;) = &eta; &middot; O(o|s&prime;,a) &middot; <span class="variable">&Sigma;</span><sub>s</sub> T(s&prime;|s,a) &middot; b(s)
+  &eta; = normalizing constant
+
+<span class="comment">// PSPACE-hard in general (Papadimitriou &amp; Tsitsiklis, 1987)</span>
+<span class="comment">// Even for finite S, the belief space is continuous (|S|-1 simplex)</span>
+<span class="comment">// This demo uses heuristic policies, NOT optimal planning</span>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(122,162,247,0.2);border-radius:4px;background:rgba(122,162,247,0.03);">
+        <p style="font-size:0.85rem;color:var(--blue);font-weight:600;margin-bottom:0.5rem;">&#x2605;&#x2606;&#x2606; Educational Demo</p>
+        <p style="font-size:0.85rem;color:var(--slate-light);">This is a <strong>simplified grid-world illustration</strong> of belief updates under partial observability. It does NOT solve the full POMDP &mdash; that would require representing and optimizing over a continuous belief space, which is computationally intractable even for this small grid. The two heuristic policies (most-likely-state and information-gathering) are reasonable practical approaches but are not guaranteed to be optimal. See Kaelbling et al. (1998) for the full theory.</p>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Demo</div>
+    <h2 class="section-title">Grid <span>Reconnaissance</span></h2>
+    <span class="realism-badge realism-demo">&starf;&#x2606;&#x2606; Educational Demo</span>
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-binoculars" style="margin-right:0.4rem"></i>4&times;4 Grid &middot; 2 Hidden Aliens &middot; 80% Sensor Accuracy</div>
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">Colour intensity = belief probability. Click a cell to scan it. Use arrow buttons to move. Belief updates after each action via Bayes&rsquo; rule.</p>
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip" onclick="pomdpAction('up')">&#x2191; Up</button>
+            <button class="algo-chip" onclick="pomdpAction('down')">&#x2193; Down</button>
+            <button class="algo-chip" onclick="pomdpAction('left')">&#x2190; Left</button>
+            <button class="algo-chip" onclick="pomdpAction('right')">&#x2192; Right</button>
+            <button class="algo-chip" onclick="pomdpAction('scan')" style="background:rgba(122,162,247,0.15);border-color:var(--blue);">&#x1F50D; Scan Here</button>
+            <button class="algo-chip" onclick="runHeuristic('mls')">Auto: Most-Likely-State</button>
+            <button class="algo-chip" onclick="runHeuristic('info')">Auto: Info-Gathering</button>
+            <button class="algo-chip" onclick="resetPOMDP()">&#x21BB; Reset</button>
+        </div>
+        <div id="gridDisplay" style="line-height:0;margin:1rem 0;"></div>
+        <div id="pomdpStatus" style="font-size:0.82rem;color:var(--slate);font-family:'JetBrains Mono',monospace;margin-top:0.5rem;"></div>
+        <div id="pomdpLog" style="font-size:0.78rem;color:var(--slate-light);font-family:'JetBrains Mono',monospace;margin-top:0.5rem;max-height:120px;overflow-y:auto;"></div>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Kaelbling, L.P., Littman, M.L., &amp; Cassandra, A.R. (1998). &ldquo;Planning and acting in partially observable stochastic domains.&rdquo; <em>Artificial Intelligence</em>, 101(1&ndash;2), 99&ndash;134. &mdash; Foundational POMDP paper; belief-space MDP formulation.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Kurniawati, H., Hsu, D., &amp; Lee, W.S. (2008). &ldquo;SARSOP: Efficient Point-Based POMDP Planning.&rdquo; <em>RSS</em>. &mdash; Scalable point-based value iteration for POMDPs.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
