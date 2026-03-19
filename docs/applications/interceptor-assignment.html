@@ -192,7 +192,41 @@
     <div class="container">
         <div class="section-label">Try It Yourself</div>
         <h2 class="section-title">Interactive <span>Solver</span></h2>
-        <div id="solverContent"></div>
+        <div>
+            <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic (Greedy, MMR)</span>
+            <span class="realism-badge realism-exact">&starf;&starf;&starf; Exact (B&amp;B, small instances)</span>
+        </div>
+        <div class="solver-panel">
+            <div class="solver-label"><i class="fas fa-crosshairs" style="margin-right:0.4rem"></i>Weapon-Target Assignment Solver</div>
+            <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">3 weapons (capacities 3, 2, 4) vs 4 targets (values 100, 80, 60, 40). Kill probabilities shown in the matrix below.</p>
+
+            <table class="results-table" style="margin-bottom:1.5rem;max-width:500px;">
+                <thead><tr><th></th><th>T1 (100)</th><th>T2 (80)</th><th>T3 (60)</th><th>T4 (40)</th></tr></thead>
+                <tbody>
+                    <tr><td style="color:var(--gold)">Laser Alpha (3)</td><td>0.80</td><td>0.60</td><td>0.70</td><td>0.90</td></tr>
+                    <tr><td style="color:var(--gold)">Laser Beta (2)</td><td>0.70</td><td>0.80</td><td>0.50</td><td>0.60</td></tr>
+                    <tr><td style="color:var(--gold)">Ground Gamma (4)</td><td>0.60</td><td>0.50</td><td>0.80</td><td>0.70</td></tr>
+                </tbody>
+            </table>
+
+            <div style="margin-bottom:1rem;">
+                <button class="algo-chip" onclick="solveWTA('greedy')">Greedy by Threat Value</button>
+                <button class="algo-chip" onclick="solveWTA('mmr')">Maximum Marginal Return</button>
+                <button class="algo-chip" onclick="solveWTA('bnb')">Branch &amp; Bound (Exact)</button>
+            </div>
+
+            <table class="results-table" id="wtaAssignTable" style="display:none;">
+                <thead><tr><th>Target</th><th>Value</th><th>Assignments</th><th>Survival Prob</th><th>Expected Loss</th></tr></thead>
+                <tbody id="wtaAssignBody"></tbody>
+            </table>
+            <div id="wtaCompare" style="margin-top:1rem;display:none;">
+                <table class="results-table">
+                    <thead><tr><th>Algorithm</th><th>Total Expected Surviving Value</th><th>Time</th></tr></thead>
+                    <tbody id="wtaCompareBody"></tbody>
+                </table>
+            </div>
+            <div id="wtaSolverNote" style="margin-top:0.8rem;font-size:0.82rem;color:var(--green);font-family:'JetBrains Mono',monospace;display:none;"></div>
+        </div>
     </div>
 </section>
 
@@ -294,6 +328,135 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// WTA Data
+var W=[3,2,4], V=[100,80,60,40], P=[[0.8,0.6,0.7,0.9],[0.7,0.8,0.5,0.6],[0.6,0.5,0.8,0.7]];
+var wNames=['Laser Alpha','Laser Beta','Ground Gamma'];
+var tNames=['Mothership Scout','Drone Cluster','Supply Pod','Recon Probe'];
+
+function computeESV(assign){
+    var total=0;
+    for(var j=0;j<4;j++){
+        var surv=1;
+        for(var i=0;i<3;i++){
+            for(var s=0;s<assign[i][j];s++) surv*=(1-P[i][j]);
+        }
+        total+=V[j]*surv;
+    }
+    return total;
+}
+
+function showResult(assign,algo,t0){
+    var body=document.getElementById('wtaAssignBody');
+    while(body.firstChild) body.removeChild(body.firstChild);
+    for(var j=0;j<4;j++){
+        var tr=document.createElement('tr');
+        var surv=1, parts=[];
+        for(var i=0;i<3;i++){
+            if(assign[i][j]>0){parts.push(wNames[i]+' x'+assign[i][j]); for(var s=0;s<assign[i][j];s++) surv*=(1-P[i][j]);}
+        }
+        var cells=[tNames[j],V[j],parts.length?parts.join(', '):'(none)',surv.toFixed(4),(V[j]*surv).toFixed(1)];
+        for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+        body.appendChild(tr);
+    }
+    document.getElementById('wtaAssignTable').style.display='table';
+    var esv=computeESV(assign);
+    var note=document.getElementById('wtaSolverNote');
+    note.style.display='block';
+    note.textContent=algo+': Expected surviving value = '+esv.toFixed(2)+' (computed in '+(performance.now()-t0).toFixed(1)+' ms)';
+    // Add to comparison
+    var cb=document.getElementById('wtaCompareBody');
+    var tr2=document.createElement('tr');
+    var c1=document.createElement('td');c1.textContent=algo;
+    var c2=document.createElement('td');c2.textContent=esv.toFixed(2);
+    var c3=document.createElement('td');c3.textContent=(performance.now()-t0).toFixed(1)+' ms';
+    tr2.appendChild(c1);tr2.appendChild(c2);tr2.appendChild(c3);
+    cb.appendChild(tr2);
+    document.getElementById('wtaCompare').style.display='block';
+}
+
+function solveWTA(method){
+    var t0=performance.now();
+    var assign=[[0,0,0,0],[0,0,0,0],[0,0,0,0]];
+    if(method==='greedy'){
+        var rem=[W[0],W[1],W[2]];
+        var order=[0,1,2,3]; order.sort(function(a,b){return V[b]-V[a];});
+        for(var ti=0;ti<order.length;ti++){
+            var j=order[ti];
+            // Assign best available weapon shots (one per pass until capacity exhausted)
+            while(true){
+                var bestI=-1,bestP=0;
+                for(var i=0;i<3;i++){if(rem[i]>0 && P[i][j]>bestP){bestP=P[i][j];bestI=i;}}
+                if(bestI<0) break;
+                assign[bestI][j]++; rem[bestI]--;
+                // Only assign one weapon per target in greedy-by-value
+                break;
+            }
+        }
+        // Distribute remaining capacity using MMR-like assignment
+        var totalRem=rem[0]+rem[1]+rem[2];
+        while(totalRem>0){
+            var bestMarg=0,bi=-1,bj=-1;
+            for(var i=0;i<3;i++){
+                if(rem[i]<=0) continue;
+                for(var j=0;j<4;j++){
+                    var survBefore=1;
+                    for(var ii=0;ii<3;ii++){for(var s=0;s<assign[ii][j];s++) survBefore*=(1-P[ii][j]);}
+                    var marg=V[j]*survBefore*P[i][j];
+                    if(marg>bestMarg){bestMarg=marg;bi=i;bj=j;}
+                }
+            }
+            if(bi<0) break;
+            assign[bi][bj]++; rem[bi]--; totalRem--;
+        }
+        showResult(assign,'Greedy by Threat Value',t0);
+    } else if(method==='mmr'){
+        var rem=[W[0],W[1],W[2]];
+        var totalCap=W[0]+W[1]+W[2];
+        for(var iter=0;iter<totalCap;iter++){
+            var bestMarg=0,bi=-1,bj=-1;
+            for(var i=0;i<3;i++){
+                if(rem[i]<=0) continue;
+                for(var j=0;j<4;j++){
+                    var survBefore=1;
+                    for(var ii=0;ii<3;ii++){for(var s=0;s<assign[ii][j];s++) survBefore*=(1-P[ii][j]);}
+                    var marg=V[j]*survBefore*P[i][j];
+                    if(marg>bestMarg){bestMarg=marg;bi=i;bj=j;}
+                }
+            }
+            if(bi<0) break;
+            assign[bi][bj]++; rem[bi]--;
+        }
+        showResult(assign,'Maximum Marginal Return',t0);
+    } else if(method==='bnb'){
+        var bestESV=Infinity, bestAssign=null;
+        // Enumerate via recursive DFS
+        function bnbSearch(wIdx,rem,cur){
+            if(wIdx>=3){
+                var esv=computeESV(cur);
+                if(esv<bestESV){bestESV=esv; bestAssign=cur.map(function(r){return r.slice();});}
+                return;
+            }
+            // Generate all ways to distribute rem[wIdx] shots among 4 targets
+            function distribute(shots,tIdx,partial){
+                if(tIdx>=4){
+                    if(shots===0){
+                        cur[wIdx]=partial.slice();
+                        bnbSearch(wIdx+1,rem,cur);
+                    }
+                    return;
+                }
+                for(var s=0;s<=shots;s++){
+                    partial[tIdx]=s;
+                    distribute(shots-s,tIdx+1,partial);
+                }
+            }
+            distribute(rem[wIdx],0,[0,0,0,0]);
+        }
+        bnbSearch(0,[W[0],W[1],W[2]],[[0,0,0,0],[0,0,0,0],[0,0,0,0]]);
+        if(bestAssign) showResult(bestAssign,'Branch & Bound (Exact)',t0);
+    }
+}
 </script>
 </body>
 </html>
