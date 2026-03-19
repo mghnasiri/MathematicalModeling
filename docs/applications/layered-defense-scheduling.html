@@ -225,6 +225,212 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// RCPSP Serial SGS Solver
+var activities=[
+    {id:'D1',name:'Detect-1',p:1,r:[1,0],pred:[]},
+    {id:'T1',name:'Track-1',p:2,r:[1,0],pred:[0]},
+    {id:'J1',name:'Jam-1',p:1,r:[0,1],pred:[1]},
+    {id:'I1',name:'Intercept-1',p:2,r:[0,1],pred:[2]},
+    {id:'D2',name:'Detect-2',p:1,r:[1,0],pred:[]},
+    {id:'T2',name:'Track-2',p:2,r:[1,0],pred:[4]},
+    {id:'J2',name:'Jam-2',p:2,r:[0,1],pred:[5]},
+    {id:'I2',name:'Intercept-2',p:1,r:[0,1],pred:[6]},
+    {id:'D3',name:'Detect-3',p:1,r:[1,0],pred:[]},
+    {id:'T3',name:'Track-3',p:2,r:[1,0],pred:[8]}
+];
+var R=[2,2]; // Radar, Weapons
+var N=activities.length;
+var colors=['#C5A059','#D4AF37','#64ffda','#7aa2f7','#ff6b6b','#a8b2d1','#C5A059','#64ffda','#ff6b6b','#7aa2f7'];
+
+function computeSuccessors(){
+    var succ=[];for(var i=0;i<N;i++)succ.push([]);
+    for(var i=0;i<N;i++){
+        for(var p=0;p<activities[i].pred.length;p++){
+            succ[activities[i].pred[p]].push(i);
+        }
+    }
+    return succ;
+}
+function countAllSucc(succ,i,visited){
+    if(!visited) visited=[];
+    var count=0;
+    for(var s=0;s<succ[i].length;s++){
+        if(visited.indexOf(succ[i][s])<0){
+            visited.push(succ[i][s]);
+            count+=1+countAllSucc(succ,succ[i][s],visited);
+        }
+    }
+    return count;
+}
+
+function solveRCPSP(rule){
+    var succ=computeSuccessors();
+    // Forward pass for LFT
+    var es=[];for(var i=0;i<N;i++)es.push(0);
+    for(var i=0;i<N;i++){
+        for(var p=0;p<activities[i].pred.length;p++){
+            var pr=activities[i].pred[p];
+            if(es[pr]+activities[pr].p>es[i]) es[i]=es[pr]+activities[pr].p;
+        }
+    }
+    var cpLen=0;for(var i=0;i<N;i++){if(es[i]+activities[i].p>cpLen) cpLen=es[i]+activities[i].p;}
+    // Backward pass for LFT
+    var lf=[];for(var i=0;i<N;i++)lf.push(cpLen);
+    for(var i=N-1;i>=0;i--){
+        for(var s=0;s<succ[i].length;s++){
+            var sc=succ[i][s];
+            if(lf[sc]-activities[sc].p<lf[i]-activities[i].p){/* already handled */}
+        }
+    }
+    // Proper backward pass
+    for(var i=0;i<N;i++)lf[i]=cpLen;
+    for(var i=N-1;i>=0;i--){
+        for(var s=0;s<succ[i].length;s++){
+            var sc=succ[i][s];
+            var lfCandidate=lf[sc]-activities[sc].p;
+            if(lfCandidate<lf[i]) lf[i]=lfCandidate;
+        }
+    }
+
+    // Priority values
+    var priority=[];
+    for(var i=0;i<N;i++){
+        if(rule==='lft') priority.push(lf[i]); // lower LFT = higher priority
+        else priority.push(-countAllSucc(succ,i,[])); // more successors = lower value = higher priority
+    }
+
+    // Serial SGS
+    var T=20;
+    var resUsage=[];for(var t=0;t<T;t++){var row=[];for(var k=0;k<R.length;k++)row.push(0);resUsage.push(row);}
+    var scheduled=[];for(var i=0;i<N;i++)scheduled.push(false);
+    var startTimes=[];for(var i=0;i<N;i++)startTimes.push(-1);
+
+    for(var step=0;step<N;step++){
+        // Find eligible (all preds scheduled)
+        var eligible=[];
+        for(var i=0;i<N;i++){
+            if(scheduled[i]) continue;
+            var allPredDone=true;
+            for(var p=0;p<activities[i].pred.length;p++){
+                if(!scheduled[activities[i].pred[p]]){allPredDone=false;break;}
+            }
+            if(allPredDone) eligible.push(i);
+        }
+        if(eligible.length===0) break;
+        // Pick by priority (lowest value first)
+        eligible.sort(function(a,b){return priority[a]-priority[b];});
+        var chosen=eligible[0];
+        // Find earliest feasible start
+        var minStart=0;
+        for(var p=0;p<activities[chosen].pred.length;p++){
+            var pr=activities[chosen].pred[p];
+            if(startTimes[pr]+activities[pr].p>minStart) minStart=startTimes[pr]+activities[pr].p;
+        }
+        for(var t=minStart;t<T;t++){
+            var feasible=true;
+            for(var dt=0;dt<activities[chosen].p;dt++){
+                if(t+dt>=T){feasible=false;break;}
+                for(var k=0;k<R.length;k++){
+                    if(resUsage[t+dt][k]+activities[chosen].r[k]>R[k]){feasible=false;break;}
+                }
+                if(!feasible) break;
+            }
+            if(feasible){
+                startTimes[chosen]=t;
+                for(var dt=0;dt<activities[chosen].p;dt++){
+                    for(var k=0;k<R.length;k++) resUsage[t+dt][k]+=activities[chosen].r[k];
+                }
+                break;
+            }
+        }
+        scheduled[chosen]=true;
+    }
+
+    var makespan=0;
+    for(var i=0;i<N;i++){if(startTimes[i]+activities[i].p>makespan) makespan=startTimes[i]+activities[i].p;}
+
+    drawGantt(startTimes,makespan);
+    drawResources(resUsage,makespan);
+
+    var body=document.getElementById('rcpspBody');
+    var tr=document.createElement('tr');
+    var ruleName=rule==='lft'?'Latest Finish Time':'Most Successors';
+    var gap=makespan-cpLen;
+    var cells=[ruleName,makespan+' units',cpLen+' units',gap===0?'Optimal':'+'+gap+' units'];
+    for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];if(c===3&&gap===0)td.style.color='var(--green)';tr.appendChild(td);}
+    body.appendChild(tr);
+    document.getElementById('rcpspResults').style.display='table';
+}
+
+function drawGantt(starts,makespan){
+    var c=document.getElementById('ganttCanvas'),ctx=c.getContext('2d');
+    ctx.fillStyle='#0A192F';ctx.fillRect(0,0,c.width,c.height);
+    var margin={l:80,r:20,t:20,b:30};
+    var w=c.width-margin.l-margin.r, h=c.height-margin.t-margin.b;
+    var rowH=h/N, unitW=w/Math.max(makespan,10);
+
+    // Time axis
+    ctx.strokeStyle='rgba(197,160,89,0.2)';ctx.lineWidth=1;
+    for(var t=0;t<=makespan;t++){
+        var x=margin.l+t*unitW;
+        ctx.beginPath();ctx.moveTo(x,margin.t);ctx.lineTo(x,c.height-margin.b);ctx.stroke();
+        ctx.fillStyle='rgba(197,160,89,0.5)';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+        ctx.fillText(t,x,c.height-margin.b+12);
+    }
+
+    // Activities
+    for(var i=0;i<N;i++){
+        var y=margin.t+i*rowH;
+        // Label
+        ctx.fillStyle='rgba(197,160,89,0.7)';ctx.font='10px Inter';ctx.textAlign='right';
+        ctx.fillText(activities[i].id,margin.l-8,y+rowH/2+3);
+        // Bar
+        if(starts[i]>=0){
+            var x=margin.l+starts[i]*unitW;
+            var bw=activities[i].p*unitW;
+            ctx.fillStyle=colors[i%colors.length];
+            ctx.globalAlpha=0.7;
+            ctx.fillRect(x,y+2,bw-1,rowH-4);
+            ctx.globalAlpha=1;
+            ctx.fillStyle='var(--ivory)';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+            ctx.fillText(activities[i].name,x+bw/2,y+rowH/2+3);
+        }
+    }
+    ctx.textAlign='start';
+}
+
+function drawResources(usage,makespan){
+    var c=document.getElementById('resourceCanvas'),ctx=c.getContext('2d');
+    ctx.fillStyle='#0A192F';ctx.fillRect(0,0,c.width,c.height);
+    var margin={l:80,r:20,t:10,b:20};
+    var w=c.width-margin.l-margin.r;
+    var unitW=w/Math.max(makespan,10);
+    var halfH=(c.height-margin.t-margin.b)/2;
+
+    var labels=['Radar (R\u2081)','Weapons (R\u2082)'];
+    var resColors=['rgba(122,162,247,0.6)','rgba(255,107,107,0.6)'];
+    var capColors=['rgba(122,162,247,0.3)','rgba(255,107,107,0.3)'];
+
+    for(var k=0;k<2;k++){
+        var baseY=margin.t+k*halfH;
+        ctx.fillStyle='rgba(197,160,89,0.5)';ctx.font='9px Inter';ctx.textAlign='right';
+        ctx.fillText(labels[k],margin.l-8,baseY+halfH/2+3);
+        // Capacity line
+        ctx.strokeStyle=capColors[k];ctx.lineWidth=1;ctx.setLineDash([4,4]);
+        var capY=baseY+halfH-R[k]*(halfH/3);
+        ctx.beginPath();ctx.moveTo(margin.l,capY);ctx.lineTo(margin.l+makespan*unitW,capY);ctx.stroke();
+        ctx.setLineDash([]);
+        // Usage bars
+        for(var t=0;t<makespan;t++){
+            var barH=usage[t][k]*(halfH/3);
+            var x=margin.l+t*unitW;
+            ctx.fillStyle=usage[t][k]>R[k]?'rgba(255,107,107,0.8)':resColors[k];
+            ctx.fillRect(x,baseY+halfH-barH,unitW-1,barH);
+        }
+    }
+    ctx.textAlign='start';
+}
 </script>
 </body>
 </html>
