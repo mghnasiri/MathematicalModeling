@@ -215,6 +215,109 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// Wave Defense Simulation
+var weapons=[{name:'Laser Alpha',ammo:3,maxAmmo:3,p:[0.8,0.7,0.6,0.9,0.5,0.7,0.8,0.6]},
+             {name:'Laser Beta',ammo:3,maxAmmo:3,p:[0.6,0.8,0.7,0.5,0.8,0.6,0.5,0.7]},
+             {name:'Ground Gamma',ammo:4,maxAmmo:4,p:[0.5,0.6,0.8,0.7,0.6,0.8,0.7,0.5]}];
+var threatNames=['Scout Alpha','Bomber Zeta','Cruiser Phi','Probe Delta','Fighter Kappa','Raider Sigma','Drone Omega','Striker Tau'];
+var threatValues=[100,80,120,40,60,90,50,70];
+var waves=[[0,1,2],[3,4],[5,6,7],[0,4]]; // indices into threatNames
+
+function resetSim(){
+    for(var i=0;i<weapons.length;i++) weapons[i].ammo=weapons[i].maxAmmo;
+    var disp=document.getElementById('simDisplay');
+    while(disp.firstChild) disp.removeChild(disp.firstChild);
+    var body=document.getElementById('simResultsBody');
+    while(body.firstChild) body.removeChild(body.firstChild);
+    document.getElementById('simResultsTable').style.display='none';
+}
+
+function runSimulation(policy){
+    resetSim();
+    var disp=document.getElementById('simDisplay');
+    var totalScore=0, totalNeutralized=0, wavesCompleted=0;
+
+    for(var w=0;w<waves.length;w++){
+        var waveDiv=document.createElement('div');
+        waveDiv.className='wave-display';
+        var title=document.createElement('div');
+        title.className='wave-title';
+        title.textContent='Wave '+(w+1)+' of '+waves.length;
+        waveDiv.appendChild(title);
+
+        var active=waves[w].slice(); // threat indices active this wave
+        var waveLog=[];
+
+        // Make assignments based on policy
+        for(var ti=0;ti<active.length;ti++){
+            var tIdx=active[ti];
+            var bestW=-1, bestVal=0;
+
+            if(policy==='myopic'){
+                // Myopic: pick weapon with highest expected marginal value for this target
+                for(var wi=0;wi<weapons.length;wi++){
+                    if(weapons[wi].ammo<=0) continue;
+                    var marginal=threatValues[tIdx]*weapons[wi].p[tIdx];
+                    if(marginal>bestVal){bestVal=marginal;bestW=wi;}
+                }
+            } else {
+                // Random: pick a random weapon with ammo
+                var available=[];
+                for(var wi=0;wi<weapons.length;wi++){if(weapons[wi].ammo>0) available.push(wi);}
+                if(available.length>0) bestW=available[Math.floor(Math.random()*available.length)];
+            }
+
+            if(bestW>=0){
+                weapons[bestW].ammo--;
+                var hit=Math.random()<weapons[bestW].p[tIdx];
+                if(hit){
+                    totalScore+=threatValues[tIdx];
+                    totalNeutralized++;
+                    waveLog.push(weapons[bestW].name+' \u2192 '+threatNames[tIdx]+' (V='+threatValues[tIdx]+') \u2714 HIT');
+                } else {
+                    waveLog.push(weapons[bestW].name+' \u2192 '+threatNames[tIdx]+' (V='+threatValues[tIdx]+') \u2718 MISS');
+                }
+            } else {
+                waveLog.push('No ammo available for '+threatNames[tIdx]+' \u2014 UNENGAGED');
+            }
+        }
+        wavesCompleted++;
+
+        // Display wave results
+        for(var l=0;l<waveLog.length;l++){
+            var p=document.createElement('div');
+            p.style.fontSize='0.82rem';
+            p.style.color=waveLog[l].indexOf('HIT')>=0?'var(--green)':waveLog[l].indexOf('MISS')>=0?'var(--red)':'var(--slate)';
+            p.style.fontFamily="'JetBrains Mono',monospace";
+            p.textContent=waveLog[l];
+            waveDiv.appendChild(p);
+        }
+
+        // Ammo status
+        var ammoLine=document.createElement('div');
+        ammoLine.style.marginTop='0.5rem';
+        ammoLine.style.fontSize='0.75rem';
+        ammoLine.style.color='var(--slate)';
+        var ammoText='Ammo remaining: ';
+        for(var wi=0;wi<weapons.length;wi++) ammoText+=weapons[wi].name+' '+weapons[wi].ammo+'/'+weapons[wi].maxAmmo+'  ';
+        ammoLine.textContent=ammoText;
+        waveDiv.appendChild(ammoLine);
+
+        disp.appendChild(waveDiv);
+    }
+
+    // Show results
+    var ammoLeft=0;
+    for(var wi=0;wi<weapons.length;wi++) ammoLeft+=weapons[wi].ammo;
+    var body=document.getElementById('simResultsBody');
+    var tr=document.createElement('tr');
+    var policyName=policy==='myopic'?'Myopic AI (1-step lookahead)':'Random Assignment';
+    var cells=[policyName, totalScore, totalNeutralized+'/'+waves.reduce(function(s,w){return s+w.length;},0), ammoLeft+'/'+(weapons[0].maxAmmo+weapons[1].maxAmmo+weapons[2].maxAmmo), wavesCompleted+'/'+waves.length];
+    for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+    body.appendChild(tr);
+    document.getElementById('simResultsTable').style.display='table';
+}
 </script>
 </body>
 </html>
