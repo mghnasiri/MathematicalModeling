@@ -102,9 +102,84 @@
 </div></section>
 
 <!-- Placeholders filled in next commit -->
-<section class="content-section" id="scenario"><div class="container" id="fortScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="fortSolver"></div></section>
-<section class="content-section" id="references"><div class="container" id="fortRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">EMP <span>Hardening</span></h2>
+
+    <div class="safety-note">
+        <strong>&#x26A0; Educational context:</strong> This toy example is designed for educational clarity. Real infrastructure fortification problems involve orders of magnitude more complexity and are subject to strict legal and ethical review.
+    </div>
+
+    <div class="context-panel">
+        A city has <strong>4 power plants</strong> serving <strong>5 demand sectors</strong>. An alien EMP weapon can destroy one unfortified plant. The defender can fortify <strong>1 plant</strong> (budget B<sub>f</sub>=1) before the attacker chooses which remaining unprotected plant to strike (budget B<sub>a</sub>=1). After the attack, the defender operates the surviving plants to satisfy as much demand as possible. The question: <strong>which plant to fortify?</strong>
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Power station</td><td>Facility</td><td>i &isin; {A,B,C,D}</td><td>Plant-A (cap 30)</td></tr>
+            <tr><td>City district</td><td>Demand point</td><td>j &isin; {1,...,5}</td><td>Sector-1 (demand 15)</td></tr>
+            <tr><td>Hardening</td><td>Fortification</td><td>x&#x1D62; &isin; {0,1}</td><td>Fortify Plant-A</td></tr>
+            <tr><td>EMP strike</td><td>Attack</td><td>y&#x1D62; &isin; {0,1}</td><td>Destroy Plant-B</td></tr>
+            <tr><td>Power delivery</td><td>Operations</td><td>z</td><td>Serve 65 MW</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: verified tri-level structure against Brown et al. (2006) and Alderson et al. (2011) — presented as conceptual framework, not solvable model -->
+    <div class="formulation">
+<span class="keyword">Stage 1 &mdash; Defender fortifies</span> (first mover):
+  <span class="keyword">max</span><sub>x</sub>  [ Stage 2 value ]
+  s.t.  <span class="variable">&Sigma;</span>&#x1D62; x&#x1D62; &le; B<sub>f</sub>     <span class="comment">// fortification budget (= 1)</span>
+        x&#x1D62; &isin; {0,1}
+
+<span class="keyword">Stage 2 &mdash; Attacker strikes</span> (worst case):
+  <span class="keyword">min</span><sub>y</sub>  [ Stage 3 value ]
+  s.t.  <span class="variable">&Sigma;</span>&#x1D62; y&#x1D62; &le; B<sub>a</sub>     <span class="comment">// attack budget (= 1)</span>
+        y&#x1D62; &le; 1 - x&#x1D62;        <span class="comment">// cannot destroy fortified plant</span>
+        y&#x1D62; &isin; {0,1}
+
+<span class="keyword">Stage 3 &mdash; Defender operates</span> (surviving network):
+  <span class="keyword">max</span><sub>z</sub>  <span class="variable">&Sigma;</span>&#x2C7; satisfied_demand(j)
+  s.t.  flow conservation, capacity of surviving plants
+
+<span class="comment">// This is a max-min-max problem: three nested optimizations</span>
+<span class="comment">// Cannot be solved by standard MIP directly</span>
+<span class="comment">// Approaches: Benders decomposition, column-and-constraint generation</span>
+<span class="comment">// This demo uses brute-force enumeration (4 fortify &times; 3 attack = 12 combos)</span>
+    </div>
+
+    <div style="margin-top:1.5rem;padding:1rem;border:1px solid rgba(122,162,247,0.2);border-radius:4px;background:rgba(122,162,247,0.03);">
+        <p style="font-size:0.85rem;color:var(--blue);font-weight:600;margin-bottom:0.5rem;">&#x2605;&#x2606;&#x2606; Educational Demo</p>
+        <p style="font-size:0.85rem;color:var(--slate-light);">This page demonstrates the <strong>conceptual structure</strong> of a tri-level optimization problem. The brute-force enumeration shown here is only feasible because the instance has 4 facilities with budget 1 each. Real infrastructure fortification problems (Brown et al. 2006) have thousands of components and require specialized decomposition algorithms.</p>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Solver</div>
+    <h2 class="section-title">Enumeration <span>Matrix</span></h2>
+    <span class="realism-badge realism-demo">&starf;&#x2606;&#x2606; Educational Demo (brute-force)</span>
+
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-shield-alt" style="margin-right:0.4rem"></i>4 Plants &middot; 5 Sectors &middot; B<sub>f</sub>=1 &middot; B<sub>a</sub>=1</div>
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:0.5rem;">Plants: A (cap 30, serves S1,S2), B (cap 25, serves S2,S3), C (cap 20, serves S3,S4), D (cap 35, serves S4,S5,S1). Demands: S1=15, S2=20, S3=10, S4=25, S5=12. Total demand = 82.</p>
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip active" onclick="solveFort()">Enumerate All 12 Combinations</button>
+        </div>
+        <table class="results-table" id="fortTable" style="display:none;">
+            <thead><tr><th>Fortify</th><th>Attack</th><th>Surviving Plants</th><th>Demand Served</th><th>Worst Case?</th></tr></thead>
+            <tbody id="fortBody"></tbody>
+        </table>
+        <div id="fortSummary" style="margin-top:1rem;font-size:0.85rem;font-family:'JetBrains Mono',monospace;display:none;"></div>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Brown, G., Carlyle, M., Salmer&oacute;n, J., &amp; Wood, K. (2006). &ldquo;Defending critical infrastructure.&rdquo; <em>Interfaces</em>, 36(6), 530&ndash;544. &mdash; Original defender-attacker-defender framework for infrastructure protection.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Alderson, D.L., Brown, G.G., Carlyle, W.M., &amp; Wood, R.K. (2011). &ldquo;Solving Defender-Attacker-Defender Models for Infrastructure Defense.&rdquo; <em>Operations Research</em>, 59(6), 1423&ndash;1442. &mdash; Decomposition algorithms for tri-level problems.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
