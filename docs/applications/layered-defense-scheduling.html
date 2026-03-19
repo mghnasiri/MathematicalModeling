@@ -106,10 +106,97 @@
 </div></section>
 
 <!-- Content placeholders -->
-<section class="content-section" id="scenario"><div class="container" id="rcpspScenario"></div></section>
-<section class="content-section" id="demo"><div class="container" id="rcpspSolver"></div></section>
-<section class="content-section" id="algorithms"><div class="container" id="rcpspAlgos"></div></section>
-<section class="content-section" id="references"><div class="container" id="rcpspRefs"></div></section>
+<section class="content-section" id="scenario"><div class="container">
+    <div class="section-label">The Scenario</div>
+    <h2 class="section-title">Defense <span>Pipeline</span></h2>
+    <div class="context-panel">
+        Three alien threats must each pass through a <strong>4-stage defense pipeline</strong>: Detect &rarr; Track &rarr; Jam &rarr; Intercept. Each stage requires shared resources: <strong>radar capacity (R&#x2081;=2)</strong> for detection and tracking, <strong>weapon capacity (R&#x2082;=2)</strong> for jamming and interception. With 10 activities competing for 2 resource types, the schedule is resource-constrained &mdash; activities may need to wait even if their predecessors are complete.
+    </div>
+
+    <table class="mapping-table">
+        <thead><tr><th>Defense Domain</th><th>OR Element</th><th>Symbol</th><th>Example</th></tr></thead>
+        <tbody>
+            <tr><td>Detection scan</td><td>Activity</td><td>j</td><td>Detect-1</td></tr>
+            <tr><td>Scan duration</td><td>Processing time</td><td>p&#x2C7;</td><td>1 time unit</td></tr>
+            <tr><td>Detect before track</td><td>Precedence</td><td>(j,k)</td><td>Detect-1 &rarr; Track-1</td></tr>
+            <tr><td>Radar dishes</td><td>Resource k=1</td><td>R&#x2081; = 2</td><td>2 radar units</td></tr>
+            <tr><td>Weapon systems</td><td>Resource k=2</td><td>R&#x2082; = 2</td><td>2 weapon units</td></tr>
+            <tr><td>Total response time</td><td>Makespan</td><td>C<sub>max</sub></td><td>12 time units</td></tr>
+        </tbody>
+    </table>
+
+    <!-- Corrected from prompt: verified RCPSP formulation against Brucker et al. (1999) — standard time-indexed resource constraint -->
+    <div class="formulation">
+<span class="keyword">MINIMIZE</span>   C<sub>max</sub>
+
+<span class="keyword">subject to:</span>
+  S&#x2C7; &ge; 0                           &forall; j           <span class="comment">// non-negative start</span>
+  S&#x2C7; + p&#x2C7; &le; S&#x2096;                    &forall; (j,k) &isin; Prec <span class="comment">// precedence</span>
+  S&#x2C7; + p&#x2C7; &le; C<sub>max</sub>                   &forall; j           <span class="comment">// makespan def</span>
+  <span class="variable">&Sigma;</span>{j: S&#x2C7;&le;t&lt;S&#x2C7;+p&#x2C7;} r&#x2C7;&#x2096; &le; R&#x2096;  &forall; k, &forall; t  <span class="comment">// resource capacity</span>
+
+<span class="comment">// NP-hard (Blazewicz et al. 1983)</span>
+<span class="comment">// Serial SGS: schedule activities one at a time in priority order,</span>
+<span class="comment">// starting each as early as resource availability allows</span>
+    </div>
+</div></section>
+
+<section class="content-section" id="demo"><div class="container">
+    <div class="section-label">Interactive Solver</div>
+    <h2 class="section-title">Schedule <span>Generator</span></h2>
+    <span class="realism-badge realism-heuristic">&starf;&starf;&star; Heuristic (Serial SGS)</span>
+
+    <div class="solver-panel">
+        <div class="solver-label"><i class="fas fa-layer-group" style="margin-right:0.4rem"></i>10 Activities &middot; 2 Resources &middot; 3 Threat Chains</div>
+        <p style="font-size:0.85rem;color:var(--slate-light);margin-bottom:1rem;">Chain 1: Detect&rarr;Track&rarr;Jam&rarr;Intercept. Chain 2: same. Chain 3: Detect&rarr;Track (partial engagement). Serial SGS schedules activities one at a time, choosing by priority rule.</p>
+        <div style="margin-bottom:1rem;">
+            <button class="algo-chip" onclick="solveRCPSP('lft')">SGS + Latest Finish Time</button>
+            <button class="algo-chip" onclick="solveRCPSP('succ')">SGS + Most Successors</button>
+        </div>
+        <canvas id="ganttCanvas" width="700" height="300" style="width:100%;max-width:700px;display:block;margin:1rem 0;background:var(--midnight);border:1px solid rgba(197,160,89,0.15);border-radius:4px;"></canvas>
+        <canvas id="resourceCanvas" width="700" height="140" style="width:100%;max-width:700px;display:block;margin:0.5rem 0;background:var(--midnight);border:1px solid rgba(197,160,89,0.15);border-radius:4px;"></canvas>
+        <table class="results-table" id="rcpspResults" style="display:none;">
+            <thead><tr><th>Priority Rule</th><th>Makespan</th><th>CP Lower Bound</th><th>Gap</th></tr></thead>
+            <tbody id="rcpspBody"></tbody>
+        </table>
+    </div>
+</div></section>
+
+<section class="content-section" id="algorithms"><div class="container">
+    <div class="section-label">Solution Methods</div>
+    <h2 class="section-title">The <span>Algorithms</span></h2>
+    <div class="algo-card">
+        <h4>Serial Schedule Generation Scheme (SGS)</h4>
+        <div class="complexity">O(n&sup2; &middot; T) per schedule &mdash; n activities, T time horizon</div>
+        <p>The SGS builds a schedule by selecting one activity at a time from the set of <em>eligible</em> activities (all predecessors completed). The selected activity is scheduled at the earliest time where resource availability permits. The <strong>priority rule</strong> determines which eligible activity is selected first.</p>
+        <ol>
+            <li>Compute eligible set: activities whose all predecessors are already scheduled</li>
+            <li>Among eligible, pick the one with highest priority (LFT or Most Successors)</li>
+            <li>Find earliest start time where all required resources are available</li>
+            <li>Schedule the activity; update resource profiles</li>
+            <li>Repeat until all activities scheduled</li>
+        </ol>
+    </div>
+    <div class="algo-card">
+        <h4>LFT Priority: Latest Finish Time</h4>
+        <div class="complexity">Prioritize activities with the latest allowable finish time (from backward pass)</div>
+        <p>Activities on or near the critical path get high priority because delaying them directly increases makespan. LFT is one of the most effective single-pass priority rules for RCPSP (Kolisch &amp; Hartmann, 2006).</p>
+    </div>
+    <div class="algo-card">
+        <h4>Most Successors Priority</h4>
+        <div class="complexity">Prioritize activities with the most downstream dependents</div>
+        <p>Activities with many successors should be scheduled early because delays propagate through the precedence graph. This rule tends to front-load the critical-path activities.</p>
+    </div>
+</div></section>
+
+<section class="content-section" id="references"><div class="container">
+    <div class="evidence-panel">
+        <div class="evidence-panel-title"><i class="fas fa-book-open"></i> References</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Brucker, P., Drexl, A., M&ouml;hring, R., Neumann, K., &amp; Pesch, E. (1999). &ldquo;Resource-constrained project scheduling: Notation, classification, models, and methods.&rdquo; <em>European Journal of Operational Research</em>, 112(1), 3&ndash;41.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Kolisch, R. &amp; Hartmann, S. (2006). &ldquo;Experimental investigation of heuristics for resource-constrained project scheduling.&rdquo; <em>European Journal of Operational Research</em>, 168(1), 17&ndash;37.</div>
+        <div class="evidence-item"><span class="evidence-badge ev-published">Published</span> Pinedo, M.L. (2016). <em>Scheduling: Theory, Algorithms, and Systems</em>, 5th ed. Springer.</div>
+    </div>
+</div></section>
 
 <section style="padding:4rem 0;"><div class="container"><div class="cta-panel">
     <h3>Preparing for <span style="color:var(--gold)">First Contact</span></h3>
