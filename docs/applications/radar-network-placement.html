@@ -193,6 +193,137 @@ window.addEventListener('scroll',function(){
     var btn=document.getElementById('scrollTopBtn');if(btn)btn.classList.toggle('visible',window.scrollY>400);
 });
 document.getElementById('scrollTopBtn').addEventListener('click',function(){window.scrollTo({top:0,behavior:'smooth'});});
+
+// MCLP Solver
+var cands=[{id:'Radar-A',x:10,y:50},{id:'Radar-B',x:30,y:80},{id:'Radar-C',x:50,y:30},{id:'Radar-D',x:70,y:70},{id:'Radar-E',x:90,y:40}];
+var dpts=[{id:'Corr-1',x:15,y:55,w:12},{id:'Corr-2',x:25,y:75,w:18},{id:'Corr-3',x:35,y:35,w:8},{id:'Corr-4',x:45,y:65,w:15},{id:'Corr-5',x:60,y:25,w:10},{id:'Corr-6',x:75,y:75,w:20},{id:'Corr-7',x:85,y:45,w:14},{id:'Corr-8',x:55,y:50,w:9}];
+var radius=25, p=2;
+
+function dist(a,b){return Math.sqrt((a.x-b.x)*(a.x-b.x)+(a.y-b.y)*(a.y-b.y));}
+
+function coverageOf(openSet){
+    var total=0;
+    for(var j=0;j<dpts.length;j++){
+        var covered=false;
+        for(var s=0;s<openSet.length;s++){
+            if(dist(cands[openSet[s]],dpts[j])<=radius){covered=true;break;}
+        }
+        if(covered) total+=dpts[j].w;
+    }
+    return total;
+}
+
+function drawMCLP(openSet,method){
+    var c=document.getElementById('mclpCanvas'),ctx=c.getContext('2d');
+    var scale=5.5, ox=30, oy=20;
+    ctx.fillStyle='#0A192F';ctx.fillRect(0,0,c.width,c.height);
+
+    // Coverage circles for open radars
+    for(var s=0;s<openSet.length;s++){
+        var cd=cands[openSet[s]];
+        ctx.beginPath();ctx.arc(ox+cd.x*scale,oy+cd.y*scale,radius*scale,0,Math.PI*2);
+        ctx.fillStyle='rgba(100,255,218,0.06)';ctx.fill();
+        ctx.strokeStyle='rgba(100,255,218,0.25)';ctx.lineWidth=1;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);
+    }
+
+    // Demand points
+    for(var j=0;j<dpts.length;j++){
+        var dp=dpts[j];
+        var isCovered=false;
+        for(var s=0;s<openSet.length;s++){
+            if(dist(cands[openSet[s]],dp)<=radius){isCovered=true;break;}
+        }
+        var px=ox+dp.x*scale, py=oy+dp.y*scale;
+        var r=3+dp.w*0.3;
+        ctx.beginPath();ctx.arc(px,py,r,0,Math.PI*2);
+        ctx.fillStyle=isCovered?'rgba(100,255,218,0.6)':'rgba(136,146,176,0.3)';ctx.fill();
+        ctx.strokeStyle=isCovered?'rgba(100,255,218,0.8)':'rgba(136,146,176,0.5)';ctx.lineWidth=1;ctx.stroke();
+        ctx.fillStyle=isCovered?'rgba(100,255,218,0.9)':'rgba(136,146,176,0.6)';ctx.font='9px JetBrains Mono';ctx.textAlign='center';
+        ctx.fillText(dp.w,px,py-r-4);
+    }
+
+    // Candidate sites
+    for(var i=0;i<cands.length;i++){
+        var cd=cands[i];
+        var px=ox+cd.x*scale, py=oy+cd.y*scale;
+        var isOpen=openSet.indexOf(i)>=0;
+        ctx.fillStyle=isOpen?'rgba(197,160,89,0.8)':'rgba(197,160,89,0.2)';
+        ctx.fillRect(px-6,py-6,12,12);
+        ctx.strokeStyle=isOpen?'var(--gold)':'rgba(197,160,89,0.4)';ctx.lineWidth=isOpen?2:1;ctx.strokeRect(px-6,py-6,12,12);
+        ctx.fillStyle=isOpen?'var(--gold)':'rgba(197,160,89,0.5)';ctx.font='10px Inter';ctx.textAlign='center';
+        ctx.fillText(cd.id,px,py+20);
+    }
+
+    // Legend
+    ctx.fillStyle='rgba(197,160,89,0.6)';ctx.font='11px Inter';ctx.textAlign='left';
+    ctx.fillText(method+': coverage = '+coverageOf(openSet)+'/'+dpts.reduce(function(s,d){return s+d.w;},0),10,c.height-10);
+    ctx.textAlign='start';
+}
+
+function solveMCLP(method){
+    var enumDiv=document.getElementById('enumTable');
+    while(enumDiv.firstChild) enumDiv.removeChild(enumDiv.firstChild);
+
+    if(method==='exact'){
+        // Enumerate all C(5,2) = 10 pairs
+        var allPairs=[];
+        for(var i=0;i<cands.length;i++){
+            for(var j=i+1;j<cands.length;j++){
+                var cov=coverageOf([i,j]);
+                allPairs.push({i:i,j:j,cov:cov});
+            }
+        }
+        allPairs.sort(function(a,b){return b.cov-a.cov;});
+
+        var tbl=document.createElement('table');tbl.className='results-table';
+        var thead=document.createElement('thead');
+        var htr=document.createElement('tr');
+        var headers=['Pair','Sites','Covered Weight','Total Weight','Rank'];
+        for(var h=0;h<headers.length;h++){var th=document.createElement('th');th.textContent=headers[h];htr.appendChild(th);}
+        thead.appendChild(htr);tbl.appendChild(thead);
+        var tbody=document.createElement('tbody');
+        for(var k=0;k<allPairs.length;k++){
+            var ap=allPairs[k];
+            var tr=document.createElement('tr');
+            if(k===0) tr.className='best';
+            var totalW=dpts.reduce(function(s,d){return s+d.w;},0);
+            var cells=[(k+1), cands[ap.i].id+' + '+cands[ap.j].id, ap.cov, totalW, k===0?'\u2605 OPTIMAL':''];
+            for(var c=0;c<cells.length;c++){var td=document.createElement('td');td.textContent=cells[c];tr.appendChild(td);}
+            tbody.appendChild(tr);
+        }
+        tbl.appendChild(tbody);
+        enumDiv.appendChild(tbl);
+        drawMCLP([allPairs[0].i,allPairs[0].j],'Exact');
+        var note=document.getElementById('mclpNote');note.style.display='block';note.style.color='var(--green)';
+        note.textContent='Optimal: '+cands[allPairs[0].i].id+' + '+cands[allPairs[0].j].id+' covering '+allPairs[0].cov+' (enumerated all 10 pairs)';
+    } else {
+        // Greedy
+        var open=[];var covered=[];for(var j=0;j<dpts.length;j++)covered.push(false);
+        for(var iter=0;iter<p;iter++){
+            var bestI=-1,bestGain=0;
+            for(var i=0;i<cands.length;i++){
+                if(open.indexOf(i)>=0) continue;
+                var gain=0;
+                for(var j=0;j<dpts.length;j++){
+                    if(!covered[j]&&dist(cands[i],dpts[j])<=radius) gain+=dpts[j].w;
+                }
+                if(gain>bestGain){bestGain=gain;bestI=i;}
+            }
+            if(bestI>=0){
+                open.push(bestI);
+                for(var j=0;j<dpts.length;j++){
+                    if(!covered[j]&&dist(cands[bestI],dpts[j])<=radius) covered[j]=true;
+                }
+            }
+        }
+        drawMCLP(open,'Greedy');
+        var note=document.getElementById('mclpNote');note.style.display='block';note.style.color='var(--gold)';
+        note.textContent='Greedy: '+open.map(function(i){return cands[i].id;}).join(' + ')+' covering '+coverageOf(open);
+    }
+}
+
+// Draw initial state (no selection)
+drawMCLP([],'No selection');
 </script>
 </body>
 </html>
