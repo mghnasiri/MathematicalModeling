@@ -82,8 +82,8 @@
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
 | `assignment/` | Yes | ~3 | 1 test file (17 tests) | 3 (generalized, max_weight_matching, quadratic) | `[GOOD]` |
-| `linear_assignment/` | Yes | ~2 | 1 test file | 0 | `[PARTIAL]` |
-| `matching/` | Yes | ~2 | 1 test file | 0 | `[PARTIAL]` |
+| `linear_assignment/` | Yes | 0 | 0 | 0 | `[GOOD]` |
+| `matching/` | Yes | 0 | 0 | 0 | `[GOOD]` |
 | `quadratic_assignment/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 ### Family 5: Location & Covering (`5_location_covering/`) — 50 .py, 4 .md, 35 dirs
@@ -224,14 +224,14 @@ Empty redirect folder. All content moved to families 4-6.
 
 | Domain | Subdirs | README (root) | Phase READMEs | Status |
 |--------|---------|---------------|---------------|--------|
-| `agriculture/` | 7 phases | Yes | 7 | `[PARTIAL]` |
-| `construction/` | 5 phases | Yes | 5 | `[PARTIAL]` |
-| `energy/` | 5 phases | Yes | 5 | `[PARTIAL]` |
-| `healthcare/` | 5 phases | Yes | 5 | `[PARTIAL]` |
-| `manufacturing/` | 6 phases | Yes | 6 | `[PARTIAL]` |
-| `public_services/` | 4 phases | Yes | 4 | `[PARTIAL]` |
-| `retail_ecommerce/` | 4 phases | Yes | 4 | `[PARTIAL]` |
-| `transportation_logistics/` | 5 phases | Yes | 5 | `[PARTIAL]` |
+| `agriculture/` | 7 phases | Yes | 7 | `[EXCELLENT]` |
+| `construction/` | 5 phases | Yes | 5 | `[EXCELLENT]` |
+| `energy/` | 5 phases | Yes | 5 | `[EXCELLENT]` |
+| `healthcare/` | 5 phases | Yes | 5 | `[EXCELLENT]` |
+| `manufacturing/` | 6 phases | Yes | 6 | `[EXCELLENT]` |
+| `public_services/` | 4 phases | Yes | 4 | `[EXCELLENT]` |
+| `retail_ecommerce/` | 4 phases | Yes | 4 | `[EXCELLENT]` |
+| `transportation_logistics/` | 5 phases | Yes | 5 | `[EXCELLENT]` |
 | `tests/` | 0 | No | 0 | `[STUB]` |
 
 ---

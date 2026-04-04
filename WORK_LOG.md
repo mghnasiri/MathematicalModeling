@@ -346,3 +346,45 @@
 **network_design:** FCNDP formulation, big-M capacity linking, greedy edge opening heuristic, Magnanti-Wong reference.
 
 **Total: 0 missing READMEs remaining in problems/ directory.**
+
+---
+
+## 2026-04-04 — Phase 2: `applications/` (all 8 domains + 41 phase READMEs)
+
+**All eight domains:** `[PARTIAL]` → `[EXCELLENT]`
+
+### Domain root READMEs enriched (8)
+
+Each domain README now includes:
+- Expanded "About this sector" (3-4 sentences with OR context)
+- Complete decision chain table with Implementation column and Live/Planned status
+- New "Canonical problems used" table linking to `/problems/` READMEs
+
+**agriculture:** 12/12 decision points Live, canonical problem table (10 entries).
+
+**healthcare:** Expanded from 3 to 10 decision points, all Live with implementation links.
+
+**construction:** Populated empty chain with 9 decision points (all Planned — no code yet).
+
+**energy:** Expanded from 1 to 9 decision points across all 5 phases.
+
+**manufacturing:** Expanded from 1 to 8 decision points; 3 Live implementations.
+
+**public_services:** Populated empty chain with 9 decision points.
+
+**retail_ecommerce:** Expanded from 2 to 8 decision points; 3 Live implementations.
+
+**transportation_logistics:** Expanded from 1 to 10 decision points; 2 Live implementations.
+
+### Phase-level READMEs enriched (41)
+
+All 41 phase READMEs (12 Live + 29 Placeholder) received:
+- "Key modeling aspects" section (3 bullet points on OR mapping)
+- "Data requirements" section (3-4 input data items)
+- "Canonical problem" section linking to problem READMEs
+
+### Additional: `problems/4_assignment_matching/` (2 placeholder READMEs)
+
+**linear_assignment:** Enriched from stub to full problem definition (LAP formulation, TU property, Hungarian $O(n^3)$, references).
+
+**matching:** Enriched from stub to full problem definition (5 variants table, augmenting paths, blossom algorithm, Edmonds/Hopcroft-Karp references).
