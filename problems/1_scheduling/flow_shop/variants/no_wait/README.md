@@ -1,46 +1,39 @@
-# No-Wait Flow Shop Scheduling Problem (NWFSP)
+# No-Wait Flow Shop (PFSP Variant)
 
-## Problem Definition
+## What Changes
 
 In the **no-wait permutation flow shop** (Fm | prmu, no-wait | Cmax), each job
-must be processed on all m machines in sequence without any waiting time between
-consecutive operations. Once a job starts on the first machine, it proceeds
-through all machines without interruption.
+must be processed on all m machines in sequence without any idle time between
+consecutive operations. Once a job starts on machine 1, it flows through all
+machines without interruption. This models production processes where the
+material cannot sit idle between stages -- steel continuous casting, chemical
+reactions that cannot be paused, and temperature-sensitive food processing.
+The objective remains makespan minimization, but the no-wait constraint
+transforms the problem structure into an asymmetric TSP on a delay matrix.
 
-### Mathematical Formulation
+## Mathematical Formulation
 
-**Given:**
-- n jobs, m machines
-- Processing times p[i][j] for job j on machine i
+The base PFSP formulation (see parent README) is modified as follows:
 
-**No-wait constraint:** For each job j, processing on machine i+1 must start
-immediately after processing on machine i finishes:
+**No-wait constraint:** For each job j, processing on machine i+1 starts
+immediately after machine i finishes:
 ```
 start(j, i+1) = start(j, i) + p[i][j]    for all i = 0, ..., m-2
 ```
 
-**Objective:** Minimize the makespan (completion time of the last job on the
-last machine).
-
-### Delay-Based Formulation
-
-The no-wait constraint reduces the problem to finding the optimal permutation
-where makespan depends on **inter-job delays**:
-
+**Delay-based reformulation:** The constraint reduces the problem to inter-job delays:
 ```
 d(j, k) = max over i of [ cumulative_p(j, 0..i) - cumulative_p(k, 0..i-1) ]
 ```
+where d(j, k) is the minimum start-to-start gap between consecutive jobs j and k.
 
-where d(j, k) is the minimum time gap between starting job j and starting job k.
-
-**Makespan:**
+**Makespan in terms of delays:**
 ```
 Cmax = sum_{i=0}^{n-2} d(pi[i], pi[i+1]) + sum_{i=0}^{m-1} p[i, pi[n-1]]
 ```
 
-This structure makes the NWFSP equivalent to an **asymmetric Traveling Salesman
-Problem (ATSP)** on the delay matrix, connecting it to a rich body of TSP
-literature and algorithms.
+This structure makes the NWFSP equivalent to an **asymmetric TSP** on the
+delay matrix D, connecting it to the rich body of TSP algorithms.
 
 ## Complexity
 
@@ -49,22 +42,36 @@ literature and algorithms.
 | m = 2 | Polynomial (reducible to TSP on a line) | Gilmore & Gomory (1964) |
 | m >= 3 | NP-hard | Roeck (1984) |
 
-## Implemented Algorithms
+The reduction to ATSP means any TSP solver or heuristic can be applied to
+the delay matrix. For m = 2, the delay matrix has special structure that
+admits a polynomial-time algorithm.
 
-### Heuristics
-- **Nearest Neighbor (NN):** Greedy TSP-like construction using delay matrix
-- **NEH-NW:** NEH adapted with no-wait makespan evaluation
-- **Gangadharan-Rajendran:** Slope-index priority with NEH-style insertion
+## Solution Approaches
 
-### Metaheuristics
-- **Iterated Greedy (IG-NW):** Ruiz-Stuetzle IG adapted for no-wait
+| Method | Works? | Notes |
+|--------|--------|-------|
+| Johnson's Rule (base exact) | No | Does not enforce no-wait constraint |
+| NEH (base heuristic) | No | Must use delay-based makespan evaluation |
+| Nearest Neighbor (variant heuristic) | Yes | Greedy TSP-like on delay matrix |
+| NEH-NW (variant heuristic) | Yes | NEH with no-wait makespan evaluation |
+| Gangadharan-Rajendran (variant heuristic) | Yes | Slope-index priority with NEH-style insertion |
+| IG-NW (variant metaheuristic) | Yes | Iterated Greedy adapted for no-wait |
+| TSP metaheuristics (2-opt, SA) | Possible | Apply to delay matrix as ATSP instance |
+
+## Implementations
+
+Python files in this directory:
+- `instance.py` -- NoWaitFlowShopInstance, delay matrix computation
+- `heuristics.py` -- Nearest Neighbor, NEH-NW, Gangadharan-Rajendran
+- `metaheuristics.py` -- Iterated Greedy for no-wait (IG-NW)
+- `__init__.py` -- Package init
 
 ## Applications
 
-- Steel manufacturing (continuous casting)
+- Steel manufacturing (continuous casting, hot rolling)
 - Chemical processing (reactions that cannot be interrupted)
 - Food processing (temperature-sensitive products)
-- Pharmaceutical production
+- Pharmaceutical production (time-critical chemical synthesis)
 
 ## Key References
 

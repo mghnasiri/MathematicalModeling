@@ -1,37 +1,32 @@
-# Blocking Flow Shop Scheduling Problem (BFSP)
+# Blocking Flow Shop (PFSP Variant)
 
-## Problem Definition
+## What Changes
 
 In the **blocking permutation flow shop** (Fm | prmu, blocking | Cmax), there
 are no intermediate storage buffers between machines. When a job finishes
 processing on machine i, it remains on that machine (blocking it) until
 machine i+1 becomes available. This prevents the next job from starting
-on machine i.
+on machine i. Real-world production lines with limited buffer space --
+such as robotic cells, paint shops, and concrete production -- motivate
+this variant. The objective remains makespan minimization, but blocking
+always yields makespan >= the standard PFSP for the same permutation.
 
-### Mathematical Formulation
+## Mathematical Formulation
 
-**Given:**
-- n jobs, m machines
-- Processing times p[i][j] for job j on machine i
+The base PFSP formulation (see parent README) is modified as follows:
 
-**Blocking constraint:** A job must stay on machine i until machine i+1 is
-free. We track both completion times C and departure times D:
+**Additional variable:** Departure time D[i][k] -- the time job pi(k) leaves machine i.
 
+**Modified completion time recursion:**
 ```
 C[i][k] = max(C[i-1][k], D[i][k-1]) + p[i][pi(k)]
-D[i][k] = max(C[i][k], D[i+1][k])    for i < m-1
-D[m-1][k] = C[m-1][k]                  (no blocking on last machine)
+D[i][k] = max(C[i][k], D[i+1][k-1])    for i < m-1
+D[m-1][k] = C[m-1][k]                    (no blocking on last machine)
 ```
 
-**Objective:** Minimize Cmax = C[m-1][n-1]
-
-### Relationship to Standard PFSP
-
-- Standard PFSP: C[i][k] = max(C[i-1][k], **C[i][k-1]**) + p[i][pi(k)]
-- Blocking PFSP: C[i][k] = max(C[i-1][k], **D[i][k-1]**) + p[i][pi(k)]
-
-The departure time D[i][k-1] >= C[i][k-1], so blocking makespan is always
-greater than or equal to the standard PFSP makespan for the same permutation.
+In the standard PFSP, D[i][k] = C[i][k] because jobs can wait in an
+unlimited buffer. Here, D[i][k] >= C[i][k], so the previous job's
+departure time replaces its completion time in the recursion.
 
 ## Complexity
 
@@ -40,14 +35,28 @@ greater than or equal to the standard PFSP makespan for the same permutation.
 | m = 2 | Polynomial | Gilmore & Gomory (1964) |
 | m >= 3 | NP-hard | Hall & Sriskandarajah (1996) |
 
-## Implemented Algorithms
+The 2-machine case reduces to a special TSP solvable in polynomial time.
+For m >= 3, the problem is NP-hard, same complexity class as the base PFSP.
 
-### Heuristics
-- **NEH-B:** NEH adapted with blocking-aware makespan evaluation
-- **Profile Fitting (PF-B):** Greedy construction minimizing blocking time
+## Solution Approaches
 
-### Metaheuristics
-- **Iterated Greedy (IG-B):** Ruiz-Stuetzle IG adapted for blocking
+| Method | Works? | Notes |
+|--------|--------|-------|
+| Johnson's Rule (base exact) | No | Does not account for blocking delays |
+| NEH (base heuristic) | No | Must use blocking-aware makespan evaluation |
+| NEH-B (variant heuristic) | Yes | NEH adapted with departure-time recursion |
+| Profile Fitting (variant heuristic) | Yes | Greedy construction minimizing blocking time |
+| IG-B (variant metaheuristic) | Yes | Iterated Greedy with blocking-aware evaluation |
+| Tabu Search (base meta, adapted) | Possible | Neighborhood moves transfer; evaluation must change |
+| SA (base meta, adapted) | Possible | Swap/insertion moves work; re-evaluate with D[i][k] |
+
+## Implementations
+
+Python files in this directory:
+- `instance.py` -- BlockingFlowShopInstance, departure time computation
+- `heuristics.py` -- NEH-B, Profile Fitting (PF-B)
+- `metaheuristics.py` -- Iterated Greedy for blocking (IG-B)
+- `__init__.py` -- Package init
 
 ## Applications
 
