@@ -122,3 +122,17 @@
 - Added: computational results table
 - Updated: directory tree showing all 6 test files (was 1)
 - Noted: no exact method implementations currently exist
+
+---
+
+## 2026-04-04 — Phase 2: `problems/3_packing_cutting/knapsack/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+**Changes:**
+- Complete rewrite matching gold standard
+- Added: notation table, LP relaxation / Dantzig bound description
+- Added: DP pseudocode, variant subsections (bounded, multidim, subset sum)
+- Added: all 6 metaheuristics documented (README had 1; added SA, TS, IG, LS, VNS)
+- Added: repair operator explanation, implementation guide, computational results
+- Updated: directory tree showing all 6 test files (was 1), Pisinger/OR-Library benchmark refs
