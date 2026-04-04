@@ -22,3 +22,31 @@
 **Created:** `AUDIT_MANIFEST.md` with complete inventory and status assessments.
 
 **Next:** Phase 1 — Define gold standard template.
+
+---
+
+## 2026-04-04 — Phase 1: Gold Standard Template
+
+**Created:** `TEMPLATE_STANDARD.md` with templates for problem READMEs (8 sections + notation conventions), variant READMEs (lighter 5-section format), application domain READMEs (9 sections), application phase READMEs, and code file standards.
+
+---
+
+## 2026-04-04 — Phase 2: `problems/1_scheduling/flow_shop/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+**Changes:**
+- Complete README rewrite from ~187 lines to ~400+ lines matching gold standard
+- Added: formal Input/Decision/Objective/Constraints structure (Section 1)
+- Added: notation table + 3 alternative formulations (recursion, position-based MILP, CP-SAT) (Section 2)
+- Added: per-variant subsections with brief descriptions (Section 3)
+- Added: Taillard benchmark library table, instance format, small illustrative instance (Section 4)
+- Added: full method tables for ALL 11 heuristics and ALL 17 metaheuristics (README was listing only 6 heuristics and 5 metaheuristics — repo actually has 28+ algorithm files) (Section 5)
+- Added: pseudocode for Johnson's Rule, NEH, and Iterated Greedy (Section 5)
+- Added: implementation guide with Taillard acceleration, common pitfalls (Section 6)
+- Added: scale guidance table (Section 7)
+- Added: complete directory tree reflecting ALL 31 .py files and 8 test files (Section 8)
+- Added: full references section with seminal papers, surveys, benchmark citation (Section 10)
+- Preserved: algorithm taxonomy tree and key insights
+
+**Open questions:** None — this is the best-covered problem folder in the repo.
