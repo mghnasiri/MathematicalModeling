@@ -244,3 +244,23 @@
 **safety_stock:** Analytical $\sigma_{\text{DDLT}}$ formula, safety factor $z = \Phi^{-1}(\text{SL})$, reorder point. Demand + lead-time variability convolution.
 
 **vehicle_loading:** Dual-capacity bin packing (weight + volume). MILP formulation, FFD heuristic. 5-item illustrative instance.
+
+---
+
+## 2026-04-04 — Phase 2: `problems/combinatorial/` (all 7 — READMEs from scratch)
+
+**All seven:** `[EMPTY]` → `[EXCELLENT]`
+
+**graph_coloring:** ILP formulation, DSatur description, chromatic number notation. Brélaz (1979) reference.
+
+**graph_partitioning:** Balanced k-way formulation, Kernighan-Lin algorithm description. $O(n^2 \log n)$ complexity.
+
+**job_sequencing:** Scheduling notation 1|d_j|ΣwjUj, ILP formulation, greedy unit-time algorithm. Moore (1968) reference.
+
+**max_clique:** ILP formulation, Bron-Kerbosch with pivoting, relationship to MIS. $O(3^{n/3})$ worst case.
+
+**max_independent_set:** ILP formulation, B&B + greedy heuristic, Gallai's theorem. Inapproximability result.
+
+**maximum_satisfiability:** ILP with clause satisfaction, greedy 1/2-approximation. Goemans-Williamson SDP reference.
+
+**vertex_cover:** ILP formulation, 2-approximation via maximal matching, LP half-integrality. Bar-Yehuda & Even (1981).

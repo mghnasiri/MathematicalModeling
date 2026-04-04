@@ -149,13 +149,13 @@
 | Subfolder | README | .py files | Tests | Status |
 |-----------|--------|-----------|-------|--------|
 | (root) | Yes (taxonomy mapping) | 0 | 0 | `[STUB]` |
-| `graph_coloring/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `graph_partitioning/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `job_sequencing/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `max_clique/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `max_independent_set/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `maximum_satisfiability/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `vertex_cover/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
+| `graph_coloring/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `graph_partitioning/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `job_sequencing/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `max_clique/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `max_independent_set/` | Yes | 4 | 1 test file | `[EXCELLENT]` |
+| `maximum_satisfiability/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `vertex_cover/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
 
 ### Legacy: Continuous Optimization (`continuous/`) — 12 .py, 0 .md, 25 dirs
 
