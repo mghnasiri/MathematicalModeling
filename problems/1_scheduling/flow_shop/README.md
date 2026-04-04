@@ -77,9 +77,42 @@ $$x_{jk} \in \{0,1\},\quad C_{ik} \geq 0 \tag{12}$$
 **Strengths:** Compact formulation, $O(n^2 + nm)$ constraints. Solvable by any MILP solver.
 **Weaknesses:** Weak LP relaxation — the fractional solution spreads jobs across positions, yielding a loose lower bound. Practical for $n \leq 20$.
 
-### Formulation C: Constraint Programming (CP-SAT)
+### Formulation C: Time-Indexed Formulation
+
+Binary variable $y_{jit} = 1$ if job $j$ starts on machine $i$ at time $t$.
+
+$$\min \quad C_{\max} \tag{C1}$$
+
+$$\sum_{t=0}^{T} y_{jit} = 1 \quad \forall\, j \in N,\, i \in M \quad \text{(each operation starts exactly once)} \tag{C2}$$
+
+$$\sum_{j=1}^{n} \sum_{\tau=\max(0,t-p_{ij}+1)}^{t} y_{ji\tau} \leq 1 \quad \forall\, i \in M,\, t \tag{C3: no overlap on machines)}$$
+
+$$\sum_{t=0}^{T} t \cdot y_{j(i+1)t} \geq \sum_{t=0}^{T} (t + p_{ij}) \cdot y_{jit} \quad \forall\, j,\, i < m \tag{C4: precedence within job}$$
+
+$$C_{\max} \geq \sum_{t=0}^{T} (t + p_{mj}) \cdot y_{jmt} \quad \forall\, j \tag{C5}$$
+
+**Size:** $O(n \cdot m \cdot T)$ variables where $T = \sum_{j} \sum_{i} p_{ij}$. Very large but produces tighter LP relaxation than the position-based MILP. Useful with column generation for large instances.
+
+### Formulation D: Constraint Programming (CP-SAT)
 
 Model each job-on-machine operation as an interval variable; impose no-overlap constraints on each machine and precedence constraints within each job. The CP-SAT solver in OR-Tools handles this natively with propagation and search heuristics. More practical than the MILP for medium instances ($n \leq 50$).
+
+### Formulation Comparison
+
+| Formulation | Variables | Constraints | LP Relaxation | Practical Limit |
+|------------|-----------|-------------|---------------|-----------------|
+| Completion-time recursion | — | — | — (evaluation only) | Any $n$ |
+| Position-based MILP | $O(n^2 + nm)$ | $O(n^2 + nm)$ | Weak | $n \leq 20$ |
+| Time-indexed | $O(nmT)$ | $O(nmT)$ | Tight | $n \leq 15$ (direct), larger with CG |
+| CP-SAT (interval) | $O(nm)$ intervals | $O(nm)$ | N/A (propagation) | $n \leq 50$ |
+
+### Lagrangian Relaxation
+
+Relax the machine capacity constraints (no-overlap). The subproblem decomposes by job into $n$ independent shortest-path problems on a time-space graph. The Lagrangian bound is tightened via subgradient optimization:
+
+$$\lambda_i^{k+1} = \max\bigl(0,\; \lambda_i^k + \alpha_k (1 - \text{capacity}_i)\bigr)$$
+
+where $\alpha_k = \frac{\theta_k (UB - LB_k)}{\|\text{subgradient}\|^2}$ and $\theta_k \in (0, 2]$ is halved when no improvement for $K$ iterations. The Lagrangian bound is generally stronger than the LP relaxation of the position-based MILP.
 
 ---
 
@@ -146,6 +179,25 @@ The standard PFSP benchmark set (Taillard, 1993) comprises 120 instances across 
 
 Processing times are drawn from $U[1, 99]$.
 
+### Best Known Solutions (Representative)
+
+| Instance | $n \times m$ | BKS | Optimal? | Source |
+|----------|-------------|-----|----------|--------|
+| ta001 | 20 × 5 | 1278 | Yes | Taillard (1993) |
+| ta011 | 20 × 10 | 1582 | Yes | Taillard (1993) |
+| ta021 | 20 × 20 | 2297 | Yes | Taillard (1993) |
+| ta031 | 50 × 5 | 2724 | [TODO: verify BKS] | Vallada et al. (2008) |
+| ta041 | 50 × 10 | 2991 | [TODO: verify BKS] | Vallada et al. (2008) |
+| ta051 | 50 × 20 | 3850 | [TODO: verify BKS] | Vallada et al. (2008) |
+| ta061 | 100 × 5 | 5493 | [TODO: verify BKS] | Ruiz & Stützle (2007) |
+| ta071 | 100 × 10 | 5770 | [TODO: verify BKS] | Ruiz & Stützle (2007) |
+| ta081 | 100 × 20 | 6202 | [TODO: verify BKS] | Ruiz & Stützle (2007) |
+| ta091 | 200 × 10 | 10862 | [TODO: verify BKS] | Pan & Ruiz (2014) |
+| ta101 | 200 × 20 | 11195 | [TODO: verify BKS] | Pan & Ruiz (2014) |
+| ta111 | 500 × 20 | 26059 | [TODO: verify BKS] | Pan & Ruiz (2014) |
+
+*Note: BKS values for ta031+ are upper bounds from the best known heuristics. Verify against Taillard's website for current best.*
+
 ### Instance Format
 
 ```
@@ -193,11 +245,41 @@ ALGORITHM JohnsonsRule(p[1..n], q[1..n])
 
 **Idea:** DFS enumeration of partial permutations with machine-based lower bounds. At each node, a partial sequence $(\pi(1), \ldots, \pi(k))$ is fixed; the bound computes the minimum possible makespan assuming the remaining jobs can be processed without waiting. NEH is used as a warm-start upper bound.
 
+```
+ALGORITHM BranchAndBound(instance)
+  UB ← Cmax(NEH(instance))
+  π_best ← NEH solution
+  CALL Enumerate([], {1,...,n}, UB, π_best)
+  RETURN π_best
+
+PROCEDURE Enumerate(partial, remaining, UB, π_best)
+  IF remaining = ∅:
+    IF Cmax(partial) < UB:
+      UB ← Cmax(partial);  π_best ← partial
+    RETURN
+  LB ← MachineLowerBound(partial, remaining)
+  IF LB ≥ UB: RETURN                           // prune
+  FOR j in remaining (sorted by LB-based priority):
+    Enumerate(partial ++ [j], remaining \ {j}, UB, π_best)
+```
+
+**Machine-based lower bound:** For each machine $i$, compute:
+
+$$LB_i = h_i(\text{partial}) + \sum_{j \in \text{remaining}} p_{ij} + \min_{j \in \text{remaining}} t_i(j)$$
+
+where $h_i$ is the earliest time machine $i$ can start processing remaining jobs (head), and $t_i(j)$ is the minimum time to reach the last machine after job $j$ finishes on machine $i$ (tail). The bound is $\max_i LB_i$.
+
 **Practical limit:** $n \leq 20$ for makespan optimality.
+
+**Complexity:** $O(n!)$ worst case; typically $O(n^2 m)$ per node with pruning reducing explored nodes dramatically.
 
 #### MIP / CP-SAT
 
 Position-based MILP (Formulation B above) via SciPy HiGHS, or interval-variable CP model via OR-Tools CP-SAT. The CP model scales better than the MILP.
+
+**Valid inequalities for MILP:**
+- **Symmetry breaking:** $x_{j_1, 1} = 1$ (fix one job to position 1 to break symmetry)
+- **Precedence cuts:** If $p_{1j} < p_{1k}$ and $p_{mj} > p_{mk}$ for all other machines equal, job $j$ should precede $k$ (Johnson-type dominance)
 
 ### 5.2 Constructive Heuristics
 
@@ -214,6 +296,40 @@ Position-based MILP (Formulation B above) via SciPy HiGHS, or interval-variable 
 | 9 | LR Heuristic | Liu & Reeves | 2001 | $O(n^3 m)$ | Multi-candidate composite index |
 | 10 | RA Heuristic | Rad, Ruiz & Boroojerdian | 2009 | $O(n^2 m)$ | Enhanced NEH with front/back insertion |
 | 11 | Beam Search | — | — | $O(k \cdot n^2 m)$ | Parallel-beam NEH insertion ($k$ = beam width) |
+
+#### Palmer's Slope Index Formula
+
+$$S_j = -\sum_{i=1}^{m} \bigl(m - (2i - 1)\bigr) \cdot p_{ij} \quad \forall\, j \in N$$
+
+Sort jobs by decreasing $S_j$. Jobs with increasing processing times across machines get positive slope (scheduled first). Jobs with decreasing times get negative slope (scheduled last).
+
+#### CDS Algorithm (Campbell, Dudek & Smith, 1970)
+
+Generate $m-1$ virtual 2-machine problems and solve each with Johnson's Rule. Return the best.
+
+```
+ALGORITHM CDS(instance)
+  best ← ∞
+  FOR k = 1 TO m-1:
+    FOR j = 1 TO n:
+      p1_j ← sum(p[i][j] for i = 1 to k)        // virtual machine 1
+      p2_j ← sum(p[i][j] for i = m-k+1 to m)    // virtual machine 2
+    π_k ← JohnsonsRule(p1, p2)
+    IF Cmax(π_k) < best:
+      best ← Cmax(π_k);  π_best ← π_k
+  RETURN π_best
+```
+
+**Complexity:** $O(m \cdot n \log n)$. Generates $m-1$ solutions; the best typically has ARPD 5-10% on Taillard instances.
+
+#### Taillard Acceleration for NEH
+
+The key to efficient NEH is avoiding full $O(nm)$ makespan computation for each insertion. Maintain two matrices:
+
+- **Head** $e_{ik}$: earliest completion of machine $i$ after scheduling the first $k$ jobs
+- **Tail** $q_{ij}$: minimum time from start of job $j$ on machine $i$ to the end of the schedule
+
+For inserting job $j$ at position $k$, the makespan can be computed in $O(m)$ by combining head, processing time, and tail values. This reduces NEH from $O(n^3 m)$ to $O(n^2 m)$.
 
 **NEH** remains the gold standard constructive heuristic after 40+ years. Its insertion mechanism implicitly evaluates $O(n^2)$ candidate positions. Most modern methods (NEHKK, RZ, RA, Beam Search) are NEH extensions.
 
@@ -278,11 +394,77 @@ ALGORITHM IteratedGreedy(instance, d, T)
   RETURN π_best
 ```
 
+#### Parameter Tables for Key Metaheuristics
+
+**Simulated Annealing (SA):**
+
+| Parameter | Symbol | Typical Range (PFSP) | Notes |
+|-----------|--------|---------------------|-------|
+| Initial temperature | $T_0$ | $\frac{\Delta_{\text{avg}} \cdot n}{-\ln(0.5)}$ | Calibrate to accept ~50% worsening moves initially |
+| Cooling rate | $\alpha$ | 0.95–0.99 | Geometric cooling: $T_{k+1} = \alpha T_k$ |
+| Iterations per temp | $L$ | $5n$ to $10n$ | Scale with problem size |
+| Neighborhood | — | Insertion | Insertion > swap for PFSP |
+| Stopping criterion | — | $T < 0.01$ or max iterations | — |
+
+**Tabu Search (TS):**
+
+| Parameter | Symbol | Typical Range (PFSP) | Notes |
+|-----------|--------|---------------------|-------|
+| Tabu tenure | $\ell$ | $\lfloor n/2 \rfloor$ to $n$ | Length of short-term memory |
+| Aspiration | — | Accept if $f < f_{\text{best}}$ | Override tabu if globally improving |
+| Neighborhood | — | Insertion | Best-improvement over all non-tabu insertions |
+| Max iterations | — | $1000n$ | — |
+
+**Iterated Greedy (IG):**
+
+| Parameter | Symbol | Typical Range (PFSP) | Notes |
+|-----------|--------|---------------------|-------|
+| Destruction size | $d$ | 4–8 | Number of jobs removed per iteration |
+| Temperature | $T$ | $\frac{\sum p_{ij}}{10nm}$ | For Metropolis acceptance of worse solutions |
+| Local search | — | VND or insertion-LS | Applied after reconstruction |
+| Stopping | — | $n \cdot m / 2$ ms per instance | Time-based, scales with size |
+
+**Genetic Algorithm (GA):**
+
+| Parameter | Symbol | Typical Range (PFSP) | Notes |
+|-----------|--------|---------------------|-------|
+| Population size | $N_p$ | 50–200 | Larger for bigger instances |
+| Crossover | — | OX (Order Crossover) | Preserves relative order |
+| Crossover rate | $p_c$ | 0.8–0.95 | — |
+| Mutation | — | Insertion | Single-job repositioning |
+| Mutation rate | $p_m$ | 0.05–0.20 | Per-individual probability |
+| Selection | — | Tournament ($k=3$) | — |
+| Elitism | — | Keep top 1–2 | Prevent loss of best solution |
+
+**Ant Colony Optimization (ACO/MMAS):**
+
+| Parameter | Symbol | Typical Range (PFSP) | Notes |
+|-----------|--------|---------------------|-------|
+| Ants | $n_a$ | $n$ | One ant per job |
+| Pheromone weight | $\alpha$ | 1.0 | Influence of pheromone |
+| Heuristic weight | $\beta$ | 2.0–5.0 | Influence of NEH-based heuristic info |
+| Evaporation rate | $\rho$ | 0.01–0.10 | $\tau_{ij} \leftarrow (1-\rho)\tau_{ij} + \rho \cdot \Delta\tau$ |
+| $\tau_{\min}, \tau_{\max}$ | — | MMAS bounds | Prevent stagnation |
+
 ### 5.5 Hybrid and Advanced Methods
 
-- **Memetic Algorithm** = GA + local search on each individual. Combines global exploration with local exploitation.
-- **Scatter Search** = Reference set management + path relinking + local search. Uses diversification generation and structured combination.
-- **Beam Search** = Truncated tree search keeping top-$k$ partial solutions. Bridges constructive heuristics and exact methods.
+- **Memetic Algorithm (MA):** GA + local search on each offspring. The local search (typically VND or insertion-LS) is applied to every new solution after crossover/mutation. This dramatically improves convergence but increases per-generation cost by $O(n^2 m)$ per individual.
+
+- **Scatter Search (SS):** Maintains a reference set of $b$ diverse, high-quality solutions. New solutions are generated by structured combination (path relinking between reference set pairs). The reference set is updated by replacing the worst member whenever a new solution improves diversity or quality.
+
+- **Beam Search:** Truncated tree search keeping the top-$k$ partial solutions at each level. At level $\ell$, each of the $k$ partial permutations is extended by inserting the next job at all positions; the $k$ best extensions are kept. Bridges constructive heuristics ($k=1$ = NEH) and exact methods ($k=\infty$ = full enumeration).
+
+- **Fix-and-Optimize (Matheuristic):** Fix a portion of the permutation (e.g., positions 1 to $n/2$) and solve the remaining sub-problem optimally or heuristically. Iterate by fixing different portions. Uses the MILP solver as a subroutine within a local search framework.
+
+- **ML-Assisted:** Bengio et al. (2021) survey RL and GNN approaches for combinatorial optimization including flow shop. Neural methods learn priority rules from data but have not yet surpassed IG on Taillard benchmarks.
+
+### 5.6 Cutting Planes and Valid Inequalities
+
+For the position-based MILP:
+
+- **Precedence cuts:** If job $j$ dominates job $k$ (i.e., scheduling $j$ before $k$ is always at least as good), fix $\sum_{l=1}^{p} x_{jl} \geq \sum_{l=1}^{p} x_{kl}$ for all $p$.
+- **Machine idle-time cuts:** $C_{ik} - C_{i,k-1} \geq \min_{j \in N} p_{ij}$ (minimum processing time gap between consecutive positions on each machine).
+- **Bound tightening:** Use NEH makespan as initial upper bound; add $C_{\max} \leq \text{NEH}_{\text{val}}$ to the MILP to tighten the formulation.
 
 ---
 
@@ -444,6 +626,17 @@ flow_shop/
 
 - Ruiz, R. & Maroto, C. (2005). A comprehensive review and evaluation of permutation flowshop heuristics. *European Journal of Operational Research*, 165(2), 479-494.
 - Fernandez-Viagas, V., Ruiz, R. & Framinan, J.M. (2017). A new vision of approximate methods for the permutation flowshop to minimise makespan: State-of-the-art and computational evaluation. *European Journal of Operational Research*, 257(3), 707-721.
+
+### Textbooks
+
+- Pinedo, M.L. (2016). *Scheduling: Theory, Algorithms, and Systems.* 5th ed. Springer. Chapters 8-9 cover flow shop models and heuristics.
+- Graham, R.L., Lawler, E.L., Lenstra, J.K. & Rinnooy Kan, A.H.G. (1979). Optimization and approximation in deterministic sequencing and scheduling: A survey. *Annals of Discrete Mathematics*, 5, 287-326.
+
+### Recent State-of-the-Art
+
+- Pan, Q.-K. & Ruiz, R. (2014). An effective iterated greedy algorithm for the mixed no-idle permutation flowshop scheduling problem. *Omega*, 44, 41-50.
+- Vallada, E., Ruiz, R. & Framinan, J.M. (2015). New hard benchmark instances for the flowshop scheduling problem. *European Journal of Operational Research*, 242(3), 865-876.
+- Bengio, Y., Lodi, A. & Prouvost, A. (2021). Machine learning for combinatorial optimization: A methodological tour d'horizon. *European Journal of Operational Research*, 290(2), 405-421.
 
 ### Benchmark
 
