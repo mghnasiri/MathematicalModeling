@@ -38,12 +38,12 @@
 
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
-| `flow_shop/` | Yes | ~20 | 3 test files (130 tests) | 10 (blocking, distributed, hybrid, lot_streaming, no_wait, open_shop, setup_times, stochastic, tardiness) | `[GOOD]` |
-| `single_machine/` | Yes | ~7 | 1 test file (55 tests) | 2 (batch, preemptive) | `[GOOD]` |
-| `parallel_machine/` | Yes | ~7 | 1 test file (43 tests) | 2 (sdst, unrelated_tardiness) | `[GOOD]` |
-| `job_shop/` | Yes | ~5 | 1 test file (41 tests) | 3 (flexible_tardiness, no_wait, weighted_tardiness) | `[GOOD]` |
-| `flexible_job_shop/` | Yes | ~4 | 1 test file (37 tests) | 0 | `[GOOD]` |
-| `rcpsp/` | Yes | ~4 | 1 test file (35 tests) | 1 (multi_mode) | `[GOOD]` |
+| `flow_shop/` | Yes | ~20 | 3 test files (130 tests) | 10 (blocking, distributed, hybrid, lot_streaming, no_wait, open_shop, setup_times, stochastic, tardiness) | `[EXCELLENT]` |
+| `single_machine/` | Yes | ~7 | 1 test file (55 tests) | 2 (batch, preemptive) | `[EXCELLENT]` |
+| `parallel_machine/` | Yes | ~7 | 1 test file (43 tests) | 2 (sdst, unrelated_tardiness) | `[EXCELLENT]` |
+| `job_shop/` | Yes | ~5 | 1 test file (41 tests) | 3 (flexible_tardiness, no_wait, weighted_tardiness) | `[EXCELLENT]` |
+| `flexible_job_shop/` | Yes | ~4 | 1 test file (37 tests) | 0 | `[EXCELLENT]` |
+| `rcpsp/` | Yes | ~4 | 1 test file (35 tests) | 1 (multi_mode) | `[EXCELLENT]` |
 | `assembly_line_balancing/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `batch_scheduling/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `nurse_scheduling/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
@@ -56,9 +56,9 @@
 
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
-| `tsp/` | Yes | ~8 | 1 test file (55 tests) | 4 (asymmetric, pickup_delivery, prize_collecting, time_windows) | `[GOOD]` |
-| `cvrp/` | Yes | ~5 | 1 test file (41 tests) | 10 (backhaul, backhauls, cumulative, electric, multi_compartment, multi_depot, multi_trip, open_vrp, periodic, split_delivery) | `[GOOD]` |
-| `vrptw/` | Yes | ~4 | 1 test file (31 tests) | 1 (soft_time_windows) | `[GOOD]` |
+| `tsp/` | Yes | ~8 | 1 test file (55 tests) | 4 (asymmetric, pickup_delivery, prize_collecting, time_windows) | `[EXCELLENT]` |
+| `cvrp/` | Yes | ~5 | 1 test file (41 tests) | 10 (backhaul, backhauls, cumulative, electric, multi_compartment, multi_depot, multi_trip, open_vrp, periodic, split_delivery) | `[EXCELLENT]` |
+| `vrptw/` | Yes | ~4 | 1 test file (31 tests) | 1 (soft_time_windows) | `[EXCELLENT]` |
 | `arc_routing/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `chinese_postman/` | Yes | ~2 | 1 test file | 0 | `[EXCELLENT]` |
 | `dial_a_ride/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
@@ -69,9 +69,9 @@
 
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
-| `knapsack/` | Yes | ~5 | 1 test file (37 tests) | 4 (bounded, multidimensional, multiple, subset_sum) | `[GOOD]` |
-| `bin_packing/` | Yes | ~3 | 1 test file (29 tests) | 3 (online, two_dimensional, variable_size) | `[GOOD]` |
-| `cutting_stock/` | Yes | ~2 | 1 test file (21 tests) | 1 (two_dimensional) | `[GOOD]` |
+| `knapsack/` | Yes | ~5 | 1 test file (37 tests) | 4 (bounded, multidimensional, multiple, subset_sum) | `[EXCELLENT]` |
+| `bin_packing/` | Yes | ~3 | 1 test file (29 tests) | 3 (online, two_dimensional, variable_size) | `[EXCELLENT]` |
+| `cutting_stock/` | Yes | ~2 | 1 test file (21 tests) | 1 (two_dimensional) | `[EXCELLENT]` |
 | `bin_packing_2d/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `multidim_knapsack/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `multiple_knapsack/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
@@ -81,7 +81,7 @@
 
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
-| `assignment/` | Yes | ~3 | 1 test file (17 tests) | 3 (generalized, max_weight_matching, quadratic) | `[GOOD]` |
+| `assignment/` | Yes | ~3 | 1 test file (17 tests) | 3 (generalized, max_weight_matching, quadratic) | `[EXCELLENT]` |
 | `linear_assignment/` | Yes | 0 | 0 | 0 | `[GOOD]` |
 | `matching/` | Yes | 0 | 0 | 0 | `[GOOD]` |
 | `quadratic_assignment/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
@@ -90,8 +90,8 @@
 
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
-| `facility_location/` | Yes | ~3 | 1 test file (16 tests) | 1 (capacitated) | `[GOOD]` |
-| `p_median/` | Yes | ~2 | 1 test file (13 tests) | 1 (capacitated) | `[GOOD]` |
+| `facility_location/` | Yes | ~3 | 1 test file (16 tests) | 1 (capacitated) | `[EXCELLENT]` |
+| `p_median/` | Yes | ~2 | 1 test file (13 tests) | 1 (capacitated) | `[EXCELLENT]` |
 | `hub_location/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `max_coverage/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `set_covering/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
@@ -101,9 +101,9 @@
 
 | Subfolder | README | .py files | Tests | Variants | Status |
 |-----------|--------|-----------|-------|----------|--------|
-| `shortest_path/` | Yes | ~3 | 1 test file (21 tests) | 1 (all_pairs) | `[GOOD]` |
-| `max_flow/` | Yes | ~2 | 1 test file (16 tests) | 1 (min_cost_flow) | `[GOOD]` |
-| `min_spanning_tree/` | Yes | ~2 | 1 test file (16 tests) | 1 (steiner_tree) | `[GOOD]` |
+| `shortest_path/` | Yes | ~3 | 1 test file (21 tests) | 1 (all_pairs) | `[EXCELLENT]` |
+| `max_flow/` | Yes | ~2 | 1 test file (16 tests) | 1 (min_cost_flow) | `[EXCELLENT]` |
+| `min_spanning_tree/` | Yes | ~2 | 1 test file (16 tests) | 1 (steiner_tree) | `[EXCELLENT]` |
 | `multi_commodity_flow/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 | `network_design/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
