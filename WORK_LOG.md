@@ -50,3 +50,22 @@
 - Preserved: algorithm taxonomy tree and key insights
 
 **Open questions:** None — this is the best-covered problem folder in the repo.
+
+---
+
+## 2026-04-04 — Phase 2: `problems/2_routing/tsp/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+**Changes:**
+- Complete README rewrite from ~113 lines to ~350+ lines matching gold standard
+- Added: formal Input/Decision/Objective/Constraints structure
+- Added: notation table + 3 formulations (DFJ with exponential SECs, MTZ compact, 1-tree relaxation)
+- Added: per-variant subsections for ATSP, TSPTW, PCTSP, PDP
+- Added: TSPLIB benchmark library reference + small illustrative instance
+- Added: pseudocode for Held-Karp, Nearest Neighbor, 2-opt
+- Added: all 7 metaheuristics documented (README was listing only 3; actual repo has TS, ACO, IG, VNS)
+- Added: implementation guide (distance matrix tips, 2-opt evaluation, neighbor lists)
+- Added: computational results table with scale guidance
+- Updated: directory tree showing all 5 test files (was listing 1)
+- Expanded: references with books and surveys
