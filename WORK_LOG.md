@@ -136,3 +136,39 @@
 - Added: all 6 metaheuristics documented (README had 1; added SA, TS, IG, LS, VNS)
 - Added: repair operator explanation, implementation guide, computational results
 - Updated: directory tree showing all 6 test files (was 1), Pisinger/OR-Library benchmark refs
+
+---
+
+## 2026-04-04 — Phase 2: `problems/1_scheduling/parallel_machine/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+- Complete rewrite with notation table, MIP formulation, LPT pseudocode
+- All 6 metaheuristics documented (README had GA only)
+- Updated directory tree (6 test files, not 1), added MULTIFIT explanation
+- Added implementation guide, computational results, approximation ratios
+
+---
+
+## 2026-04-04 — Phase 2: `problems/1_scheduling/flexible_job_shop/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+- CRITICAL FIX: Removed phantom files (exact/mip_fjsp.py, metaheuristics/nsga2.py — don't exist)
+- Noted empty exact/ directory explicitly
+- All 6 metaheuristics documented (README had GA/SA only)
+- Added Brandimarte/Barnes/Hurink benchmark references
+- Updated directory tree (7 test files, not 1)
+
+---
+
+## 2026-04-04 — Phase 2: `problems/1_scheduling/rcpsp/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+- CRITICAL FIX: Removed phantom files (exact/mip_time_indexed.py, exact/constraint_programming.py, heuristics/priority_rules.py — don't exist)
+- Noted empty exact/ directory explicitly
+- All 6 metaheuristics documented (README had GA/SA only)
+- Added Serial SGS pseudocode, PSPLIB benchmark table
+- Added activity-list encoding explanation
+- Updated directory tree (7 test files, not 1)
