@@ -111,15 +111,13 @@
 
 | Subfolder | README | .py files | Tests | Status |
 |-----------|--------|-----------|-------|--------|
-| `eoq/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `lot_sizing/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `wagner_whitin/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `capacitated_lot_sizing/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `multi_echelon_inventory/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `safety_stock/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `vehicle_loading/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-
-**Note:** Entire family has ZERO READMEs. All 7 subfamilies need READMEs from scratch.
+| `eoq/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `lot_sizing/` | Yes | 4 | 1 test file | `[EXCELLENT]` |
+| `wagner_whitin/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `capacitated_lot_sizing/` | Yes | 7 | 3 test files | `[EXCELLENT]` |
+| `multi_echelon_inventory/` | Yes | 4 | 1 test file | `[EXCELLENT]` |
+| `safety_stock/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `vehicle_loading/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
 
 ### Family 8: Integrated Structural (`8_integrated_structural/`) — 0 .py, 4 .md, 4 dirs
 

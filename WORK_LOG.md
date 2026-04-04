@@ -224,3 +224,23 @@
 **robust_scheduling:** Added scheduling notation (1|uncertain p_j|min max-regret ΣwjCj), WSPT optimality per scenario, 3-job illustrative instance, 2-approximation note, 4 methods.
 
 **dro:** Added notation table, Wasserstein dual reformulation, moment-based ambiguity set, 2-variable illustrative instance, regularization interpretation, 3 methods.
+
+---
+
+## 2026-04-04 — Phase 2: `problems/7_inventory_lotsizing/` (all 7 — READMEs from scratch)
+
+**All seven:** `[EMPTY]` → `[EXCELLENT]`
+
+**eoq:** Classic EOQ formula, backorder variant, quantity discount variant. Notation table, $O(1)$/$O(B \log B)$ complexity. Harris (1913) reference.
+
+**lot_sizing:** Dynamic lot sizing with ZIO property. Wagner-Whitin DP formulation, Silver-Meal and Part-Period Balancing heuristics. 4-period illustrative instance.
+
+**wagner_whitin:** Standalone Wagner-Whitin DP. ZIO property explanation, $O(T^2)$ DP recurrence, 5-period illustrative instance.
+
+**capacitated_lot_sizing:** Full MILP formulation (5 constraint groups), NP-hardness citation. MIP via HiGHS, two greedy heuristics. 7 Python files, 3 test files documented.
+
+**multi_echelon_inventory:** Serial supply chain with $L$ echelons. Echelon base-stock policy, powers-of-two (2% optimality), greedy allocation. Clark-Scarf (1960) reference.
+
+**safety_stock:** Analytical $\sigma_{\text{DDLT}}$ formula, safety factor $z = \Phi^{-1}(\text{SL})$, reorder point. Demand + lead-time variability convolution.
+
+**vehicle_loading:** Dual-capacity bin packing (weight + volume). MILP formulation, FFD heuristic. 5-item illustrative instance.
