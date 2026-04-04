@@ -69,3 +69,24 @@
 - Added: computational results table with scale guidance
 - Updated: directory tree showing all 5 test files (was listing 1)
 - Expanded: references with books and surveys
+
+---
+
+## 2026-04-04 — Phase 2: `problems/2_routing/cvrp/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+**Changes:**
+- Complete README rewrite from ~99 lines to ~320+ lines matching gold standard
+- Added: formal Input/Decision/Objective/Constraints structure
+- Added: notation table + 2 formulations (2-index vehicle flow with rounded capacity cuts, 3-index vehicle flow)
+- Added: per-variant brief descriptions for 3 of 10 variants
+- Added: CVRPLIB reference with Augerat/Christofides/Uchoa sets + small instance
+- Added: pseudocode for Clarke-Wright savings
+- Added: all 7 metaheuristics documented (README had 2; actual repo has TS, ACO, IG, LS, VNS)
+- Added: 2-opt* inter-route neighborhood explanation
+- Added: giant-tour encoding + split procedure explanation
+- Added: implementation guide with split DP, savings precomputation, pitfalls
+- Added: computational results with scale guidance
+- Updated: directory tree showing all 6 test files (was 1)
+- Added: state-of-the-art references (ALNS, HGS)
