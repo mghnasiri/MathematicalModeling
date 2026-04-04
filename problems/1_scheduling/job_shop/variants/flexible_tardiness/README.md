@@ -7,7 +7,7 @@ The standard Job Shop Problem (JSP) minimizes makespan with fixed machine assign
 1. **Flexible machine assignment** (from FJSP): each operation can be processed on any machine from a set of eligible machines, with machine-dependent processing times.
 2. **Weighted tardiness objective** (from 1||SUM wjTj): each job has a due date d_j and weight w_j; the objective is to minimize total weighted tardiness SUM wjTj.
 
-This creates a joint **routing + sequencing + due-date** optimization problem that is significantly harder than either FJSP or weighted tardiness scheduling alone.
+This creates a joint **routing + sequencing + due-date** optimization problem that is significantly harder than either FJSP or weighted tardiness scheduling alone. The interaction between machine choice and tardiness means that assigning an operation to a faster machine may reduce one job's tardiness but delay other jobs sharing that machine.
 
 **Real-world motivation**: make-to-order manufacturing with flexible CNC machines and customer delivery deadlines, semiconductor wafer fabrication with multi-tool processing stations and lot priorities, flexible manufacturing systems with heterogeneous workstations.
 
@@ -24,7 +24,7 @@ s.t. m_{j,o} in E_{j,o}                              (machine eligibility)
      C_j = S_{j,last} + p_{j,last,m_{j,last}}         (completion time)
 ```
 
-Where E_{j,o} is the set of eligible machines for operation o of job j, and p_{j,o,m} is the processing time of that operation on machine m.
+Where E_{j,o} is the set of eligible machines for operation o of job j, and p_{j,o,m} is the processing time of that operation on machine m. In total FJSP, all machines are eligible for every operation; in partial FJSP, only subsets are eligible.
 
 ## Complexity
 
@@ -50,6 +50,10 @@ Where E_{j,o} is the set of eligible machines for operation o of job j, and p_{j
 | `heuristics.py` | `edd_ect()` (EDD priority + ECT machine selection), `watc_dispatch()` (Weighted ATC priority with ECT) |
 | `metaheuristics.py` | `simulated_annealing()` with machine reassignment and operation swap neighborhoods |
 | `tests/test_ftjsp.py` | Test suite covering solution validation, machine eligibility checks, tardiness computation |
+
+## Relationship to Base JSP
+
+When each operation has exactly one eligible machine (|E_{j,o}| = 1 for all j, o) and the objective is makespan, this reduces to the standard JSP. Adding machine flexibility and changing the objective to weighted tardiness creates two independent axes of generalization that interact in complex ways.
 
 ## Key References
 

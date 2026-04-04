@@ -18,6 +18,7 @@ The base CVRP formulation (see parent README) is modified as follows:
 - **Dual capacity:** sum_{i in L on route k} d_i <= Q and sum_{j in B on route k} d_j <= Q for all routes k.
 
 The objective remains minimizing total travel distance across all routes.
+Note that Q may be the same for deliveries and pickups, or different depending on the vehicle design.
 
 ## Complexity
 
@@ -29,6 +30,7 @@ NP-hard (generalizes CVRP, since setting B = empty set recovers standard CVRP). 
 - **Beverage logistics**: deliver full bottles and kegs, pick up empties for recycling or refill
 - **Postal service**: deliver parcels and mail, collect outgoing mail from post offices
 - **Manufacturing supply chains**: deliver raw materials, collect finished goods or empty pallets
+- **Library services**: deliver requested books, collect returned books
 
 ## Solution Approaches
 
@@ -40,7 +42,7 @@ NP-hard (generalizes CVRP, since setting B = empty set recovers standard CVRP). 
 
 Standard CVRP heuristics (Clarke-Wright, sweep) require modification to enforce the precedence constraint. The phased nearest-neighbor approach naturally respects this by completing all deliveries before starting pickups on each route.
 
-Note that the VRPB differs from the VRP with Simultaneous Pickup and Delivery (VRPSPD), where pickups and deliveries can be interleaved. The strict precedence constraint in VRPB simplifies feasibility checking but may increase total distance compared to VRPSPD solutions.
+Note that the VRPB differs from the VRP with Simultaneous Pickup and Delivery (VRPSPD), where pickups and deliveries can be interleaved. The strict precedence constraint in VRPB simplifies feasibility checking but may increase total distance compared to VRPSPD solutions. It also differs from the VRP with Mixed Backhauls, which allows arbitrary interleaving of linehaul and backhaul customers.
 
 ## Implementations
 
@@ -55,3 +57,4 @@ Note that the VRPB differs from the VRP with Simultaneous Pickup and Delivery (V
 - Goetschalckx, M. & Jacobs-Blecha, C. (1989). The vehicle routing problem with backhauls. *European Journal of Operational Research*, 42(1), 39-51. https://doi.org/10.1016/0377-2217(89)90057-X
 - Toth, P. & Vigo, D. (1999). A heuristic algorithm for the symmetric and asymmetric vehicle routing problem with backhauls. *European Journal of Operational Research*, 113(3), 528-543. https://doi.org/10.1016/S0377-2217(98)00012-6
 - Mingozzi, A., Giorgi, S. & Baldacci, R. (1999). An exact method for the vehicle routing problem with backhauls. *Transportation Science*, 33(3), 315-329. [TODO: verify DOI]
+- Toth, P. & Vigo, D. (2002). *The Vehicle Routing Problem*. SIAM Monographs on Discrete Mathematics and Applications. [TODO: verify DOI]

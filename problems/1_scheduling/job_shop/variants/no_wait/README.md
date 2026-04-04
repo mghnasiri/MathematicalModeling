@@ -7,6 +7,7 @@ The standard JSP allows jobs to wait between consecutive operations (in intermed
 - **No intermediate buffering**: a job's operation sequence is a contiguous block on the time axis.
 - **Start time determines everything**: unlike standard JSP where each operation is scheduled independently, here a single decision variable (job start time) fixes the entire schedule for that job.
 - **Machine conflicts** are harder to resolve because shifting one operation shifts the entire job.
+- **Fewer scheduling variables**: each job has only one decision variable (its start time), compared to one per operation in standard JSP.
 
 **Real-world motivation**: steel manufacturing (continuous casting requires uninterrupted metal flow), chemical processing (reactions cannot be paused mid-process), food processing (perishable goods require continuous handling), pharmaceutical manufacturing (drug production with strict timing constraints).
 
@@ -22,13 +23,14 @@ s.t. S_{j,k+1} = S_{j,k} + p_{j,k}                  (no-wait: next op starts imm
      S_j >= 0                                          (non-negativity)
 ```
 
-Since S_{j,k} = S_{j,0} + sum_{l=0}^{k-1} p_{j,l}, the entire schedule is determined by the n job start times {S_{j,0}}.
+Since S_{j,k} = S_{j,0} + sum_{l=0}^{k-1} p_{j,l}, the entire schedule is determined by the n job start times {S_{j,0}}. This structural simplification means the problem can be viewed as finding n start times that avoid all pairwise machine conflicts.
 
 ## Complexity
 
 - **NP-hard** (generalizes JSP; also related to no-wait flow shop which is NP-hard for m >= 3).
 - Sahni & Cho (1979) established NP-hardness of no-wait scheduling even for restricted cases.
 - The contiguous-block structure makes some neighborhoods more efficient (fewer degrees of freedom) but feasibility checking is more constrained.
+- Related to the no-wait flow shop (NWFSP), which reduces to an asymmetric TSP on the delay matrix.
 
 ## Solution Approaches
 
@@ -48,6 +50,10 @@ Since S_{j,k} = S_{j,0} + sum_{l=0}^{k-1} p_{j,l}, the entire schedule is determ
 | `heuristics.py` | `greedy_insertion()` (insert jobs at earliest feasible time), `spt_schedule()` (SPT-ordered greedy) |
 | `metaheuristics.py` | `simulated_annealing()` with permutation encoding, swap/insert moves, warm-started with greedy insertion |
 | `tests/test_nwjsp.py` | Test suite covering no-wait constraint validation, feasibility, makespan correctness |
+
+## Relationship to Base JSP
+
+When jobs are allowed to wait between operations (the standard JSP assumption), the no-wait constraint is relaxed and this reduces to standard JSP. The no-wait constraint eliminates intermediate buffers, linking the NW-JSP more closely to flow-shop variants where continuous processing is required.
 
 ## Key References
 

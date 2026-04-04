@@ -8,6 +8,7 @@ The standard 0-1 Knapsack has **one** knapsack. The **Multiple Knapsack Problem 
 - **k capacity constraints**: one per knapsack, each independently enforced.
 - **Decision variable** changes from binary x_i to integer a_i in {-1, 0, ..., k-1}, where -1 means unassigned and 0..k-1 identify the knapsack.
 - Generalizes both 0-1 Knapsack (k=1) and Bin Packing (uniform values, minimize bins used).
+- **Capacity heterogeneity**: different knapsacks may have different capacities, adding an assignment optimization layer.
 
 **Real-world motivation**: cargo loading across multiple vehicles with different weight limits, budget allocation across multiple funding sources, cloud computing task assignment to servers with resource limits, portfolio distribution across investment accounts with different constraints.
 
@@ -22,7 +23,7 @@ s.t. sum_{j: a_j = i} w_j <= C_i    for all i in {0,...,k-1}   (per-knapsack cap
      y_j = 1 if a_j >= 0, else 0                                (selection indicator)
 ```
 
-Where C_i is the capacity of knapsack i, and a_j is the assignment of item j.
+Where C_i is the capacity of knapsack i, and a_j is the assignment of item j. An item assigned to a_j = -1 is not packed in any knapsack and contributes no value.
 
 ## Complexity
 
@@ -38,6 +39,7 @@ Where C_i is the capacity of knapsack i, and a_j is the assignment of item j.
 | Greedy best-fit | Yes | Sort by v_j/w_j, assign to knapsack with tightest fit; reduces waste. |
 | Separate 0-1 DP per knapsack | Limited | Ignores inter-knapsack competition; serves as upper bound. |
 | Genetic Algorithm | Yes | Integer-vector encoding gene[j] in {-1,...,k-1}, repair removes lowest-density items from overloaded knapsacks. |
+| Exact B&B | Possible | Branch on item-to-knapsack assignments with LP bounds. Not implemented. |
 
 ## Implementations
 
@@ -47,6 +49,10 @@ Where C_i is the capacity of knapsack i, and a_j is the assignment of item j.
 | `heuristics.py` | `greedy_value_density()` (first-fit by v/w), `greedy_best_fit()` (tightest-fit by v/w) |
 | `metaheuristics.py` | `genetic_algorithm()` with integer-vector encoding, uniform crossover, repair operator for capacity violations |
 | `tests/test_mkp_multi.py` | Test suite covering assignment validation, capacity enforcement, greedy and GA quality |
+
+## Relationship to Base Knapsack
+
+When k = 1, the mKP reduces to the standard 0-1 Knapsack. With k >= 2, the assignment decision (which knapsack to use for each item) adds a combinatorial layer that does not exist in the single-knapsack case. The problem also relates to Bin Packing when all values are equal and the goal is to minimize the number of knapsacks used.
 
 ## Key References
 

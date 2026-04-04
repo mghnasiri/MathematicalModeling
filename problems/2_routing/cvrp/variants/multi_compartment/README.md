@@ -40,7 +40,9 @@ Standard CVRP heuristics adapt naturally by replacing the single capacity check 
 - **Waste collection**: trucks with separated bins for paper, glass, plastic, and organic waste
 - **Chemical distribution**: incompatible chemicals requiring physical separation during transport
 
-The key modeling distinction from standard CVRP is that two customers with small total demand may still be infeasible on the same route if they overload a single compartment, even when the overall vehicle has spare capacity.
+The key modeling distinction from standard CVRP is that two customers with small total demand may still be infeasible on the same route if they overload a single compartment, even when the overall vehicle has spare capacity. This makes route feasibility checking more expensive than in standard CVRP, as all K compartment capacities must be verified.
+
+Compartment sizes may be fixed or configurable. In the fixed case, compartment capacities are given; in the configurable case, the total vehicle volume can be partitioned among compartments, adding another decision layer.
 
 ## Implementations
 
@@ -55,3 +57,4 @@ The key modeling distinction from standard CVRP is that two customers with small
 - Derigs, U., Gottlieb, J. & Kalkoff, J. (2011). Vehicle routing with compartments: Applications, modelling and heuristics. *OR Spectrum*, 33(4), 885-914. https://doi.org/10.1007/s00291-009-0175-6
 - Chajakis, E.D. & Guignard, M. (2003). Scheduling deliveries in vehicles with multiple compartments. *Journal of Global Optimization*, 26(1), 43-78. https://doi.org/10.1023/A:1023067016014
 - Coelho, L.C. & Laporte, G. (2015). Classification, models and exact algorithms for multi-compartment delivery problems. *European Journal of Operational Research*, 242(3), 854-864. [TODO: verify DOI]
+- Lahyani, R., Coelho, L.C., Khemakhem, M., Laporte, G. & Semet, F. (2015). A multi-compartment vehicle routing problem arising in the collection of olive oil in Tunisia. *Omega*, 51, 1-10. [TODO: verify DOI]

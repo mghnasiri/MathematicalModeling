@@ -25,6 +25,8 @@ NP-hard (generalizes CVRP). The precedence constraint reduces the feasible neigh
 
 Note that the VRPB is distinct from the VRP with Simultaneous Pickup and Delivery (VRPSPD), where linehaul and backhaul customers can be freely interleaved. The strict ordering in VRPB simplifies feasibility checking but generally produces longer routes than VRPSPD for the same customer set. It also differs from the VRP with Mixed Backhauls, which relaxes the precedence constraint.
 
+Standard benchmark instances for VRPB include the Goetschalckx and Jacobs-Blecha instances with 20-150 customers and varying proportions of linehaul vs. backhaul customers. The ratio of linehaul to backhaul customers significantly affects problem difficulty and solution structure.
+
 ## Solution Approaches
 
 | Method | Type | Works? | Notes |
@@ -39,6 +41,7 @@ Note that the VRPB is distinct from the VRP with Simultaneous Pickup and Deliver
 - **Beverage delivery**: deliver full bottles/kegs, collect empties
 - **Postal service**: deliver parcels, collect outgoing mail
 - **Waste management**: deliver empty containers, collect full ones
+- **Manufacturing returns**: deliver raw materials to factories, collect finished components
 
 ## Implementations
 
@@ -53,3 +56,5 @@ Note that the VRPB is distinct from the VRP with Simultaneous Pickup and Deliver
 - Goetschalckx, M. & Jacobs-Blecha, C. (1989). The vehicle routing problem with backhauls. *European Journal of Operational Research*, 42(1), 39-51. https://doi.org/10.1016/0377-2217(89)90057-X
 - Toth, P. & Vigo, D. (1999). A heuristic algorithm for the symmetric and asymmetric vehicle routing problems with backhauls. *European Journal of Operational Research*, 113(3), 528-543. https://doi.org/10.1016/S0377-2217(98)00022-8
 - Toth, P. & Vigo, D. (2002). *The Vehicle Routing Problem*. SIAM Monographs on Discrete Mathematics and Applications, Chapter 8. [TODO: verify DOI]
+- Wade, A.C. & Salhi, S. (2002). An investigation into a new class of vehicle routing problem with backhauls. *Omega*, 30(6), 479-487. [TODO: verify DOI]
+- Ropke, S. & Pisinger, D. (2006). A unified heuristic for a large class of vehicle routing problems with backhauls. *European Journal of Operational Research*, 171(3), 750-775. [TODO: verify DOI]

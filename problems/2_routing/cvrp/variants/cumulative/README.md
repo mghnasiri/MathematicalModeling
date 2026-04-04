@@ -31,7 +31,9 @@ NP-hard (generalizes the Traveling Repairman Problem / Minimum Latency Problem, 
 - **Repair/maintenance services**: technician routing where customer downtime is the primary cost
 - **Home healthcare**: visiting patients where accumulated waiting time impacts care quality
 
-The cumulative objective captures a fundamentally different notion of service quality than total distance. Two solutions with the same total distance can have vastly different total latencies depending on visit ordering.
+The cumulative objective captures a fundamentally different notion of service quality than total distance. Two solutions with the same total distance can have vastly different total latencies depending on visit ordering. This makes the CumVRP particularly relevant when fairness and responsiveness are prioritized over fleet cost efficiency.
+
+The single-vehicle case (K=1) reduces to the classical Traveling Repairman Problem (TRP), also known as the Minimum Latency Problem.
 
 ## Solution Approaches
 
@@ -56,3 +58,4 @@ For CumVRP, nearest-neighbor performs relatively well as a constructive heuristi
 - Ngueveu, S.U., Prins, C. & Wolfler Calvo, R. (2010). An effective memetic algorithm for the cumulative capacitated vehicle routing problem. *Computers & Operations Research*, 37(11), 1877-1885. https://doi.org/10.1016/j.cor.2009.06.014
 - Kara, I., Kara, B.Y. & Yetis, M.K. (2008). Energy minimizing vehicle routing problem. *Combinatorial Optimization and Applications*, LNCS 5165, 62-71. [TODO: verify DOI]
 - Ribeiro, G.M. & Laporte, G. (2012). An adaptive large neighborhood search heuristic for the cumulative capacitated vehicle routing problem. *Computers & Operations Research*, 39(3), 627-633. [TODO: verify DOI]
+- Ke, L. & Feng, Z. (2013). A two-phase metaheuristic for the cumulative capacitated vehicle routing problem. *Computers & Operations Research*, 40(2), 633-638. [TODO: verify DOI]

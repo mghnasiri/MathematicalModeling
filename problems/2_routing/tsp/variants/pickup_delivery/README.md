@@ -7,6 +7,7 @@ The standard TSP visits all cities in any order. The **Pickup and Delivery Probl
 - **Precedence constraints** restrict the feasible permutation space, making many TSP tour improvements infeasible.
 - **Paired structure**: locations come in pickup-delivery pairs (2n locations + 1 depot for n pairs).
 - **Neighborhood design** must preserve or repair precedence feasibility after each move.
+- **Solution validation** requires checking that every pickup appears before its matching delivery in the tour.
 
 **Real-world motivation**: courier services (pickup packages, deliver to destinations), ride-sharing (pick up and drop off passengers), supply chain collect-and-deliver logistics, dial-a-ride transportation for disabled or elderly passengers.
 
@@ -21,7 +22,7 @@ s.t. pi is a permutation of {0, 1, ..., 2n}         (Hamiltonian cycle)
      pos(pickup_i) < pos(delivery_i)  for all i      (precedence)
 ```
 
-Locations: 0 = depot, 1..n = pickups, n+1..2n = deliveries. Pair i has pickup at location i and delivery at location i+n.
+Locations: 0 = depot, 1..n = pickups, n+1..2n = deliveries. Pair i has pickup at location i and delivery at location i+n. Distances are Euclidean, computed from 2D coordinates.
 
 ## Complexity
 
@@ -38,6 +39,7 @@ Locations: 0 = depot, 1..n = pickups, n+1..2n = deliveries. Pair i has pickup at
 | Or-opt (relocate) | Yes | Move a location, reject if precedence violated. |
 | Pair relocate | Yes | Move both pickup and delivery of a pair together. |
 | Simulated Annealing | Yes | Relocate + swap + pair-relocate moves with precedence checks. |
+| LNS (large neighborhood) | Possible | Remove and reinsert multiple pairs; effective for large instances. Not implemented. |
 
 ## Implementations
 
@@ -47,6 +49,10 @@ Locations: 0 = depot, 1..n = pickups, n+1..2n = deliveries. Pair i has pickup at
 | `heuristics.py` | `nearest_feasible()` (precedence-aware NN), `cheapest_pair_insertion()` (pair-wise insertion) |
 | `metaheuristics.py` | `simulated_annealing()` with relocate/swap/pair-relocate moves, precedence feasibility rejection |
 | `tests/test_pdp.py` | Test suite covering precedence validation, heuristic correctness, SA improvement |
+
+## Relationship to Base TSP
+
+When there are no precedence constraints (or when all pickups are visited before all deliveries trivially), the PDP reduces to a standard TSP over 2n+1 locations. The precedence constraints are the sole structural addition, and they restrict the feasible tour space to a strict subset of all Hamiltonian cycles.
 
 ## Key References
 

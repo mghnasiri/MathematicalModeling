@@ -50,6 +50,10 @@ The key structural difference: each item has a d-dimensional weight vector (w_i1
 | `metaheuristics.py` | `genetic_algorithm()` with binary encoding, uniform crossover, bit-flip mutation, pseudo-utility repair operator |
 | `tests/test_mkp.py` | Test suite covering multi-constraint feasibility, greedy quality, GA convergence |
 
+## Relationship to Base Knapsack
+
+When d = 1, the MKP reduces to the standard 0-1 Knapsack with its O(n*W) pseudo-polynomial DP. For d >= 2, the DP state space explodes multiplicatively across dimensions, making pseudo-polynomial algorithms impractical and shifting the problem to the strongly NP-hard class.
+
 ## Key References
 
 - Chu, P.C. & Beasley, J.E. (1998). A genetic algorithm for the multidimensional knapsack problem. *Journal of Heuristics*, 4(1), 63-86.

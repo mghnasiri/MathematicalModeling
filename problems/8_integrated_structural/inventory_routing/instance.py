@@ -238,9 +238,7 @@ def compute_cost(
 
     Returns:
         IRPSolution with costs and inventory levels populated.
-
-    Raises:
-        ValueError: If a stockout occurs (inventory < 0).
+        Stockouts are penalized with a high cost rather than raising errors.
     """
     n = instance.n_customers
     T = instance.T

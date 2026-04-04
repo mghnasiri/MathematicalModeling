@@ -52,6 +52,10 @@ Where a_i are the positive integer elements and T is the target sum.
 | `metaheuristics.py` | `simulated_annealing()` with add/remove/swap neighborhood, penalty for exceeding target |
 | `tests/test_ssp.py` | Test suite covering exact-match detection, DP optimality, greedy quality on various instances |
 
+## Relationship to Base Knapsack
+
+When all item values equal their weights (v_i = w_i), the 0-1 Knapsack reduces to the optimization form of Subset Sum. Conversely, Subset Sum can be seen as the simplest non-trivial Knapsack variant, and many NP-completeness reductions use Subset Sum as the source problem.
+
 ## Key References
 
 - Garey, M.R. & Johnson, D.S. (1979). *Computers and Intractability*. W.H. Freeman.

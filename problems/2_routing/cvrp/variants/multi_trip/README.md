@@ -57,3 +57,4 @@ The MTVRP becomes particularly important when fleet acquisition costs are high, 
 - Taillard, E.D., Laporte, G. & Gendreau, M. (1996). Vehicle routeing with multiple use of vehicles. *Journal of the Operational Research Society*, 47(8), 1065-1070. https://doi.org/10.1057/jors.1996.133
 - Olivera, A. & Viera, O. (2007). Adaptive memory programming for the vehicle routing problem with multiple trips. *Computers & Operations Research*, 34(1), 28-47. https://doi.org/10.1016/j.cor.2005.02.044
 - Cattaruzza, D., Absi, N., Feillet, D. & Gonzalez-Feliu, J. (2017). Vehicle routing problems for city logistics. *EURO Journal on Transportation and Logistics*, 6(1), 51-79. [TODO: verify DOI]
+- Petch, R.J. & Salhi, S. (2004). A multi-phase constructive heuristic for the vehicle routing problem with multiple trips. *Discrete Applied Mathematics*, 133(1-3), 69-92. [TODO: verify DOI]

@@ -7,6 +7,7 @@ The standard JSP minimizes **makespan** (Cmax). This variant changes the objecti
 - **Objective change**: from makespan (min-max) to weighted tardiness (weighted sum of lateness).
 - **Due dates and weights** are added as job parameters, introducing a customer-priority dimension.
 - **Critical path reasoning** (central to JSP makespan) is less directly applicable; dispatching rules like ATC and WSPT become more important.
+- **Tardiness is one-sided**: only late completion is penalized; early completion incurs no cost.
 
 **Real-world motivation**: make-to-order manufacturing with customer deadlines and varying order priorities, semiconductor fab scheduling with wafer lots of different urgency levels, batch chemical processing with delivery commitments and penalty costs.
 
@@ -23,7 +24,7 @@ s.t. S_{j,k+1} >= S_{j,k} + p_{j,k}                  (job precedence)
      S_{j,k} >= 0                                       (non-negativity)
 ```
 
-Where d_j is the due date and w_j is the weight (priority) of job j.
+Where d_j is the due date and w_j is the weight (priority) of job j. The tardiness Tj is zero when the job finishes on or before its due date, and positive when it finishes late.
 
 ## Complexity
 
@@ -49,6 +50,10 @@ Where d_j is the due date and w_j is the weight (priority) of job j.
 | `heuristics.py` | `atc_dispatch()` (ATC priority with Giffler-Thompson), `wspt_dispatch()` (WSPT priority) |
 | `metaheuristics.py` | `simulated_annealing()` with priority-permutation encoding, swap/insert moves, ATC warm-start |
 | `tests/test_wtjsp.py` | Test suite covering tardiness computation, dispatching correctness, SA improvement |
+
+## Relationship to Base JSP
+
+When due dates are set to infinity (no deadlines) or all weights are zero, all tardiness is zero and the problem reduces to a feasibility or makespan-oriented JSP. The weighted tardiness objective shifts focus from resource utilization to customer service performance.
 
 ## Key References
 

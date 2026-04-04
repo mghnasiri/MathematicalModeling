@@ -49,6 +49,10 @@ City 0 is the depot with a planning horizon time window [0, H].
 | `metaheuristics.py` | `simulated_annealing()` with or-opt moves and weighted infeasibility penalty for crossing TW boundaries |
 | `tests/test_tsptw.py` | Test suite covering time window validation, feasibility checking, heuristic and SA quality |
 
+## Relationship to Base TSP
+
+When all time windows are [0, infinity) (no temporal constraints), the TSPTW reduces to the standard TSP. Tighter time windows progressively constrain the feasible orderings. Extremely tight windows may result in at most one feasible tour (or none), making the problem shift from optimization to feasibility.
+
 ## Key References
 
 - Dumas, Y., Desrosiers, J., Gelinas, E. & Solomon, M.M. (1995). An optimal algorithm for the TSPTW. *Operations Research*, 43(2), 367-371.

@@ -49,6 +49,10 @@ The distance matrix D is a general n x n matrix with D[i][i] = 0 but no symmetry
 | `metaheuristics.py` | `simulated_annealing()` with or-opt + swap moves, geometric cooling, time limit support |
 | `tests/test_atsp.py` | Test suite covering correctness, solution validation, and SA improvement |
 
+## Relationship to Base TSP
+
+When D = D^T (symmetric distances), the ATSP reduces to the standard symmetric TSP. The key algorithmic difference is that segment-reversal moves (2-opt) are not effective for ATSP because reversing a directed path changes all arc directions. This makes relocate-based neighborhoods (or-opt, swap) the primary local search mechanisms.
+
 ## Key References
 
 - Kanellakis, P.C. & Papadimitriou, C.H. (1980). Local search for the asymmetric traveling salesman problem. *Operations Research*, 28(5), 1086-1099.

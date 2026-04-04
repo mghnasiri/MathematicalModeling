@@ -8,6 +8,7 @@ The standard TSP requires visiting **all** cities. The **Prize-Collecting TSP (P
 - **Minimum prize threshold**: a constraint may require collecting at least a target total prize.
 - **Objective changes** from pure distance minimization to: minimize (travel cost - collected prizes).
 - The solution space is larger than TSP since both the city subset and visit order must be chosen.
+- **Variable-length tours**: unlike standard TSP, the tour length varies as cities are added or removed.
 
 **Real-world motivation**: sales territory planning (visit high-value customers, skip low-value ones), orienteering (collect points within a time budget), selective routing in logistics, tourist trip planning.
 
@@ -22,7 +23,7 @@ s.t. S subseteq {0, ..., n-1}                    (city subset selection)
      pi is a Hamiltonian cycle over S             (tour through selected cities)
 ```
 
-Where p_i is the prize at city i and P_min is the minimum prize to collect.
+Where p_i is the prize at city i and P_min is the minimum prize to collect. The objective balances travel cost against collected prizes, incentivizing selection of high-prize, nearby cities.
 
 ## Complexity
 
@@ -39,6 +40,7 @@ Where p_i is the prize at city i and P_min is the minimum prize to collect.
 | Add/remove moves | Yes | Add an unvisited city or remove a low-value city from the tour. |
 | 2-opt | Yes | Applied to the current tour subset only. |
 | Simulated Annealing | Yes | Add/remove/swap/2-opt moves on variable-length tours. |
+| Branch-and-cut | Possible | LP relaxation with subtour elimination; effective for exact solutions. Not implemented. |
 
 ## Implementations
 
@@ -48,6 +50,10 @@ Where p_i is the prize at city i and P_min is the minimum prize to collect.
 | `heuristics.py` | `greedy_prize()` (ratio-based insertion), `nearest_neighbor_pctsp()` (NN until threshold) |
 | `metaheuristics.py` | `simulated_annealing()` with add/remove/swap/2-opt moves on variable-length tours |
 | `tests/test_pctsp.py` | Test suite covering prize constraints, objective computation, heuristic quality |
+
+## Relationship to Base TSP
+
+When all prizes are sufficiently large (or when P_min equals the sum of all prizes), every city must be visited and the PCTSP reduces to the standard TSP. The selective nature of the PCTSP means the solution space includes all subsets of cities, each with its own optimal tour ordering.
 
 ## Key References
 

@@ -57,3 +57,4 @@ Extensions include partial recharging (battery not fully replenished), heterogen
 - Erdogan, S. & Miller-Hooks, E. (2012). A green vehicle routing problem. *Transportation Research Part E*, 48(1), 100-114. https://doi.org/10.1016/j.tre.2011.08.001
 - Schneider, M., Stenger, A. & Goeke, D. (2014). The electric vehicle routing problem with time windows and recharging stations. *Transportation Science*, 48(4), 500-520. https://doi.org/10.1287/trsc.2013.0490
 - Pelletier, S., Jabali, O. & Laporte, G. (2016). Goods distribution with electric vehicles: Review and research perspectives. *Transportation Science*, 50(1), 3-22. [TODO: verify DOI]
+- Hiermann, G., Puchinger, J., Ropke, S. & Hartl, R.F. (2016). The electric fleet size and mix vehicle routing problem with time windows and recharging stations. *European Journal of Operational Research*, 252(3), 995-1018. [TODO: verify DOI]
