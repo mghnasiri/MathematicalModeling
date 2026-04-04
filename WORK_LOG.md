@@ -90,3 +90,35 @@
 - Added: computational results with scale guidance
 - Updated: directory tree showing all 6 test files (was 1)
 - Added: state-of-the-art references (ALNS, HGS)
+
+---
+
+## 2026-04-04 — Phase 2: `problems/1_scheduling/single_machine/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+**Changes:**
+- Complete rewrite matching gold standard
+- Added: notation table, WSPT optimality proof sketch, ATC formula and pseudocode
+- Added: pseudocode for Moore's Algorithm
+- Added: all 6 metaheuristics documented (README had 2; added GA, IG, LS, VNS)
+- Added: implementation guide, computational results, scale guidance
+- Updated: directory tree showing all 6 test files (was 1)
+- Added: full references (Smith, Moore, Jackson, Pinedo textbook)
+
+---
+
+## 2026-04-04 — Phase 2: `problems/1_scheduling/job_shop/`
+
+**Status change:** `[GOOD]` → `[EXCELLENT]`
+
+**Changes:**
+- **CRITICAL FIX:** Removed phantom files from directory tree (exact/disjunctive_mip.py, exact/constraint_programming.py, heuristics/giffler_thompson.py — none of these exist in the repo)
+- Added: all 6 metaheuristics documented (README had 3; added IG, local_search, VNS)
+- Added: critical-path neighborhood detail (N1, N5)
+- Added: benchmark instances table (ft06, ft10, ft20, Lawrence, Taillard)
+- Added: Shifting Bottleneck description with quality notes
+- Added: implementation guide (disjunctive graph, incremental evaluation)
+- Added: computational results table
+- Updated: directory tree showing all 6 test files (was 1)
+- Noted: no exact method implementations currently exist
