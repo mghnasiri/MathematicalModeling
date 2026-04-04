@@ -54,6 +54,19 @@ Edges: (0,1), (1,2), (2,3), (3,4), (0,4)  (cycle C₅)
 
 Repeatedly select the vertex with the fewest neighbors, add it to $S$, and remove it and all its neighbors from the graph. Runs in $O(V + E)$ but provides no approximation guarantee for general graphs.
 
+```
+GREEDY-MIS(G = (V, E)):
+  S ← ∅
+  G' ← copy of G
+  while G' has vertices:
+    v ← vertex in G' with minimum degree
+    S ← S ∪ {v}
+    remove v and all neighbors N(v) from G'
+  return S
+```
+
+- Halldorsson, M.M. & Radhakrishnan, J. (1997). Greed is good: Approximating independent sets in sparse and bounded-degree graphs. *Algorithmica*, 18(1), 145-163.
+
 ### Branch and Bound
 
 Recursively decide whether to include or exclude each vertex. Upper bound from fractional relaxation or graph coloring. Prune branches where bound $\leq$ incumbent.
@@ -80,3 +93,11 @@ max_independent_set/
 - Garey, M.R. & Johnson, D.S. (1979). *Computers and Intractability: A Guide to the Theory of NP-Completeness*. W.H. Freeman.
 - Boppana, R. & Halldorsson, M.M. (1992). Approximating maximum independent sets by excluding subgraphs. *BIT Numerical Mathematics*, 32(2), 180-196.
 - Tarjan, R.E. & Trojanowski, A.E. (1977). Finding a maximum independent set. *SIAM J. Comput.*, 6(3), 537-546.
+
+---
+
+## 6. Notes
+
+- For bounded-degree graphs ($\Delta \leq d$), the greedy MIS achieves an $O(n/d)$ approximation.
+- The complement relationship $\alpha(G) = \omega(\bar{G})$ allows reuse of maximum clique solvers (e.g., Bron-Kerbosch) for MIS.
+- Xiao, M. & Nagamochi, H. (2017). Exact algorithms for maximum independent set. *Information and Computation*, 255, 126-146.

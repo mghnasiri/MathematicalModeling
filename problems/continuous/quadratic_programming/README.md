@@ -39,6 +39,30 @@ $$Qx^* + c + A_{\text{ub}}^T \lambda + A_{\text{eq}}^T \nu = 0$$
 
 with complementary slackness $\lambda_i (a_i^T x^* - b_i) = 0, \lambda \geq 0$.
 
+#### KKT Verification Pseudocode
+
+```
+VERIFY_KKT(x*, λ*, ν*, Q, c, A_ub, b_ub, A_eq, b_eq):
+    # 1. Stationarity
+    gradient = Q @ x* + c + A_ub.T @ λ* + A_eq.T @ ν*
+    assert ||gradient|| ≈ 0
+
+    # 2. Primal feasibility
+    assert A_ub @ x* <= b_ub  (elementwise)
+    assert A_eq @ x* = b_eq
+
+    # 3. Dual feasibility
+    assert λ* >= 0  (elementwise)
+
+    # 4. Complementary slackness
+    for each inequality i:
+        assert λ*_i * (a_i^T x* - b_i) = 0
+
+    return OPTIMAL
+```
+
+The KKT system forms the basis for active-set methods (identify binding constraints, solve reduced system) and interior-point methods (apply barrier functions to relax complementarity).
+
 ### Small Illustrative Instance
 
 ```

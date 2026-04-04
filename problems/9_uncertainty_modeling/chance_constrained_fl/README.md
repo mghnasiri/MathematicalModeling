@@ -68,6 +68,18 @@ Open both → assign {1,3} to fac 0, {2} to fac 1:
 
 Iteratively open the facility that most reduces total cost while maintaining chance-constraint feasibility for all assignments. Each step evaluates the full scenario matrix.
 
+```
+GREEDY-OPEN-CCFL(f, c, C, D, α, S):
+  open ← ∅
+  while unassigned customers exist:
+    best_i ← argmin_i { f[i] + assignment_cost(i) }
+      such that opening i maintains:
+        P(Σ_{j assigned to i} D_j(s) ≤ C[i]) ≥ 1-α  for all s∈S
+    open ← open ∪ {best_i}
+    assign nearest unassigned customers to best_i (respecting CC)
+  return open, assignments
+```
+
 ### Simulated Annealing
 
 Toggle facility open/close or swap customer assignments. Infeasible solutions penalized by $\lambda \cdot \sum_i \max(0, P(\text{violation}_i) - \alpha)$.

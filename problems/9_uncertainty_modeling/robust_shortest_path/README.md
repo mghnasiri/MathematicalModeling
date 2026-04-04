@@ -57,6 +57,22 @@ Min-max regret: regret(0-1-3) = max(7-7, 7-7) = 0 → optimal
 
 Extends Dijkstra with vector labels $(c_1, c_2, \ldots, c_S)$ per node. A label dominates another if it is componentwise $\leq$. Prune dominated labels to limit explosion.
 
+```
+LABEL-SETTING-MINMAX(G, s, t, S):
+  labels[s] ← {(0, 0, ..., 0)}         // S-dimensional zero vector
+  labels[v] ← ∅ for all v ≠ s
+  Q ← priority queue with (0, s, label₀)
+  while Q not empty:
+    (key, u, L_u) ← extract-min(Q)
+    for each edge (u, v) ∈ E:
+      L_v ← (L_u[1]+w¹(u,v), ..., L_u[S]+wˢ(u,v))
+      if L_v not dominated by any label in labels[v]:
+        remove dominated labels from labels[v]
+        labels[v] ← labels[v] ∪ {L_v}
+        insert (max(L_v), v, L_v) into Q
+  return label in labels[t] with minimum max component
+```
+
 ### Midpoint Heuristic
 
 Compute mean weights $\bar{w}(e) = \sum_s p_s w^s(e)$, then run standard Dijkstra. Fast but ignores worst-case structure.

@@ -83,3 +83,23 @@ bi_objective_knapsack/
 
 - Ehrgott, M. (2005). *Multicriteria Optimization*. 2nd ed. Springer.
 - Bazgan, C., Hugot, H. & Vanderpooten, D. (2009). Solving efficiently the 0-1 multi-objective knapsack problem. *Computers & Oper. Res.*, 36(1), 260-279.
+
+---
+
+## 6. Pseudocode: Epsilon-Constraint Method
+
+```
+EPSILON-CONSTRAINT(items, W, K):
+  // Phase 1: Find extreme points
+  z2_max ← solve max Σ v²ᵢxᵢ  s.t. Σ wᵢxᵢ ≤ W
+  z2_min ← solve max Σ v¹ᵢxᵢ  s.t. Σ wᵢxᵢ ≤ W → record its z2 value
+  // Phase 2: Sweep epsilon from z2_min to z2_max
+  pareto ← ∅
+  for ε ← z2_min to z2_max step (z2_max - z2_min)/K:
+    x* ← solve max Σ v¹ᵢxᵢ  s.t. Σ v²ᵢxᵢ ≥ ε, Σ wᵢxᵢ ≤ W
+    if x* is non-dominated w.r.t. pareto:
+      pareto ← pareto ∪ {x*}
+  return pareto
+```
+
+- Laumanns, M., Thiele, L. & Zitzler, E. (2006). An efficient, adaptive parameter variation scheme for metaheuristics based on the epsilon-constraint method. *European J. Oper. Res.*, 169(3), 932-942.

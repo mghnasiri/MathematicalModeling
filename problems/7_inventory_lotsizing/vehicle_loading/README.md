@@ -60,6 +60,22 @@ Total: 3 vehicles
 
 Sort items by primary dimension (weight) descending, then assign each item to the first vehicle that has sufficient remaining weight and volume capacity. If no vehicle fits, open a new one. Extends the classic FFD for bin packing to handle dual constraints.
 
+```
+FFD-DUAL-CAPACITY(items, W, V):
+  sort items by weight descending
+  vehicles ← []
+  for each item (w_i, v_i):
+    placed ← false
+    for each vehicle k in vehicles:
+      if rem_weight[k] ≥ w_i and rem_vol[k] ≥ v_i:
+        assign item to vehicle k
+        rem_weight[k] -= w_i; rem_vol[k] -= v_i
+        placed ← true; break
+    if not placed:
+      open new vehicle with (W - w_i, V - v_i)
+  return vehicles
+```
+
 ---
 
 ## 4. Implementations in This Repository

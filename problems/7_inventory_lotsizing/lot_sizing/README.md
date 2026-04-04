@@ -62,6 +62,21 @@ Option B: Order in periods 1,3 → x1=50, x3=50
 
 Starting from first uncovered period, extend the order to cover additional periods as long as average cost per period decreases. When it increases, place the order and start a new one.
 
+```
+SILVER-MEAL(T, d, K, h):
+  orders ← []; t ← 1
+  while t ≤ T:
+    order_start ← t; cum_hold ← 0; best_avg ← ∞
+    for j ← t to T:
+      cum_hold ← cum_hold + h · (j - t) · d[j]
+      avg_cost ← (K + cum_hold) / (j - t + 1)
+      if avg_cost > best_avg: break     // avg cost rising → stop
+      best_avg ← avg_cost; t_end ← j
+    orders ← orders ∪ {(order_start, Σ d[order_start..t_end])}
+    t ← t_end + 1
+  return orders
+```
+
 ### Part-Period Balancing (PPB)
 
 Order enough to cover periods until the cumulative holding cost approximately equals the ordering cost. Based on the EOQ insight that total cost is minimized when ordering and holding costs are balanced.

@@ -66,6 +66,18 @@ Sort items by $v_i / E[W_i]$ descending. Add items greedily until expected capac
 
 Like mean-weight greedy but checks $P(\sum W_i x_i \leq W) \geq 1 - \alpha$ after each addition by evaluating all scenarios. Rejects items that would violate the chance constraint.
 
+```
+GREEDY-CHANCE-CONSTRAINED(items, W, α, scenarios):
+  sort items by v_i / E[W_i] descending
+  selected ← ∅
+  for each item i in sorted order:
+    selected' ← selected ∪ {i}
+    p_feas ← |{s : Σ_{j∈selected'} W_j(s) ≤ W}| / |scenarios|
+    if p_feas ≥ 1 - α:
+      selected ← selected'
+  return selected
+```
+
 ### Simulated Annealing
 
 Flip-bit neighborhood (toggle one item). Infeasible solutions are penalized by $\lambda \cdot \max(0, \alpha - P(\text{feasible}))$. Temperature schedule auto-calibrated.

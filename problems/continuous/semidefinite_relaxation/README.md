@@ -60,6 +60,22 @@ GW relaxation gives ≥ 0.878 × 4 = 3.51 expected
 
 The approximation uses the eigendecomposition of the adjacency matrix as a proxy for the SDP solution (avoids requiring a full SDP solver).
 
+```
+GW-ROUNDING(W, n_trials):
+  X ← solve SDP relaxation (or eigendecomposition proxy)
+  V ← Cholesky or eigen-decomposition such that X = VᵀV
+  best_cut ← 0
+  for t ← 1 to n_trials:
+    r ← random vector from N(0, I_n)
+    for i ← 1 to n:
+      x[i] ← sign(vᵢ · r)           // random hyperplane rounding
+    cut ← Σ_{(i,j)∈E} w_ij · ½(1 - x[i]·x[j])
+    best_cut ← max(best_cut, cut)
+  return best_cut, best_partition
+```
+
+- Khot, S., Kindler, G., Mossel, E. & O'Donnell, R. (2007). Optimal inapproximability results for MAX-CUT and other 2-variable CSPs? *SIAM J. Comput.*, 37(1), 319-357.
+
 ---
 
 ## 4. Implementations in This Repository
@@ -81,3 +97,4 @@ semidefinite_relaxation/
 
 - Goemans, M.X. & Williamson, D.P. (1995). Improved approximation algorithms for maximum cut and satisfiability problems using semidefinite programming. *JACM*, 42(6), 1115-1145. https://doi.org/10.1145/227683.227684
 - Karp, R.M. (1972). Reducibility among combinatorial problems. In *Complexity of Computer Computations* (pp. 85-103). Plenum.
+- Trevisan, L. (2012). Max cut and the smallest eigenvalue. *SIAM J. Comput.*, 41(6), 1769-1786.

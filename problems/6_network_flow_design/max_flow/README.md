@@ -55,6 +55,25 @@ Add cost $a(u,v)$ per unit flow. Minimize $\sum a(u,v) f(u,v)$ subject to flow c
 
 Ford-Fulkerson with BFS to find shortest augmenting paths. Guarantees $O(VE)$ augmentations, each $O(E)$.
 
+```
+EDMONDS-KARP(G, s, t):
+  flow ← 0
+  while true:
+    // BFS to find shortest s-t path in residual graph
+    parent ← BFS(G_residual, s, t)
+    if t not reached: break
+    // Find bottleneck capacity along the path
+    δ ← min residual capacity on path s → t
+    // Augment flow along the path
+    v ← t
+    while v ≠ s:
+      u ← parent[v]
+      f(u,v) += δ;  f(v,u) -= δ
+      v ← u
+    flow += δ
+  return flow
+```
+
 ### Dinic's Algorithm (1970)
 
 Build layered graph via BFS. Find blocking flows via DFS. Repeat until no augmenting path exists. $O(V^2 E)$.

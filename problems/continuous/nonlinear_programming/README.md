@@ -59,6 +59,23 @@ Optimal: x* ≈ (1.4, 1.7), f* ≈ 0.80
 
 Both methods find local optima; global optimality guaranteed only for convex problems.
 
+```
+SQP-OUTLINE(f, g, h, x₀):
+  x ← x₀
+  repeat until convergence:
+    // Solve QP subproblem at current iterate
+    Solve: min  ∇f(x)ᵀd + ½ dᵀBd
+           s.t. ∇gᵢ(x)ᵀd + gᵢ(x) ≤ 0  ∀i
+                ∇hⱼ(x)ᵀd + hⱼ(x) = 0  ∀j
+    // Update iterate
+    α ← line search along d
+    x ← x + α·d
+    B ← BFGS update of Hessian approximation
+  return x
+```
+
+- Boggs, P.T. & Tolle, J.W. (1995). Sequential quadratic programming. *Acta Numerica*, 4, 1-51.
+
 ---
 
 ## 4. Implementations in This Repository
@@ -80,3 +97,4 @@ nonlinear_programming/
 
 - Nocedal, J. & Wright, S.J. (2006). *Numerical Optimization*. 2nd ed. Springer.
 - Bazaraa, M.S., Sherali, H.D. & Shetty, C.M. (2006). *Nonlinear Programming: Theory and Algorithms*. 3rd ed. Wiley.
+- Kraft, D. (1988). A software package for sequential quadratic programming. *DFVLR-FB 88-28*, DLR German Aerospace Center.

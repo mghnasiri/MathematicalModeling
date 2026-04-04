@@ -43,6 +43,20 @@ $$y_i \in \{0,1\},\; x_{ij} \in \{0,1\} \tag{5}$$
 - **Greedy:** Iteratively open the facility giving the largest cost reduction, until $p$ are open. $O(p \cdot m \cdot n)$.
 - **Teitz-Bart Interchange:** Start with $p$ random facilities. Try swapping each open facility with each closed one; accept if cost improves. Iterate until no improving swap exists.
 
+```
+TEITZ-BART(d, w, p, m):
+  S ← random subset of p facilities from {1,...,m}
+  improved ← true
+  while improved:
+    improved ← false
+    for each i ∈ S:                      // open facility
+      for each j ∉ S:                    // closed facility
+        S' ← S \ {i} ∪ {j}
+        if cost(S') < cost(S):
+          S ← S'; improved ← true
+  return S
+```
+
 ### 4.2 Metaheuristics
 
 This repository implements **6 metaheuristics**:

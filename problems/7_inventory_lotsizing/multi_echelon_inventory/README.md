@@ -58,6 +58,16 @@ S₃ = 100·6 + 1.645·20·√6 = 680.6
 | Powers-of-two | Heuristic | $O(L \log R)$ | Reorder intervals as powers of 2; ≤ 2% above optimal (Roundy, 1985) |
 | Greedy allocation | Heuristic | $O(L \cdot n)$ | Allocate safety stock greedily across echelons |
 
+```
+ECHELON-BASE-STOCK(L, τ, μ_D, σ_D, SL):
+  z ← Φ⁻¹(SL)
+  for ℓ ← 1 to L:
+    L_cum ← Σ_{k=1}^{ℓ} τ[k]          // cumulative lead time
+    σ_cum ← σ_D · √L_cum
+    S[ℓ] ← μ_D · L_cum + z · σ_cum    // echelon base-stock level
+  return S
+```
+
 ### Powers-of-Two Policy
 
 Sets reorder intervals $T_\ell = 2^{k_\ell}$ for integer $k_\ell$, ensuring a nested schedule. Roundy (1985) proved this achieves at most 2% above the optimal cost for one-warehouse multi-retailer systems.
@@ -86,3 +96,4 @@ multi_echelon_inventory/
 - Roundy, R. (1985). 98%-effective integer-ratio lot-sizing for one-warehouse multi-retailer systems. *Management Science*, 31(11), 1416-1430. https://doi.org/10.1287/mnsc.31.11.1416
 - Axsater, S. (2006). *Inventory Control*. 2nd ed. Springer.
 - Graves, S.C. & Willems, S.P. (2000). Optimizing strategic safety stock placement in supply chains. *Manufacturing & Service Oper. Mgmt.*, 2(1), 68-83.
+- Simchi-Levi, D. & Zhao, Y. (2012). Performance evaluation of stochastic multi-echelon inventory systems: A survey. *Advances in Oper. Res.*, 2012, 126708.

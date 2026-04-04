@@ -67,7 +67,23 @@ Standard MILP with $3T$ variables ($x_t, I_t, y_t$) and $3T$ constraints. Solved
 
 ### Greedy Heuristics
 
-Two approaches: (1) lot-for-lot produces exactly demand each period — no holding cost but maximum setups; (2) greedy forward extends production to cover future demands up to capacity, reducing setup frequency.
+Two approaches: (1) lot-for-lot produces exactly demand each period -- no holding cost but maximum setups; (2) greedy forward extends production to cover future demands up to capacity, reducing setup frequency.
+
+```
+LOT-SHIFTING(T, d, C, K, h):
+  // Phase 1: Lot-for-lot baseline
+  x[t] ← d[t] for all t; y[t] ← 1 if d[t] > 0
+  // Phase 2: Shift production to eliminate setups
+  for t ← T downto 1:
+    if y[t] = 1 and x[t] > 0:
+      // Try shifting x[t] to an earlier period with spare capacity
+      for t' ← t-1 downto 1:
+        shift ← min(x[t], C[t'] - x[t'])
+        if K[t] > holding_cost(shift, t', t):
+          x[t'] += shift; x[t] -= shift
+          if x[t] = 0: y[t] ← 0; break
+  return x, y
+```
 
 ---
 

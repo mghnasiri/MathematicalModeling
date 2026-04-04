@@ -53,6 +53,35 @@ Maximum clique: {0, 1, 2, 3} → ω(G) = 4
 
 Recursive backtracking that maintains three sets: $R$ (current clique), $P$ (candidates), $X$ (already explored). At each step, branch on each vertex in $P$, adding it to $R$ and restricting $P$ and $X$ to its neighbors. Pivot selection reduces branching factor.
 
+#### Bron-Kerbosch with Pivoting Pseudocode
+
+```
+BRON_KERBOSCH(R, P, X):
+    if P is empty and X is empty:
+        report R as a maximal clique
+        return
+    u = pivot vertex from P ∪ X with max |N(u) ∩ P|
+    for each vertex v in P \ N(u):
+        BRON_KERBOSCH(
+            R ∪ {v},
+            P ∩ N(v),
+            X ∩ N(v)
+        )
+        P = P \ {v}
+        X = X ∪ {v}
+
+# Call: BRON_KERBOSCH(∅, V, ∅)
+# Track largest clique found across all reports.
+```
+
+**Complexity:** $O(3^{n/3})$ worst-case for listing all maximal cliques (Moon-Moser bound). Pivoting reduces practical runtime substantially on sparse graphs.
+
+### Applications
+
+- **Social network analysis** (identifying tightly connected communities)
+- **Bioinformatics** (protein interaction network analysis, finding functional modules)
+- **Coding theory** (identifying maximum independent sets in code graphs)
+
 ---
 
 ## 4. Implementations in This Repository
@@ -74,3 +103,5 @@ max_clique/
 - Bron, C. & Kerbosch, J. (1973). Algorithm 457: Finding all cliques of an undirected graph. *Comm. ACM*, 16(9), 575-577. https://doi.org/10.1145/362342.362367
 - Tomita, E., Tanaka, A. & Takahashi, H. (2006). The worst-case time complexity for generating all maximal cliques and computational experiments. *Theor. Comp. Sci.*, 363(1), 28-42.
 - Karp, R.M. (1972). Reducibility among combinatorial problems. In *Complexity of Computer Computations* (pp. 85-103). Plenum.
+- Cazals, F. & Karande, C. (2008). A note on the problem of reporting maximal cliques. *Theor. Comp. Sci.*, 407(1-3), 564-568.
+- Eppstein, D., Loffler, M. & Strash, D. (2013). Listing all maximal cliques in large sparse real-world graphs. *J. Exp. Algorithmics*, 18, 3.1.

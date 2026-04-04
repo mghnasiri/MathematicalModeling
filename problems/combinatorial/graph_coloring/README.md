@@ -55,6 +55,34 @@ This is K₄ minus edge (1,3).
 
 Select the uncolored vertex with the highest saturation degree (number of distinct colors among its neighbors). Break ties by graph degree. Assign the smallest feasible color. Optimal for bipartite graphs and interval graphs.
 
+#### DSatur Pseudocode
+
+```
+DSATUR(G = (V, E)):
+    for each v in V:
+        sat(v) = 0                          # saturation degree
+        color(v) = UNCOLORED
+    color(v_max_degree) = 1                  # start with highest-degree vertex
+    update sat(u) for all neighbors u of v_max_degree
+
+    while uncolored vertices remain:
+        v = argmax_{uncolored u} (sat(u), breaking ties by deg(u))
+        c = smallest color not used by any neighbor of v
+        color(v) = c
+        for each uncolored neighbor u of v:
+            sat(u) = |{color(w) : w in N(u), color(w) != UNCOLORED}|
+    return color
+```
+
+**Complexity:** $O(V^2)$ with adjacency list; can be reduced to $O((V + E) \log V)$ with a priority queue.
+
+### Applications
+
+- **Register allocation** in compilers (interference graph coloring)
+- **Frequency assignment** in wireless networks (co-channel interference avoidance)
+- **Examination timetabling** (conflict-free exam scheduling)
+- **Map coloring** (the classical Four Color Theorem context)
+
 ---
 
 ## 4. Implementations in This Repository
@@ -75,3 +103,5 @@ graph_coloring/
 - Brélaz, D. (1979). New methods to color the vertices of a graph. *Comm. ACM*, 22(4), 251-256. https://doi.org/10.1145/359094.359101
 - Jensen, T.R. & Toft, B. (2011). *Graph Coloring Problems*. Wiley.
 - Garey, M.R. & Johnson, D.S. (1979). *Computers and Intractability*. W.H. Freeman.
+- Welsh, D.J.A. & Powell, M.B. (1967). An upper bound for the chromatic number of a graph and its application to timetabling problems. *The Computer Journal*, 10(1), 85-86.
+- Malaguti, E. & Toth, P. (2010). A survey on vertex coloring problems. *Int. Trans. in Oper. Res.*, 17(1), 1-34.

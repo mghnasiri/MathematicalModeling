@@ -80,3 +80,24 @@ eoq/
 - Harris, F.W. (1913). How many parts to make at once. *Factory, The Magazine of Management*, 10(2), 135-136, 152.
 - Hadley, G. & Whitin, T.M. (1963). *Analysis of Inventory Systems*. Prentice-Hall.
 - Zipkin, P.H. (2000). *Foundations of Inventory Management*. McGraw-Hill.
+
+---
+
+## 6. Pseudocode: EOQ with All-Units Quantity Discounts
+
+```
+DISCOUNT-EOQ(D, K, h_frac, tiers):
+  // tiers = [(q_min, unit_price), ...] sorted by q_min ascending
+  best_cost ← ∞
+  for each tier (q_min, p) in tiers:
+    h ← h_frac · p                    // holding cost = fraction of unit price
+    Q ← sqrt(2·D·K / h)              // unconstrained EOQ at this price
+    Q ← max(Q, q_min)                // enforce minimum quantity for tier
+    if Q < next tier's q_min:         // check feasibility within tier
+      TC ← D·p + (D/Q)·K + (Q/2)·h  // purchase + ordering + holding
+      if TC < best_cost:
+        best_cost ← TC; best_Q ← Q
+  return best_Q, best_cost
+```
+
+- Benton, W.C. & Park, S. (1996). A classification of literature on determining the lot size under quantity discounts. *European J. Oper. Res.*, 92(2), 219-238.

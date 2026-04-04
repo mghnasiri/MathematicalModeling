@@ -36,6 +36,26 @@ $$\ell \leq x \leq u \tag{4}$$
 - **Reduced costs**: how much the objective must change for a non-basic variable to enter the basis
 - **Allowable ranges**: intervals for $c_j$ and $b_i$ within which the optimal basis remains unchanged
 
+#### Sensitivity Analysis Detail
+
+Given an optimal basis $B$, the sensitivity analysis examines how changes to the input parameters affect optimality:
+
+1. **Right-hand side ranging:** For each constraint $i$, determine the range $[b_i^-, b_i^+]$ such that the current basis remains optimal. The shadow price $y_i$ gives $\Delta z^* = y_i \cdot \Delta b_i$ within this range.
+
+2. **Objective coefficient ranging:** For each variable $j$, find the interval $[c_j^-, c_j^+]$ over which the current basis stays optimal. Outside this range, a different basis becomes optimal.
+
+3. **New variable analysis:** A new variable with cost $c_{n+1}$ and column $a_{n+1}$ enters the basis if its reduced cost $\bar{c}_{n+1} = c_{n+1} - c_B^T B^{-1} a_{n+1} < 0$.
+
+### Duality
+
+The dual of the standard LP is:
+
+$$\max \quad b_{\text{ub}}^T y$$
+
+$$A_{\text{ub}}^T y \leq c, \quad y \geq 0$$
+
+Strong duality holds: at optimality, $c^T x^* = b^T y^*$. The dual variables $y^*$ are the shadow prices.
+
 ### Small Illustrative Instance
 
 ```
@@ -55,6 +75,15 @@ Shadow prices: [1, 0.5] for the two inequalities
 | Method | Type | Complexity | Description |
 |--------|------|-----------|-------------|
 | HiGHS (via SciPy) | Exact | Polynomial (IPM) | `scipy.optimize.linprog` with sensitivity |
+| Simplex method | Exact | $O(2^n)$ worst, fast in practice | Pivot-based, visits BFS vertices |
+| Interior-point | Exact | $O(n^{3.5} L)$ | Barrier method, polynomial guarantee |
+
+### Applications
+
+- **Resource allocation** (production planning, workforce scheduling)
+- **Supply chain optimization** (transportation and transshipment problems)
+- **Diet and blending problems** (nutrient optimization at minimum cost)
+- **Financial planning** (portfolio optimization under linear constraints)
 
 ---
 
@@ -76,3 +105,5 @@ linear_programming/
 
 - Dantzig, G.B. (1963). *Linear Programming and Extensions*. Princeton University Press.
 - Bertsimas, D. & Tsitsiklis, J.N. (1997). *Introduction to Linear Optimization*. Athena Scientific.
+- Karmarkar, N. (1984). A new polynomial-time algorithm for linear programming. *Combinatorica*, 4(4), 373-395.
+- Vanderbei, R.J. (2014). *Linear Programming: Foundations and Extensions*. 4th ed. Springer.

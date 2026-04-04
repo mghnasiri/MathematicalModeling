@@ -51,6 +51,19 @@ The constraint matrix is totally unimodular — the LP relaxation always gives a
 
 **Complexity:** $O(n^3)$ using shortest-augmenting-path variant.
 
+```
+HUNGARIAN(C, n):
+  u[1..n] ← 0; v[1..n] ← 0          // dual variables (row/col potentials)
+  match[1..n] ← -1                     // column matched to each row
+  for i ← 1 to n:                      // augment one row at a time
+    find shortest augmenting path from row i
+      in the equality subgraph {(i,j): C[i][j] - u[i] - v[j] = 0}
+      using Dijkstra on reduced costs
+    update potentials u, v along the path
+    augment matching along the path
+  return match, Σ C[i][match[i]]
+```
+
 ### Greedy Assignment
 
 Assign the cheapest available (agent, task) pair iteratively. $O(n^2)$. No optimality guarantee.
@@ -82,3 +95,10 @@ assignment/
 - Munkres, J. (1957). Algorithms for the assignment and transportation problems. *SIAM Journal*, 5(1), 32-38.
 - Burkard, R.E., Dell'Amico, M. & Martello, S. (2009). *Assignment Problems*. SIAM.
 - Koopmans, T.C. & Beckmann, M. (1957). Assignment problems and the location of economic activities. *Econometrica*, 25(1), 53-76.
+
+---
+
+## 7. Notes
+
+- The shortest-augmenting-path variant of the Hungarian algorithm (Jonker & Volgenant, 1987) is the fastest practical implementation at $O(n^3)$.
+- Jonker, R. & Volgenant, A. (1987). A shortest augmenting path algorithm for dense and sparse linear assignment problems. *Computing*, 38(4), 325-340.

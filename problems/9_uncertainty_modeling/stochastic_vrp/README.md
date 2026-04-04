@@ -63,6 +63,22 @@ Route 1 = [1, 3]: P(D1+D3 > 30) = P(18, 32) = 0.5 > α ✗
 
 Standard savings algorithm but route merges are rejected if the merged route would violate $P(\sum D_j > Q) \leq \alpha$. Evaluated by checking all scenarios.
 
+```
+CC-CLARKE-WRIGHT(dist, demands, Q, α, S):
+  routes ← {[j] for j = 1,...,n}        // initial: one route per customer
+  savings ← [(dist[0][i]+dist[0][j]-dist[i][j], i, j) for all i<j]
+  sort savings descending
+  for each (s_val, i, j) in savings:
+    R_i, R_j ← routes containing i, j
+    if R_i ≠ R_j and i, j are route endpoints:
+      R_merged ← R_i ∪ R_j
+      // Check chance constraint across all scenarios
+      p_overflow ← |{s : Σ_{k∈R_merged} D_k(s) > Q}| / S
+      if p_overflow ≤ α:
+        merge R_i and R_j
+  return routes
+```
+
 ### Simulated Annealing
 
 Neighborhoods: relocate customer between routes, swap customers across routes, 2-opt within route. Objective includes distance + expected recourse. Overflow probability penalty term for infeasible moves.

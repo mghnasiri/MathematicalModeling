@@ -54,6 +54,34 @@ Greedy by profit: accept job 1 (slot 1), job 2 can't fit slot 1 → slot 1 taken
 
 Sort jobs by profit descending. For each job, assign it to the latest available time slot before its deadline. Uses a union-find or simple array for slot assignment.
 
+#### Greedy Job Sequencing Pseudocode
+
+```
+GREEDY_JOB_SEQUENCING(jobs):
+    sort jobs by profit descending
+    max_deadline = max(d_j for all jobs)
+    slot[1..max_deadline] = FREE
+
+    accepted = []
+    for each job j in sorted order:
+        for t = min(d_j, max_deadline) downto 1:
+            if slot[t] == FREE:
+                slot[t] = j
+                accepted.append(j)
+                break
+    return accepted, sum of profits of accepted jobs
+```
+
+**Complexity:** $O(n \log n)$ with union-find for slot lookup; $O(n \cdot d_{\max})$ with simple array scan.
+
+**Optimality:** For unit-time jobs, this greedy approach produces an optimal solution (matroid structure -- the set of feasible job subsets forms a matroid).
+
+### Applications
+
+- **Batch manufacturing** with product-specific deadlines and varying profitability
+- **Project selection** under deadline constraints with limited capacity
+- **Advertisement scheduling** (maximize revenue from time-slot ads with expiry dates)
+
 ---
 
 ## 4. Implementations in This Repository
@@ -74,3 +102,5 @@ job_sequencing/
 
 - Moore, J.M. (1968). An $n$ job, one machine sequencing algorithm for minimizing the number of late jobs. *Management Science*, 15(1), 102-109.
 - Lawler, E.L. & Moore, J.M. (1969). A functional equation and its application to resource allocation and sequencing problems. *Management Science*, 16(1), 77-84.
+- Sahni, S.K. (1976). Algorithms for scheduling independent tasks. *JACM*, 23(1), 116-127.
+- Pinedo, M.L. (2016). *Scheduling: Theory, Algorithms, and Systems*. 5th ed. Springer.

@@ -58,6 +58,20 @@ Optimal: Order in periods 1 and 4
 
 Evaluates all $O(T^2)$ subproblems: for each period $j$, find the best period $i$ to place the last order covering periods $i$ through $j$. The ZIO property ensures only "order from scratch" decisions are considered.
 
+```
+WAGNER-WHITIN-DP(T, d, K, h):
+  f[0] ← 0
+  pred[0] ← -1
+  for j ← 1 to T:
+    f[j] ← ∞
+    for i ← 1 to j:
+      cost ← f[i-1] + K[i] + Σ_{k=i}^{j-1} h[k] · Σ_{ℓ=k+1}^{j} d[ℓ]
+      if cost < f[j]:
+        f[j] ← cost
+        pred[j] ← i
+  return f[T], backtrack(pred)
+```
+
 ---
 
 ## 4. Implementations in This Repository
@@ -79,3 +93,11 @@ wagner_whitin/
 - Wagner, H.M. & Whitin, T.M. (1958). Dynamic version of the economic lot size model. *Management Science*, 5(1), 89-96. https://doi.org/10.1287/mnsc.5.1.89
 - Aggarwal, A. & Park, J.K. (1993). Improved algorithms for economic lot size problems. *Oper. Res.*, 41(3), 549-571. https://doi.org/10.1287/opre.41.3.549
 - Pochet, Y. & Wolsey, L.A. (2006). *Production Planning by Mixed Integer Programming*. Springer.
+
+---
+
+## 6. Notes
+
+- The Aggarwal-Park (1993) algorithm reduces Wagner-Whitin to $O(T)$ using the SMAWK technique for concave cost structures.
+- The Wagner-Whitin model assumes deterministic demand, zero lead time, and no capacity constraints.
+- Federgruen, A. & Tzur, M. (1991). A simple forward algorithm to solve general dynamic lot sizing models with $n$ periods in $O(n \log n)$ or $O(n)$ time. *Management Science*, 37(8), 909-925.

@@ -354,19 +354,8 @@ def simulated_annealing(
 
         temp *= cooling_rate
 
-    # Build final solution using compute_cost if feasible
-    try:
-        return compute_cost(instance, best_routes, best_deliveries)
-    except ValueError:
-        # If best solution has stockouts, return with penalty info
-        return IRPSolution(
-            routes_per_period=best_routes,
-            deliveries_per_period=best_deliveries,
-            routing_cost=best_routing,
-            holding_cost=best_holding,
-            total_cost=best_routing + best_holding,
-            inventory_levels=None,
-        )
+    # Build final solution using compute_cost (uses soft penalty for stockouts)
+    return compute_cost(instance, best_routes, best_deliveries)
 
 
 if __name__ == "__main__":
