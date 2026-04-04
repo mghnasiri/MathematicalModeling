@@ -70,6 +70,64 @@ $$1 \leq u_i \leq n - 1 \quad \forall\, i \in V \setminus \{1\} \tag{7}$$
 
 The minimum 1-tree (Held & Karp, 1970): compute the MST of $V \setminus \{1\}$ plus the two shortest edges incident to city 1. This yields a lower bound on the optimal tour. Lagrangian relaxation of the degree constraints can be applied via subgradient optimization to tighten this bound. This is the standard B&B lower bound for TSP.
 
+### Formulation D: Single-Commodity Flow (SCF)
+
+Gavish and Graves (1978) introduced a flow-based subtour elimination approach. A single commodity of $n$ units leaves node 1 (the depot), and each city consumes exactly 1 unit:
+
+$$f_{ij} \leq (n - 1)\, x_{ij} \quad \forall\, (i, j) \in A \tag{8}$$
+
+$$\sum_{j} f_{ji} - \sum_{j} f_{ij} = 1 \quad \forall\, i \in V \setminus \{1\} \quad \text{(consume 1 unit per city)} \tag{9}$$
+
+$$f_{ij} \geq 0 \quad \forall\, (i, j) \in A \tag{10}$$
+
+Combined with the degree constraints (2)-(3) and integrality (5), the flow conservation ensures connectivity. The LP relaxation is tighter than MTZ but weaker than DFJ.
+
+**Variables:** $n^2$ binary $x_{ij}$ + $n^2$ continuous $f_{ij}$.
+**Constraints:** $O(n^2)$ (compact).
+
+### Formulation E: Multi-Commodity Flow (MCF)
+
+Claus (1984) and Wong (1980) use $n - 1$ commodities, one for each city $k \in V \setminus \{1\}$. Each commodity $k$ sends one unit of flow from city 1 to city $k$:
+
+$$\sum_{j} y^k_{1j} = 1 \quad \forall\, k \in V \setminus \{1\} \tag{11}$$
+
+$$\sum_{j} y^k_{jk} = 1 \quad \forall\, k \in V \setminus \{1\} \tag{12}$$
+
+$$\sum_{j} y^k_{ji} - \sum_{j} y^k_{ij} = 0 \quad \forall\, i \in V \setminus \{1, k\},\; \forall\, k \tag{13}$$
+
+$$y^k_{ij} \leq x_{ij} \quad \forall\, (i, j) \in A,\; \forall\, k \tag{14}$$
+
+$$y^k_{ij} \geq 0 \tag{15}$$
+
+**Variables:** $n^2$ binary $x_{ij}$ + $O(n^3)$ continuous $y^k_{ij}$.
+**Constraints:** $O(n^3)$.
+**LP quality:** Equivalent to DFJ (the tightest compact-vs-exponential comparison), but at high computational cost due to the $O(n^3)$ variable count.
+
+### Formulation Comparison
+
+| Formulation | Binary vars | Continuous vars | Constraints | LP quality |
+|-------------|-----------|----------------|-------------|------------|
+| DFJ (subtour elim.) | $O(n^2)$ | 0 | $O(2^n)$ | Tightest (gold standard) |
+| MTZ (compact) | $O(n^2)$ | $O(n)$ | $O(n^2)$ | Weakest |
+| SCF (single-commodity flow) | $O(n^2)$ | $O(n^2)$ | $O(n^2)$ | Intermediate (tighter than MTZ) |
+| MCF (multi-commodity flow) | $O(n^2)$ | $O(n^3)$ | $O(n^3)$ | Equivalent to DFJ |
+| 1-Tree (Lagrangian) | n/a | n/a | n/a | Near-DFJ with subgradient tuning |
+
+**Practical guidance:** DFJ with lazy constraint generation (via branch-and-cut) is the standard for exact solvers like Concorde. MTZ is convenient for small models in general-purpose MIP solvers. The 1-tree bound is preferred for custom B&B implementations.
+
+### Christofides-Serdyukov 3/2-Approximation
+
+The Christofides-Serdyukov algorithm (Christofides, 1976; Serdyukov, 1978) provides a 3/2-approximation for metric TSP, the best known polynomial-time guarantee for over four decades:
+
+1. Compute a minimum spanning tree $T$ of the complete graph.
+2. Let $O$ be the set of vertices with odd degree in $T$.
+3. Find a minimum-weight perfect matching $M$ on the vertices in $O$.
+4. Combine $T \cup M$ to form a multigraph $G'$ where every vertex has even degree.
+5. Find an Eulerian tour in $G'$.
+6. Shortcut the Eulerian tour to a Hamiltonian cycle by skipping already-visited cities.
+
+**Guarantee:** The tour cost is at most $\frac{3}{2}$ times optimal. The key insight is that $\text{cost}(M) \leq \frac{1}{2}\,\text{OPT}$ (from the optimal tour restricted to $O$) and $\text{cost}(T) \leq \text{OPT}$. Note that in 2020 Karlin, Klein, and Oveis Gharan improved the bound slightly to $(3/2 - \epsilon)$ for some small $\epsilon > 10^{-36}$.
+
 ---
 
 ## 3. Variants
@@ -115,6 +173,25 @@ The standard TSP benchmark library (Reinelt, 1991) contains 111 instances from 1
 | small5 | 5 | 19 | Handcrafted |
 | gr17 | 17 | 2016 | TSPLIB (Groetschel) |
 
+### TSPLIB Best Known Solutions
+
+The following table lists commonly used TSPLIB benchmark instances with their best known solutions (BKS). All values below are established optima verified by the Concorde solver or exhaustive computation.
+
+| Instance | $n$ | BKS | Optimal? | Notes |
+|----------|-----|-----|----------|-------|
+| eil51 | 51 | 426 | Yes | Eilon, 51-city Euclidean |
+| berlin52 | 52 | 7542 | Yes | 52 locations in Berlin |
+| st70 | 70 | 675 | Yes | 70-city instance |
+| pr76 | 76 | 108159 | Yes | 76-city instance |
+| kroA100 | 100 | 21282 | Yes | Krolak set A, 100 cities |
+| ch150 | 150 | 6528 | Yes | Churritz, 150 cities |
+| d198 | 198 | 15780 | Yes | Drilling problem |
+| lin318 | 318 | 42029 | Yes | Lin, 318-city instance |
+| pcb442 | 442 | 50778 | Yes | Printed circuit board |
+| rat783 | 783 | 8806 | Yes | Rattled-grid, 783 cities |
+
+**Source:** TSPLIB (Reinelt, 1991). Optimal solutions verified by Concorde (Applegate et al., 2006). Integer distances computed per TSPLIB EUC_2D convention (nint of Euclidean distance).
+
 ### Small Illustrative Instance
 
 A 5-city Euclidean instance:
@@ -137,6 +214,8 @@ Distance: 13.6 (Euclidean)
 
 **Complexity:** $O(2^n \cdot n^2)$ time, $O(2^n \cdot n)$ space. **Practical limit:** $n \leq 23$.
 
+**High-level pseudocode:**
+
 ```
 ALGORITHM HeldKarp(d[1..n][1..n])
   FOR each subset S ⊆ {2,...,n} with |S|=1:
@@ -147,6 +226,34 @@ ALGORITHM HeldKarp(d[1..n][1..n])
         f[S][j] ← min over k ∈ S\{j} of (f[S\{j}][k] + d[k][j])
   RETURN min over j of (f[{2,...,n}][j] + d[j][1])
 ```
+
+**Bitmask implementation detail:**
+
+The key insight is representing subsets $S \subseteq V$ as bitmasks. City $j$ is in $S$ iff bit $j$ of the integer $S$ is set. The recurrence becomes:
+
+```
+ALGORITHM HeldKarpBitmask(d[0..n-1][0..n-1])
+  // State: dp[S][j] = min-cost path from city 0 through all cities in S, ending at j
+  // S is a bitmask; city 0 is always included (bit 0 set)
+  dp[1 << 0][0] ← 0                          // base case: at city 0, visited {0}
+  FOR S = 1 TO (1 << n) - 1:
+    IF NOT (S & 1): CONTINUE                  // city 0 must be in S
+    FOR j = 0 TO n-1:
+      IF NOT (S & (1 << j)): CONTINUE         // j must be in S
+      IF dp[S][j] = ∞: CONTINUE
+      FOR k = 1 TO n-1:                       // extend to unvisited city k
+        IF S & (1 << k): CONTINUE             // k must not be in S
+        new_S ← S | (1 << k)
+        dp[new_S][k] ← min(dp[new_S][k], dp[S][j] + d[j][k])
+        parent[new_S][k] ← j                  // for tour reconstruction
+  // Close the cycle: return to city 0
+  full ← (1 << n) - 1
+  opt ← min over j ∈ {1,...,n-1} of (dp[full][j] + d[j][0])
+  // Reconstruct tour by backtracking through parent[]
+  RETURN opt, reconstructed tour
+```
+
+**Memory note:** For $n = 23$, the DP table requires $2^{23} \times 23 \approx 193$ million entries. Using 64-bit floats, this is roughly 1.5 GB. Our implementation uses `numpy` arrays for efficient storage (see `exact/held_karp.py`).
 
 #### Branch and Bound (1-Tree Lower Bound)
 
@@ -192,15 +299,73 @@ ALGORITHM TwoOpt(tour)
   improved ← TRUE
   WHILE improved:
     improved ← FALSE
-    FOR i = 1 TO n-2:
-      FOR j = i+2 TO n:
-        Δ ← d[tour[i]][tour[j]] + d[tour[i+1]][tour[j+1]]
-             - d[tour[i]][tour[i+1]] - d[tour[j]][tour[j+1]]
-        IF Δ < 0:
+    FOR i = 0 TO n-2:
+      FOR j = i+2 TO n-1:
+        IF i = 0 AND j = n-1: CONTINUE       // skip full reversal (equivalent tour)
+        // O(1) delta evaluation — the critical optimization
+        a ← tour[i],   b ← tour[i+1]
+        c ← tour[j],   d ← tour[(j+1) mod n]
+        Δ ← d(a,c) + d(b,d) - d(a,b) - d(c,d)
+        IF Δ < -ε:                            // ε = 1e-10 for floating-point safety
           Reverse tour[i+1 .. j]
           improved ← TRUE
   RETURN tour
 ```
+
+The $O(1)$ delta evaluation is essential: computing $\Delta$ from four edge lookups avoids recomputing the full $O(n)$ tour cost. For each candidate 2-opt move, only the two removed edges $\{(a, b), (c, d)\}$ and two inserted edges $\{(a, c), (b, d)\}$ change.
+
+#### 3-opt: Eight Reconnection Cases
+
+3-opt removes three edges from the tour, producing three segments. These three segments can be reconnected in $2^3 = 8$ ways (including the identity), of which 7 are non-trivial:
+
+| Case | Reconnection | Includes |
+|------|-------------|----------|
+| 0 | A-B-C (identity) | No change |
+| 1 | A-B'-C | Single 2-opt (reverse B) |
+| 2 | A-B-C' | Single 2-opt (reverse C) |
+| 3 | A'-B-C | Single 2-opt (reverse A) |
+| 4 | A-B'-C' | Double 2-opt |
+| 5 | A'-B-C' | Double 2-opt |
+| 6 | A'-B'-C | Double 2-opt |
+| 7 | A'-B'-C' | True 3-opt (not decomposable into 2-opt) |
+
+Only case 7 represents a move not reachable by sequential 2-opt. The full 3-opt neighborhood has $O(n^3)$ size, making it expensive. **When to use 3-opt vs 2-opt:** 3-opt is useful for final polishing on small instances ($n < 200$) where 2-opt has converged to a local optimum. For larger instances, the cubic cost is prohibitive; use Or-opt or LK moves instead.
+
+#### Or-opt: Segment Relocation
+
+Or-opt (Or, 1976) relocates a segment of $\ell$ consecutive cities ($\ell \in \{1, 2, 3\}$) to another position in the tour:
+
+```
+ALGORITHM OrOpt(tour)
+  improved ← TRUE
+  WHILE improved:
+    improved ← FALSE
+    FOR seg_len ∈ {1, 2, 3}:                  // try segment lengths
+      FOR i = 0 TO n-1:                       // segment start
+        FOR j = 0 TO n-1:                     // insertion position
+          IF j overlaps [i, i+seg_len): CONTINUE
+          Compute Δ = (bridge cost + insert cost) - (remove cost + old edge)
+          IF Δ < -ε:
+            Remove segment tour[i..i+seg_len-1]
+            Insert segment after position j
+            improved ← TRUE
+  RETURN tour
+```
+
+Or-opt is $O(n^2)$ per pass (like 2-opt) but explores a complementary neighborhood. The VND (Variable Neighborhood Descent) in this repository alternates 2-opt and Or-opt until neither improves.
+
+#### Lin-Kernighan (LK) Moves
+
+The Lin-Kernighan algorithm (Lin & Kernighan, 1973) performs variable-depth search: a sequence of edge swaps that generalizes $k$-opt for adaptive $k$. At each step, the algorithm:
+
+1. Remove an edge $(t_1, t_2)$ from the tour.
+2. Add a new edge $(t_2, t_3)$ not in the tour, with the gain criterion $G_i = g_1 + g_2 + \ldots + g_i > 0$ maintained greedily.
+3. Continue extending the chain of swaps as long as the cumulative gain remains positive.
+4. Close the tour and accept if the total improvement is positive.
+
+**Why LK is powerful:** Unlike fixed-$k$ opt, LK adaptively determines the depth of the move. It effectively performs 3-opt, 4-opt, or higher moves when beneficial, while keeping the average cost closer to 2-opt. The Helsgaun extension (LKH) uses 5-opt sequential moves with candidate lists restricted to the $k$-nearest neighbors, achieving near-optimal results on instances with millions of cities.
+
+**Note:** LK/LKH is not implemented in this repository but is the reference standard (see Section 5.5).
 
 ### 5.4 Metaheuristics
 
@@ -217,6 +382,61 @@ This repository implements **7 metaheuristics** for TSP:
 | 7 | Local Search (2-opt, Or-opt, VND) | — | Improvement | Foundation for all trajectory methods |
 
 **ACO** is particularly natural for TSP: ants probabilistically build tours edge-by-edge, biased by pheromone intensity (exploitation) and inverse distance (greedy heuristic). MMAS bounds prevent stagnation.
+
+#### Parameter Tables
+
+**Simulated Annealing (SA)** — as implemented in `metaheuristics/simulated_annealing.py`:
+
+| Parameter | Symbol | Default | Description |
+|-----------|--------|---------|-------------|
+| Max iterations | $I_{\max}$ | 100,000 | Total number of 2-opt move attempts |
+| Initial temperature | $T_0$ | Auto-calibrated | Set so 80% of uphill moves are accepted |
+| Cooling rate | $\alpha$ | 0.9995 | Geometric: $T_{k+1} = \alpha \cdot T_k$ |
+| Neighborhood | — | 2-opt | Random segment reversal |
+| Warm start | — | Nearest neighbor | Initial tour from NN heuristic |
+
+**Tabu Search (TS)** — as implemented in `metaheuristics/tabu_search.py`:
+
+| Parameter | Symbol | Default | Description |
+|-----------|--------|---------|-------------|
+| Max iterations | $I_{\max}$ | 5,000 | Full neighborhood scans |
+| Tabu tenure | $\tau$ | $\lfloor\sqrt{n}\rfloor$ | Iterations a reversed segment stays tabu |
+| Aspiration | — | Global best | Tabu overridden if move improves best known |
+| Neighborhood | — | 2-opt | Full enumeration per iteration |
+
+**Genetic Algorithm (GA)** — as implemented in `metaheuristics/genetic_algorithm.py`:
+
+| Parameter | Symbol | Default | Description |
+|-----------|--------|---------|-------------|
+| Population size | $P$ | 50 | Number of individuals |
+| Generations | $G$ | 500 | Number of evolutionary cycles |
+| Mutation rate | $p_m$ | 0.10 | Probability of swap mutation per offspring |
+| Tournament size | $k$ | 5 | Selection pressure |
+| Crossover | — | OX | Order Crossover preserving relative order |
+| Elitism | — | 1 | Best individual always survives |
+| Optional LS | — | 2-opt | Applied to each offspring if enabled |
+
+**Ant Colony Optimization (ACO/MMAS)** — as implemented in `metaheuristics/ant_colony.py`:
+
+| Parameter | Symbol | Default | Description |
+|-----------|--------|---------|-------------|
+| Number of ants | $m$ | $n$ | One ant per city |
+| Max iterations | $I_{\max}$ | 200 | Pheromone update cycles |
+| Pheromone weight | $\alpha$ | 1.0 | Influence of pheromone trail |
+| Visibility weight | $\beta$ | 3.0 | Influence of $1/d_{ij}$ heuristic |
+| Evaporation rate | $\rho$ | 0.1 | Fraction of pheromone that evaporates |
+| Pheromone bounds | — | MMAS | $[\tau_{\min}, \tau_{\max}]$ prevents stagnation |
+
+#### Tour Encoding Strategies
+
+| Encoding | Representation | Used by | Crossover |
+|----------|---------------|---------|-----------|
+| Permutation | Ordered list of city indices $[\pi_1, \ldots, \pi_n]$ | GA, SA, TS, IG, VNS | OX, PMX, CX, Edge recombination |
+| Adjacency | $\text{adj}[i] = $ next city after $i$ | Edge recombination GA | Edge assembly |
+| Random keys | Real vector $r \in [0,1]^n$; argsort gives permutation | PSO, DE (not implemented) | Arithmetic crossover |
+| Binary matrix | $x_{ij} \in \{0,1\}$ edge variables | MIP formulations | n/a |
+
+This repository uses **permutation encoding** throughout, which is the natural and most common representation for TSP. The random-key encoding is useful when adapting continuous optimization metaheuristics (PSO, Differential Evolution) to permutation problems, as standard arithmetic operators apply directly to the real-valued vector.
 
 ### 5.5 Hybrid and Advanced Methods
 
@@ -309,23 +529,35 @@ tsp/
 
 ### Seminal Papers
 
-- Karp, R.M. (1972). Reducibility among combinatorial problems. *Complexity of Computer Computations*, 85-103.
-- Held, M. & Karp, R.M. (1962). A dynamic programming approach to sequencing problems. *SIAM Journal on Applied Mathematics*, 10(1), 196-210.
+- Dantzig, G.B., Fulkerson, D.R. & Johnson, S.M. (1954). Solution of a large-scale traveling-salesman problem. *Journal of the Operations Research Society of America*, 2(4), 393-410. https://doi.org/10.1287/opre.2.4.393
+- Held, M. & Karp, R.M. (1962). A dynamic programming approach to sequencing problems. *SIAM Journal on Applied Mathematics*, 10(1), 196-210. https://doi.org/10.1137/0110015
+- Held, M. & Karp, R.M. (1970). The traveling-salesman problem and minimum spanning trees. *Operations Research*, 18(6), 1138-1162. https://doi.org/10.1287/opre.18.6.1138
+- Karp, R.M. (1972). Reducibility among combinatorial problems. *Complexity of Computer Computations*, Plenum Press, 85-103. https://doi.org/10.1007/978-1-4684-2001-2_9
 - Christofides, N. (1976). Worst-case analysis of a new heuristic for the travelling salesman problem. *Report 388, Graduate School of Industrial Administration, CMU*.
-- Croes, G.A. (1958). A method for solving traveling salesman problems. *Operations Research*, 6(6), 791-812.
-- Lin, S. & Kernighan, B.W. (1973). An effective heuristic algorithm for the traveling-salesman problem. *Operations Research*, 21(2), 498-516.
-- Arora, S. (1998). Polynomial time approximation schemes for Euclidean traveling salesman and other geometric problems. *Journal of the ACM*, 45(5), 753-782.
+- Croes, G.A. (1958). A method for solving traveling salesman problems. *Operations Research*, 6(6), 791-812. https://doi.org/10.1287/opre.6.6.791
+- Lin, S. & Kernighan, B.W. (1973). An effective heuristic algorithm for the traveling-salesman problem. *Operations Research*, 21(2), 498-516. https://doi.org/10.1287/opre.21.2.498
+- Or, I. (1976). Traveling salesman-type combinatorial problems and their relation to the logistics of regional blood banking. *Ph.D. thesis*, Northwestern University.
+- Miller, C.E., Tucker, A.W. & Zemlin, R.A. (1960). Integer programming formulation of traveling salesman problems. *Journal of the ACM*, 7(4), 326-329. https://doi.org/10.1145/321043.321046
+- Arora, S. (1998). Polynomial time approximation schemes for Euclidean traveling salesman and other geometric problems. *Journal of the ACM*, 45(5), 753-782. https://doi.org/10.1145/290179.290180
+- Dorigo, M. & Gambardella, L.M. (1997). Ant colony system: a cooperative learning approach to the traveling salesman problem. *IEEE Transactions on Evolutionary Computation*, 1(1), 53-66. https://doi.org/10.1109/4235.585892
+- Kirkpatrick, S., Gelatt, C.D. & Vecchi, M.P. (1983). Optimization by simulated annealing. *Science*, 220(4598), 671-680. https://doi.org/10.1126/science.220.4598.671
 
 ### Books
 
-- Applegate, D.L., Bixby, R.E., Chvatal, V. & Cook, W.J. (2006). *The Traveling Salesman Problem: A Computational Study*. Princeton University Press.
-- Gutin, G. & Punnen, A.P., eds. (2007). *The Traveling Salesman Problem and Its Variations*. Springer.
+- Applegate, D.L., Bixby, R.E., Chvatal, V. & Cook, W.J. (2006). *The Traveling Salesman Problem: A Computational Study*. Princeton University Press. https://doi.org/10.1515/9781400841103
+- Gutin, G. & Punnen, A.P., eds. (2007). *The Traveling Salesman Problem and Its Variations*. Springer. https://doi.org/10.1007/b101971
 
 ### Surveys
 
-- Rosenkrantz, D.J., Stearns, R.E. & Lewis, P.M. (1977). An analysis of several heuristics for the traveling salesman problem. *SIAM Journal on Computing*, 6(3), 563-581.
-- Laporte, G. (1992). The traveling salesman problem: An overview of exact and approximate algorithms. *European Journal of Operational Research*, 59(2), 231-247.
+- Rosenkrantz, D.J., Stearns, R.E. & Lewis, P.M. (1977). An analysis of several heuristics for the traveling salesman problem. *SIAM Journal on Computing*, 6(3), 563-581. https://doi.org/10.1137/0206041
+- Laporte, G. (1992). The traveling salesman problem: An overview of exact and approximate algorithms. *European Journal of Operational Research*, 59(2), 231-247. https://doi.org/10.1016/0377-2217(92)90138-Y
+- Johnson, D.S. & McGeoch, L.A. (1997). The traveling salesman problem: A case study in local optimization. *Local Search in Combinatorial Optimization*, Wiley, 215-310.
+
+### Solvers
+
+- Helsgaun, K. (2000). An effective implementation of the Lin-Kernighan traveling salesman heuristic. *European Journal of Operational Research*, 126(1), 106-130. https://doi.org/10.1016/S0377-2217(99)00284-2
+- Helsgaun, K. (2009). General k-opt submoves for the Lin-Kernighan TSP heuristic. *Mathematical Programming Computation*, 1(2-3), 119-163. https://doi.org/10.1007/s12532-009-0004-6
 
 ### Benchmark
 
-- Reinelt, G. (1991). TSPLIB — a traveling salesman problem library. *ORSA Journal on Computing*, 3(4), 376-384.
+- Reinelt, G. (1991). TSPLIB — a traveling salesman problem library. *ORSA Journal on Computing*, 3(4), 376-384. https://doi.org/10.1287/ijoc.3.4.376
