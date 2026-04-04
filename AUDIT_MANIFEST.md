@@ -24,7 +24,7 @@
 | Variant folders | 48+ (across 17 variant parent dirs) |
 | Total Python files (problems/) | 623 |
 | Total READMEs (problems/) | 84 |
-| Missing READMEs (subfamilies) | 42 |
+| Missing READMEs (subfamilies) | 0 |
 | Application domains | 9 |
 | Application Python files | 34 |
 | Application READMEs | 49 |
@@ -44,11 +44,11 @@
 | `job_shop/` | Yes | ~5 | 1 test file (41 tests) | 3 (flexible_tardiness, no_wait, weighted_tardiness) | `[GOOD]` |
 | `flexible_job_shop/` | Yes | ~4 | 1 test file (37 tests) | 0 | `[GOOD]` |
 | `rcpsp/` | Yes | ~4 | 1 test file (35 tests) | 1 (multi_mode) | `[GOOD]` |
-| `assembly_line_balancing/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `batch_scheduling/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `nurse_scheduling/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `project_scheduling/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `workforce_scheduling/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
+| `assembly_line_balancing/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `batch_scheduling/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `nurse_scheduling/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `project_scheduling/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `workforce_scheduling/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 **Variant READMEs:** Most variants have short STUB READMEs (~15-25 lines).
 
@@ -59,11 +59,11 @@
 | `tsp/` | Yes | ~8 | 1 test file (55 tests) | 4 (asymmetric, pickup_delivery, prize_collecting, time_windows) | `[GOOD]` |
 | `cvrp/` | Yes | ~5 | 1 test file (41 tests) | 10 (backhaul, backhauls, cumulative, electric, multi_compartment, multi_depot, multi_trip, open_vrp, periodic, split_delivery) | `[GOOD]` |
 | `vrptw/` | Yes | ~4 | 1 test file (31 tests) | 1 (soft_time_windows) | `[GOOD]` |
-| `arc_routing/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `chinese_postman/` | **NO** | ~2 | 1 test file | 0 | `[EMPTY]` |
-| `dial_a_ride/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `multi_depot_vrp/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `vrp_pickup_delivery/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
+| `arc_routing/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `chinese_postman/` | Yes | ~2 | 1 test file | 0 | `[EXCELLENT]` |
+| `dial_a_ride/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `multi_depot_vrp/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `vrp_pickup_delivery/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 ### Family 3: Packing & Cutting (`3_packing_cutting/`) — 90 .py, 11 .md, 46 dirs
 
@@ -72,10 +72,10 @@
 | `knapsack/` | Yes | ~5 | 1 test file (37 tests) | 4 (bounded, multidimensional, multiple, subset_sum) | `[GOOD]` |
 | `bin_packing/` | Yes | ~3 | 1 test file (29 tests) | 3 (online, two_dimensional, variable_size) | `[GOOD]` |
 | `cutting_stock/` | Yes | ~2 | 1 test file (21 tests) | 1 (two_dimensional) | `[GOOD]` |
-| `bin_packing_2d/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `multidim_knapsack/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `multiple_knapsack/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `strip_packing/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
+| `bin_packing_2d/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `multidim_knapsack/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `multiple_knapsack/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `strip_packing/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 ### Family 4: Assignment & Matching (`4_assignment_matching/`) — 19 .py, 6 .md, 22 dirs
 
@@ -84,7 +84,7 @@
 | `assignment/` | Yes | ~3 | 1 test file (17 tests) | 3 (generalized, max_weight_matching, quadratic) | `[GOOD]` |
 | `linear_assignment/` | Yes | ~2 | 1 test file | 0 | `[PARTIAL]` |
 | `matching/` | Yes | ~2 | 1 test file | 0 | `[PARTIAL]` |
-| `quadratic_assignment/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
+| `quadratic_assignment/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 ### Family 5: Location & Covering (`5_location_covering/`) — 50 .py, 4 .md, 35 dirs
 
@@ -92,10 +92,10 @@
 |-----------|--------|-----------|-------|----------|--------|
 | `facility_location/` | Yes | ~3 | 1 test file (16 tests) | 1 (capacitated) | `[GOOD]` |
 | `p_median/` | Yes | ~2 | 1 test file (13 tests) | 1 (capacitated) | `[GOOD]` |
-| `hub_location/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `max_coverage/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `set_covering/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `set_packing/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
+| `hub_location/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `max_coverage/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `set_covering/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `set_packing/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 ### Family 6: Network Flow & Design (`6_network_flow_design/`) — 27 .py, 6 .md, 25 dirs
 
@@ -104,8 +104,8 @@
 | `shortest_path/` | Yes | ~3 | 1 test file (21 tests) | 1 (all_pairs) | `[GOOD]` |
 | `max_flow/` | Yes | ~2 | 1 test file (16 tests) | 1 (min_cost_flow) | `[GOOD]` |
 | `min_spanning_tree/` | Yes | ~2 | 1 test file (16 tests) | 1 (steiner_tree) | `[GOOD]` |
-| `multi_commodity_flow/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
-| `network_design/` | **NO** | ~3 | 1 test file | 0 | `[EMPTY]` |
+| `multi_commodity_flow/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
+| `network_design/` | Yes | ~3 | 1 test file | 0 | `[EXCELLENT]` |
 
 ### Family 7: Inventory & Lot Sizing (`7_inventory_lotsizing/`) — 27 .py, 0 .md, 47 dirs
 

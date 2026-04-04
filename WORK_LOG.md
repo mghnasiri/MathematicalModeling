@@ -284,3 +284,65 @@
 **multi_objective_tsp:** $k$ distance matrices, weighted-sum scalarization, nearest-neighbor per weight vector. Jaszkiewicz reference.
 
 **multi_objective_shortest_path:** Pareto-optimal paths, label-setting (multi-objective Dijkstra), dominance pruning. Hansen/Martins references.
+
+---
+
+## 2026-04-04 — Phase 2: Remaining problem directories (21 READMEs from scratch)
+
+**All twenty-one:** `[EMPTY]` → `[EXCELLENT]`
+
+### Scheduling (5)
+
+**assembly_line_balancing:** SALBP-1 formulation, cycle time constraint, RPW heuristic, Helgeson-Birnie reference.
+
+**batch_scheduling:** 1|batch,s_fam|ΣwjCj notation, family grouping formulation, BATC dispatching rule, Ikura-Potts reference.
+
+**nurse_scheduling:** NSP formulation, shift coverage + pattern constraints, greedy roster heuristic, Warner (1976) reference.
+
+**project_scheduling:** Multi-project RCPSP (MPSP), cross-project resource sharing, priority SGS, Gonçalves (2008) reference.
+
+**workforce_scheduling:** WS|skills,availability|min uncovered formulation, skill-coverage constraints, greedy cover heuristic.
+
+### Routing (5)
+
+**arc_routing:** CARP formulation, edge-demand constraints, path scanning heuristic, Golden-Wong reference.
+
+**chinese_postman:** CPP formulation, polynomial solution via minimum-weight matching on odd-degree vertices, Edmonds-Johnson reference.
+
+**dial_a_ride:** DARP formulation, pickup-delivery pairing + ride-time constraints, insertion heuristic, Cordeau-Laporte reference.
+
+**multi_depot_vrp:** MDVRP formulation, depot assignment + routing, nearest-depot heuristic, Renaud (1996) reference.
+
+**vrp_pickup_delivery:** VRPPD formulation, precedence + capacity constraints, insertion heuristic, Savelsbergh-Sol reference.
+
+### Packing & Cutting (4)
+
+**bin_packing_2d:** 2D-BPP formulation, shelf algorithms (NFDH, FFDH), Coffman et al. reference.
+
+**multidim_knapsack:** MdKP formulation, m capacity constraints, pseudo-utility greedy, Chu-Beasley reference.
+
+**multiple_knapsack:** MKP formulation, item-to-bin assignment, ILP + density greedy, Martello-Toth reference.
+
+**strip_packing:** 2D-SPP formulation, NFDH/FFDH shelf heuristics, Coffman et al. reference.
+
+### Assignment (1)
+
+**quadratic_assignment:** QAP Koopmans-Beckmann formulation, Gilmore-Lawler bound, greedy + SA, Sahni-Gonzalez NP-hardness.
+
+### Location & Covering (4)
+
+**hub_location:** p-Hub Median formulation, O'Kelly linearization, enumeration + greedy heuristic, O'Kelly (1987) reference.
+
+**max_coverage:** Submodular maximization, (1-1/e) greedy approximation, ILP formulation, Nemhauser et al. (1978) reference.
+
+**set_covering:** SCP formulation, ILP via HiGHS, greedy ln(m)+1 approximation, Chvatal (1979) reference.
+
+**set_packing:** Max-weight set packing formulation, greedy 1/k-approximation, Hurkens-Schrijver reference.
+
+### Network (2)
+
+**multi_commodity_flow:** MCFP arc-commodity formulation, shared capacity constraints, LP via linprog, Ahuja-Magnanti-Orlin reference.
+
+**network_design:** FCNDP formulation, big-M capacity linking, greedy edge opening heuristic, Magnanti-Wong reference.
+
+**Total: 0 missing READMEs remaining in problems/ directory.**
