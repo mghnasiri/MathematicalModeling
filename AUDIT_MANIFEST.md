@@ -161,18 +161,18 @@
 
 | Subfolder | README | .py files | Tests | Status |
 |-----------|--------|-----------|-------|--------|
-| `linear_programming/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `quadratic_programming/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `nonlinear_programming/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `semidefinite_relaxation/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
+| `linear_programming/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `quadratic_programming/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `nonlinear_programming/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `semidefinite_relaxation/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
 
 ### Legacy: Multi-Objective (`multi_objective/`) — 9 .py, 0 .md, 19 dirs
 
 | Subfolder | README | .py files | Tests | Status |
 |-----------|--------|-----------|-------|--------|
-| `bi_objective_knapsack/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `multi_objective_tsp/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
-| `multi_objective_shortest_path/` | **NO** | ~3 | 1 test file | `[EMPTY]` |
+| `bi_objective_knapsack/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `multi_objective_tsp/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
+| `multi_objective_shortest_path/` | Yes | 3 | 1 test file | `[EXCELLENT]` |
 
 ### Legacy: Location & Network (`location_network/`) — 0 .py, 1 .md
 

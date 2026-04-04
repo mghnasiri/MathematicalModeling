@@ -264,3 +264,23 @@
 **maximum_satisfiability:** ILP with clause satisfaction, greedy 1/2-approximation. Goemans-Williamson SDP reference.
 
 **vertex_cover:** ILP formulation, 2-approximation via maximal matching, LP half-integrality. Bar-Yehuda & Even (1981).
+
+---
+
+## 2026-04-04 — Phase 2: `problems/continuous/` + `problems/multi_objective/` (7 READMEs from scratch)
+
+**All seven:** `[EMPTY]` → `[EXCELLENT]`
+
+**linear_programming:** Standard LP form, sensitivity analysis (shadow prices, reduced costs, allowable ranges). HiGHS solver. Dantzig/Bertsimas references.
+
+**quadratic_programming:** Convex QP standard form, KKT conditions. SLSQP solver. Nocedal & Wright, Boyd & Vandenberghe references.
+
+**nonlinear_programming:** General NLP form with callable constraints, KKT conditions. SciPy minimize interface.
+
+**semidefinite_relaxation:** MAX-CUT via GW SDP relaxation, 0.878 approximation ratio, random hyperplane rounding. Eigendecomposition proxy.
+
+**bi_objective_knapsack:** Pareto front formulation, epsilon-constraint method, 4-item illustrative instance. Ehrgott/Bazgan references.
+
+**multi_objective_tsp:** $k$ distance matrices, weighted-sum scalarization, nearest-neighbor per weight vector. Jaszkiewicz reference.
+
+**multi_objective_shortest_path:** Pareto-optimal paths, label-setting (multi-objective Dijkstra), dominance pruning. Hansen/Martins references.
