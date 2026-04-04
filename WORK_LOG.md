@@ -139,6 +139,18 @@
 
 ---
 
+## 2026-04-04 — Phase 2: Batch — `bin_packing`, `cutting_stock`, `vrptw`
+
+**All three:** `[GOOD]` → `[EXCELLENT]`
+
+**bin_packing:** MILP formulation with symmetry-breaking, FFD pseudocode with tight 11/9 bound, all 6 metaheuristics, 6 test files.
+
+**cutting_stock:** Gilmore-Gomory pattern-based formulation, column generation description, all 6 metaheuristics (README had 0), 7 test files.
+
+**vrptw:** Time window propagation formulation, Solomon I1 description, all 7 metaheuristics (README had 2; added TS, ACO, IG, LS, VNS), forward time slack tip, Solomon benchmarks, 6 test files.
+
+---
+
 ## 2026-04-04 — Phase 2: `problems/1_scheduling/parallel_machine/`
 
 **Status change:** `[GOOD]` → `[EXCELLENT]`

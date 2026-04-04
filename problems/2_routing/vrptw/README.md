@@ -1,67 +1,174 @@
 # Vehicle Routing Problem with Time Windows (VRPTW)
 
-## Problem Definition
+## 1. Problem Definition
 
-Extends the CVRP with **time window constraints** $[e_i, l_i]$ for each customer $i$. A vehicle must arrive at customer $i$ no later than $l_i$. If it arrives before $e_i$, it waits until $e_i$ (no early service). Service takes $s_i$ time units. The depot has a time window $[e_0, l_0]$ defining the planning horizon.
+- **Input:**
+  - A depot (node 0) with time window $[e_0, l_0]$ (planning horizon)
+  - $n$ customers with demands $q_i$, time windows $[e_i, l_i]$, and service times $s_i$
+  - Vehicle capacity $Q$, fleet size $K$
+  - Pairwise distances $d_{ij}$ and travel times $t_{ij}$
+- **Decision:** Partition customers into routes; determine visit sequences
+- **Objective:** Minimize total travel distance (or number of vehicles + distance)
+- **Constraints:**
+  - Each customer visited exactly once
+  - Route capacity $\leq Q$
+  - Arrive at customer $i$ by $l_i$; if before $e_i$, wait until $e_i$
+  - Return to depot within $[e_0, l_0]$
+- **Classification:** NP-hard (generalizes CVRP)
 
-## Mathematical Formulation
+### Complexity
 
-**Parameters:**
-- $n$: number of customers
-- $Q$: vehicle capacity
-- $q_i$: demand of customer $i$
-- $d_{ij}$: distance/travel time from node $i$ to node $j$
-- $[e_i, l_i]$: time window for node $i$
-- $s_i$: service time at node $i$
+NP-hard (generalizes CVRP which generalizes TSP). Even feasibility testing (does a feasible solution exist with $K$ vehicles?) is NP-complete when time windows are tight.
 
-**Constraints (in addition to CVRP):**
-- $a_i \leq l_i$ for all customers $i$ (arrive before window closes)
-- $b_i = \max(a_i, e_i)$ (service begins at arrival or window opening)
-- $a_j \geq b_i + s_i + t_{ij}$ for consecutive visits $i \to j$
+---
 
-## Complexity
+## 2. Mathematical Formulation
 
-NP-hard — generalizes CVRP (set all time windows to $[0, \infty]$).
+### Notation Table
 
-## Solution Approaches
+| Symbol | Definition | Domain |
+|--------|-----------|--------|
+| $[e_i, l_i]$ | Time window for customer $i$ | $\mathbb{R}^2$ |
+| $s_i$ | Service time at customer $i$ | $\mathbb{R}_{\geq 0}$ |
+| $t_{ij}$ | Travel time from $i$ to $j$ | $\mathbb{R}_{\geq 0}$ |
+| $a_i$ | Arrival time at customer $i$ | $\mathbb{R}_{\geq 0}$ |
+| $b_i$ | Begin-service time: $b_i = \max(a_i, e_i)$ | $\mathbb{R}_{\geq 0}$ |
 
-### Constructive Heuristics
+### Time Window Propagation
 
-| Method | Complexity | Description |
-|--------|-----------|-------------|
-| Solomon I1 | $O(n^2 K)$ | Iterative insertion with composite criterion (distance + time urgency) |
-| Nearest Neighbor TW | $O(n^2)$ | Greedy nearest feasible customer, start new route when blocked |
+For consecutive customers $i \to j$ in a route:
 
-### Metaheuristics
+$$a_j = b_i + s_i + t_{ij} \tag{1}$$
 
-| Method | Neighborhoods | Description |
-|--------|--------------|-------------|
-| Simulated Annealing | Relocate, swap | Feasibility-checked inter-route moves |
-| Genetic Algorithm | Giant-tour OX | TW-aware split decoder |
+$$b_j = \max(a_j, e_j) \tag{2}$$
 
-## Implementations in This Repository
+Feasibility check: $b_j \leq l_j$ (arrive before window closes).
+
+### MILP (extends CVRP with time variables)
+
+Add time window constraints to the CVRP formulation:
+
+$$b_i + s_i + t_{ij} - b_j \leq M(1 - x_{ij}) \quad \forall i,j \quad \text{(time propagation)} \tag{3}$$
+
+$$e_i \leq b_i \leq l_i \quad \forall i \quad \text{(time window feasibility)} \tag{4}$$
+
+---
+
+## 3. Variants
+
+| Variant | Directory | Key Difference |
+|---------|-----------|---------------|
+| Soft Time Windows | `variants/soft_time_windows/` | Penalties for early/late arrival instead of hard constraints |
+
+### Soft Time Windows
+
+Arrival outside $[e_i, l_i]$ incurs a penalty rather than infeasibility. Objective includes penalty costs, enabling trade-off between routing cost and punctuality.
+
+---
+
+## 4. Benchmark Instances
+
+### Solomon Benchmark (Solomon, 1987)
+
+The standard VRPTW test set with 56 instances across 3 classes:
+
+| Class | Customer Distribution | Time Windows |
+|-------|----------------------|-------------|
+| C (clustered) | Clustered groups | Narrow |
+| R (random) | Uniform random | Wide |
+| RC (mixed) | Random + clustered | Mixed |
+
+Each class has 100-customer and 25-customer variants.
+
+**URL:** https://www.sintef.no/projectweb/top/vrptw/
+
+### Instances in This Repository
+
+| Instance | Customers | Type |
+|----------|-----------|------|
+| solomon_c101_mini | 8 | Clustered (from C101) |
+| tight_tw5 | 5 | Narrow windows |
+
+---
+
+## 5. Solution Methods
+
+### 5.1 Constructive Heuristics
+
+#### Solomon I1 Insertion (Solomon, 1987)
+
+**Idea:** Start with a seed customer (farthest unrouted). Iteratively insert the customer-position pair that minimizes a composite criterion: $\alpha_1 \cdot \text{distance increase} + \alpha_2 \cdot \text{urgency}$. When no more insertions are feasible, start a new route.
+
+**Complexity:** $O(n^2 K)$ where $K$ is the number of routes.
+
+#### Nearest Neighbor with Time Windows
+
+Greedy: from the current position, go to the nearest *feasible* unvisited customer (respecting capacity and time windows).
+
+### 5.2 Metaheuristics
+
+This repository implements **7 metaheuristics** for VRPTW:
+
+| # | Method | Category | Key Feature |
+|---|--------|----------|-------------|
+| 1 | Local Search | Improvement | Relocate/swap with TW feasibility |
+| 2 | Simulated Annealing (SA) | Trajectory | Relocate/swap with TW checks |
+| 3 | Tabu Search (TS) | Trajectory | Customer-route tabu |
+| 4 | Iterated Greedy (IG) | Trajectory | Remove customers + Solomon reinsert |
+| 5 | Variable Neighborhood Search (VNS) | Trajectory | Relocate → swap → cross-exchange |
+| 6 | Genetic Algorithm (GA) | Population | Giant-tour + TW-aware split decoder |
+| 7 | Ant Colony Optimization (ACO) | Population | Pheromone + TW urgency heuristic |
+
+**TW-feasibility check:** All inter-route moves must verify that the new route respects time windows for every customer downstream of the insertion point. This requires $O(k)$ propagation per move (where $k$ is route length).
+
+### 5.3 State-of-the-Art
+
+**Adaptive Large Neighborhood Search** (Ropke & Pisinger, 2006) and **Hybrid Genetic Search** (Vidal et al., 2013) achieve state-of-the-art on Solomon and Gehring-Homberger benchmarks.
+
+---
+
+## 6. Implementation Guide
+
+- **Forward time slack:** Precompute slack at each position to check TW feasibility in $O(1)$ for relocate/swap moves instead of $O(k)$.
+- **Hierarchical objective:** Minimize vehicles first, then distance. This avoids solutions with many half-empty routes.
+- **Waiting time:** When a vehicle arrives early, it waits. This increases route duration but not cost (distance-based). Some formulations penalize waiting.
+
+---
+
+## 7. Implementations in This Repository
 
 ```
 vrptw/
-├── instance.py              # VRPTWInstance, VRPTWSolution, validation
+├── instance.py                    # VRPTWInstance, VRPTWSolution, validation
 ├── heuristics/
-│   └── solomon_insertion.py # Solomon I1 + nearest neighbor TW
+│   └── solomon_insertion.py       # Solomon I1 + nearest neighbor TW
 ├── metaheuristics/
-│   ├── simulated_annealing.py # Relocate/swap with TW feasibility
-│   └── genetic_algorithm.py # Giant-tour encoding, TW-aware split
-└── tests/
-    └── test_vrptw.py        # 31 tests, 8 test classes
+│   ├── local_search.py            # Relocate/swap with TW feasibility
+│   ├── simulated_annealing.py     # SA with TW checks
+│   ├── tabu_search.py             # TS with customer-route tabu
+│   ├── iterated_greedy.py         # IG: remove + Solomon reinsert
+│   ├── vns.py                     # VNS: relocate → swap → cross
+│   ├── genetic_algorithm.py       # GA: giant-tour + TW split
+│   └── ant_colony.py              # ACO with TW urgency
+├── variants/
+│   └── soft_time_windows/         # Soft TW penalties
+└── tests/                         # 6 test files
+    ├── test_vrptw.py              # Core algorithms
+    ├── test_vrptw_ts.py           # TS
+    ├── test_vrptw_aco.py          # ACO
+    ├── test_vrptw_ig.py           # IG
+    ├── test_vrptw_ls.py           # LS
+    └── test_vrptw_vns.py          # VNS
 ```
 
-## Variants
+**Total:** 2 heuristics (1 file), 7 metaheuristics/LS, 1 variant, 6 test files.
 
-| Variant | Directory | Description |
-|---------|-----------|-------------|
-| [Soft Time Windows](variants/soft_time_windows/) | `variants/soft_time_windows/` | Time window violations allowed with penalty costs |
+---
 
-## Key References
+## 8. Key References
 
-- Solomon, M.M. (1987). Algorithms for the vehicle routing and scheduling problems with time window constraints. *Oper. Res.*, 35(2), 254-265. https://doi.org/10.1287/opre.35.2.254
-- Desrochers, M., Desrosiers, J. & Solomon, M. (1992). A new optimization algorithm for the VRP with time windows. *Oper. Res.*, 40(2), 342-354. https://doi.org/10.1287/opre.40.2.342
-- Chiang, W.-C. & Russell, R.A. (1996). SA metaheuristics for the VRPTW. *Ann. Oper. Res.*, 63(1), 3-27. https://doi.org/10.1007/BF02601637
-- Potvin, J.-Y. & Bengio, S. (1996). The VRP with time windows part II: Genetic search. *INFORMS J. Comput.*, 8(2), 165-172. https://doi.org/10.1287/ijoc.8.2.165
+- Solomon, M.M. (1987). Algorithms for the vehicle routing and scheduling problems with time window constraints. *Operations Research*, 35(2), 254-265.
+- Gehring, H. & Homberger, J. (1999). A parallel hybrid evolutionary metaheuristic for the vehicle routing problem with time windows. *Proceedings of EUROGEN*, 57-64.
+- Ropke, S. & Pisinger, D. (2006). An adaptive large neighborhood search heuristic for the pickup and delivery problem with time windows. *Transportation Science*, 40(4), 455-472.
+- Vidal, T., Crainic, T.G., Gendreau, M., Lahrichi, N. & Rei, W. (2013). A hybrid genetic algorithm for multidepot and periodic vehicle routing problems. *Operations Research*, 60(3), 611-624.
+- Toth, P. & Vigo, D., eds. (2014). *Vehicle Routing: Problems, Methods, and Applications* (2nd ed.). SIAM.
