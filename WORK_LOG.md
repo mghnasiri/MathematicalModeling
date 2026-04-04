@@ -151,6 +151,24 @@
 
 ---
 
+## 2026-04-04 — Phase 2: Batch — families 4-6 (assignment, location, network)
+
+**All six:** `[GOOD]` or `[PARTIAL]` → `[EXCELLENT]`
+
+**assignment:** Total unimodularity explanation, Hungarian description, 3 variant directories.
+
+**facility_location:** MILP formulation, LP relaxation note, all 6 metaheuristics documented (README had SA only), 1.488 approximation.
+
+**p_median:** MILP formulation, Teitz-Bart description, all 6 metaheuristics documented (README had 0), 7 test files.
+
+**shortest_path:** Dijkstra + Bellman-Ford pseudocode, LP formulation (TU matrix), APSP variant.
+
+**max_flow:** Max-Flow Min-Cut theorem, LP duality, added Dinic's algorithm (missing from README), 2 test files.
+
+**min_spanning_tree:** Kruskal + Prim pseudocode, cut/cycle properties, Steiner tree variant.
+
+---
+
 ## 2026-04-04 — Phase 2: `problems/1_scheduling/parallel_machine/`
 
 **Status change:** `[GOOD]` → `[EXCELLENT]`

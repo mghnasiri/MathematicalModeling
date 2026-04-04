@@ -1,32 +1,92 @@
 # p-Median Problem (PMP)
 
-## Problem Definition
+## 1. Problem Definition
 
-Given $n$ demand points and $m$ candidate facility locations, open exactly $p$ facilities and assign each customer to its nearest open facility to minimize total weighted distance.
+- **Input:**
+  - $n$ demand points and $m$ candidate facility locations
+  - Distances/costs $d_{ij}$ from facility $i$ to demand point $j$
+  - Demand weights $w_j$ for each demand point
+  - Number of facilities to open: $p$
+- **Decision:** Select exactly $p$ facilities to open; assign each demand point to nearest open facility
+- **Objective:** Minimize total weighted distance $\sum_j w_j \min_i d_{ij}$
+- **Constraints:** Exactly $p$ facilities open; each customer to one facility
+- **Classification:** NP-hard for general $p$ (Kariv & Hakimi, 1979)
 
-$$\min \sum_{j=1}^{n} w_j \min_{i \in S} d_{ij}$$
+---
 
-subject to $|S| = p$, $S \subseteq \{1, \ldots, m\}$.
+## 2. Mathematical Formulation
 
-## Complexity
+$$\min \sum_{i=1}^{m} \sum_{j=1}^{n} w_j d_{ij} x_{ij} \tag{1}$$
 
-NP-hard for general $p$ (Kariv & Hakimi, 1979).
+$$\sum_{i=1}^{m} x_{ij} = 1 \quad \forall j \quad \text{(each customer assigned)} \tag{2}$$
 
-## Solution Approaches
+$$x_{ij} \leq y_i \quad \forall i, j \quad \text{(assign to open facilities)} \tag{3}$$
 
-| Method | Complexity | Description |
-|--------|-----------|-------------|
-| Greedy | $O(m \cdot p \cdot n)$ | Iteratively add most cost-reducing facility |
-| Teitz-Bart Interchange | $O(m \cdot p \cdot n \cdot \text{iter})$ | Swap open/closed facilities until no improvement |
+$$\sum_{i=1}^{m} y_i = p \quad \text{(exactly } p \text{ facilities)} \tag{4}$$
 
-## Variants
+$$y_i \in \{0,1\},\; x_{ij} \in \{0,1\} \tag{5}$$
 
-| Variant | Directory | Description |
-|---------|-----------|-------------|
-| [Capacitated p-Median (CPMP)](variants/capacitated/) | `variants/capacitated/` | Facilities have limited capacity; customer demands must not exceed it |
+---
 
-## Key References
+## 3. Variants
 
-- Hakimi, S.L. (1964). Optimum locations of switching centers. *Oper. Res.*, 12(3), 450-459. https://doi.org/10.1287/opre.12.3.450
-- Teitz, M.B. & Bart, P. (1968). Heuristic methods for estimating the generalized vertex median. *Oper. Res.*, 16(5), 955-961. https://doi.org/10.1287/opre.16.5.955
-- Reese, J. (2006). Solution methods for the p-median problem. *Networks*, 48(3), 125-142. https://doi.org/10.1002/net.20128
+| Variant | Directory | Key Difference |
+|---------|-----------|---------------|
+| Capacitated p-Median | `variants/capacitated/` | Each facility has a capacity limit |
+
+---
+
+## 4. Solution Methods
+
+### 4.1 Constructive Heuristics
+
+- **Greedy:** Iteratively open the facility giving the largest cost reduction, until $p$ are open. $O(p \cdot m \cdot n)$.
+- **Teitz-Bart Interchange:** Start with $p$ random facilities. Try swapping each open facility with each closed one; accept if cost improves. Iterate until no improving swap exists.
+
+### 4.2 Metaheuristics
+
+This repository implements **6 metaheuristics**:
+
+| # | Method | Category | Key Feature |
+|---|--------|----------|-------------|
+| 1 | Local Search | Improvement | Swap open/closed facility |
+| 2 | Simulated Annealing (SA) | Trajectory | Swap with Boltzmann acceptance |
+| 3 | Tabu Search (TS) | Trajectory | Facility swap with tabu on recently changed |
+| 4 | Iterated Greedy (IG) | Trajectory | Close facilities + greedy reopen |
+| 5 | Genetic Algorithm (GA) | Population | Binary/subset encoding |
+| 6 | Variable Neighborhood Search (VNS) | Trajectory | 1-swap → 2-swap → block-swap |
+
+---
+
+## 5. Implementations in This Repository
+
+```
+p_median/
+├── instance.py                    # PMedianInstance, validation
+├── heuristics/
+│   └── greedy_pmedian.py          # Greedy, Teitz-Bart interchange
+├── metaheuristics/
+│   ├── local_search.py            # Facility swap
+│   ├── simulated_annealing.py     # SA
+│   ├── tabu_search.py             # TS
+│   ├── iterated_greedy.py         # IG
+│   ├── genetic_algorithm.py       # GA
+│   └── vns.py                     # VNS
+├── variants/
+│   └── capacitated/               # Capacitated p-median
+└── tests/                         # 7 test files
+    ├── test_p_median.py
+    ├── test_pm_sa.py, test_pm_ts.py, test_pm_ig.py
+    ├── test_pm_ls.py, test_pm_vns.py, test_pm_ga.py
+```
+
+**Total:** 2 heuristics (1 file), 6 metaheuristics/LS, 1 variant, 7 test files.
+
+---
+
+## 6. Key References
+
+- Hakimi, S.L. (1964). Optimum locations of switching centers and the absolute centers and medians of a graph. *Operations Research*, 12(3), 450-459.
+- Kariv, O. & Hakimi, S.L. (1979). An algorithmic approach to network location problems. *SIAM J. Applied Math.*, 37(3), 539-560.
+- Teitz, M.B. & Bart, P. (1968). Heuristic methods for estimating the generalized vertex median of a weighted graph. *Operations Research*, 16(5), 955-961.
+- Reese, J. (2006). Solution methods for the p-median problem: An annotated bibliography. *Networks*, 48(3), 125-142.

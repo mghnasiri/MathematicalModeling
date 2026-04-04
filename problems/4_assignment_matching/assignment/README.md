@@ -1,31 +1,84 @@
 # Linear Assignment Problem (LAP)
 
-## Problem Definition
+## 1. Problem Definition
 
-Given an $n \times n$ cost matrix $C$, find a one-to-one assignment of agents to tasks minimizing total cost:
+- **Input:** An $n \times n$ cost matrix $C$ where $c_{ij}$ = cost of assigning agent $i$ to task $j$
+- **Decision:** Find a one-to-one assignment (permutation $\sigma$)
+- **Objective:** Minimize total cost $\sum_{i=1}^{n} c_{i,\sigma(i)}$
+- **Constraints:** Each agent assigned to exactly one task; each task assigned to exactly one agent
+- **Classification:** Polynomial — $O(n^3)$ via Hungarian method
 
-$$\min_{\sigma \in S_n} \sum_{i=1}^{n} c_{i, \sigma(i)}$$
+### Complexity
 
-where $\sigma$ is a permutation (bijection from agents to tasks).
+| Variant | Complexity | Reference |
+|---------|-----------|-----------|
+| Square LAP ($n \times n$) | $O(n^3)$ | Kuhn (1955), Munkres (1957) |
+| Rectangular LAP | $O(n^2 m)$ | Pad with dummy rows/columns |
+| Bottleneck Assignment | $O(n^{2.5})$ | Threshold-based |
+| Quadratic Assignment (QAP) | NP-hard | Koopmans & Beckmann (1957) |
 
-## Complexity
+---
 
-| Algorithm | Complexity | Description |
-|-----------|-----------|-------------|
-| Hungarian (Kuhn-Munkres) | $O(n^3)$ | Dual potentials + augmenting paths |
-| Auction | $O(n^3)$ avg | Parallel-friendly, Bertsekas (1979) |
-| Greedy | $O(n^2)$ | Not optimal, fast upper bound |
+## 2. Mathematical Formulation
 
-## Variants
+$$\min \sum_{i=1}^{n} \sum_{j=1}^{n} c_{ij} x_{ij} \tag{1}$$
 
-| Variant | Directory | Description |
-|---------|-----------|-------------|
-| [Generalized Assignment (GAP)](variants/generalized/) | `variants/generalized/` | Multiple items per agent with resource constraints |
-| [Quadratic Assignment (QAP)](variants/quadratic/) | `variants/quadratic/` | Minimize pairwise interaction costs based on facility-location assignment |
-| [Maximum Weight Matching](variants/max_weight_matching/) | `variants/max_weight_matching/` | Maximize total weight of matched pairs in a bipartite graph |
+$$\sum_{j=1}^{n} x_{ij} = 1 \quad \forall i \quad \text{(each agent to one task)} \tag{2}$$
 
-## Key References
+$$\sum_{i=1}^{n} x_{ij} = 1 \quad \forall j \quad \text{(each task to one agent)} \tag{3}$$
 
-- Kuhn, H.W. (1955). The Hungarian method for the assignment problem. *Naval Res. Logist.*, 2(1-2), 83-97. https://doi.org/10.1002/nav.3800020109
-- Munkres, J. (1957). Algorithms for the assignment and transportation problems. *SIAM J.*, 5(1), 32-38. https://doi.org/10.1137/0105003
-- Jonker, R. & Volgenant, A. (1987). A shortest augmenting path algorithm for LAP. *Computing*, 38(4), 325-340. https://doi.org/10.1007/BF02278710
+$$x_{ij} \in \{0, 1\} \tag{4}$$
+
+The constraint matrix is totally unimodular — the LP relaxation always gives an integral solution. This is why the assignment problem is polynomial despite being an integer program.
+
+---
+
+## 3. Variants
+
+| Variant | Directory | Key Difference |
+|---------|-----------|---------------|
+| Generalized AP | `variants/generalized/` | Agents can handle multiple tasks; capacity constraints |
+| Max Weight Matching | `variants/max_weight_matching/` | Maximize weight in a bipartite graph |
+| Quadratic AP (QAP) | `variants/quadratic/` | Cost depends on pairs of assignments — NP-hard |
+
+---
+
+## 4. Solution Methods
+
+### Hungarian Algorithm (Kuhn-Munkres, 1955/1957)
+
+**Idea:** Iteratively reduce the cost matrix using dual variables (row/column reductions) and find augmenting paths in the equality subgraph.
+
+**Complexity:** $O(n^3)$ using shortest-augmenting-path variant.
+
+### Greedy Assignment
+
+Assign the cheapest available (agent, task) pair iteratively. $O(n^2)$. No optimality guarantee.
+
+---
+
+## 5. Implementations in This Repository
+
+```
+assignment/
+├── instance.py                    # AssignmentInstance, cost matrix
+├── exact/
+│   └── hungarian.py               # Hungarian (Kuhn-Munkres) O(n³)
+���── heuristics/
+│   └── greedy_assignment.py       # Greedy min-cost O(n²)
+├─�� variants/
+│   ├── generalized/               # GAP
+│   ├── max_weight_matching/       # Maximum weight bipartite matching
+│   └── quadratic/                 # QAP
+└─��� tests/
+    └── test_assignment.py         # 17 tests
+```
+
+---
+
+## 6. Key References
+
+- Kuhn, H.W. (1955). The Hungarian method for the assignment problem. *Naval Research Logistics Quarterly*, 2(1-2), 83-97.
+- Munkres, J. (1957). Algorithms for the assignment and transportation problems. *SIAM Journal*, 5(1), 32-38.
+- Burkard, R.E., Dell'Amico, M. & Martello, S. (2009). *Assignment Problems*. SIAM.
+- Koopmans, T.C. & Beckmann, M. (1957). Assignment problems and the location of economic activities. *Econometrica*, 25(1), 53-76.

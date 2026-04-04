@@ -1,33 +1,105 @@
 # Shortest Path Problem (SPP)
 
-## Problem Definition
+## 1. Problem Definition
 
-Given a directed graph $G = (V, E)$ with edge weights $w(u,v)$, find the path from source $s$ to target $t$ with minimum total weight.
+- **Input:** Directed graph $G = (V, E)$ with edge weights $w(u,v)$, source $s$, target $t$
+- **Decision:** Find a path from $s$ to $t$
+- **Objective:** Minimize total path weight $\sum_{(u,v) \in P} w(u,v)$
+- **Constraints:** Path must be simple (no cycles if negative weights exist)
+- **Classification:** Polynomial — solvable in $O((V+E)\log V)$ for non-negative weights
 
-## Complexity
+### Complexity
 
-| Variant | Complexity | Algorithm |
-|---------|-----------|-----------|
-| Non-negative weights | $O((V+E) \log V)$ | Dijkstra (1959) |
-| Arbitrary weights | $O(VE)$ | Bellman-Ford (1958) |
-| DAG | $O(V+E)$ | Topological sort + relaxation |
-| All-pairs | $O(V^3)$ | Floyd-Warshall |
+| Variant | Algorithm | Complexity |
+|---------|----------|-----------|
+| Non-negative weights | Dijkstra | $O((V+E) \log V)$ |
+| General weights | Bellman-Ford | $O(VE)$ |
+| DAG | Topological sort + relax | $O(V+E)$ |
+| All-pairs | Floyd-Warshall | $O(V^3)$ |
+| Negative cycle detection | Bellman-Ford | $O(VE)$ |
 
-## Implementations
+---
 
-| Algorithm | Handles Negative | Detects Neg. Cycles | Description |
-|-----------|:---:|:---:|-------------|
-| Dijkstra | No | — | Binary heap priority queue |
-| Bellman-Ford | Yes | Yes | V-1 edge relaxation rounds |
+## 2. Mathematical Formulation
 
-## Variants
+### LP Formulation (shortest $s$-$t$ path)
 
-| Variant | Directory | Description |
-|---------|-----------|-------------|
-| [All-Pairs Shortest Path (APSP)](variants/all_pairs/) | `variants/all_pairs/` | Floyd-Warshall $O(V^3)$ and repeated Dijkstra for all source-target pairs |
+$$\min \sum_{(u,v) \in E} w(u,v) \cdot x_{uv} \tag{1}$$
 
-## Key References
+$$\sum_{v: (s,v) \in E} x_{sv} - \sum_{u: (u,s) \in E} x_{us} = 1 \quad \text{(flow out of source)} \tag{2}$$
 
-- Dijkstra, E.W. (1959). A note on two problems in connexion with graphs. *Numerische Mathematik*, 1(1), 269-271. https://doi.org/10.1007/BF01386390
-- Bellman, R. (1958). On a routing problem. *Q. Appl. Math.*, 16(1), 87-90. https://doi.org/10.1090/qam/102435
-- Fredman, M.L. & Tarjan, R.E. (1987). Fibonacci heaps and network optimization. *JACM*, 34(3), 596-615. https://doi.org/10.1145/28869.28874
+$$\sum_{v: (t,v) \in E} x_{tv} - \sum_{u: (u,t) \in E} x_{ut} = -1 \quad \text{(flow into sink)} \tag{3}$$
+
+$$\sum_{v} x_{uv} - \sum_{v} x_{vu} = 0 \quad \forall u \neq s, t \quad \text{(conservation)} \tag{4}$$
+
+$$x_{uv} \geq 0 \tag{5}$$
+
+The LP relaxation is always integral (totally unimodular constraint matrix).
+
+---
+
+## 3. Variants
+
+| Variant | Directory |
+|---------|-----------|
+| All-Pairs Shortest Path | `variants/all_pairs/` |
+
+---
+
+## 4. Solution Methods
+
+### Dijkstra's Algorithm (non-negative weights)
+
+```
+ALGORITHM Dijkstra(G, w, s)
+  dist[v] ← ∞ for all v; dist[s] ← 0
+  Q ← min-priority-queue with all vertices
+  WHILE Q not empty:
+    u ← extract-min(Q)
+    FOR each neighbor v of u:
+      IF dist[u] + w(u,v) < dist[v]:
+        dist[v] ← dist[u] + w(u,v)
+        decrease-key(Q, v, dist[v])
+  RETURN dist
+```
+
+### Bellman-Ford (general weights, negative cycle detection)
+
+```
+ALGORITHM BellmanFord(G, w, s)
+  dist[v] ← ∞ for all v; dist[s] ← 0
+  FOR i = 1 TO |V| - 1:
+    FOR each edge (u,v):
+      IF dist[u] + w(u,v) < dist[v]:
+        dist[v] ← dist[u] + w(u,v)
+  // Negative cycle check:
+  FOR each edge (u,v):
+    IF dist[u] + w(u,v) < dist[v]:
+      RETURN "Negative cycle detected"
+  RETURN dist
+```
+
+---
+
+## 5. Implementations in This Repository
+
+```
+shortest_path/
+├── instance.py                    # ShortestPathInstance, edge/matrix creation
+├── exact/
+│   ├── dijkstra.py                # Dijkstra O((V+E)log V)
+│   └── bellman_ford.py            # Bellman-Ford O(VE), negative cycles
+├── variants/
+│   └── all_pairs/                 # Floyd-Warshall / Johnson's
+└── tests/
+    └── test_shortest_path.py      # 21 tests
+```
+
+---
+
+## 6. Key References
+
+- Dijkstra, E.W. (1959). A note on two problems in connexion with graphs. *Numerische Mathematik*, 1(1), 269-271.
+- Bellman, R. (1958). On a routing problem. *Quarterly of Applied Mathematics*, 16, 87-90.
+- Ford, L.R. (1956). Network flow theory. *RAND Corporation Report P-923*.
+- Fredman, M.L. & Tarjan, R.E. (1987). Fibonacci heaps and their uses in improved network optimization algorithms. *JACM*, 34(3), 596-615.
