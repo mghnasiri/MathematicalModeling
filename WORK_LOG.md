@@ -388,3 +388,29 @@ All 41 phase READMEs (12 Live + 29 Placeholder) received:
 **linear_assignment:** Enriched from stub to full problem definition (LAP formulation, TU property, Hungarian $O(n^3)$, references).
 
 **matching:** Enriched from stub to full problem definition (5 variants table, augmenting paths, blossom algorithm, Edmonds/Hopcroft-Karp references).
+
+---
+
+## 2026-04-04 — DEPTH PASS Phase 1: Deep enrichment of 15 priority families
+
+**All fifteen priority families deep-enriched with encyclopedic content. 1,122/1,122 tests pass.**
+
+| Family | Before | After | Tests | Key Additions |
+|--------|--------|-------|-------|---------------|
+| flow_shop | 462 | 655 | 265/265 | Time-indexed formulation, Lagrangian, CDS pseudocode, parameter tables |
+| job_shop | 248 | 534 | 74/74 | Disjunctive graph, N1/N5, BKS table, Shifting Bottleneck |
+| single_machine | 254 | 454 | 99/99 | Bitmask DP, ATC derivation, WSPT exchange proof |
+| parallel_machine | 187 | 402 | 81/81 | LPT proof, MULTIFIT, PTAS |
+| nurse_scheduling | 35 | 241 | 12/12 | Full ILP, greedy pseudocode, decomposition |
+| tsp | 331 | 563 | 92/92 | SCF/MCF, 2-opt delta, LK, TSPLIB BKS |
+| cvrp | 302 | 498 | 88/88 | Set-partitioning, ALNS, split DP, CVRPLIB BKS |
+| vrptw | 174 | 434 | 82/82 | Solomon I1, column generation, Solomon BKS |
+| knapsack | 237 | 400 | 87/87 | FPTAS, core concept, DP pseudocode |
+| bin_packing | 147 | 356 | 56/56 | FFD guarantee, competitive ratios, L2 bound |
+| cutting_stock | 130 | 356 | 47/47 | Gilmore-Gomory CG, branch-and-price, MIRUP |
+| facility_location | 96 | 388 | 61/61 | LP relaxation, primal-dual, 1.488-approximation |
+| shortest_path | 105 | 423 | 21/21 | 7-algorithm comparison, A*, Floyd-Warshall |
+| two_stage_sp | 123 | 335 | 10/10 | L-shaped, EVPI/VSS, SAA convergence |
+| newsvendor | 79 | 400 | 13/13 | Critical fractile derivation, multi-product, extensions |
+
+**Total README line increase:** 2,910→6,439 (+3,529 lines, +121%).
