@@ -202,3 +202,25 @@
 - Added Serial SGS pseudocode, PSPLIB benchmark table
 - Added activity-list encoding explanation
 - Updated directory tree (7 test files, not 1)
+
+---
+
+## 2026-04-04 — Phase 2: `problems/9_uncertainty_modeling/` (batch — 8 remaining)
+
+**All eight:** `[GOOD]` → `[EXCELLENT]`
+
+**two_stage_sp:** Added notation table (9 symbols), deterministic equivalent extensive form, newsvendor-as-2SSP illustrative instance, SAA description, 4 factory methods documented.
+
+**robust_shortest_path:** Added notation table, min-max cost/regret/expected cost criteria table with complexity, label-setting description, 4-node illustrative instance, 4 solution methods with complexity.
+
+**stochastic_knapsack:** Added notation table, chance-constrained formulation, expected-capacity variant, 4-item illustrative instance showing feasibility probability check, 3 methods documented.
+
+**chance_constrained_fl:** Added full MILP formulation (5 constraint groups), notation table (10 symbols), 2-facility illustrative instance, capacity_violation_prob() documented, 3 methods.
+
+**robust_portfolio:** Added Markowitz and robust SOCP formulations, ellipsoidal uncertainty set explanation, 3-asset illustrative instance, DeMiguel 1/n insight, 5 methods documented.
+
+**stochastic_vrp:** Added notation table, chance-constrained formulation, recourse policy description, 4-customer illustrative instance, overflow probability mechanics, 3 methods.
+
+**robust_scheduling:** Added scheduling notation (1|uncertain p_j|min max-regret ΣwjCj), WSPT optimality per scenario, 3-job illustrative instance, 2-approximation note, 4 methods.
+
+**dro:** Added notation table, Wasserstein dual reformulation, moment-based ambiguity set, 2-variable illustrative instance, regularization interpretation, 3 methods.

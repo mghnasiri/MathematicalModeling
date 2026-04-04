@@ -136,15 +136,15 @@
 
 | Subfolder | README | .py files | Tests | Status |
 |-----------|--------|-----------|-------|--------|
-| `newsvendor/` | Yes | ~3 | 1 test file (13 tests) | `[GOOD]` |
-| `two_stage_sp/` | Yes | ~3 | 1 test file (10 tests) | `[GOOD]` |
-| `robust_shortest_path/` | Yes | ~3 | 1 test file (13 tests) | `[GOOD]` |
-| `stochastic_knapsack/` | Yes | ~3 | 1 test file (11 tests) | `[GOOD]` |
-| `chance_constrained_fl/` | Yes | ~3 | 1 test file (11 tests) | `[GOOD]` |
-| `robust_portfolio/` | Yes | ~3 | 1 test file (14 tests) | `[GOOD]` |
-| `stochastic_vrp/` | Yes | ~3 | 1 test file (13 tests) | `[GOOD]` |
-| `robust_scheduling/` | Yes | ~3 | 1 test file (13 tests) | `[GOOD]` |
-| `dro/` | Yes | ~3 | 1 test file (12 tests) | `[GOOD]` |
+| `newsvendor/` | Yes | ~3 | 1 test file (13 tests) | `[EXCELLENT]` |
+| `two_stage_sp/` | Yes | ~3 | 1 test file (10 tests) | `[EXCELLENT]` |
+| `robust_shortest_path/` | Yes | ~3 | 1 test file (13 tests) | `[EXCELLENT]` |
+| `stochastic_knapsack/` | Yes | ~3 | 1 test file (11 tests) | `[EXCELLENT]` |
+| `chance_constrained_fl/` | Yes | ~3 | 1 test file (11 tests) | `[EXCELLENT]` |
+| `robust_portfolio/` | Yes | ~3 | 1 test file (14 tests) | `[EXCELLENT]` |
+| `stochastic_vrp/` | Yes | ~3 | 1 test file (13 tests) | `[EXCELLENT]` |
+| `robust_scheduling/` | Yes | ~3 | 1 test file (13 tests) | `[EXCELLENT]` |
+| `dro/` | Yes | ~3 | 1 test file (12 tests) | `[EXCELLENT]` |
 
 ### Legacy: Combinatorial (`combinatorial/`) — 22 .py, 1 .md, 45 dirs
 
