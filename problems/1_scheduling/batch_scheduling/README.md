@@ -13,7 +13,21 @@ $1 \mid \text{batch}, s_{\text{fam}} \mid \sum w_j C_j$
 
 ---
 
-## 2. Solution Methods
+## 2. Mathematical Formulation
+
+$$\min \sum_{j=1}^{n} w_j C_j \tag{1}$$
+
+$$C_j = \text{completion time of the batch containing job } j \tag{2}$$
+
+$$\text{batch}_b = \{j : j \in \text{family } f_b\}, \quad p_b = \sum_{j \in \text{batch}_b} p_j \tag{3}$$
+
+$$C_b = C_{b-1} + s \cdot \mathbf{1}[f_b \neq f_{b-1}] + p_b \tag{4}$$
+
+where $s$ is the setup time between different families and batches are processed sequentially.
+
+---
+
+## 3. Solution Methods
 
 | Method | Type | Complexity | Description |
 |--------|------|-----------|-------------|
@@ -50,7 +64,7 @@ BATC(jobs, families, setup_time):
 
 ---
 
-## 3. Illustrative Instance
+## 4. Illustrative Instance
 
 Single machine, setup time $s = 2$ between families:
 
@@ -65,7 +79,7 @@ Greedy WSPT-batch: Family A ratio = 7/5 = 1.4, Family B ratio = 8/6 = 1.33. Proc
 
 ---
 
-## 4. Applications
+## 5. Applications
 
 - **Semiconductor fabrication:** Wafer lots from the same product family share oven setups; sequencing families minimizes furnace changeovers.
 - **Pharmaceutical manufacturing:** Tablet compression runs grouped by active ingredient to reduce cleaning validation time.
@@ -74,7 +88,7 @@ Greedy WSPT-batch: Family A ratio = 7/5 = 1.4, Family B ratio = 8/6 = 1.33. Proc
 
 ---
 
-## 5. Implementations in This Repository
+## 6. Implementations in This Repository
 
 ```
 batch_scheduling/
@@ -87,7 +101,7 @@ batch_scheduling/
 
 ---
 
-## 6. Key References
+## 7. Key References
 
 - Potts, C.N. & Kovalyov, M.Y. (2000). Scheduling with batching: A review. *European J. Oper. Res.*, 120(2), 228-249.
 - Mason, S.J. & Chen, J. (2010). Scheduling batch processing machines in complex job shops. *IIE Transactions*, 42(10), 700-713.

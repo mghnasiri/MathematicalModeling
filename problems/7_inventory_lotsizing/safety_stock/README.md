@@ -96,4 +96,5 @@ safety_stock/
 - When lead-time variability is negligible ($\sigma_L \approx 0$), the DDLT formula simplifies to $\sigma_{\text{DDLT}} = \sigma_D \sqrt{\mu_L}$.
 - For fill-rate (Type II) service, the safety stock calculation requires the unit normal loss function $G(z)$ rather than $\Phi^{-1}(\text{SL})$.
 - The formulas above assume normally distributed demand. For non-normal distributions, use the empirical quantile $Q_{\text{SL}}$ of the DDLT distribution.
+- Graves, S.C. (1999). A single-item inventory model for a nonstationary demand process. *Manufacturing & Service Oper. Mgmt.*, 1(1), 50-61.
 - Axsater, S. (2006). *Inventory Control*. 2nd ed. Springer. https://doi.org/10.1007/0-387-33331-2

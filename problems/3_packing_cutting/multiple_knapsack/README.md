@@ -8,6 +8,20 @@
 - **Constraints:** Total weight per knapsack $\leq C_j$
 - **Classification:** NP-hard (generalizes 0-1 knapsack)
 
+The MKP generalizes both the 0-1 knapsack (single bin) and the bin packing problem
+(uniform items). Applications include assigning jobs to machines with capacity
+limits, distributing cargo across vehicles, and memory allocation in computing.
+
+### Mathematical Formulation
+
+$$\max \sum_{i=1}^{n} \sum_{j=1}^{m} v_i \cdot x_{ij}$$
+
+$$\sum_{j=1}^{m} x_{ij} \leq 1 \quad \forall i \quad \text{(each item assigned at most once)}$$
+
+$$\sum_{i=1}^{n} w_i \cdot x_{ij} \leq C_j \quad \forall j \quad \text{(capacity per knapsack)}$$
+
+$$x_{ij} \in \{0, 1\}$$
+
 ---
 
 ## 2. Solution Methods

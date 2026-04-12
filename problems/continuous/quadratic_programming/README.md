@@ -79,6 +79,21 @@ Optimal: x* = (1, 0), z* = -1
 | Method | Type | Complexity | Description |
 |--------|------|-----------|-------------|
 | SLSQP (SciPy) | Exact | Polynomial (convex) | `scipy.optimize.minimize` with method='SLSQP' |
+| Active-set | Exact | Polynomial (convex) | Identifies binding constraints iteratively |
+| Interior-point | Exact | $O(n^{3.5} L)$ | Barrier method for convex QP |
+
+### Special Cases
+
+- **Unconstrained QP:** $x^* = -Q^{-1}c$ when $Q \succ 0$ (positive definite). Reduces to a linear system solve.
+- **Equality-constrained QP:** Solved via the KKT linear system in $O(n^3)$.
+- **Portfolio optimization:** QP with $Q = \Sigma$ (covariance), $c = -\mu$ (expected returns), and simplex/budget constraints.
+
+### Applications
+
+- **Markowitz portfolio optimization** (mean-variance tradeoff)
+- **Model predictive control** (trajectory optimization in robotics)
+- **Support vector machines** (SVM training as convex QP)
+- **Structural engineering** (minimum weight design under stress constraints)
 
 ---
 
@@ -100,3 +115,5 @@ quadratic_programming/
 
 - Nocedal, J. & Wright, S.J. (2006). *Numerical Optimization*. 2nd ed. Springer.
 - Boyd, S. & Vandenberghe, L. (2004). *Convex Optimization*. Cambridge University Press.
+- Goldfarb, D. & Idnani, A. (1983). A numerically stable dual method for solving strictly convex quadratic programs. *Math. Programming*, 27(1), 1-33.
+- Markowitz, H. (1952). Portfolio selection. *Journal of Finance*, 7(1), 77-91.

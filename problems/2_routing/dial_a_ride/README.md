@@ -8,6 +8,12 @@
 - **Constraints:** Pickup before delivery; vehicle capacity; time windows; max ride time
 - **Classification:** NP-hard (generalizes VRP with Pickup and Delivery)
 
+### Key Constraints
+
+- **Pairing:** Each pickup $i^+$ must be visited before its corresponding delivery $i^-$ on the same route.
+- **Maximum ride time:** The elapsed time from pickup to delivery for any request must not exceed $L$.
+- **Time windows:** Both pickup and delivery locations have earliest/latest service times.
+
 ---
 
 ## 2. Solution Methods
@@ -69,7 +75,16 @@ Depot at (0,0). Insertion: R1 and R3 assigned to vehicle 1 (both early pickups, 
 
 ---
 
-## 4. Implementations in This Repository
+## 4. Applications
+
+- **Paratransit services:** Door-to-door transportation for elderly and disabled passengers with advance booking and maximum ride time constraints.
+- **Airport shuttle services:** Shared-ride vans collecting passengers from hotels with specific flight departure times.
+- **On-demand ride pooling:** Services like shared taxis or ride-hailing pools where multiple passengers share a vehicle.
+- **Medical transportation:** Non-emergency patient transport with appointment time windows and wheelchair capacity constraints.
+
+---
+
+## 5. Implementations in This Repository
 
 ```
 dial_a_ride/
@@ -82,7 +97,7 @@ dial_a_ride/
 
 ---
 
-## 5. Key References
+## 6. Key References
 
 - Cordeau, J.-F. & Laporte, G. (2007). The dial-a-ride problem: models and algorithms. *Annals Oper. Res.*, 153(1), 29-46. https://doi.org/10.1007/s10479-007-0170-8
 - Jaw, J.J., Odoni, A.R., Psaraftis, H.N. & Wilson, N.H.M. (1986). A heuristic algorithm for the multi-vehicle advance request dial-a-ride problem. *Transp. Res. B*, 20(3), 243-257.

@@ -97,3 +97,4 @@ multi_echelon_inventory/
 - Axsater, S. (2006). *Inventory Control*. 2nd ed. Springer.
 - Graves, S.C. & Willems, S.P. (2000). Optimizing strategic safety stock placement in supply chains. *Manufacturing & Service Oper. Mgmt.*, 2(1), 68-83.
 - Simchi-Levi, D. & Zhao, Y. (2012). Performance evaluation of stochastic multi-echelon inventory systems: A survey. *Advances in Oper. Res.*, 2012, 126708.
+- De Kok, A.G. & Graves, S.C. (2003). *Handbooks in OR & MS, Vol. 11: Supply Chain Management*. North-Holland.

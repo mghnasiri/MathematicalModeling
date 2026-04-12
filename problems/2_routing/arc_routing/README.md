@@ -10,7 +10,21 @@
 
 ---
 
-## 2. Solution Methods
+## 2. Mathematical Formulation
+
+$$\min \sum_{e \in E} \sum_{r \in R} c_e \cdot x_{er} \tag{1}$$
+
+$$\sum_{r \in R} y_{er} = 1 \quad \forall e \in E_R \text{ (required edges)} \tag{2}$$
+
+$$\sum_{e \in E} q_e \cdot y_{er} \leq Q \quad \forall r \in R \tag{3}$$
+
+$$\text{flow conservation at each vertex per route} \tag{4}$$
+
+where $x_{er}$ counts traversals of edge $e$ on route $r$, $y_{er} = 1$ if route $r$ services edge $e$, $q_e$ is the demand of edge $e$, and $Q$ is the vehicle capacity.
+
+---
+
+## 3. Solution Methods
 
 | Method | Type | Complexity | Description |
 |--------|------|-----------|-------------|
@@ -46,7 +60,7 @@ PATH_SCANNING(graph, depot, required_edges, capacity):
 
 ---
 
-## 3. Illustrative Instance
+## 4. Illustrative Instance
 
 Graph with 4 nodes and 5 edges (3 required), depot = node 0, capacity Q = 10:
 
@@ -62,7 +76,7 @@ Path scanning: Start at depot 0. Nearest required edge from 0: (0,3) at cost 0. 
 
 ---
 
-## 4. Applications
+## 5. Applications
 
 - **Street sweeping and snow plowing:** Municipal vehicles must traverse every street segment in a district while respecting vehicle capacity (salt/plow time).
 - **Postal delivery:** Mail carriers walk or drive every block on their route; minimizing deadheading (traveling non-required edges) saves time and fuel.
@@ -71,7 +85,7 @@ Path scanning: Start at depot 0. Nearest required edge from 0: (0,3) at cost 0. 
 
 ---
 
-## 5. Implementations in This Repository
+## 6. Implementations in This Repository
 
 ```
 arc_routing/
@@ -84,7 +98,7 @@ arc_routing/
 
 ---
 
-## 6. Key References
+## 7. Key References
 
 - Golden, B.L. & Wong, R.T. (1981). Capacitated arc routing problems. *Networks*, 11(3), 305-315.
 - Eiselt, H.A., Gendreau, M. & Laporte, G. (1995). Arc routing problems, part I: The Chinese postman problem. *Oper. Res.*, 43(2), 231-242.

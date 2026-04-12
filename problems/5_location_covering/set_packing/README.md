@@ -8,6 +8,18 @@
 - **Constraints:** No two selected subsets share an element
 - **Classification:** NP-hard. Greedy achieves $1/k$-approximation where $k$ is maximum set size.
 
+Set packing models resource allocation scenarios where tasks require non-overlapping
+resources: scheduling non-conflicting meetings in rooms, assigning non-overlapping
+frequency bands, or selecting compatible organ donor-recipient pairs. When all
+weights are equal ($w_i = 1$), this becomes the maximum cardinality set packing problem.
+
+### Relationship to Other Problems
+
+Set packing is the dual of set cover: cover seeks the cheapest way to cover all
+elements, while packing seeks the heaviest collection of non-overlapping sets.
+On the conflict graph, set packing is equivalent to the maximum weight independent
+set (MWIS) problem.
+
 ---
 
 ## 2. Solution Methods

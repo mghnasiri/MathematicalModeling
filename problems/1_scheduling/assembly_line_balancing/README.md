@@ -20,6 +20,14 @@ $$\sum_{j=1}^{n} t_j x_{jk} \leq C \cdot y_k \quad \forall k \tag{3}$$
 
 $$\sum_{k} k \cdot x_{ik} \leq \sum_{k} k \cdot x_{jk} \quad \forall (i,j) \in \text{precedence} \tag{4}$$
 
+**Applications:** Automotive assembly, electronics manufacturing, packaging lines, and any serial production system where work is divided among sequential stations connected by a conveyor.
+
+### Problem Variants
+
+- **SALBP-2:** Given a fixed number of stations, minimize the cycle time $C$.
+- **U-shaped lines:** Tasks can be assigned from both ends of the line, relaxing precedence locality.
+- **Mixed-model ALB:** Multiple product variants share the same line, requiring balancing across models.
+
 ---
 
 ## 3. Solution Methods

@@ -8,6 +8,20 @@
 - **Constraints:** $\sum_i w_{id} x_i \leq C_d$ for all dimensions $d$
 - **Classification:** NP-hard (harder than 0-1 KP due to multiple constraints)
 
+Unlike the standard 0-1 knapsack (single capacity constraint, pseudo-polynomial DP),
+the multi-dimensional variant has no known FPTAS because the LP relaxation gap can
+be arbitrarily large. Practical instances arise in capital budgeting (projects consume
+multiple resource types), cargo loading, and processor scheduling with memory/CPU/IO
+constraints.
+
+### Mathematical Formulation
+
+$$\max \sum_{i=1}^{n} v_i x_i$$
+
+$$\sum_{i=1}^{n} w_{ij} x_i \leq C_j \quad \forall j = 1, \ldots, d$$
+
+$$x_i \in \{0, 1\} \quad \forall i = 1, \ldots, n$$
+
 ---
 
 ## 2. Solution Methods

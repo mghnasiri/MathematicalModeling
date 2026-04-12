@@ -7,6 +7,17 @@
 - **Objective:** Maximize number of covered elements $|\bigcup_{i \in \text{selected}} S_i|$
 - **Classification:** NP-hard. Greedy achieves $(1 - 1/e) \approx 0.632$ approximation (optimal for polynomial-time algorithms under standard assumptions).
 
+Maximum coverage arises in facility placement (cover the most customers with $k$
+facilities), sensor deployment (monitor the most area), advertising (reach the most
+users with $k$ ads), and influence maximization in social networks.
+
+### Relationship to Set Cover
+
+Maximum coverage is the dual perspective of set cover: instead of minimizing cost
+to cover everything, we maximize coverage under a budget constraint. While set cover
+asks "how cheaply can I cover all elements?", max coverage asks "how much can I cover
+with a fixed budget?".
+
 ---
 
 ## 2. Solution Methods

@@ -8,6 +8,12 @@
 - **Constraints:** Pickup visited before delivery; vehicle load never exceeds capacity; all requests served
 - **Classification:** NP-hard (generalizes CVRP)
 
+### Key Constraints
+
+- **Precedence:** For each request, the pickup location must be visited before the delivery location on the same route.
+- **Capacity:** The cumulative load on a vehicle must never exceed $Q$ at any point along the route.
+- **Coupling:** Both pickup and delivery of the same request must be served by the same vehicle.
+
 ---
 
 ## 2. Solution Methods
@@ -70,7 +76,16 @@ Depot at (0, 0). Insertion order (by distance): R2 (dist=3), R1 (dist=3), R3 (di
 
 ---
 
-## 4. Implementations in This Repository
+## 4. Applications
+
+- **LTL freight:** Less-than-truckload carriers pick up shipments from shippers and deliver to receivers; each request is a pickup-delivery pair.
+- **Reverse logistics:** Vehicles collect returned products from customers and deliver them to processing centers in the same trip.
+- **Intermodal container drayage:** Trucks pick up containers at ports and deliver to inland warehouses or rail yards.
+- **Bike/scooter rebalancing:** Shared mobility operators relocate vehicles from surplus stations (pickup) to deficit stations (delivery).
+
+---
+
+## 5. Implementations in This Repository
 
 ```
 vrp_pickup_delivery/
@@ -83,7 +98,7 @@ vrp_pickup_delivery/
 
 ---
 
-## 5. Key References
+## 6. Key References
 
 - Savelsbergh, M.W.P. & Sol, M. (1995). The general pickup and delivery problem. *Transp. Sci.*, 29(1), 17-29. https://doi.org/10.1287/trsc.29.1.17
 - Ropke, S. & Pisinger, D. (2006). An adaptive large neighborhood search heuristic for the pickup and delivery problem with time windows. *Transp. Sci.*, 40(4), 455-472.

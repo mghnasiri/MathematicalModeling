@@ -7,9 +7,29 @@
 - **Objective:** Minimize total project delays (sum of makespans or weighted tardiness)
 - **Classification:** NP-hard (extends RCPSP to multiple projects with shared resources)
 
+### Problem Variants
+
+- **MPSP with preemption:** Activities may be interrupted and resumed later.
+- **Multi-mode MPSP:** Each activity has multiple execution modes (time-resource trade-offs).
+- **MPSP with activity splitting:** Activities can be split across non-contiguous time intervals.
+
 ---
 
-## 2. Solution Methods
+## 2. Mathematical Formulation
+
+$$\min \sum_{p=1}^{P} w_p \cdot C_{\max,p} \tag{1}$$
+
+$$S_j + p_j \leq S_k \quad \forall (j,k) \in \text{precedence arcs} \tag{2}$$
+
+$$\sum_{j: j \text{ active at } t} r_{jk} \leq R_k \quad \forall \text{ resource } k, \forall t \tag{3}$$
+
+$$S_j \geq 0 \quad \forall j \tag{4}$$
+
+where $S_j$ is the start time of activity $j$, $p_j$ its duration, $r_{jk}$ its requirement for resource $k$, $R_k$ the resource capacity, and $C_{\max,p}$ the makespan of project $p$.
+
+---
+
+## 3. Solution Methods
 
 | Method | Type | Complexity | Description |
 |--------|------|-----------|-------------|
@@ -38,7 +58,7 @@ SERIAL_SGS_MULTIPROJECT(projects, resources, priority_rule):
 
 ---
 
-## 3. Illustrative Instance
+## 4. Illustrative Instance
 
 Consider 2 projects sharing 1 resource (capacity = 2):
 
@@ -53,7 +73,7 @@ With LFT priority: schedule A1 at t=0, B1 at t=0 (both fit in capacity 2), then 
 
 ---
 
-## 4. Applications
+## 5. Applications
 
 - **Construction management:** Coordinating multiple building projects sharing cranes, crews, and specialized equipment across a portfolio.
 - **R&D portfolio:** Pharmaceutical companies managing parallel drug development pipelines with shared lab resources and regulatory milestones.
@@ -62,7 +82,7 @@ With LFT priority: schedule A1 at t=0, B1 at t=0 (both fit in capacity 2), then 
 
 ---
 
-## 5. Implementations in This Repository
+## 6. Implementations in This Repository
 
 ```
 project_scheduling/
@@ -75,7 +95,7 @@ project_scheduling/
 
 ---
 
-## 6. Key References
+## 7. Key References
 
 - Lova, A., Tormos, P., Cervantes, M. & Barber, F. (2009). An efficient hybrid GA for scheduling projects with resource constraints and multiple execution modes. *Int. J. Prod. Econ.*, 117(2), 302-316.
 - Kolisch, R. & Padman, R. (2001). An integrated survey of deterministic project scheduling. *Omega*, 29(3), 249-272.

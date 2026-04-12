@@ -14,7 +14,21 @@ $\text{WS} \mid \text{skills, availability} \mid \min \text{uncovered demand}$
 
 ---
 
-## 2. Solution Methods
+## 2. Mathematical Formulation
+
+$$\min \sum_{s \in S} \sum_{k \in K} u_{sk} \tag{1}$$
+
+$$\sum_{e \in E} x_{es} \cdot a_{ek} + u_{sk} \geq d_{sk} \quad \forall s \in S, k \in K \tag{2}$$
+
+$$\sum_{s \in S_t} x_{es} \leq 1 \quad \forall e \in E, \forall \text{period } t \tag{3}$$
+
+$$x_{es} \in \{0,1\}, \quad u_{sk} \geq 0 \tag{4}$$
+
+where $x_{es} = 1$ if employee $e$ is assigned to shift $s$, $a_{ek} = 1$ if employee $e$ has skill $k$, $d_{sk}$ is the demand for skill $k$ in shift $s$, and $u_{sk}$ is uncovered demand.
+
+---
+
+## 3. Solution Methods
 
 | Method | Type | Complexity | Description |
 |--------|------|-----------|-------------|
@@ -43,7 +57,7 @@ GREEDY_SHIFT_COVER(employees, shifts, demands):
 
 ---
 
-## 3. Illustrative Instance
+## 4. Illustrative Instance
 
 3 employees, 2 shifts, 2 skills:
 
@@ -62,7 +76,7 @@ Greedy: Assign E2 to Morning (covers Cashier or Stocking -- choose Stocking sinc
 
 ---
 
-## 4. Applications
+## 5. Applications
 
 - **Retail staffing:** Assigning cashiers and floor associates to morning/evening shifts based on skill certifications and labor regulations.
 - **Healthcare:** Allocating nurses and technicians with specific qualifications (ICU, pediatrics) across hospital wards and shift rotations.
@@ -71,7 +85,7 @@ Greedy: Assign E2 to Morning (covers Cashier or Stocking -- choose Stocking sinc
 
 ---
 
-## 5. Implementations in This Repository
+## 6. Implementations in This Repository
 
 ```
 workforce_scheduling/
@@ -84,7 +98,7 @@ workforce_scheduling/
 
 ---
 
-## 6. Key References
+## 7. Key References
 
 - Ernst, A.T., Jiang, H., Krishnamoorthy, M. & Sier, D. (2004). Staff scheduling and rostering: A review. *European J. Oper. Res.*, 153(1), 3-27.
 - Van den Bergh, J., Belien, J., De Bruecker, P., Demeulemeester, E. & De Boeck, L. (2013). Personnel scheduling: A literature review. *European J. Oper. Res.*, 226(3), 367-385.

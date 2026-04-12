@@ -8,6 +8,12 @@
 - **Constraints:** Each customer visited exactly once; vehicle capacity respected; routes start/end at their depot
 - **Classification:** NP-hard (generalizes CVRP)
 
+### Problem Variants
+
+- **Heterogeneous fleet MDVRP:** Vehicles at each depot may have different capacities.
+- **MDVRP with time windows:** Customer visits must occur within specified time intervals.
+- **Open MDVRP:** Vehicles do not need to return to their depot after the last delivery.
+
 ---
 
 ## 2. Solution Methods
@@ -69,7 +75,16 @@ Assignment: C1, C2, C5 -> D1 (nearest). C3, C4 -> D2 (nearest). D1 routes: [D1, 
 
 ---
 
-## 4. Implementations in This Repository
+## 4. Applications
+
+- **Grocery delivery:** Multiple distribution centers serve overlapping delivery zones; assigning customers to the nearest warehouse reduces transit time.
+- **Courier services:** Regional hubs dispatch fleets of vans; customers on depot boundaries may be served by either hub.
+- **Emergency services:** Fire stations or ambulance depots positioned across a city; each depot covers a service region.
+- **Beverage distribution:** Breweries or bottling plants at different locations supply retailers through dedicated vehicle fleets.
+
+---
+
+## 5. Implementations in This Repository
 
 ```
 multi_depot_vrp/
@@ -82,7 +97,7 @@ multi_depot_vrp/
 
 ---
 
-## 5. Key References
+## 6. Key References
 
 - Cordeau, J.-F., Gendreau, M. & Laporte, G. (1997). A tabu search heuristic for periodic and multi-depot VRP. *Networks*, 30(2), 105-119.
 - Montoya-Torres, J.R. et al. (2015). A literature review on the VRP with multiple depots. *Computers & Industrial Engineering*, 79, 115-129.
