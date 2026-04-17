@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -16,1206 +15,210 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <title>Crop Transport Routing | Mathematical Modeling &amp; Operations Research</title>
-    <meta name="description" content="Crop Transport Routing modeled as a Capacitated Vehicle Routing Problem (CVRP). Interactive Clarke-Wright, Sweep, and Nearest Neighbor simulation.">
-    <!-- Open Graph / Social Sharing -->
+    <meta name="description" content="Route grain trucks from fields to a central silo on a Quebec grain-oilseed farm. Capacitated Vehicle Routing Problem with interactive Clarke-Wright solver.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Mohammad G. Nasiri">
     <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/crop-transport.html">
     <meta property="og:title" content="Crop Transport Routing | Mathematical Modeling &amp; Operations Research">
-    <meta property="og:description" content="Crop Transport Routing modeled as a Capacitated Vehicle Routing Problem (CVRP). Interactive Clarke-Wright, Sweep, and Nearest Neighbor simulation.">
+    <meta property="og:description" content="CVRP for Quebec harvest transport: interactive Clarke-Wright savings solver with map visualization.">
     <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Crop Transport Routing | Mathematical Modeling &amp; Operations Research">
-    <meta name="twitter:description" content="Crop Transport Routing modeled as a Capacitated Vehicle Routing Problem (CVRP). Interactive Clarke-Wright, Sweep, and Nearest Neighbor simulation.">
+    <meta name="twitter:title" content="Crop Transport Routing">
+    <meta name="twitter:description" content="CVRP for Quebec harvest transport with interactive solver.">
     <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/crop-transport.html" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}]});"></script>
     <style>
         :root {
-            --midnight: #0A192F;
-            --midnight-light: #112240;
-            --midnight-lighter: #1a2f4a;
-            --gold: #C5A059;
-            --gold-light: #D4AF37;
-            --gold-dim: rgba(197, 160, 89, 0.15);
-            --ivory: #F8F9FA;
-            --slate: #8892B0;
-            --slate-light: #a8b2d1;
-            --green: #64ffda;
-            --red: #ff6b6b;
-            --blue: #7aa2f7;
+            --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a;
+            --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1;
+            --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--midnight);
-            color: var(--ivory);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
-        /* ── Navigation ── */
-        .navbar {
-            background: transparent;
-            padding: 1.5rem 0;
-            transition: all 0.4s ease;
-            z-index: 1000;
-        }
-        .navbar.scrolled {
-            background: rgba(10, 25, 47, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 0.8rem 0;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
-        }
-        .navbar-brand {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--gold) !important;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .nav-link {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            color: var(--slate-light) !important;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 0.5rem 1rem !important;
-            transition: color 0.3s ease;
-        }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
         .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
         .navbar-toggler { border-color: var(--gold); }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
 
-        /* ── Breadcrumb ── */
-        .breadcrumb-nav {
-            padding: 1rem 0 0;
-            margin-top: 70px;
-        }
-        .breadcrumb-nav ol {
-            background: transparent;
-            padding: 0;
-            margin: 0;
-            list-style: none;
-            display: flex;
-            gap: 0.5rem;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
         .breadcrumb-nav li { color: var(--slate); }
-        .breadcrumb-nav li a {
-            color: var(--slate);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
         .breadcrumb-nav li a:hover { color: var(--gold); }
-        .breadcrumb-nav li + li::before {
-            content: '/';
-            margin-right: 0.5rem;
-            color: var(--slate);
-            opacity: 0.5;
-        }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
         .breadcrumb-nav li.active { color: var(--gold); }
 
-        /* ── Hero ── */
-        .hero {
-            min-height: 50vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            position: relative;
-            padding: 4rem 2rem 4rem;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: radial-gradient(ellipse 120% 40% at 50% 110%, rgba(100,255,218,0.05) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 20% 90%, rgba(197,160,89,0.04) 0%, transparent 50%), radial-gradient(ellipse 60% 30% at 80% 95%, rgba(100,255,218,0.03) 0%, transparent 40%);
-            pointer-events: none;
-        }
-        .hero-icon {
-            font-size: 3rem;
-            color: var(--gold);
-            margin-bottom: 1.5rem;
-            opacity: 0.8;
-        }
-        .hero h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 3.5rem;
-            font-weight: 300;
-            letter-spacing: 4px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
-        .hero h1 span { color: var(--gold); }
-        .hero-subtitle {
-            font-size: 0.95rem;
-            color: var(--slate);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 1.5rem;
-        }
-        .gold-line {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 1.5rem auto;
-        }
-
-        /* ── Sections ── */
-        section { padding: 5rem 0; }
-        section:nth-child(even) { background: var(--midnight-light); }
-
-        .section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        .section-header h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.5rem;
-            font-weight: 300;
-            letter-spacing: 3px;
-            margin-bottom: 0.5rem;
-        }
-        .section-header p {
-            color: var(--slate);
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-        }
-
-        /* ── Content Cards ── */
-        .content-card {
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 2.5rem;
-            margin-bottom: 2rem;
-        }
-        .content-card h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.6rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
-        .content-card p, .content-card li {
-            color: var(--slate-light);
-            font-size: 0.92rem;
-            line-height: 1.8;
-        }
-        .content-card ul {
-            list-style: none;
-            padding: 0;
-        }
-        .content-card ul li {
-            padding: 0.3rem 0;
-            padding-left: 1.2rem;
-            position: relative;
-        }
-        .content-card ul li::before {
-            content: '\f105';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            left: 0;
-            color: var(--gold);
-            font-size: 0.75rem;
-        }
-
-        /* ── Mapping Table ── */
-        .mapping-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.5rem 0;
-        }
-        .mapping-table th, .mapping-table td {
-            padding: 0.8rem 1.2rem;
-            text-align: left;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
-            font-size: 0.88rem;
-        }
-        .mapping-table th {
-            font-family: 'Inter', sans-serif;
-            font-weight: 600;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-size: 0.75rem;
-        }
-        .mapping-table td {
-            color: var(--slate-light);
-        }
-        .mapping-table tbody tr:hover {
-            background: rgba(197, 160, 89, 0.05);
-        }
-        .mapping-table .icon-col {
-            color: var(--gold);
-            font-size: 1rem;
-            width: 40px;
-            text-align: center;
-        }
-
-        /* ── Interactive Panel ── */
-        .interactive-panel {
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .panel-header {
-            padding: 1.5rem 2rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-        }
-        .panel-header h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin: 0;
-        }
-        .panel-body {
-            padding: 2rem;
-        }
-
-        /* ── Field Table ── */
-        .patient-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 1.5rem;
-            font-size: 0.85rem;
-        }
-        .patient-table th {
-            font-weight: 600;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            font-size: 0.72rem;
-            padding: 0.7rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-        }
-        .patient-table td {
-            padding: 0.6rem 0.8rem;
-            color: var(--slate-light);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-        }
-        .patient-table .patient-name {
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            color: var(--ivory);
-        }
-        .patient-dot {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 2px;
-            margin-right: 0.5rem;
-            vertical-align: middle;
-        }
-
-        /* ── Algorithm Chips ── */
-        .algorithm-chips {
-            display: flex;
-            gap: 0.6rem;
-            flex-wrap: wrap;
-            margin-bottom: 1.5rem;
-        }
-        .algo-chip {
-            padding: 0.5rem 1.2rem;
-            border: 1px solid var(--blue);
-            border-radius: 3px;
-            font-size: 0.78rem;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: var(--blue);
-            background: transparent;
-            font-family: 'Inter', sans-serif;
-        }
-        .algo-chip:hover {
-            background: rgba(122, 162, 247, 0.15);
-        }
-        .algo-chip.active {
-            background: var(--blue);
-            color: var(--midnight);
-        }
-        .algo-chip .chip-tag {
-            font-size: 0.62rem;
-            opacity: 0.7;
-            margin-left: 0.4rem;
-        }
-
-        /* ── Canvas Map ── */
-        .map-container {
-            background: rgba(10, 25, 47, 0.5);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1rem;
-            margin-bottom: 1.5rem;
-            position: relative;
-        }
-        .map-container canvas {
-            width: 100%;
-            height: auto;
-            display: block;
-            border-radius: 3px;
-        }
-
-        /* ── Legend ── */
-        .legend {
-            display: flex;
-            gap: 1.2rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-        }
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-            font-size: 0.78rem;
-            color: var(--slate-light);
-        }
-        .legend-color {
-            width: 14px;
-            height: 14px;
-            border-radius: 2px;
-        }
-
-        /* ── Results Panel ── */
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
-        .result-card {
-            background: rgba(10, 25, 47, 0.5);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1rem;
-            text-align: center;
-        }
-        .result-value {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2rem;
-            font-weight: 600;
-            color: var(--gold);
-            line-height: 1;
-        }
-        .result-label {
-            font-size: 0.7rem;
-            color: var(--slate);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-top: 0.3rem;
-        }
-
-        /* ── Schedule Detail ── */
-        .schedule-detail {
-            background: rgba(10, 25, 47, 0.5);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1.2rem;
-            margin-bottom: 1rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.8rem;
-            color: var(--slate-light);
-            line-height: 1.9;
-        }
-        .schedule-detail .room-name {
-            color: var(--gold);
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        /* ── Algorithm Detail ── */
-        .algo-step {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.2rem;
-            align-items: flex-start;
-        }
-        .step-number {
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            background: var(--gold-dim);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--gold);
-            margin-top: 0.2rem;
-        }
-        .step-content h4 {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--ivory);
-            margin-bottom: 0.3rem;
-        }
-        .step-content p {
-            color: var(--slate-light);
-            font-size: 0.85rem;
-            line-height: 1.7;
-            margin: 0;
-        }
-
-        /* ── Complexity Cards ── */
-        .complexity-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 1.5rem;
-            margin-top: 2rem;
-        }
-        .complexity-card {
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1.5rem;
-            transition: all 0.3s ease;
-        }
-        .complexity-card:hover {
-            border-color: rgba(197, 160, 89, 0.3);
-            transform: translateY(-2px);
-        }
-        .complexity-card .card-icon {
-            font-size: 1.3rem;
-            color: var(--gold);
-            margin-bottom: 0.8rem;
-        }
-        .complexity-card h4 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.15rem;
-            font-weight: 500;
-            letter-spacing: 0.5px;
-            margin-bottom: 0.5rem;
-        }
-        .complexity-card p {
-            color: var(--slate-light);
-            font-size: 0.85rem;
-            margin: 0;
-        }
-
-        /* ── References ── */
-        .reference-item {
-            padding: 1rem 0;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.06);
-        }
-        .reference-item:last-child { border-bottom: none; }
-        .reference-authors {
-            color: var(--ivory);
-            font-size: 0.88rem;
-            font-weight: 500;
-        }
-        .reference-title {
-            color: var(--gold);
-            font-size: 0.88rem;
-            font-style: italic;
-        }
-        .reference-journal {
-            color: var(--slate);
-            font-size: 0.82rem;
-        }
-
-        /* ── CTA ── */
-        .cta-section {
-            text-align: center;
-            padding: 4rem 0;
-        }
-        .cta-section h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2rem;
-            font-weight: 300;
-            letter-spacing: 2px;
-            margin-bottom: 1.5rem;
-        }
-        .btn-cta {
-            display: inline-block;
-            padding: 0.9rem 2.5rem;
-            border: 1px solid var(--gold);
-            background: transparent;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-size: 0.82rem;
-            text-decoration: none;
-            transition: all 0.3s ease;
-            font-family: 'Inter', sans-serif;
-        }
-        .btn-cta:hover {
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            color: var(--midnight);
-        }
-
-        /* ── Disclaimer ── */
-        .disclaimer {
-            text-align: center;
-            padding: 1.5rem;
-            font-size: 0.78rem;
-            color: var(--slate);
-            border-top: 1px solid rgba(197, 160, 89, 0.08);
-        }
-
-        /* ── Footer ── */
-        footer {
-            padding: 2.5rem 0;
-            text-align: center;
-            border-top: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        footer p {
-            color: var(--slate);
-            font-size: 0.82rem;
-            letter-spacing: 0.5px;
-        }
-        footer a {
-            color: var(--gold);
-            text-decoration: underline;
-            transition: color 0.3s;
-        }
-        footer a:hover { color: var(--gold-light); }
-
-        /* ── Back Link ── */
-        .back-link {
-            position: fixed;
-            bottom: 2rem;
-            left: 2rem;
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            color: var(--gold);
-            padding: 0.6rem 1.2rem;
-            border-radius: 3px;
-            font-size: 0.78rem;
-            text-decoration: none;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            transition: all 0.3s;
-            z-index: 999;
-        }
-        .back-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-        }
-
-        /* ── Formula ── */
-        .formula-block {
-            background: rgba(10, 25, 47, 0.6);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1.2rem 1.5rem;
-            margin: 1.2rem 0;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            color: var(--gold);
-            text-align: center;
-            letter-spacing: 0.5px;
-        }
-
-        /* ── Responsive ── */
-        @media (max-width: 768px) {
-            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
-            .section-header h2 { font-size: 1.8rem; }
-            .content-card { padding: 1.5rem; }
-            .panel-body { padding: 1.2rem; }
-            .results-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-
-        /* ── Fade In ── */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ── Route Capacity Bars ── */
-        .route-caps-panel {
-            margin-top: 0.8rem;
-        }
-        .route-cap-row {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin-bottom: 0.3rem;
-        }
-        .route-cap-label {
-            font-size: 0.68rem;
-            color: var(--slate);
-            min-width: 22px;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .route-cap-track {
-            flex: 1;
-            height: 16px;
-            background: rgba(197, 160, 89, 0.06);
-            border-radius: 3px;
-            overflow: hidden;
-            position: relative;
-        }
-        .route-cap-fill {
-            height: 100%;
-            border-radius: 3px;
-            transition: width 0.5s ease;
-            display: flex;
-            align-items: center;
-            padding-left: 6px;
-        }
-        .route-cap-fill span {
-            font-size: 0.58rem;
-            font-family: 'JetBrains Mono', monospace;
-            color: var(--midnight);
-            font-weight: 600;
-        }
-        .route-cap-fill.safe { background: linear-gradient(90deg, rgba(100,255,218,0.7), rgba(80,250,123,0.7)); }
-        .route-cap-fill.warn { background: linear-gradient(90deg, rgba(224,175,104,0.7), rgba(197,160,89,0.7)); }
-        .route-cap-fill.full { background: linear-gradient(90deg, rgba(255,107,107,0.7), rgba(247,118,110,0.7)); }
-
-        /* ══ INTERACTIVITY ENHANCEMENTS ══ */
-
-        /* ── 1. Theme Toggle ── */
-        .theme-toggle {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            background: var(--midnight-lighter);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.4s ease;
-            display: flex;
-            align-items: center;
-            padding: 0 3px;
-            margin-left: 0.8rem;
-            flex-shrink: 0;
-        }
-        .theme-toggle::before {
-            content: '';
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--gold);
-            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-        .theme-toggle .toggle-icon {
-            position: absolute;
-            font-size: 0.6rem;
-            transition: opacity 0.3s;
-        }
-        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
-        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
-
-        /* Light theme */
-        html[data-theme="light"] {
-            --midnight: #F5F1EB;
-            --midnight-light: #EDE8E0;
-            --midnight-lighter: #E3DDD4;
-            --ivory: #1a1a2e;
-            --slate: #5a6178;
-            --slate-light: #3d4155;
-        }
-        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
-        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
-        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
-        html[data-theme="light"] .navbar.scrolled,
-        html[data-theme="light"] .navbar {
-            background: rgba(245, 241, 235, 0.95);
-        }
-
-        /* ── 2. Command Palette (Ctrl+K) ── */
-        .cmd-palette-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            z-index: 10000;
-            display: none;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 15vh;
-        }
-        .cmd-palette-overlay.open { display: flex; }
-        .cmd-palette {
-            width: 90%;
-            max-width: 580px;
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.25);
-            border-radius: 12px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-            overflow: hidden;
-            animation: cmdSlideIn 0.2s ease-out;
-        }
-        @keyframes cmdSlideIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .cmd-input-wrap {
-            display: flex;
-            align-items: center;
-            padding: 1rem 1.2rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
-            gap: 0.8rem;
-        }
-        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
-        .cmd-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--ivory);
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            caret-color: var(--gold);
-        }
-        .cmd-input::placeholder { color: var(--slate); }
-        .cmd-kbd {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border: 1px solid rgba(197, 160, 89, 0.25);
-            border-radius: 4px;
-            color: var(--slate);
-            background: rgba(197, 160, 89, 0.05);
-        }
-        .cmd-results {
-            max-height: 340px;
-            overflow-y: auto;
-            padding: 0.5rem;
-        }
-        .cmd-results::-webkit-scrollbar { width: 4px; }
-        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
-        .cmd-group-label {
-            font-size: 0.65rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            padding: 0.6rem 0.8rem 0.3rem;
-            font-weight: 600;
-        }
-        .cmd-result {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.6rem 0.8rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.15s;
-            text-decoration: none;
-            color: var(--ivory);
-        }
-        .cmd-result:hover, .cmd-result.active {
-            background: rgba(197, 160, 89, 0.12);
-            color: var(--ivory);
-        }
-        .cmd-result .cmd-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            background: rgba(197, 160, 89, 0.08);
-            color: var(--gold);
-            font-size: 0.85rem;
-            flex-shrink: 0;
-        }
-        .cmd-result .cmd-info { flex: 1; min-width: 0; }
-        .cmd-result .cmd-title {
-            font-size: 0.88rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .cmd-result .cmd-subtitle {
-            font-size: 0.72rem;
-            color: var(--slate);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .cmd-result .cmd-badge {
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-        }
-        .cmd-empty {
-            padding: 2rem;
-            text-align: center;
-            color: var(--slate);
-            font-size: 0.88rem;
-        }
-        .cmd-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 1.2rem;
-            border-top: 1px solid rgba(197, 160, 89, 0.1);
-            font-size: 0.68rem;
-            color: var(--slate);
-        }
-        .cmd-footer-keys { display: flex; gap: 0.8rem; }
-        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
-
-        /* ── 3. Particle Network Canvas ── */
-        .hero-particles {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(100,255,218,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(197,160,89,0.06) 0%, transparent 60%); pointer-events: none; }
         .hero > .container { position: relative; z-index: 1; }
-
-        /* ── 4. Scroll Progress Bar + Scroll-to-Top ── */
-        .scroll-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
-            z-index: 9999;
-            transition: width 0.1s linear;
-            width: 0%;
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-        .scroll-top-btn {
-            position: fixed;
-            bottom: 5rem;
-            right: 2rem;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            color: var(--gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            z-index: 998;
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-        }
-        .scroll-top-btn.visible {
-            opacity: 1;
-            transform: translateY(0);
-            pointer-events: auto;
-        }
-        .scroll-top-btn:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4);
-        }
-
-        /* ── Active nav section highlight ── */
-        .nav-link.section-active {
-            color: var(--gold) !important;
-            position: relative;
-        }
-        .nav-link.section-active::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 1rem;
-            right: 1rem;
-            height: 2px;
-            background: var(--gold);
-            border-radius: 1px;
-        }
-
-        /* ── Search trigger in navbar ── */
-        .nav-search-trigger {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.35rem 0.8rem;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 6px;
-            background: rgba(197, 160, 89, 0.05);
-            color: var(--slate);
-            font-size: 0.78rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-left: 0.5rem;
-            white-space: nowrap;
-        }
-        .nav-search-trigger:hover {
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-        .nav-search-trigger .search-shortcut {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.6rem;
-            padding: 1px 5px;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 3px;
-            background: rgba(197, 160, 89, 0.05);
-        }
-
-        /* ── Feature panel ── */
-        .feature-panel {
-            margin-top: 1rem;
-            padding: 0.8rem 1rem;
-            background: rgba(10, 25, 47, 0.3);
-            border: 1px solid rgba(197, 160, 89, 0.08);
-            border-radius: 6px;
-        }
-        .feature-panel-title {
-            font-size: 0.65rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            display: flex;
-            align-items: center;
-            gap: 0.4rem;
-        }
-        .feature-panel-title i { font-size: 0.7rem; }
-
-        @media (max-width: 576px) {
-            .scroll-top-btn { bottom: 4rem; right: 1rem; }
-            .nav-search-trigger .search-shortcut { display: none; }
-        }
-
-        /* ── Hero Description ── */
-        .hero-desc {
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            color: var(--slate-light);
-            font-size: 1rem;
-            line-height: 1.8;
-        }
-
-        /* ── Decision Chain ── */
-        .decision-chain {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin: 2rem 0;
-            justify-content: center;
-        }
-        .chain-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.75rem 1.25rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: var(--slate-light);
-            text-align: center;
-            min-width: 110px;
-        }
-        .chain-step.active {
-            border-color: var(--gold);
-            color: var(--gold);
-            background: rgba(197,160,89,0.07);
-        }
-        .chain-sub {
-            font-size: 0.72rem;
-            color: var(--slate);
-            margin-top: 0.3rem;
-            font-weight: 400;
-        }
-        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
-        .chain-arrow {
-            color: var(--slate);
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-
-        /* ── Scenario Switcher ── */
-        .scenario-switcher {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.6rem;
-            margin-bottom: 1rem;
-        }
-        .scenario-btn {
-            display: flex;
-            flex-direction: column;
-            padding: 0.75rem 1rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px;
-            background: transparent;
-            cursor: pointer;
-            text-align: left;
-            transition: border-color 0.2s, background 0.2s;
-            gap: 0.25rem;
-        }
-        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
-        .scenario-btn.active {
-            border-color: var(--gold);
-            background: rgba(197,160,89,0.07);
-        }
-        .scn-name {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: var(--ivory);
-            letter-spacing: 0.02em;
-        }
-        .scenario-btn.active .scn-name { color: var(--gold); }
-        .scn-desc {
-            font-size: 0.72rem;
-            color: var(--slate);
-            line-height: 1.4;
-        }
-        .scenario-context {
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            line-height: 1.6;
-            padding: 0.6rem 0.8rem;
-            border-left: 2px solid rgba(197,160,89,0.3);
-            margin-bottom: 1.2rem;
-            font-style: italic;
-        }
-
-        /* ── Business Translation Panel ── */
-        .business-panel {
-            margin-top: 1.5rem;
-            padding: 1.2rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 8px;
-            background: rgba(197,160,89,0.04);
-        }
-        .business-controls {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            align-items: center;
-        }
-        .biz-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-        .biz-card {
-            background: rgba(10,25,47,0.4);
-            border: 1px solid rgba(197,160,89,0.15);
-            border-radius: 6px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-        .biz-val {
-            font-size: 1.5rem;
-            font-weight: 600;
-            color: var(--gold);
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .biz-label-text {
-            font-size: 0.75rem;
-            color: var(--slate-light);
-            line-height: 1.4;
-        }
-        .biz-label-text small { color: var(--slate); }
-        .biz-disclaimer {
-            font-size: 0.72rem;
-            color: var(--slate);
-            font-style: italic;
-            margin: 0;
-        }
-
-        /* ── Algorithm Comparison Illustration ── */
-        .algo-comparison-svg {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 2rem;
-        }
-        .algo-comparison-svg svg {
-            max-width: 100%;
-            height: auto;
-        }
-
-        @media (max-width: 480px) {
-            .scenario-switcher { grid-template-columns: 1fr; }
-            .biz-cards { grid-template-columns: 1fr; }
-            .decision-chain { gap: 0.3rem; }
-            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
-        }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
         .hero-icon--agriculture { filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)) drop-shadow(0 4px 20px rgba(100,255,218,0.12)); animation: growPulse 3.5s ease-in-out infinite; }
         @keyframes growPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(100,255,218,0.5)); } }
-    
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
 
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; color: var(--gold); font-size: 0.75rem; letter-spacing: 0.5px; }
+
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 20%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 6px; overflow: hidden; }
+        .mapping-table th { padding: 0.9rem 1.1rem; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.2); }
+        .mapping-table td { padding: 0.75rem 1.1rem; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .mapping-table td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; }
+        .mapping-table tr:last-child td { border-bottom: none; }
+
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; }
+        .result-table th, .result-table td { padding: 0.5rem 0.7rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .result-table th { background: rgba(197,160,89,0.06); color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem; }
+        .result-table td { color: var(--slate-light); }
+
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.3rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .hero-desc { font-size: 0.92rem; }
+            section { padding: 3rem 0; }
+            .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; }
+        }
     </style>
 
     <script type="application/ld+json">
     {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Applications",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "Crop Transport Routing",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/crop-transport.html"
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Agriculture",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/agriculture.html" },
+        { "@type": "ListItem", "position": 3, "name": "Crop Transport Routing",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/crop-transport.html" }
+      ]
     }
-  ]
-}
     </script>
 </head>
 <body>
 <a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
 
-<!-- Navigation -->
+<div class="scroll-progress" id="scrollProgress"></div>
+
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -1223,592 +226,406 @@
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
                 <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
-                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></li>
-
-                <li class="nav-item d-flex align-items-center">
-                    <div class="nav-search-trigger" id="navSearchTrigger">
-                        <i class="fas fa-search" aria-hidden="true" style="font-size:0.75rem"></i>
-                        <span>Search</span>
-                        <span class="search-shortcut">&#8984;K</span>
-                    </div>
-                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
-                        <span class="toggle-icon icon-sun"><i class="fas fa-sun" aria-hidden="true"></i></span>
-                        <span class="toggle-icon icon-moon"><i class="fas fa-moon" aria-hidden="true"></i></span>
-                    </div>
-                </li>
+                <li class="nav-item"><a class="nav-link active" href="agriculture.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <main id="main-content">
-<!-- Breadcrumb -->
+
 <nav aria-label="breadcrumb" class="breadcrumb-nav">
     <div class="container">
-        <a href="../index.html">Home</a>
-        <span class="bc-sep">›</span>
-        <a href="agriculture.html">Agriculture</a>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">Crop Transport Routing</span>
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="agriculture.html">Agriculture</a></li>
+            <li class="active">Crop Transport</li>
+        </ol>
     </div>
 </nav>
 
-<!-- Hero -->
 <section class="hero">
     <div class="container">
-        <div class="hero-icon hero-icon--agriculture"><i class="fas fa-truck-moving" aria-hidden="true"></i></div>
+        <div class="hero-icon hero-icon--agriculture"><i class="fas fa-truck" aria-hidden="true"></i></div>
         <h1>Crop Transport <span>Routing</span></h1>
-        <p class="hero-subtitle">Capacitated Vehicle Routing</p>
+        <p class="hero-subtitle">CAPACITATED VEHICLE ROUTING</p>
+        <a href="agriculture.html?lens=matrix#framework" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;margin-top:0.3rem;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(197,160,89,0.25);border-radius:20px;text-decoration:none;background:rgba(197,160,89,0.05);">
+            <i class="fas fa-sitemap" aria-hidden="true" style="font-size:0.68rem;opacity:0.9;"></i>
+            <span>Agriculture &middot; Distribution &middot; Operational</span>
+        </a>
         <div class="gold-line" aria-hidden="true"></div>
         <p class="hero-desc">
-            Transport costs represent 5&ndash;10% of total crop value for commodity grains, and efficient truck routing during peak harvest reduces fuel consumption by 15&ndash;25% (USDA, 2020). Every harvest season requires deciding how to route a fleet of capacity-limited trucks across dozens of fields to collect grain and return it to the elevator. This is the Capacitated Vehicle Routing Problem (CVRP)&mdash;one of the foundational NP-hard problems in combinatorial optimization.
+            During the ten-day corn harvest window on a 1,200&nbsp;ha Ch&acirc;teauguay-valley grain-oilseed farm,
+            a fleet of grain trucks runs continuously between the combine-filled field edges and the central silo.
+            Each truck has a finite capacity; each field has a known tonnage ready to move. The operational
+            question &mdash; which truck visits which fields, in what order &mdash; is the
+            <strong>Capacitated Vehicle Routing Problem (CVRP)</strong>, an NP-hard generalization of TSP that
+            admits strong heuristics (Clarke-Wright savings) and exact methods (branch-cut-price) for the scales
+            typical of a single farm.
         </p>
     </div>
 </section>
 
-<!-- Decision in Context -->
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Why this <span>decision matters</span></h2>
+            <p>Three verified facts on agricultural transport</p>
+        </div>
+        <div class="impact-row">
+            <div class="impact-card fade-in">
+                <div class="impact-val">~14%</div>
+                <div class="impact-label">of global food produced is lost between post-harvest and retail &mdash; much of it on the farm-to-silo and silo-to-processor legs.</div>
+                <div class="impact-src">FAO, <em>State of Food and Agriculture 2019</em> &middot; <a href="https://www.fao.org/state-of-food-agriculture/2019/en/" target="_blank" rel="noopener">fao.org</a></div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">3.4&nbsp;Mt</div>
+                <div class="impact-label">of grain corn produced in Qu&eacute;bec in the 2022 crop year &mdash; every tonne requires a short-haul movement from field to on-farm silo or commercial elevator.</div>
+                <div class="impact-src">Statistics Canada, Table 32-10-0359-01 &middot; <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3210035901" target="_blank" rel="noopener">StatCan field crops table</a></div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">5&ndash;15%</div>
+                <div class="impact-label">of total distance travelled is savings typically delivered by good CVRP heuristics (Clarke-Wright, sweep) versus naive one-field-per-truck routing.</div>
+                <div class="impact-src">Toth &amp; Vigo (2014), <em>Vehicle Routing</em> &middot; <a href="https://doi.org/10.1137/1.9781611973594" target="_blank" rel="noopener">SIAM</a></div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section id="context">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Where This <span>Decision Fits</span></h2>
-            <p>Post-harvest operations chain &mdash; the highlighted step is what this page optimizes</p>
+            <h2>Where this <span>decision fits</span></h2>
+            <p>Agriculture sector decision chain &middot; operational, in-season horizon</p>
         </div>
-        <div class="decision-chain fade-in">
-            <div class="chain-step">
-                Harvest
-                <span class="chain-sub">Field collection</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">
-                Silo Packing
-                <span class="chain-sub">Storage allocation</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step active">
-                Crop Transport
-                <span class="chain-sub">Route trucks to fields</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">
-                Distribution Center
-                <span class="chain-sub">Facility placement</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">
-                Market &amp; Sales
-                <span class="chain-sub">Pricing &amp; contracts</span>
-            </div>
+        <div class="decision-chain fade-in" aria-label="Agricultural decision chain">
+            <div class="chain-step">Strategic<span class="chain-sub">crops &amp; fields</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Workforce<span class="chain-sub">seasonal labour</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Planting<span class="chain-sub">seed &amp; inputs</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Growing<span class="chain-sub">irrigation &amp; pests</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Harvest<span class="chain-sub">scheduling</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step active">Transport<span class="chain-sub">this page</span></div>
         </div>
     </div>
 </section>
 
-<!-- The Problem -->
-<section id="problem">
+<section id="formulation" class="formulation-section">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The Problem</h2>
-            <p>From farm fields to optimization theory</p>
+            <h2>Problem &amp; <span>formulation</span></h2>
+            <p>Classical CVRP with Miller-Tucker-Zemlin subtour elimination</p>
         </div>
 
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="content-card fade-in">
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">OR family</div>
+                    <div class="problem-meta-value">CVRP</div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Complexity</div>
+                    <div class="problem-meta-value">NP-hard</div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Solver realism</div>
+                    <div class="problem-meta-value"><span class="problem-realism">&starf;&starf;&#9734; Heuristic (Clarke-Wright)</span></div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Reference</div>
+                    <div class="problem-meta-value">Dantzig &amp; Ramser (1959)</div>
+                </div>
+            </div>
+
+            <h3>Sets &amp; indices</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(V = \{0, 1, \ldots, n\}\)</td><td>Nodes: 0 = central silo (depot), \(1..n\) = field pickup points</td><td>\(|V| = n+1\)</td></tr>
+                    <tr><td>\(A = V \times V\)</td><td>Directed arcs between every pair of nodes</td><td>\(|A| = (n+1)^2\)</td></tr>
+                    <tr><td>\(K\)</td><td>Homogeneous truck fleet available during the harvest day</td><td>finite</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(d_{ij}\)</td><td>Road distance from node \(i\) to node \(j\)</td><td>km</td></tr>
+                    <tr><td>\(q_i\)</td><td>Tonnes ready to collect at field \(i\) (\(q_0 = 0\))</td><td>t</td></tr>
+                    <tr><td>\(Q\)</td><td>Payload capacity per truck</td><td>t</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variables</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(x_{ij}\)</td><td>1 if some truck traverses arc \((i,j)\), 0 otherwise</td><td>\(\{0,1\}\)</td></tr>
+                    <tr><td>\(u_i\)</td><td>Cumulative load when a truck arrives at node \(i\) (MTZ)</td><td>\([q_i, Q]\)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Objective</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Minimize total distance travelled by the fleet:</p>
+            <div class="formula-block">
+                $$\min \; \sum_{(i,j) \in A} d_{ij} \, x_{ij}$$
+            </div>
+
+            <h3>Constraints</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Each field is visited exactly once; the depot is entered and left by each vehicle; capacity is respected; subtours are eliminated:</p>
+            <div class="formula-block">
+                $$\sum_{j \in V} x_{ij} \;=\; 1 \qquad \forall\, i \in V \setminus \{0\} \qquad \text{(leave each field once)}$$
+                $$\sum_{i \in V} x_{ij} \;=\; 1 \qquad \forall\, j \in V \setminus \{0\} \qquad \text{(enter each field once)}$$
+                $$\sum_{j \in V \setminus \{0\}} x_{0j} \;\leq\; |K| \qquad \text{(trucks leaving the depot)}$$
+                $$u_j \;\geq\; u_i + q_j - Q\,(1 - x_{ij}) \qquad \forall\, i,j \in V \setminus \{0\},\ i \neq j \qquad \text{(MTZ: subtour + capacity)}$$
+                $$q_i \;\leq\; u_i \;\leq\; Q \qquad \forall\, i \in V \setminus \{0\}$$
+                $$x_{ij} \;\in\; \{0, 1\}$$
+            </div>
+            <p class="formula-caption">MTZ combines capacity and subtour elimination in \(\mathcal{O}(n^2)\) constraints. Stronger DFJ cuts or set-partitioning + column generation scale further.</p>
+
+            <h3>Solution methods at a glance</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Up to ~25 fields, MTZ solved by a MIP solver is practical. Beyond that, the <em>Clarke-Wright savings</em> heuristic (1964) is the classical first line: merge routes whenever the savings \(s_{ij} = d_{0i} + d_{0j} - d_{ij}\) of joining them is positive and capacity allows. State-of-the-art metaheuristics (LKH-3, HGS-CVRP) close the gap to optimum to under 1% on benchmark instances.</p>
+        </div>
+    </div>
+</section>
+
+<section id="mapping">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world &rarr; <span>OR mapping</span></h2>
+            <p>Harvest-day vocabulary translated to the CVRP</p>
+        </div>
+        <div style="max-width:920px;margin:0 auto;">
+            <table class="mapping-table fade-in">
+                <thead><tr><th>On the farm</th><th>In the CVRP model</th></tr></thead>
+                <tbody>
+                    <tr><td>Central silo / grain elevator at the farmyard</td><td>Node \(0\) (depot)</td></tr>
+                    <tr><td>Each harvestable field waiting for pickup</td><td>Node \(i \in V \setminus \{0\}\)</td></tr>
+                    <tr><td>Road distance along gravel / country roads</td><td>\(d_{ij}\)</td></tr>
+                    <tr><td>Tonnes of corn, soy, or wheat ready in the field</td><td>\(q_i\)</td></tr>
+                    <tr><td>Grain-trailer payload (20&ndash;25 t typical)</td><td>\(Q\)</td></tr>
+                    <tr><td>Available truck-drivers that day</td><td>\(|K|\)</td></tr>
+                    <tr><td>Does truck \(k\) drive from \(i\) to \(j\)?</td><td>\(x_{ij}\)</td></tr>
+                    <tr><td>Total km driven by the fleet</td><td>Objective</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Clarke-Wright savings on a representative Qu&eacute;bec farm instance</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div>
+                    <div class="solver-title">CVRP Clarke-Wright solver</div>
+                    <div class="solver-subtitle">Fields around a central silo &middot; homogeneous truck fleet &middot; O(n&sup2; log n)</div>
+                </div>
+                <div class="problem-realism">&starf;&starf;&#9734; Heuristic</div>
+            </div>
+
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label for="numFields">Number of fields (n)</label>
+                        <input type="number" id="numFields" value="15" min="5" max="25" step="1">
+                        <div class="control-help">Fields laid out in a 10km radius</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="capacity">Truck capacity Q (tonnes)</label>
+                        <input type="number" id="capacity" value="22" min="5" max="60" step="1">
+                        <div class="control-help">Tandem grain trailer &approx; 22 t</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="seed">Random seed</label>
+                        <input type="number" id="seed" value="42" min="0" max="9999" step="1">
+                        <div class="control-help">Fixes field positions &amp; yields</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="yieldLow">Yield per field, min (t)</label>
+                        <input type="number" id="yieldLow" value="15" min="1" max="100" step="1">
+                    </div>
+                    <div class="control-group">
+                        <label for="yieldHigh">Yield per field, max (t)</label>
+                        <input type="number" id="yieldHigh" value="55" min="1" max="200" step="1">
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiDist">&mdash;</div><div class="result-kpi-label">Total distance (km)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiRoutes">&mdash;</div><div class="result-kpi-label">Routes (trucks used)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiTons">&mdash;</div><div class="result-kpi-label">Total tonnes moved</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiSavings">&mdash;</div><div class="result-kpi-label">vs naive baseline</div></div>
+                    </div>
+
+                    <canvas id="canvas" width="920" height="480" aria-label="Farm map with truck routes"></canvas>
+                    <div class="canvas-legend" id="canvasLegend"></div>
+
+                    <div style="overflow-x:auto;margin-top:1.2rem;">
+                        <table class="result-table" id="resultTable"></table>
+                    </div>
+                </div>
+
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>How Clarke-Wright works</h4>
                     <p>
-                        After harvest, <strong>10 fields</strong> have crops ready for pickup. A fleet of
-                        <strong>3 trucks</strong>, each with a <strong>15-ton capacity</strong>, must collect
-                        all crops and deliver them to the grain elevator (depot). The objective is to
-                        <strong>minimize total travel distance</strong> while ensuring no truck exceeds
-                        its weight limit.
+                        Start with a &ldquo;one field per truck&rdquo; plan: \(n\) trivial routes
+                        \(0 \to i \to 0\). For each pair of fields, compute the <em>savings</em>
+                        \(s_{ij} = d_{0i} + d_{0j} - d_{ij}\): distance saved if a truck visited
+                        \(i\) and \(j\) in sequence instead of two separate round trips. Sort the
+                        savings descending; greedily merge route-endpoints whenever the merged route
+                        still fits within capacity. Output routes are typically 5&ndash;15% shorter than
+                        the baseline and within a few percent of the proven optimum.
                     </p>
-                    <p style="margin-top: 1rem;">
-                        This is precisely the structure of a <strong>Capacitated Vehicle Routing Problem</strong>
-                        (CVRP). Each field is a <em>customer</em> with a <em>demand</em> equal to its harvest
-                        quantity, each truck is a <em>vehicle</em> with limited <em>capacity</em>, and the
-                        grain elevator is the <em>depot</em>. Each truck departs from the depot, visits a
-                        subset of fields, and returns &mdash; forming a route that respects the 15-ton limit.
-                    </p>
-
-                    <table class="mapping-table" style="margin-top: 1.5rem;">
-                        <thead>
-                            <tr>
-                                <th scope="col"></th>
-                                <th scope="col">Agriculture Domain</th>
-                                <th scope="col">CVRP Model</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td class="icon-col"><i class="fas fa-seedling" aria-hidden="true"></i></td>
-                                <td>Field</td>
-                                <td>Customer</td>
-                            </tr>
-                            <tr>
-                                <td class="icon-col"><i class="fas fa-warehouse" aria-hidden="true"></i></td>
-                                <td>Grain elevator</td>
-                                <td>Depot</td>
-                            </tr>
-                            <tr>
-                                <td class="icon-col"><i class="fas fa-truck" aria-hidden="true"></i></td>
-                                <td>Truck</td>
-                                <td>Vehicle</td>
-                            </tr>
-                            <tr>
-                                <td class="icon-col"><i class="fas fa-weight-hanging" aria-hidden="true"></i></td>
-                                <td>Harvest quantity</td>
-                                <td>Demand d<sub>i</sub></td>
-                            </tr>
-                            <tr>
-                                <td class="icon-col"><i class="fas fa-balance-scale" aria-hidden="true"></i></td>
-                                <td>Truck limit</td>
-                                <td>Capacity Q</td>
-                            </tr>
-                            <tr>
-                                <td class="icon-col"><i class="fas fa-route" aria-hidden="true"></i></td>
-                                <td>Pickup route</td>
-                                <td>Vehicle route</td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    <div class="formula-block">
-                        CVRP &nbsp;&mdash;&nbsp; NP-hard (generalizes TSP + Bin Packing)
-                    </div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Try It Yourself -->
-<section id="interactive">
+<section id="interpretation">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Try It Yourself</h2>
-            <p>Route 3 trucks across 10 fields using classic CVRP heuristics</p>
+            <h2>Reading the <span>solution</span></h2>
+            <p>What the route map tells the farm manager</p>
         </div>
-
-        <div class="row justify-content-center">
-            <div class="col-lg-11">
-                <div class="interactive-panel fade-in">
-                    <div class="panel-header">
-                        <h3><i class="fas fa-sliders-h" aria-hidden="true" style="color: var(--gold); margin-right: 0.7rem;"></i>Configuration</h3>
-                        <span style="font-size: 0.75rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase;">10 Fields &middot; 3 Trucks &middot; 15t Capacity</span>
-                    </div>
-                    <div class="panel-body">
-
-<!-- Scenario Switcher -->
-<div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">Choose a Scenario</div>
-<div class="scenario-switcher" id="scenario-switcher">
-    <button class="scenario-btn active" data-scenario="0" onclick="loadNamedScenario(0)">
-        <span class="scn-name">Harvest Day Pickup</span>
-        <span class="scn-desc">10 fields, balanced loads &mdash; typical Midwest collection run</span>
-    </button>
-    <button class="scenario-btn" data-scenario="1" onclick="loadNamedScenario(1)">
-        <span class="scn-name">Heavy Corn Haul</span>
-        <span class="scn-desc">A few fields with near-capacity loads &mdash; stresses truck utilization</span>
-    </button>
-    <button class="scenario-btn" data-scenario="2" onclick="loadNamedScenario(2)">
-        <span class="scn-name">Scattered Small Farms</span>
-        <span class="scn-desc">15 small fields spread wide &mdash; savings algorithm shines on clustering</span>
-    </button>
-</div>
-<div class="scenario-context" id="scenario-context">
-    A typical harvest-day collection run: 10 fields with mixed crops (corn, wheat, soybean, barley) across a 100&times;100 km region. Three 15-ton trucks depart from the grain elevator and must visit every field.
-</div>
-
-                        <!-- Field Data -->
-                        <table class="patient-table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Field</th>
-                                    <th scope="col">Harvest (tons)</th>
-                                    <th scope="col">X</th>
-                                    <th scope="col">Y</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: var(--gold);"></span>Grain Elevator (depot)</td>
-                                    <td>0</td>
-                                    <td>300</td>
-                                    <td>300</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>North Corn</td>
-                                    <td>5</td>
-                                    <td>150</td>
-                                    <td>80</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>East Wheat</td>
-                                    <td>4</td>
-                                    <td>480</td>
-                                    <td>150</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>South Soybean</td>
-                                    <td>6</td>
-                                    <td>200</td>
-                                    <td>480</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>West Canola</td>
-                                    <td>3</td>
-                                    <td>50</td>
-                                    <td>300</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Ridge Barley</td>
-                                    <td>5</td>
-                                    <td>420</td>
-                                    <td>80</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Valley Oats</td>
-                                    <td>4</td>
-                                    <td>480</td>
-                                    <td>400</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Hilltop Corn</td>
-                                    <td>7</td>
-                                    <td>100</td>
-                                    <td>150</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Creek Wheat</td>
-                                    <td>3</td>
-                                    <td>350</td>
-                                    <td>450</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Far Soybean</td>
-                                    <td>5</td>
-                                    <td>500</td>
-                                    <td>300</td>
-                                </tr>
-                                <tr>
-                                    <td class="patient-name"><span class="patient-dot" style="background: #7aa2f7;"></span>Plain Barley</td>
-                                    <td>4</td>
-                                    <td>250</td>
-                                    <td>180</td>
-                                </tr>
-                            </tbody>
-                        </table>
-
-                        <!-- Algorithm Selection -->
-                        <div style="margin-bottom: 0.5rem; font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px;">Select Algorithm</div>
-                        <div class="algorithm-chips">
-                            <button class="algo-chip active" data-algo="savings" onclick="selectAlgorithm('savings')">
-                                Clarke-Wright Savings <span class="chip-tag">heuristic</span>
-                            </button>
-                            <button class="algo-chip" data-algo="sweep" onclick="selectAlgorithm('sweep')">
-                                Sweep <span class="chip-tag">heuristic</span>
-                            </button>
-                            <button class="algo-chip" data-algo="nn" onclick="selectAlgorithm('nn')">
-                                Nearest Neighbor <span class="chip-tag">heuristic</span>
-                            </button>
-                        </div>
-
-                        <!-- Canvas Map -->
-                        <div class="map-container">
-                            <canvas id="routeCanvas" width="600" height="600"></canvas>
-                        </div>
-
-                        <!-- Results -->
-                        <div class="results-grid" id="resultsGrid"></div>
-
-                        <!-- Route Detail -->
-                        <div class="schedule-detail" id="routeDetail"></div>
-
-                        <!-- Capacity Bars -->
-                        <div class="feature-panel" id="capPanel" style="display:none;">
-                            <div class="feature-panel-title"><i class="fas fa-weight-hanging" aria-hidden="true"></i> Truck Capacity Utilization</div>
-                            <div class="route-caps-panel" id="capBars"></div>
-                        </div>
-
-<!-- Business Translation Panel -->
-<div class="business-panel" id="business-panel" style="display:none">
-    <div style="margin-bottom:0.5rem;font-size:0.75rem;color:var(--slate);text-transform:uppercase;letter-spacing:1.5px;">
-        <i class="fas fa-chart-line" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem"></i>
-        What this means for your operation
-    </div>
-    <div class="business-controls">
-        <label>
-            Fuel cost per km ($)
-            <input type="number" id="biz-unit-cost" value="2" min="0.1" max="100" step="0.5"
-                   style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()">
-        </label>
-        <label>
-            Collection runs per season
-            <input type="number" id="biz-ops-per-day" value="40" min="1" max="500" step="1"
-                   style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusinessPanel()">
-        </label>
-    </div>
-    <div class="biz-cards">
-        <div class="biz-card">
-            <span class="biz-val" id="biz-gap">&mdash;</span>
-            <span class="biz-label-text">Extra km per run<br><small>worst vs best algorithm</small></span>
-        </div>
-        <div class="biz-card">
-            <span class="biz-val" id="biz-daily">&mdash;</span>
-            <span class="biz-label-text">Wasted per run<br><small>at current fuel cost</small></span>
-        </div>
-        <div class="biz-card">
-            <span class="biz-val" id="biz-annual">&mdash;</span>
-            <span class="biz-label-text">Wasted per season<br><small>across all runs</small></span>
-        </div>
-    </div>
-    <p class="biz-disclaimer">Values are illustrative estimates based on the scenario above. Adjust inputs to model your operation.</p>
-</div>
-
-                    </div>
-                </div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Cluster routes vs. radial routes.</strong> When field yields are small, Clarke-Wright merges many adjacent fields into long &ldquo;cluster&rdquo; routes. When yields approach capacity \(Q\), routes become near-radial (one trip per field).</li>
+                    <li><strong>Truck count vs. makespan.</strong> Total distance is weakly sensitive to an extra truck &mdash; the real cost driver is per-km fuel and driver-hour. But more trucks in parallel shorten the harvest-day <em>makespan</em>.</li>
+                    <li><strong>Close-to-depot fillers.</strong> Fields near the silo become opportunistic &ldquo;short-hop&rdquo; fillers when a truck has capacity left after longer legs.</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions the solver answers instantly</h4>
+                <ul>
+                    <li>Capacity drops (older trucks, wet corn adding weight)? Reduce \(Q\) &mdash; watch route count grow.</li>
+                    <li>Add a far-off rented field? Use a larger seed / re-spatialize to see how the extra 5&ndash;10 km reshapes routes.</li>
+                    <li>One field much bigger than the others? Raise max yield &mdash; a dedicated near-full truck is likely.</li>
+                </ul>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Algorithm Explanation -->
-<section id="algorithm">
+<section id="extensions">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The Algorithm</h2>
-            <p>Clarke-Wright savings heuristic for vehicle routing</p>
+            <h2>Model <span>extensions</span></h2>
+            <p>Natural agricultural generalizations of the base CVRP</p>
         </div>
-
-<!-- Algorithm Comparison Illustration -->
-<div class="algo-comparison-svg fade-in">
-<svg width="680" height="280" viewBox="0 0 680 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Nearest Neighbor vs Clarke-Wright comparison: NN builds routes greedily, while Clarke-Wright merges routes using savings to avoid depot detours">
-  <rect width="680" height="280" fill="none"/>
-
-  <!-- Left: Nearest Neighbor -->
-  <text x="160" y="22" text-anchor="middle" fill="#a8b2d1" font-family="Inter,sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">Nearest Neighbor</text>
-  <text x="160" y="40" text-anchor="middle" fill="#8892B0" font-family="Inter,sans-serif" font-size="10">Greedy closest-first &mdash; ignores savings from clustering</text>
-
-  <!-- NN Depot -->
-  <polygon points="160,130 155,140 165,140" fill="#C5A059"/>
-  <text x="160" y="153" text-anchor="middle" fill="#C5A059" font-family="Inter,sans-serif" font-size="9" font-weight="600">Depot</text>
-
-  <!-- NN Fields -->
-  <circle cx="80" cy="70" r="10" fill="#112240" stroke="#7aa2f7" stroke-width="1.5"/>
-  <text x="80" y="73" text-anchor="middle" fill="#7aa2f7" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">A</text>
-  <circle cx="240" cy="70" r="10" fill="#112240" stroke="#64ffda" stroke-width="1.5"/>
-  <text x="240" y="73" text-anchor="middle" fill="#64ffda" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">B</text>
-  <circle cx="100" cy="200" r="10" fill="#112240" stroke="#ff9e64" stroke-width="1.5"/>
-  <text x="100" y="203" text-anchor="middle" fill="#ff9e64" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">C</text>
-  <circle cx="220" cy="200" r="10" fill="#112240" stroke="#bb9af7" stroke-width="1.5"/>
-  <text x="220" y="203" text-anchor="middle" fill="#bb9af7" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">D</text>
-
-  <!-- NN Route 1: Depot→A→C→Depot (greedy picks nearest from depot=A, then nearest from A=C) -->
-  <line x1="160" y1="130" x2="80" y2="70" stroke="#7aa2f7" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="80" y1="70" x2="100" y2="200" stroke="#7aa2f7" stroke-width="1.5"/>
-  <line x1="100" y1="200" x2="160" y2="130" stroke="#7aa2f7" stroke-width="1.5" stroke-dasharray="4,3"/>
-
-  <!-- NN Route 2: Depot→B→D→Depot -->
-  <line x1="160" y1="130" x2="240" y2="70" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="240" y1="70" x2="220" y2="200" stroke="#64ffda" stroke-width="1.5"/>
-  <line x1="220" y1="200" x2="160" y2="130" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4,3"/>
-
-  <!-- NN label: lots of depot trips -->
-  <text x="160" y="240" text-anchor="middle" fill="#ff6b6b" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600">4 depot trips &middot; longer routes</text>
-
-  <!-- Divider -->
-  <line x1="340" y1="12" x2="340" y2="265" stroke="#8892B0" stroke-width="1" stroke-dasharray="2,4" opacity="0.3"/>
-
-  <!-- Right: Clarke-Wright Savings -->
-  <text x="510" y="22" text-anchor="middle" fill="#C5A059" font-family="Inter,sans-serif" font-size="13" font-weight="600" letter-spacing="1.5">Clarke-Wright Savings</text>
-  <text x="510" y="40" text-anchor="middle" fill="#8892B0" font-family="Inter,sans-serif" font-size="10">Merges nearby customers &mdash; fewer depot returns</text>
-
-  <!-- CW Depot -->
-  <polygon points="510,130 505,140 515,140" fill="#C5A059"/>
-  <text x="510" y="153" text-anchor="middle" fill="#C5A059" font-family="Inter,sans-serif" font-size="9" font-weight="600">Depot</text>
-
-  <!-- CW Fields -->
-  <circle cx="430" cy="70" r="10" fill="#112240" stroke="#7aa2f7" stroke-width="1.5"/>
-  <text x="430" y="73" text-anchor="middle" fill="#7aa2f7" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">A</text>
-  <circle cx="590" cy="70" r="10" fill="#112240" stroke="#64ffda" stroke-width="1.5"/>
-  <text x="590" y="73" text-anchor="middle" fill="#64ffda" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">B</text>
-  <circle cx="450" cy="200" r="10" fill="#112240" stroke="#ff9e64" stroke-width="1.5"/>
-  <text x="450" y="203" text-anchor="middle" fill="#ff9e64" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">C</text>
-  <circle cx="570" cy="200" r="10" fill="#112240" stroke="#bb9af7" stroke-width="1.5"/>
-  <text x="570" y="203" text-anchor="middle" fill="#bb9af7" font-family="JetBrains Mono,monospace" font-size="8" font-weight="600">D</text>
-
-  <!-- CW Route 1: Depot→A→C→Depot (A and C are close, high savings) -->
-  <line x1="510" y1="130" x2="430" y2="70" stroke="#7aa2f7" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="430" y1="70" x2="450" y2="200" stroke="#7aa2f7" stroke-width="2"/>
-  <line x1="450" y1="200" x2="510" y2="130" stroke="#7aa2f7" stroke-width="1.5" stroke-dasharray="4,3"/>
-
-  <!-- CW Route 2: Depot→B→D→Depot (B and D are close, high savings) -->
-  <line x1="510" y1="130" x2="590" y2="70" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4,3"/>
-  <line x1="590" y1="70" x2="570" y2="200" stroke="#64ffda" stroke-width="2"/>
-  <line x1="570" y1="200" x2="510" y2="130" stroke="#64ffda" stroke-width="1.5" stroke-dasharray="4,3"/>
-
-  <!-- CW savings annotation -->
-  <text x="440" y="140" text-anchor="middle" fill="#C5A059" font-family="Inter,sans-serif" font-size="8" font-style="italic">savings(A,C)</text>
-  <text x="580" y="140" text-anchor="middle" fill="#C5A059" font-family="Inter,sans-serif" font-size="8" font-style="italic">savings(B,D)</text>
-
-  <text x="510" y="240" text-anchor="middle" fill="#64ffda" font-family="JetBrains Mono,monospace" font-size="10" font-weight="600">Clustered routes &middot; shorter total</text>
-
-  <!-- Bottom annotation -->
-  <text x="340" y="270" text-anchor="middle" fill="#8892B0" font-family="Inter,sans-serif" font-size="9">Same 4 fields &mdash; Clarke-Wright merges nearby stops to eliminate depot detours</text>
-</svg>
-</div>
-
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="content-card fade-in">
-                    <h3>Clarke-Wright Savings</h3>
-                    <p style="margin-bottom: 1.5rem;">
-                        The Clarke-Wright algorithm (1964) is the most widely used constructive heuristic for
-                        the CVRP. It starts with each customer served by a dedicated vehicle (trivial solution)
-                        and iteratively merges routes to reduce total distance. The key insight: serving two
-                        customers on the same route saves the detour back to the depot between them.
-                    </p>
-
-                    <div class="algo-step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h4>Initialize Trivial Routes</h4>
-                            <p>Create one route per customer: depot &rarr; customer<sub>i</sub> &rarr; depot.
-                               This is the worst-case feasible solution with maximum travel distance.</p>
-                        </div>
-                    </div>
-
-                    <div class="algo-step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h4>Compute Savings</h4>
-                            <p>For every pair of customers (i, j), calculate the savings from merging their routes:
-                               <strong>s(i,j) = d(0,i) + d(0,j) &minus; d(i,j)</strong>. A large savings means
-                               customers i and j are far from the depot but close to each other &mdash; ideal for
-                               the same route.</p>
-                        </div>
-                    </div>
-
-                    <div class="algo-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h4>Sort and Merge</h4>
-                            <p>Sort all savings in descending order. For each pair (i, j) with highest remaining
-                               savings, merge their routes if: (a) i and j are on different routes, (b) both are
-                               at the exterior of their routes (first or last customer), and (c) the merged route
-                               does not exceed vehicle capacity Q.</p>
-                        </div>
-                    </div>
-
-                    <div class="algo-step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h4>Return Solution</h4>
-                            <p>When no more feasible merges exist, the remaining routes form the CVRP solution.
-                               The number of vehicles used is determined automatically by the algorithm.</p>
-                        </div>
-                    </div>
-                </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h5>Time windows (VRPTW)</h5>
+                <p>If trucks can only arrive during a combine's unload window (say, every 90 minutes), the
+                problem becomes VRPTW. Sharper constraints, tighter solutions, but materially harder to solve.</p>
+                <a href="fertilizer-routing.html">See the fertilizer-routing VRPTW &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Stochastic demand</h5>
+                <p>Actual tonnage depends on local yield variance (wet spots, uneven emergence).
+                Stochastic CVRP with chance-constrained capacity or two-stage recourse prevents routes
+                from running short by one or two tonnes.</p>
+                <a href="agriculture.html?lens=matrix#framework">See the operational cell &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Heterogeneous fleet</h5>
+                <p>Mixing a 22&nbsp;t tandem with a 15&nbsp;t single-axle trailer makes vehicle assignment
+                part of the decision. The LP relaxation + branch-and-price approach (SDVRP, VRPHF) is
+                standard.</p>
+                <a href="agriculture.html">Related applications &rarr;</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- Why It's More Complex -->
-<section id="complexity">
-    <div class="container">
-        <div class="section-header fade-in">
-            <h2>Real-World Complexity</h2>
-            <p>Why agricultural logistics goes beyond the basic model</p>
-        </div>
-
-        <div class="row justify-content-center">
-            <div class="col-lg-10">
-                <div class="complexity-cards fade-in">
-                    <div class="complexity-card">
-                        <div class="card-icon"><i class="fas fa-road" aria-hidden="true"></i></div>
-                        <h3>Road Conditions</h3>
-                        <p>Unpaved farm roads, seasonal mud, and weight-restricted bridges create asymmetric travel times and forbidden links between fields.</p>
-                    </div>
-                    <div class="complexity-card">
-                        <div class="card-icon"><i class="fas fa-clock" aria-hidden="true"></i></div>
-                        <h4>Harvest Timing</h4>
-                        <p>Crops must be collected within tight time windows after harvest to prevent spoilage, adding time window constraints to the routing model.</p>
-                    </div>
-                    <div class="complexity-card">
-                        <div class="card-icon"><i class="fas fa-weight-hanging" aria-hidden="true"></i></div>
-                        <h4>Weight Restrictions</h4>
-                        <p>Different crop types have varying densities. A truck full of wheat weighs differently than one full of barley, requiring product-specific capacity modeling.</p>
-                    </div>
-                    <div class="complexity-card">
-                        <div class="card-icon"><i class="fas fa-gas-pump" aria-hidden="true"></i></div>
-                        <h4>Fuel Costs</h4>
-                        <p>Fuel consumption depends on load weight and terrain. Loaded trucks consume more fuel, making the objective load-dependent rather than purely distance-based.</p>
-                    </div>
-                    <div class="complexity-card">
-                        <div class="card-icon"><i class="fas fa-cogs" aria-hidden="true"></i></div>
-                        <h4>Loading Equipment</h4>
-                        <p>Grain augers and loaders may not be available at every field simultaneously, introducing resource constraints and setup times at each stop.</p>
-                    </div>
-                    <div class="complexity-card">
-                        <div class="card-icon"><i class="fas fa-hourglass-half" aria-hidden="true"></i></div>
-                        <h4>Storage Deadlines</h4>
-                        <p>The grain elevator has limited unloading capacity and operating hours, requiring staggered arrival times and potentially multiple trips per day.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- References -->
 <section id="references">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>References</h2>
-            <p>Key literature on vehicle routing and logistics optimization</p>
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs and permanent URLs</p>
         </div>
-
         <div class="row justify-content-center">
             <div class="col-lg-10">
-                <div class="content-card fade-in">
-                    <div class="reference-item">
-                        <div class="reference-authors">Clarke, G., &amp; Wright, J. W. (1964).</div>
-                        <div class="reference-title">"Scheduling of vehicles from a central depot to a number of delivery points."</div>
-                        <div class="reference-journal">Operations Research, 12(4), 568&ndash;581.</div>
-                    </div>
-                    <div class="reference-item">
-                        <div class="reference-authors">Toth, P., &amp; Vigo, D. (Eds.). (2014).</div>
-                        <div class="reference-title">"Vehicle Routing: Problems, Methods, and Applications."</div>
-                        <div class="reference-journal">MOS-SIAM Series on Optimization, 2nd Edition.</div>
-                    </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Dantzig, G. B., &amp; Ramser, J. H. (1959).</div>
+                    <div class="reference-title">&ldquo;The truck dispatching problem.&rdquo;</div>
+                    <div class="reference-journal"><em>Management Science</em>, 6(1), 80&ndash;91. <a href="https://doi.org/10.1287/mnsc.6.1.80" target="_blank" rel="noopener">doi:10.1287/mnsc.6.1.80</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Clarke, G., &amp; Wright, J. W. (1964).</div>
+                    <div class="reference-title">&ldquo;Scheduling of vehicles from a central depot to a number of delivery points.&rdquo;</div>
+                    <div class="reference-journal"><em>Operations Research</em>, 12(4), 568&ndash;581. <a href="https://doi.org/10.1287/opre.12.4.568" target="_blank" rel="noopener">doi:10.1287/opre.12.4.568</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Miller, C. E., Tucker, A. W., &amp; Zemlin, R. A. (1960).</div>
+                    <div class="reference-title">&ldquo;Integer programming formulation of traveling salesman problems.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of the ACM</em>, 7(4), 326&ndash;329. <a href="https://doi.org/10.1145/321043.321046" target="_blank" rel="noopener">doi:10.1145/321043.321046</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Toth, P., &amp; Vigo, D. (Eds.) (2014).</div>
+                    <div class="reference-title"><em>Vehicle Routing: Problems, Methods, and Applications</em> (2nd ed.).</div>
+                    <div class="reference-journal">SIAM. <a href="https://doi.org/10.1137/1.9781611973594" target="_blank" rel="noopener">doi:10.1137/1.9781611973594</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Ahumada, O., &amp; Villalobos, J.&nbsp;R. (2009).</div>
+                    <div class="reference-title">&ldquo;Application of planning models in the agri-food supply chain: A review.&rdquo;</div>
+                    <div class="reference-journal"><em>European Journal of Operational Research</em>, 196(1), 1&ndash;20. <a href="https://doi.org/10.1016/j.ejor.2008.02.014" target="_blank" rel="noopener">doi:10.1016/j.ejor.2008.02.014</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">FAO. (2019).</div>
+                    <div class="reference-title"><em>The State of Food and Agriculture 2019: Moving forward on food loss and waste reduction.</em></div>
+                    <div class="reference-journal">Rome: FAO. <a href="https://www.fao.org/state-of-food-agriculture/2019/en/" target="_blank" rel="noopener">fao.org/sofa-2019</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Statistics Canada.</div>
+                    <div class="reference-title">Table 32-10-0359-01 &mdash; Estimated areas, yield, production, average farm price and total farm value of principal field crops.</div>
+                    <div class="reference-journal"><a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3210035901" target="_blank" rel="noopener">StatCan tables</a></div>
                 </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- CTA -->
 <section class="cta-section">
     <div class="container">
-        <h2>Need to optimize agricultural<br>transport logistics?</h2>
+        <h2>Need to optimize harvest transport<br>on your farm or cooperative?</h2>
         <div class="gold-line" aria-hidden="true"></div>
-        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank">
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
             <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
         </a>
     </div>
 </section>
 
-<!-- Disclaimer -->
 <div class="disclaimer">
-    Data shown is illustrative. This is a simplified model for educational purposes.
+    Data and numerical examples are illustrative (representative Quebec grain-oilseed farm). This is an educational tool, not production software.
 </div>
 
-<!-- Footer -->
 </main>
 
 <footer>
     <div class="container">
         <p>
-            <a href="https://mghnasiri.github.io">&larr; Back to Portfolio</a>
+            <a href="agriculture.html">&larr; Back to Agriculture</a>
             &ensp;&middot;&ensp;
             &copy; 2025 Mohammad Ghafourian Nasiri
             &ensp;&middot;&ensp;
@@ -1817,672 +634,301 @@
     </div>
 </footer>
 
-<!-- Back Link -->
-<a href="../index.html" class="back-link">
-    <i class="fas fa-arrow-left" aria-hidden="true"></i>&ensp;Home
-</a>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script>
-// ─────────────────────────────────────────────────────────────
-// Crop Transport Routing — CVRP Solver Implementation
-// ─────────────────────────────────────────────────────────────
+(function () {
+    'use strict';
 
-// Problem data: 10 fields + depot, 3 trucks, 15-ton capacity
-const CAPACITY = 15;
-const VEHICLE_COUNT = 3;
-
-const ROUTE_COLORS = ['#7aa2f7', '#64ffda', '#ff9e64', '#bb9af7', '#f7768e'];
-
-let lastSolverResults = {};
-
-const NAMED_SCENARIOS = [
-    {
-        name: 'Harvest Day Pickup',
-        context: 'A typical harvest-day collection run: 10 fields with mixed crops (corn, wheat, soybean, barley) across a 100\u00d7100 km region. Three 15-ton trucks depart from the grain elevator and must visit every field.',
-        fields: [
-            { name: 'Grain Elevator', demand: 0, x: 300, y: 300, isDepot: true },
-            { name: 'North Corn', demand: 5, x: 150, y: 80 },
-            { name: 'East Wheat', demand: 4, x: 480, y: 150 },
-            { name: 'Ridge Barley', demand: 5, x: 420, y: 80 },
-            { name: 'Plain Barley', demand: 4, x: 250, y: 180 },
-            { name: 'Hilltop Corn', demand: 7, x: 100, y: 150 },
-            { name: 'West Canola', demand: 3, x: 50, y: 300 },
-            { name: 'South Soybean', demand: 6, x: 200, y: 480 },
-            { name: 'Creek Wheat', demand: 3, x: 350, y: 450 },
-            { name: 'Valley Oats', demand: 4, x: 480, y: 400 },
-            { name: 'Far Soybean', demand: 5, x: 500, y: 300 }
-        ]
-    },
-    {
-        name: 'Heavy Corn Haul',
-        context: 'A few large corn fields dominate this harvest. Several loads are near the 15-ton truck limit, making capacity constraints tight and forcing more vehicles onto the road.',
-        fields: [
-            { name: 'Grain Elevator', demand: 0, x: 300, y: 300, isDepot: true },
-            { name: 'Anderson Wheat N', demand: 12, x: 150, y: 80 },
-            { name: 'Anderson Wheat S', demand: 10, x: 180, y: 140 },
-            { name: 'Baker Corn E', demand: 14, x: 480, y: 150 },
-            { name: 'Baker Corn W', demand: 11, x: 420, y: 180 },
-            { name: 'Clark Soybean', demand: 8, x: 500, y: 350 },
-            { name: 'Davis Barley', demand: 6, x: 100, y: 400 },
-            { name: 'Evans Wheat', demand: 9, x: 350, y: 480 },
-            { name: 'Foster Corn', demand: 13, x: 80, y: 200 }
-        ]
-    },
-    {
-        name: 'Scattered Small Farms',
-        context: '15 small farms spread across the region, each with modest harvests. Many stops and low per-field demand reward algorithms that cluster geographically close stops together.',
-        fields: [
-            { name: 'Grain Elevator', demand: 0, x: 300, y: 300, isDepot: true },
-            { name: 'Field A', demand: 3, x: 50, y: 50 },
-            { name: 'Field B', demand: 2, x: 100, y: 80 },
-            { name: 'Field C', demand: 4, x: 180, y: 60 },
-            { name: 'Field D', demand: 3, x: 500, y: 80 },
-            { name: 'Field E', demand: 2, x: 550, y: 120 },
-            { name: 'Field F', demand: 3, x: 520, y: 200 },
-            { name: 'Field G', demand: 4, x: 50, y: 350 },
-            { name: 'Field H', demand: 3, x: 80, y: 450 },
-            { name: 'Field I', demand: 2, x: 150, y: 500 },
-            { name: 'Field J', demand: 3, x: 450, y: 400 },
-            { name: 'Field K', demand: 4, x: 500, y: 450 },
-            { name: 'Field L', demand: 2, x: 520, y: 500 },
-            { name: 'Field M', demand: 3, x: 250, y: 150 },
-            { name: 'Field N', demand: 3, x: 350, y: 450 },
-            { name: 'Field O', demand: 2, x: 400, y: 200 }
-        ]
-    }
-];
-
-const FIELDS = [
-    { name: 'Grain Elevator', demand: 0, x: 300, y: 300, isDepot: true },
-    { name: 'North Corn', demand: 5, x: 150, y: 80 },
-    { name: 'East Wheat', demand: 4, x: 480, y: 150 },
-    { name: 'Ridge Barley', demand: 5, x: 420, y: 80 },
-    { name: 'Plain Barley', demand: 4, x: 250, y: 180 },
-    { name: 'Hilltop Corn', demand: 7, x: 100, y: 150 },
-    { name: 'West Canola', demand: 3, x: 50, y: 300 },
-    { name: 'South Soybean', demand: 6, x: 200, y: 480 },
-    { name: 'Creek Wheat', demand: 3, x: 350, y: 450 },
-    { name: 'Valley Oats', demand: 4, x: 480, y: 400 },
-    { name: 'Far Soybean', demand: 5, x: 500, y: 300 }
-];
-
-/**
- * Euclidean distance between two fields.
- */
-function dist(a, b) {
-    const dx = FIELDS[a].x - FIELDS[b].x;
-    const dy = FIELDS[a].y - FIELDS[b].y;
-    return Math.sqrt(dx * dx + dy * dy);
-}
-
-/**
- * Total distance of a route (including depot returns).
- */
-function routeDistance(route) {
-    if (route.length === 0) return 0;
-    let d = dist(0, route[0]);
-    for (let i = 1; i < route.length; i++) {
-        d += dist(route[i - 1], route[i]);
-    }
-    d += dist(route[route.length - 1], 0);
-    return d;
-}
-
-/**
- * Total demand of a route.
- */
-function routeDemand(route) {
-    return route.reduce((s, i) => s + FIELDS[i].demand, 0);
-}
-
-/**
- * Clarke-Wright Savings algorithm.
- */
-function clarkeWrightSavings() {
-    const t0 = performance.now();
-    const n = FIELDS.length;
-
-    // Initialize: one route per customer
-    let routes = [];
-    for (let i = 1; i < n; i++) {
-        routes.push([i]);
-    }
-
-    // Compute savings
-    const savings = [];
-    for (let i = 1; i < n; i++) {
-        for (let j = i + 1; j < n; j++) {
-            const s = dist(i, 0) + dist(0, j) - dist(i, j);
-            savings.push({ i, j, s });
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = (h.scrollTop || b.scrollTop);
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            scrollProgress.style.width = (height > 0 ? (scrolled / height) * 100 : 0) + '%';
         }
     }
-    savings.sort((a, b) => b.s - a.s);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-    // Find which route a customer belongs to
-    function findRoute(cust) {
-        for (let r = 0; r < routes.length; r++) {
-            const idx = routes[r].indexOf(cust);
-            if (idx !== -1) return { route: r, pos: idx };
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function (el) { io.observe(el); });
+    } else { fades.forEach(function (el) { el.classList.add('visible'); }); }
+
+    // Deterministic RNG (mulberry32)
+    function mulberry32(seed) {
+        return function () {
+            seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+            var t = seed;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    // Generate CVRP instance: depot at centre, fields in a 10 km perturbed ring
+    function generateInstance(n, seed, yieldLow, yieldHigh) {
+        var rng = mulberry32(seed);
+        var coords = [[0, 0]];
+        var yields = [0];
+        var R = 10;
+        for (var i = 1; i <= n; i++) {
+            var theta = 2 * Math.PI * rng();
+            var r = R * (0.4 + 0.6 * Math.sqrt(rng()));
+            coords.push([Math.cos(theta) * r, Math.sin(theta) * r]);
+            yields.push(yieldLow + (yieldHigh - yieldLow) * rng());
         }
-        return null;
+        var n2 = coords.length;
+        var dist = [];
+        for (var a = 0; a < n2; a++) {
+            dist[a] = [];
+            for (var b = 0; b < n2; b++) {
+                var dx = coords[a][0] - coords[b][0];
+                var dy = coords[a][1] - coords[b][1];
+                dist[a][b] = Math.sqrt(dx*dx + dy*dy);
+            }
+        }
+        return { coords: coords, yields: yields, dist: dist, n: n };
     }
 
-    // Merge routes
-    for (const sav of savings) {
-        const ri = findRoute(sav.i);
-        const rj = findRoute(sav.j);
-        if (!ri || !rj || ri.route === rj.route) continue;
+    // Clarke-Wright savings algorithm
+    function clarkeWright(inst, Q) {
+        var n = inst.n;
+        var dist = inst.dist;
+        var yields = inst.yields;
 
-        const routeI = routes[ri.route];
-        const routeJ = routes[rj.route];
-
-        // Check if both are at exterior of their routes
-        const iAtEnd = ri.pos === routeI.length - 1;
-        const iAtStart = ri.pos === 0;
-        const jAtEnd = rj.pos === routeJ.length - 1;
-        const jAtStart = rj.pos === 0;
-
-        if (!((iAtEnd || iAtStart) && (jAtEnd || jAtStart))) continue;
-
-        // Check capacity
-        const totalDemand = routeDemand(routeI) + routeDemand(routeJ);
-        if (totalDemand > CAPACITY) continue;
-
-        // Merge: arrange so i is at end of routeI and j is at start of routeJ
-        let merged;
-        if (iAtEnd && jAtStart) {
-            merged = [...routeI, ...routeJ];
-        } else if (iAtStart && jAtEnd) {
-            merged = [...routeJ, ...routeI];
-        } else if (iAtEnd && jAtEnd) {
-            merged = [...routeI, ...routeJ.slice().reverse()];
-        } else {
-            merged = [...routeI.slice().reverse(), ...routeJ];
+        var routes = [];
+        var routeOf = new Array(n + 1);
+        for (var i = 1; i <= n; i++) {
+            routes.push({ nodes: [0, i, 0], load: yields[i] });
+            routeOf[i] = routes.length - 1;
         }
 
-        // Replace routes
-        const idxToRemove = Math.max(ri.route, rj.route);
-        const idxToKeep = Math.min(ri.route, rj.route);
-        routes.splice(idxToRemove, 1);
-        routes[idxToKeep] = merged;
-    }
-
-    const elapsed = performance.now() - t0;
-    return { routes, elapsed };
-}
-
-/**
- * Sweep algorithm.
- */
-function sweepAlgorithm() {
-    const t0 = performance.now();
-    const depot = FIELDS[0];
-
-    // Compute angles from depot
-    const customers = [];
-    for (let i = 1; i < FIELDS.length; i++) {
-        const angle = Math.atan2(FIELDS[i].y - depot.y, FIELDS[i].x - depot.x);
-        customers.push({ id: i, angle });
-    }
-    customers.sort((a, b) => a.angle - b.angle);
-
-    // Sweep and build routes
-    const routes = [];
-    let currentRoute = [];
-    let currentLoad = 0;
-
-    for (const c of customers) {
-        if (currentLoad + FIELDS[c.id].demand > CAPACITY && currentRoute.length > 0) {
-            routes.push(currentRoute);
-            currentRoute = [];
-            currentLoad = 0;
+        var savings = [];
+        for (var i2 = 1; i2 <= n; i2++) {
+            for (var j2 = i2 + 1; j2 <= n; j2++) {
+                savings.push({ i: i2, j: j2, s: dist[0][i2] + dist[0][j2] - dist[i2][j2] });
+            }
         }
-        currentRoute.push(c.id);
-        currentLoad += FIELDS[c.id].demand;
-    }
-    if (currentRoute.length > 0) routes.push(currentRoute);
+        savings.sort(function (a, b) { return b.s - a.s; });
 
-    const elapsed = performance.now() - t0;
-    return { routes, elapsed };
-}
+        for (var k = 0; k < savings.length; k++) {
+            if (savings[k].s <= 0) break;
+            var I = savings[k].i, J = savings[k].j;
+            var rI = routeOf[I], rJ = routeOf[J];
+            if (rI === undefined || rJ === undefined || rI === rJ) continue;
+            var routeI = routes[rI], routeJ = routes[rJ];
+            if (!routeI || !routeJ) continue;
+            if (routeI.load + routeJ.load > Q + 1e-9) continue;
 
-/**
- * Nearest Neighbor algorithm.
- */
-function nearestNeighbor() {
-    const t0 = performance.now();
-    const visited = new Set();
-    const routes = [];
+            var iIsHead = routeI.nodes[1] === I;
+            var iIsTail = routeI.nodes[routeI.nodes.length - 2] === I;
+            var jIsHead = routeJ.nodes[1] === J;
+            var jIsTail = routeJ.nodes[routeJ.nodes.length - 2] === J;
+            if (!(iIsHead || iIsTail) || !(jIsHead || jIsTail)) continue;
 
-    while (visited.size < FIELDS.length - 1) {
-        const route = [];
-        let currentLoad = 0;
-        let current = 0; // start at depot
-
-        while (true) {
-            let bestDist = Infinity;
-            let bestCust = -1;
-
-            for (let i = 1; i < FIELDS.length; i++) {
-                if (visited.has(i)) continue;
-                if (currentLoad + FIELDS[i].demand > CAPACITY) continue;
-                const d = dist(current, i);
-                if (d < bestDist) {
-                    bestDist = d;
-                    bestCust = i;
-                }
+            var merged;
+            if (iIsTail && jIsHead) {
+                merged = routeI.nodes.slice(0, -1).concat(routeJ.nodes.slice(1));
+            } else if (iIsHead && jIsTail) {
+                merged = routeJ.nodes.slice(0, -1).concat(routeI.nodes.slice(1));
+            } else if (iIsTail && jIsTail) {
+                var revJ = routeJ.nodes.slice().reverse();
+                merged = routeI.nodes.slice(0, -1).concat(revJ.slice(1));
+            } else {
+                var revI = routeI.nodes.slice().reverse();
+                merged = revI.slice(0, -1).concat(routeJ.nodes.slice(1));
             }
 
-            if (bestCust === -1) break;
-
-            route.push(bestCust);
-            visited.add(bestCust);
-            currentLoad += FIELDS[bestCust].demand;
-            current = bestCust;
+            routes[rI] = { nodes: merged, load: routeI.load + routeJ.load };
+            routes[rJ] = null;
+            for (var m = 1; m < merged.length - 1; m++) routeOf[merged[m]] = rI;
         }
 
-        if (route.length > 0) routes.push(route);
+        return routes.filter(function (r) { return r !== null; });
     }
 
-    const elapsed = performance.now() - t0;
-    return { routes, elapsed };
-}
-
-/**
- * Render the canvas map with routes.
- */
-function renderMap(routes) {
-    const canvas = document.getElementById('routeCanvas');
-    const ctx = canvas.getContext('2d');
-    const W = canvas.width;
-    const H = canvas.height;
-
-    // Clear
-    ctx.fillStyle = '#0a1628';
-    ctx.fillRect(0, 0, W, H);
-
-    // Draw grid
-    ctx.strokeStyle = 'rgba(197, 160, 89, 0.06)';
-    ctx.lineWidth = 0.5;
-    for (let x = 0; x <= W; x += 50) {
-        ctx.beginPath();
-        ctx.moveTo(x, 0);
-        ctx.lineTo(x, H);
-        ctx.stroke();
-    }
-    for (let y = 0; y <= H; y += 50) {
-        ctx.beginPath();
-        ctx.moveTo(0, y);
-        ctx.lineTo(W, y);
-        ctx.stroke();
-    }
-
-    // Scale coordinates to canvas
-    const pad = 40;
-    const maxX = Math.max(...FIELDS.map(f => f.x));
-    const maxY = Math.max(...FIELDS.map(f => f.y));
-    const minX = Math.min(...FIELDS.map(f => f.x));
-    const minY = Math.min(...FIELDS.map(f => f.y));
-    const scaleX = (W - 2 * pad) / (maxX - minX || 1);
-    const scaleY = (H - 2 * pad) / (maxY - minY || 1);
-    const scale = Math.min(scaleX, scaleY);
-
-    function tx(f) { return pad + (f.x - minX) * scale; }
-    function ty(f) { return pad + (f.y - minY) * scale; }
-
-    const depot = FIELDS[0];
-
-    // Draw routes
-    for (let r = 0; r < routes.length; r++) {
-        const route = routes[r];
-        const color = ROUTE_COLORS[r % ROUTE_COLORS.length];
-
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 2.5;
-        ctx.globalAlpha = 0.8;
-        ctx.setLineDash([]);
-
-        // Depot to first
-        ctx.beginPath();
-        ctx.moveTo(tx(depot), ty(depot));
-        for (const cust of route) {
-            ctx.lineTo(tx(FIELDS[cust]), ty(FIELDS[cust]));
+    function routeDistance(route, dist) {
+        var d = 0;
+        for (var k = 0; k < route.nodes.length - 1; k++) {
+            d += dist[route.nodes[k]][route.nodes[k+1]];
         }
-        ctx.lineTo(tx(depot), ty(depot));
-        ctx.stroke();
-        ctx.globalAlpha = 1.0;
+        return d;
+    }
+    function naiveBaseline(inst) {
+        var d = 0;
+        for (var i = 1; i <= inst.n; i++) d += 2 * inst.dist[0][i];
+        return d;
+    }
 
-        // Draw direction arrows on route segments
-        const points = [depot, ...route.map(i => FIELDS[i]), depot];
-        for (let i = 0; i < points.length - 1; i++) {
-            const x1 = tx(points[i]);
-            const y1 = ty(points[i]);
-            const x2 = tx(points[i + 1]);
-            const y2 = ty(points[i + 1]);
-            const mx = (x1 + x2) / 2;
-            const my = (y1 + y2) / 2;
-            const angle = Math.atan2(y2 - y1, x2 - x1);
+    var CANVAS_W = 920, CANVAS_H = 480;
+    var ROUTE_COLORS = ['#C5A059','#64ffda','#7aa2f7','#ff6b6b','#D4AF37','#a8b2d1','#ffcb8e','#90ee90'];
 
-            ctx.save();
-            ctx.translate(mx, my);
-            ctx.rotate(angle);
-            ctx.fillStyle = color;
-            ctx.globalAlpha = 0.6;
+    function renderMap(inst, routes) {
+        var canvas = document.getElementById('canvas');
+        if (!canvas.getContext) return;
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = CANVAS_W * dpr;
+        canvas.height = CANVAS_H * dpr;
+        canvas.style.width = CANVAS_W + 'px';
+        canvas.style.height = CANVAS_H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+        var minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+        inst.coords.forEach(function (c) {
+            if (c[0] < minX) minX = c[0];
+            if (c[0] > maxX) maxX = c[0];
+            if (c[1] < minY) minY = c[1];
+            if (c[1] > maxY) maxY = c[1];
+        });
+        var pad = 40;
+        var rangeX = maxX - minX || 1, rangeY = maxY - minY || 1;
+        var scale = Math.min((CANVAS_W - 2 * pad) / rangeX, (CANVAS_H - 2 * pad) / rangeY);
+        var offsetX = (CANVAS_W - rangeX * scale) / 2 - minX * scale;
+        var offsetY = (CANVAS_H - rangeY * scale) / 2 - minY * scale;
+        function tx(c) { return { x: c[0] * scale + offsetX, y: CANVAS_H - (c[1] * scale + offsetY) }; }
+
+        // Grid
+        ctx.strokeStyle = 'rgba(197,160,89,0.04)';
+        ctx.lineWidth = 1;
+        for (var gx = Math.floor(minX); gx <= Math.ceil(maxX); gx++) {
+            var pt = tx([gx, 0]);
+            ctx.beginPath(); ctx.moveTo(pt.x, 0); ctx.lineTo(pt.x, CANVAS_H); ctx.stroke();
+        }
+        for (var gy = Math.floor(minY); gy <= Math.ceil(maxY); gy++) {
+            var pt2 = tx([0, gy]);
+            ctx.beginPath(); ctx.moveTo(0, pt2.y); ctx.lineTo(CANVAS_W, pt2.y); ctx.stroke();
+        }
+
+        // Routes
+        for (var r = 0; r < routes.length; r++) {
+            ctx.strokeStyle = ROUTE_COLORS[r % ROUTE_COLORS.length];
+            ctx.lineWidth = 2.2;
             ctx.beginPath();
-            ctx.moveTo(6, 0);
-            ctx.lineTo(-4, -4);
-            ctx.lineTo(-4, 4);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-            ctx.globalAlpha = 1.0;
-        }
-    }
-
-    // Draw field nodes
-    for (let i = 1; i < FIELDS.length; i++) {
-        const f = FIELDS[i];
-        const cx = tx(f);
-        const cy = ty(f);
-
-        // Find which route this field belongs to
-        let nodeColor = '#7aa2f7';
-        for (let r = 0; r < routes.length; r++) {
-            if (routes[r].includes(i)) {
-                nodeColor = ROUTE_COLORS[r % ROUTE_COLORS.length];
-                break;
+            for (var k = 0; k < routes[r].nodes.length; k++) {
+                var p = tx(inst.coords[routes[r].nodes[k]]);
+                if (k === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
             }
+            ctx.stroke();
         }
 
-        // Outer glow
-        ctx.beginPath();
-        ctx.arc(cx, cy, 16, 0, Math.PI * 2);
-        ctx.fillStyle = nodeColor.replace(')', ', 0.15)').replace('rgb', 'rgba').replace('#', '');
-        const gradient = ctx.createRadialGradient(cx, cy, 4, cx, cy, 16);
-        gradient.addColorStop(0, nodeColor + '33');
-        gradient.addColorStop(1, 'transparent');
-        ctx.fillStyle = gradient;
-        ctx.fill();
+        // Fields
+        for (var i = 1; i <= inst.n; i++) {
+            var p3 = tx(inst.coords[i]);
+            var radius = 4 + Math.min(12, inst.yields[i] / 8);
+            ctx.fillStyle = 'rgba(10,25,47,0.9)';
+            ctx.strokeStyle = '#C5A059';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(p3.x, p3.y, radius, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(String(i), p3.x, p3.y);
+        }
 
-        // Node circle
-        ctx.beginPath();
-        ctx.arc(cx, cy, 8, 0, Math.PI * 2);
-        ctx.fillStyle = nodeColor;
-        ctx.fill();
-        ctx.strokeStyle = '#0a1628';
-        ctx.lineWidth = 2;
-        ctx.stroke();
-
-        // Demand label
-        ctx.fillStyle = '#0a1628';
-        ctx.font = 'bold 9px Inter, sans-serif';
+        // Depot
+        var pd = tx(inst.coords[0]);
+        ctx.fillStyle = '#C5A059';
+        ctx.fillRect(pd.x - 8, pd.y - 8, 16, 16);
+        ctx.fillStyle = '#0A192F';
+        ctx.font = 'bold 10px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText(f.demand + 't', cx, cy);
-
-        // Field name label
-        ctx.fillStyle = 'rgba(168, 178, 209, 0.8)';
-        ctx.font = '9px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(f.name, cx, cy - 16);
+        ctx.fillText('SILO', pd.x, pd.y + 18);
     }
 
-    // Draw depot (gold star)
-    const dx = tx(depot);
-    const dy = ty(depot);
-
-    // Depot glow
-    const depotGrad = ctx.createRadialGradient(dx, dy, 4, dx, dy, 20);
-    depotGrad.addColorStop(0, 'rgba(197, 160, 89, 0.3)');
-    depotGrad.addColorStop(1, 'transparent');
-    ctx.fillStyle = depotGrad;
-    ctx.beginPath();
-    ctx.arc(dx, dy, 20, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Star shape
-    ctx.fillStyle = '#C5A059';
-    ctx.beginPath();
-    const spikes = 5;
-    const outerR = 12;
-    const innerR = 5;
-    for (let s = 0; s < spikes * 2; s++) {
-        const r = s % 2 === 0 ? outerR : innerR;
-        const angle = (s * Math.PI / spikes) - Math.PI / 2;
-        const sx = dx + Math.cos(angle) * r;
-        const sy = dy + Math.sin(angle) * r;
-        if (s === 0) ctx.moveTo(sx, sy);
-        else ctx.lineTo(sx, sy);
-    }
-    ctx.closePath();
-    ctx.fill();
-
-    // Depot label
-    ctx.fillStyle = '#C5A059';
-    ctx.font = 'bold 10px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('DEPOT', dx, dy - 20);
-}
-
-/**
- * Render results and route details.
- */
-function renderResults(result) {
-    const { routes, elapsed } = result;
-    const resultsEl = document.getElementById('resultsGrid');
-    const detailEl = document.getElementById('routeDetail');
-    const capPanel = document.getElementById('capPanel');
-    const capBars = document.getElementById('capBars');
-
-    // Total distance
-    let totalDist = 0;
-    for (const route of routes) {
-        totalDist += routeDistance(route);
+    function renderLegend(routes, dist) {
+        var legend = document.getElementById('canvasLegend');
+        while (legend.firstChild) legend.removeChild(legend.firstChild);
+        for (var r = 0; r < routes.length; r++) {
+            var span = document.createElement('span');
+            var swatch = document.createElement('span');
+            swatch.className = 'legend-swatch';
+            swatch.style.background = ROUTE_COLORS[r % ROUTE_COLORS.length];
+            span.appendChild(swatch);
+            var txt = document.createElement('span');
+            txt.textContent = 'Truck ' + (r + 1) + ': ' + routeDistance(routes[r], dist).toFixed(1) + ' km, ' + routes[r].load.toFixed(1) + ' t';
+            span.appendChild(txt);
+            legend.appendChild(span);
+        }
     }
 
-    // Capacity utilization
-    let totalDemand = 0;
-    for (const route of routes) {
-        totalDemand += routeDemand(route);
-    }
-    const totalCapacity = routes.length * CAPACITY;
-    const utilization = ((totalDemand / totalCapacity) * 100).toFixed(1);
-
-    // Results grid
-    resultsEl.innerHTML = `
-        <div class="result-card">
-            <div class="result-value">${totalDist.toFixed(0)}</div>
-            <div class="result-label">Total Distance (km)</div>
-        </div>
-        <div class="result-card">
-            <div class="result-value">${routes.length}</div>
-            <div class="result-label">Vehicles Used</div>
-        </div>
-        <div class="result-card">
-            <div class="result-value">${utilization}</div>
-            <div class="result-label">Capacity Util. (%)</div>
-        </div>
-        <div class="result-card">
-            <div class="result-value">${elapsed.toFixed(2)}</div>
-            <div class="result-label">Time (ms)</div>
-        </div>
-    `;
-
-    // Route detail
-    let detailHTML = '';
-    for (let r = 0; r < routes.length; r++) {
-        const route = routes[r];
-        const color = ROUTE_COLORS[r % ROUTE_COLORS.length];
-        const load = routeDemand(route);
-        const d = routeDistance(route).toFixed(0);
-        const seq = route.map(i => FIELDS[i].name).join(' &rarr; ');
-        detailHTML += `<span class="room-name" style="color:${color}">Truck ${r + 1}:</span> Depot &rarr; ${seq} &rarr; Depot<br>`;
-        detailHTML += `&nbsp;&nbsp;&nbsp;&nbsp;Load: ${load}/${CAPACITY}t &middot; Distance: ${d} km<br><br>`;
-    }
-    detailEl.innerHTML = detailHTML;
-
-    // Capacity bars
-    capPanel.style.display = 'block';
-    let capHTML = '';
-    for (let r = 0; r < routes.length; r++) {
-        const load = routeDemand(routes[r]);
-        const pct = (load / CAPACITY * 100).toFixed(0);
-        const cls = pct >= 90 ? 'full' : pct >= 70 ? 'warn' : 'safe';
-        const color = ROUTE_COLORS[r % ROUTE_COLORS.length];
-        capHTML += `<div class="route-cap-row">
-            <span class="route-cap-label" style="color:${color}">T${r + 1}</span>
-            <div class="route-cap-track">
-                <div class="route-cap-fill ${cls}" style="width:${pct}%">
-                    <span>${load}/${CAPACITY}t</span>
-                </div>
-            </div>
-        </div>`;
-    }
-    capBars.innerHTML = capHTML;
-
-    // Render map
-    renderMap(routes);
-
-    // Run all 3 algorithms for comparison and business panel
-    const savingsR = clarkeWrightSavings();
-    const sweepR = sweepAlgorithm();
-    const nnR = nearestNeighbor();
-    let sDist = 0, swDist = 0, nDist = 0;
-    for (const r of savingsR.routes) sDist += routeDistance(r);
-    for (const r of sweepR.routes) swDist += routeDistance(r);
-    for (const r of nnR.routes) nDist += routeDistance(r);
-    lastSolverResults = {
-        savings: { dist: sDist, routes: savingsR.routes.length },
-        sweep: { dist: swDist, routes: sweepR.routes.length },
-        nn: { dist: nDist, routes: nnR.routes.length }
-    };
-    updateBusinessPanel();
-}
-
-/**
- * Handle algorithm chip selection.
- */
-function selectAlgorithm(algo) {
-    // Update chip UI
-    document.querySelectorAll('.algo-chip').forEach(c => c.classList.remove('active'));
-    document.querySelector(`.algo-chip[data-algo="${algo}"]`).classList.add('active');
-
-    // Run selected algorithm
-    let result;
-    if (algo === 'savings') {
-        result = clarkeWrightSavings();
-    } else if (algo === 'sweep') {
-        result = sweepAlgorithm();
-    } else {
-        result = nearestNeighbor();
-    }
-    renderResults(result);
-}
-
-// ── Named Scenario Loader ──
-function loadNamedScenario(i) {
-    const scenario = NAMED_SCENARIOS[i];
-    if (!scenario) return;
-
-    // Update active button
-    document.querySelectorAll('.scenario-btn').forEach(b => b.classList.remove('active'));
-    const btn = document.querySelector(`.scenario-btn[data-scenario="${i}"]`);
-    if (btn) btn.classList.add('active');
-
-    // Update context text
-    document.getElementById('scenario-context').textContent = scenario.context;
-
-    // Replace FIELDS array contents
-    FIELDS.length = 0;
-    scenario.fields.forEach(f => FIELDS.push(Object.assign({}, f)));
-
-    // Update the static table display
-    const tbody = document.querySelector('.patient-table tbody');
-    if (tbody) {
-        let html = '';
-        FIELDS.forEach((f, idx) => {
-            const color = f.isDepot ? 'var(--gold)' : '#7aa2f7';
-            const label = f.isDepot ? f.name + ' (depot)' : f.name;
-            html += `<tr>
-                <td class="patient-name"><span class="patient-dot" style="background:${color};"></span>${label}</td>
-                <td>${f.demand}</td>
-                <td>${f.x}</td>
-                <td>${f.y}</td>
-            </tr>`;
+    function renderTable(routes, dist) {
+        var tbl = document.getElementById('resultTable');
+        while (tbl.firstChild) tbl.removeChild(tbl.firstChild);
+        var thead = document.createElement('thead');
+        var hr = document.createElement('tr');
+        ['#', 'Route', 'Stops', 'Load (t)', 'Distance (km)'].forEach(function (h) {
+            var th = document.createElement('th'); th.textContent = h; hr.appendChild(th);
         });
-        tbody.innerHTML = html;
+        thead.appendChild(hr);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        for (var r = 0; r < routes.length; r++) {
+            var tr = document.createElement('tr');
+            var c1 = document.createElement('td'); c1.textContent = String(r + 1); tr.appendChild(c1);
+            var c2 = document.createElement('td'); c2.textContent = routes[r].nodes.join(' -> '); tr.appendChild(c2);
+            var c3 = document.createElement('td'); c3.textContent = String(routes[r].nodes.length - 2); tr.appendChild(c3);
+            var c4 = document.createElement('td'); c4.textContent = routes[r].load.toFixed(1); tr.appendChild(c4);
+            var c5 = document.createElement('td'); c5.textContent = routeDistance(routes[r], dist).toFixed(2); tr.appendChild(c5);
+            tbody.appendChild(tr);
+        }
+        tbl.appendChild(tbody);
     }
-}
 
-// ── Business Translation Panel ──
-function updateBusinessPanel() {
-    const panel = document.getElementById('business-panel');
-    if (!lastSolverResults.savings && !lastSolverResults.sweep && !lastSolverResults.nn) {
-        panel.style.display = 'none';
-        return;
+    function runSolver() {
+        var n = parseInt(document.getElementById('numFields').value, 10) || 15;
+        var Q = parseFloat(document.getElementById('capacity').value) || 22;
+        var seed = parseInt(document.getElementById('seed').value, 10) || 42;
+        var yLow = parseFloat(document.getElementById('yieldLow').value) || 15;
+        var yHigh = parseFloat(document.getElementById('yieldHigh').value) || 55;
+        if (yHigh < yLow) yHigh = yLow;
+
+        var inst = generateInstance(n, seed, yLow, yHigh);
+        var routes = clarkeWright(inst, Q);
+        var totalDist = routes.reduce(function (acc, r) { return acc + routeDistance(r, inst.dist); }, 0);
+        var totalTons = inst.yields.reduce(function (a, b) { return a + b; }, 0);
+        var baseline = naiveBaseline(inst);
+        var savingsPct = baseline > 0 ? (100 * (baseline - totalDist) / baseline) : 0;
+
+        document.getElementById('kpiDist').textContent = totalDist.toFixed(1);
+        document.getElementById('kpiRoutes').textContent = String(routes.length);
+        document.getElementById('kpiTons').textContent = totalTons.toFixed(1);
+        document.getElementById('kpiSavings').textContent = savingsPct.toFixed(1) + '%';
+
+        renderMap(inst, routes);
+        renderLegend(routes, inst.dist);
+        renderTable(routes, inst.dist);
+
+        document.getElementById('resultPanel').classList.add('active');
     }
 
-    const dists = {};
-    if (lastSolverResults.savings) dists['Clarke-Wright'] = lastSolverResults.savings.dist;
-    if (lastSolverResults.sweep) dists['Sweep'] = lastSolverResults.sweep.dist;
-    if (lastSolverResults.nn) dists['Nearest Neighbor'] = lastSolverResults.nn.dist;
-
-    const vals = Object.values(dists);
-    const bestDist = Math.min(...vals);
-    const worstDist = Math.max(...vals);
-    const worstAlgo = Object.keys(dists).find(k => dists[k] === worstDist);
-
-    const gap = Math.round(worstDist - bestDist);
-    const unitCost = parseFloat(document.getElementById('biz-unit-cost').value) || 2;
-    const opsPerSeason = parseFloat(document.getElementById('biz-ops-per-day').value) || 40;
-
-    const perRun = Math.round(gap * unitCost);
-    const perSeason = perRun * opsPerSeason;
-
-    document.getElementById('biz-gap').textContent = gap + ' km';
-    document.getElementById('biz-daily').textContent = '$' + perRun.toLocaleString();
-    document.getElementById('biz-annual').textContent = '$' + perSeason.toLocaleString();
-
-    const gapCard = document.getElementById('biz-gap').parentElement;
-    gapCard.querySelector('.biz-label-text').innerHTML = 'Extra km per run<br><small>' + worstAlgo + ' vs best</small>';
-
-    const dailyCard = document.getElementById('biz-daily').parentElement;
-    dailyCard.querySelector('.biz-label-text').innerHTML = 'Wasted per run<br><small>at $' + unitCost + '/km</small>';
-
-    const annualCard = document.getElementById('biz-annual').parentElement;
-    annualCard.querySelector('.biz-label-text').innerHTML = 'Wasted per season<br><small>' + opsPerSeason + ' runs</small>';
-
-    panel.style.display = 'block';
-}
-
-// ── Navbar scroll effect ──
-window.addEventListener('scroll', () => {
-    const nav = document.querySelector('.navbar');
-    nav.classList.toggle('scrolled', window.scrollY > 50);
-});
-
-// ── Smooth scroll ──
-document.querySelectorAll('a[href^="#"]').forEach(a => {
-    a.addEventListener('click', e => {
-        const href = a.getAttribute('href');
-        if (href === '#') return;
-        e.preventDefault();
-        const target = document.querySelector(href);
-        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    document.getElementById('btnRun').addEventListener('click', runSolver);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('numFields').value = 15;
+        document.getElementById('capacity').value = 22;
+        document.getElementById('seed').value = 42;
+        document.getElementById('yieldLow').value = 15;
+        document.getElementById('yieldHigh').value = 55;
+        runSolver();
     });
-});
 
-// ── Fade-in observer ──
-const observer = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-        if (entry.isIntersecting) entry.target.classList.add('visible');
-    });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-
-// ── Initial render ──
-document.addEventListener('DOMContentLoaded', () => {
-    selectAlgorithm('savings');
-});
+    runSolver();
+})();
 </script>
+</body>
+</html>

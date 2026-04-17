@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <!-- Google tag (gtag.js) -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -16,1172 +15,498 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <title>Market Timing &amp; Sales | Mathematical Modeling &amp; Operations Research</title>
-    <meta name="description" content="Interactive Stochastic Dynamic Programming demo for optimal crop market timing. Compare DP Backward Induction, Myopic Threshold, and Percentile Rule strategies.">
-    <!-- Open Graph / Social Sharing -->
+    <meta name="description" content="When should a Quebec grain farmer sell stored corn? Stochastic Dynamic Programming with interactive optimal-stopping solver and policy heatmap.">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Mohammad G. Nasiri">
     <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/market-timing.html">
     <meta property="og:title" content="Market Timing &amp; Sales | Mathematical Modeling &amp; Operations Research">
-    <meta property="og:description" content="Interactive Stochastic Dynamic Programming demo for optimal crop market timing. Compare DP Backward Induction, Myopic Threshold, and Percentile Rule strategies.">
+    <meta property="og:description" content="Stochastic DP for post-harvest grain sales timing, with price-state Markov chain and interactive solver.">
     <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Market Timing &amp; Sales | Mathematical Modeling &amp; Operations Research">
-    <meta name="twitter:description" content="Interactive Stochastic Dynamic Programming demo for optimal crop market timing. Compare DP Backward Induction, Myopic Threshold, and Percentile Rule strategies.">
+    <meta name="twitter:title" content="Market Timing &amp; Sales">
+    <meta name="twitter:description" content="Stochastic DP for grain sales timing.">
     <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/market-timing.html" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}]});"></script>
     <style>
         :root {
-            --midnight: #0A192F;
-            --midnight-light: #112240;
-            --midnight-lighter: #1a2f4a;
-            --gold: #C5A059;
-            --gold-light: #D4AF37;
-            --gold-dim: rgba(197, 160, 89, 0.15);
-            --ivory: #F8F9FA;
-            --slate: #8892B0;
-            --slate-light: #a8b2d1;
-            --green: #64ffda;
-            --red: #ff6b6b;
-            --blue: #7aa2f7;
+            --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a;
+            --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1;
+            --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7;
         }
-
         * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
 
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--midnight);
-            color: var(--ivory);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
-        /* ── Navigation ── */
-        .navbar {
-            background: rgba(10, 25, 47, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        .navbar-brand {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--gold) !important;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .nav-link {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            color: var(--slate-light) !important;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 0.5rem 1rem !important;
-            transition: color 0.3s ease;
-        }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
         .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
         .navbar-toggler { border-color: var(--gold); }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
 
-        /* ── Breadcrumb ── */
-        .breadcrumb-nav {
-            padding: 1rem 0;
-            background: var(--midnight-light);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-        }
-        .breadcrumb-nav ol {
-            list-style: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-            padding: 0;
-        }
-        .breadcrumb-nav li {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--slate);
-        }
-        .breadcrumb-nav li a {
-            color: var(--gold);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        .breadcrumb-nav li a:hover { color: var(--gold-light); }
-        .breadcrumb-nav li + li::before {
-            content: '/';
-            margin-right: 0.5rem;
-            color: var(--slate);
-            opacity: 0.5;
-        }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
 
-        /* ── Hero Section ── */
-        .hero {
-            padding: 6rem 2rem 4rem;
-            text-align: center;
-            position: relative;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: radial-gradient(ellipse 120% 40% at 50% 110%, rgba(100,255,218,0.05) 0%, transparent 60%), radial-gradient(ellipse 80% 60% at 20% 90%, rgba(197,160,89,0.04) 0%, transparent 50%), radial-gradient(ellipse 60% 30% at 80% 95%, rgba(100,255,218,0.03) 0%, transparent 40%);
-            pointer-events: none;
-        }
-        .hero-icon {
-            font-size: 3rem;
-            color: var(--gold);
-            margin-bottom: 1.5rem;
-            opacity: 0.8;
-        }
-        .hero h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 3.5rem;
-            font-weight: 300;
-            letter-spacing: 4px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(100,255,218,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(197,160,89,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--agriculture { filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)) drop-shadow(0 4px 20px rgba(100,255,218,0.12)); animation: growPulse 3.5s ease-in-out infinite; }
+        @keyframes growPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(100,255,218,0.5)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
         .hero h1 span { color: var(--gold); }
-        .hero-subtitle {
-            font-size: 1.05rem;
-            color: var(--slate);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 1.5rem;
-        }
-        .gold-line {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 1.5rem auto;
-        }
-        .hero-desc {
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            color: var(--slate-light);
-            font-size: 1rem;
-            line-height: 1.8;
-        }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
 
-        /* ── Section Headers ── */
-        .section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        .section-header h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.5rem;
-            font-weight: 300;
-            letter-spacing: 3px;
-            margin-bottom: 0.5rem;
-        }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
         .section-header h2 span { color: var(--gold); }
-        .section-header p {
-            color: var(--slate);
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-        }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
 
-        section { padding: 5rem 0; }
-        section:nth-of-type(even) { background: var(--midnight-light); }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
 
-        /* ── Content Blocks ── */
-        .content-block {
-            max-width: 800px;
-            margin: 0 auto;
-            color: var(--slate-light);
-            font-size: 0.95rem;
-            line-height: 1.9;
-        }
-        .content-block p { margin-bottom: 1.2rem; }
-        .content-block strong { color: var(--ivory); font-weight: 500; }
-
-        /* ── Mapping Table ── */
-        .mapping-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.5rem 0;
-            font-size: 0.88rem;
-        }
-        .mapping-table thead th {
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--gold);
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-            text-align: left;
-        }
-        .mapping-table tbody td {
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-        }
-        .mapping-table tbody td i {
-            color: var(--gold);
-            width: 20px;
-            text-align: center;
-            margin-right: 0.4rem;
-        }
-        .mapping-table tbody tr:hover td { color: var(--ivory); }
-
-        /* ── Formulation Block ── */
-        .formulation {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1.5rem 2rem;
-            margin-bottom: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            line-height: 2;
-            overflow-x: auto;
-        }
-        .formulation .form-label {
-            color: var(--gold);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 0.8rem;
-            display: block;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-        }
-        .formulation .keyword { color: var(--green); }
-        .formulation .variable { color: var(--blue); }
-        .formulation .comment { color: var(--slate); font-style: italic; }
-
-        /* ── Theory Link ── */
-        .theory-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.4rem;
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
-            margin-top: 1rem;
-        }
-        .theory-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            border-color: var(--gold);
-        }
-
-        /* ── Decision Chain ── */
-        #context { padding: 3rem 0 2rem; }
-        .decision-chain {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin: 2rem 0;
-            justify-content: center;
-        }
-        .chain-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.75rem 1.25rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px;
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            text-align: center;
-            min-width: 110px;
-            transition: border-color 0.2s;
-        }
-        .chain-step.active {
-            border-color: var(--gold);
-            color: var(--gold);
-            background: rgba(197,160,89,0.07);
-        }
-        .chain-sub {
-            font-size: 0.7rem;
-            color: var(--slate);
-            margin-top: 0.3rem;
-        }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
         .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
         .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
 
-        /* ── Solver Panel ── */
-        .solver-panel {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .solver-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
-        }
-        .solver-panel-header h4 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.3rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin: 0;
-            color: var(--gold);
-        }
-        .solver-panel-header h4 i { margin-right: 0.5rem; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 20%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 6px; overflow: hidden; }
+        .mapping-table th { padding: 0.9rem 1.1rem; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.2); }
+        .mapping-table td { padding: 0.75rem 1.1rem; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .mapping-table td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; }
+        .mapping-table tr:last-child td { border-bottom: none; }
+
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
         .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
 
-        .solver-section-label {
-            font-size: 0.72rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.8rem;
-            font-weight: 500;
-        }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
 
-        .algo-chip {
-            padding: 6px 14px;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 2px;
-            background: transparent;
-            color: var(--slate-light);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-        }
-        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
-        .algo-chip.active {
-            background: rgba(197, 160, 89, 0.15);
-            border-color: var(--gold);
-            color: var(--gold);
-        }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
 
-        .solver-canvas-wrap {
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 0.5rem;
-            position: relative;
-        }
-        .solver-canvas-wrap canvas {
-            width: 100%;
-            display: block;
-            border-radius: 2px;
-        }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 10px; vertical-align: middle; margin-right: 0.4rem; border-radius: 2px; }
 
-        .solver-status {
-            font-size: 0.78rem;
-            color: var(--slate);
-            margin-top: 0.5rem;
-            font-style: italic;
-        }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
 
-        /* ── Results Table ── */
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
-        .results-table thead th {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--gold);
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-            text-align: left;
-        }
-        .results-table tbody td {
-            padding: 0.5rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-        }
-        .results-table tbody tr:hover td { color: var(--ivory); }
-        .results-table .best-val { color: var(--green); font-weight: 600; }
-        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
 
-        /* ── Scenario Chips ── */
-        .scenario-row {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            flex-wrap: wrap;
-            margin-bottom: 0.75rem;
-        }
-        .scenario-chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-        .scenario-context-box {
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            line-height: 1.6;
-            padding: 0.6rem 0.9rem;
-            border-left: 2px solid rgba(197,160,89,0.35);
-            margin-bottom: 1.2rem;
-            font-style: italic;
-            background: rgba(197,160,89,0.03);
-            border-radius: 0 4px 4px 0;
-        }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
 
-        /* ── Business Panel ── */
-        .business-panel {
-            margin-top: 1.5rem;
-            padding: 1.2rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 8px;
-            background: rgba(197,160,89,0.04);
-        }
-        .biz-controls {
-            display: flex;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-            margin-bottom: 1rem;
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            align-items: center;
-        }
-        .biz-ctrl-label { display: flex; align-items: center; gap: 0.3rem; }
-        .biz-ctrl-label input {
-            width: 90px;
-            margin-left: 0.5rem;
-            background: var(--midnight);
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 3px;
-            color: var(--ivory);
-            padding: 3px 6px;
-            font-size: 0.78rem;
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .biz-ctrl-label input:focus { border-color: var(--gold); outline: none; }
-        .biz-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-        .biz-card {
-            background: rgba(10,25,47,0.4);
-            border: 1px solid rgba(197,160,89,0.15);
-            border-radius: 6px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-        .biz-val {
-            font-size: 1.45rem;
-            font-weight: 600;
-            color: var(--gold);
-            font-family: 'JetBrains Mono', monospace;
-        }
-        .biz-label-text { font-size: 0.75rem; color: var(--slate-light); line-height: 1.4; }
-        .biz-label-text small { color: var(--slate); }
-        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); font-style: italic; margin: 0; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
 
-        /* ── Algo Cards ── */
-        .algo-card {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            padding: 2rem 2.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .algo-card h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 0.8rem;
-            color: var(--ivory);
-        }
-        .algo-card .algo-complexity {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-            color: var(--green);
-            margin-bottom: 1rem;
-            display: inline-block;
-        }
-        .algo-card .algo-tag {
-            display: inline-block;
-            padding: 2px 10px;
-            border: 1px solid rgba(122, 162, 247, 0.3);
-            border-radius: 2px;
-            font-size: 0.68rem;
-            color: var(--blue);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.8rem;
-        }
-        .algo-card p {
-            color: var(--slate-light);
-            font-size: 0.9rem;
-            line-height: 1.8;
-            margin-bottom: 0.5rem;
-        }
-
-        /* ── Algo Steps ── */
-        .algo-step {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1rem;
-            padding-left: 0.5rem;
-        }
-        .step-number {
-            width: 28px;
-            height: 28px;
-            min-width: 28px;
-            border-radius: 50%;
-            background: rgba(197,160,89,0.15);
-            color: var(--gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.75rem;
-            font-weight: 600;
-            margin-top: 0.1rem;
-        }
-        .step-content {
-            color: var(--slate-light);
-            font-size: 0.88rem;
-            line-height: 1.7;
-        }
-
-        /* ── Complexity Box ── */
-        .complexity-box {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            padding: 2rem 2.5rem;
-            margin-top: 2rem;
-        }
-        .complexity-box h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.5rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 1.2rem;
-            color: var(--ivory);
-        }
-        .complexity-box h3 i { color: var(--gold); margin-right: 0.5rem; }
-        .complexity-list { list-style: none; padding: 0; }
-        .complexity-list li {
-            padding: 0.5rem 0 0.5rem 1.5rem;
-            position: relative;
-            color: var(--slate-light);
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-        }
-        .complexity-list li:last-child { border-bottom: none; }
-        .complexity-list li::before {
-            content: '\f054';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            left: 0;
-            color: var(--gold);
-            font-size: 0.6rem;
-            top: 0.75rem;
-        }
-
-        /* ── References ── */
-        .reference-list { list-style: none; padding: 0; }
-        .reference-list li {
-            padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-            font-size: 0.88rem;
-            line-height: 1.6;
-        }
-        .reference-list li:last-child { border-bottom: none; }
-        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
-        .reference-list .ref-title { font-style: italic; }
-        .reference-list .ref-journal { color: var(--slate); }
-
-        /* ── CTA Panel ── */
-        .cta-panel {
-            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 4px;
-            padding: 3rem;
-            text-align: center;
-        }
-        .cta-panel h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2rem;
-            font-weight: 400;
-            letter-spacing: 2px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
-        .cta-panel p {
-            color: var(--slate-light);
-            font-size: 0.95rem;
-            max-width: 650px;
-            margin: 0 auto 2rem;
-            line-height: 1.8;
-        }
-        .cta-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
-        .cta-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.7rem 1.8rem;
-            border: 1px solid rgba(197, 160, 89, 0.4);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
-        }
-        .cta-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
-
-        /* ── Disclaimer Box ── */
-        .disclaimer-box {
-            background: rgba(122, 162, 247, 0.08);
-            border: 1px solid rgba(122, 162, 247, 0.2);
-            border-radius: 4px;
-            padding: 1.2rem 1.5rem;
-            margin: 2rem 0;
-            font-size: 0.88rem;
-            color: var(--slate-light);
-            line-height: 1.7;
-        }
-        .disclaimer-box .disclaimer-title {
-            color: var(--blue);
-            font-weight: 500;
-            margin-bottom: 0.3rem;
-            font-size: 0.9rem;
-        }
-
-        /* ── Back Link ── */
-        .back-link {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 0.8rem 1.5rem;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-            z-index: 999;
-        }
-        .back-link:hover { background: var(--gold); color: var(--midnight); }
-
-        /* ── Scroll-to-Top ── */
-        .scroll-top-btn {
-            position: fixed;
-            bottom: 5rem;
-            right: 2rem;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            color: var(--gold);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 0.9rem;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s ease;
-            z-index: 998;
-            opacity: 0;
-            transform: translateY(10px);
-            pointer-events: none;
-        }
-        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4); }
-
-        /* ── Scroll Progress ── */
-        .scroll-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
-            z-index: 9999;
-            transition: width 0.1s linear;
-            width: 0%;
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-
-        /* ── Footer ── */
-        footer {
-            padding: 3rem 0;
-            text-align: center;
-            border-top: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
         footer a { color: var(--gold); text-decoration: underline; }
-        footer a:hover { color: var(--gold-light); }
 
-        /* ── Scroll Animations ── */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
         .fade-in.visible { opacity: 1; transform: translateY(0); }
 
-        /* ── Theme Toggle ── */
-        .theme-toggle {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            background: var(--midnight-lighter);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.4s ease;
-            display: flex;
-            align-items: center;
-            padding: 0 3px;
-            margin-left: 0.8rem;
-            flex-shrink: 0;
-        }
-        .theme-toggle::before {
-            content: '';
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--gold);
-            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
-        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
-        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
-
-        html[data-theme="light"] {
-            --midnight: #F5F1EB;
-            --midnight-light: #EDE8E0;
-            --midnight-lighter: #E3DDD4;
-            --ivory: #1a1a2e;
-            --slate: #5a6178;
-            --slate-light: #3d4155;
-        }
-        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
-        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
-        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
-        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
-        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
-
-        /* ── Editable Inputs ── */
-        .param-input {
-            width: 70px;
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 3px;
-            color: var(--ivory);
-            padding: 3px 6px;
-            font-size: 0.78rem;
-            font-family: 'JetBrains Mono', monospace;
-            text-align: center;
-        }
-        .param-input:focus { border-color: var(--gold); outline: none; }
-        .param-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 0.8rem;
-            margin-bottom: 1.2rem;
-        }
-        .param-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.5rem 0.8rem;
-            background: var(--midnight-lighter);
-            border-radius: 3px;
-            border: 1px solid rgba(197,160,89,0.05);
-        }
-        .param-item label { font-size: 0.78rem; color: var(--slate-light); }
-
         @media (max-width: 768px) {
-            .hero h1 { font-size: 2.2rem; }
-            .decision-chain { gap: 0.3rem; }
-            .chain-step { min-width: 80px; padding: 0.5rem 0.8rem; font-size: 0.72rem; }
-            .chain-arrow { font-size: 0.7rem; }
-            .param-grid { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.3rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .hero-desc { font-size: 0.92rem; }
+            section { padding: 3rem 0; }
+            .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; }
         }
-        .hero-icon--agriculture { filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)) drop-shadow(0 4px 20px rgba(100,255,218,0.12)); animation: growPulse 3.5s ease-in-out infinite; }
-        @keyframes growPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(100,255,218,0.5)); } }
-    
     </style>
 
     <script type="application/ld+json">
     {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Applications",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "Market Timing & Sales",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/market-timing.html"
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Agriculture",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/agriculture.html" },
+        { "@type": "ListItem", "position": 3, "name": "Market Timing &amp; Sales",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/market-timing.html" }
+      ]
     }
-  ]
-}
     </script>
 </head>
 <body>
 <a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
 
-<!-- ── Scroll Progress ── -->
 <div class="scroll-progress" id="scrollProgress"></div>
 
-<!-- ── Navigation ── -->
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="../index.html">Mathematical Modeling</a>
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="../families/uncertainty.html">Families</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
-                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
-                <li class="nav-item d-flex align-items-center">
-                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
-                        <span class="toggle-icon icon-sun"><i class="fas fa-sun" aria-hidden="true"></i></span>
-                        <span class="toggle-icon icon-moon"><i class="fas fa-moon" aria-hidden="true"></i></span>
-                    </div>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="agriculture.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <main id="main-content">
-<!-- ── Breadcrumb ── -->
+
 <nav aria-label="breadcrumb" class="breadcrumb-nav">
     <div class="container">
-        <a href="../index.html">Home</a>
-        <span class="bc-sep">›</span>
-        <a href="agriculture.html">Agriculture</a>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">Market Timing</span>
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="agriculture.html">Agriculture</a></li>
+            <li class="active">Market Timing</li>
+        </ol>
     </div>
 </nav>
 
-<!-- ══ SECTION 1 · Hero ══ -->
 <section class="hero">
     <div class="container">
         <div class="hero-icon hero-icon--agriculture"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
-        <h1>Market <span>Timing</span></h1>
-        <p class="hero-subtitle">Stochastic Dynamic Programming</p>
+        <h1>Market Timing &amp; <span>Sales</span></h1>
+        <p class="hero-subtitle">STOCHASTIC DYNAMIC PROGRAMMING</p>
+        <a href="agriculture.html?lens=matrix#framework" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;margin-top:0.3rem;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(197,160,89,0.25);border-radius:20px;text-decoration:none;background:rgba(197,160,89,0.05);">
+            <i class="fas fa-sitemap" aria-hidden="true" style="font-size:0.68rem;opacity:0.9;"></i>
+            <span>Agriculture &middot; Distribution &middot; Tactical</span>
+        </a>
         <div class="gold-line" aria-hidden="true"></div>
         <p class="hero-desc">
-            Post-harvest crop price volatility costs agricultural cooperatives 8&ndash;15% of potential
-            revenue annually through suboptimal sell timing. Every week after harvest, a sales manager
-            must decide: sell the stored crop at today&rsquo;s market price, or hold and wait for a
-            better price&mdash;risking a decline. This is a finite-horizon <strong>optimal stopping
-            problem</strong> solved by <strong>Stochastic Dynamic Programming</strong>, where the
-            optimal reservation price decreases as the selling deadline approaches.
+            After harvest, the 1,200&nbsp;ha Ch&acirc;teauguay-valley grain-oilseed farm has several thousand tonnes
+            of dry corn sitting in on-farm silos. Chicago Board of Trade corn futures drift up and down from
+            week to week; every week stored costs a few dollars a tonne in shrink, aeration, and capital.
+            &ldquo;Sell now or hold another week?&rdquo; is an archetypal <strong>optimal-stopping problem</strong>
+            solvable by backward induction on a finite state-action Markov Decision Process &mdash; the
+            <strong>Stochastic Dynamic Programming</strong> toolbox that underlies modern commodity marketing
+            advice.
         </p>
     </div>
 </section>
 
-<!-- ══ SECTION 2 · Where This Decision Fits ══ -->
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Why this <span>decision matters</span></h2>
+            <p>Three verified facts on Canadian grain marketing</p>
+        </div>
+        <div class="impact-row">
+            <div class="impact-card fade-in">
+                <div class="impact-val">3.4&nbsp;Mt</div>
+                <div class="impact-label">of grain corn produced in Qu&eacute;bec in the 2022 crop year &mdash; most marketed between September and the following July, giving about ten months of optimal-stopping decisions.</div>
+                <div class="impact-src">Statistics Canada, Table 32-10-0359-01 &middot; <a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3210035901" target="_blank" rel="noopener">StatCan field crops</a></div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">$2&ndash;4 / t / mo</div>
+                <div class="impact-label">typical on-farm grain storage cost in Canada &mdash; interest, shrink, aeration energy, and insurance &mdash; the marginal cost of &ldquo;hold one more week&rdquo;.</div>
+                <div class="impact-src">Agriculture &amp; Agri-Food Canada, farm financial benchmarks &middot; <a href="https://agriculture.canada.ca/en/canadas-agriculture-sectors/crops" target="_blank" rel="noopener">agriculture.canada.ca</a></div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">20&ndash;40%</div>
+                <div class="impact-label">range of corn-futures annual volatility (implied or realized) in recent cycles &mdash; large enough that &ldquo;sell immediately&rdquo; is rarely optimal and timing has measurable cash-flow value.</div>
+                <div class="impact-src">CME Group, Corn Futures options markets &middot; <a href="https://www.cmegroup.com/markets/agriculture/grains/corn.html" target="_blank" rel="noopener">cmegroup.com</a></div>
+            </div>
+        </div>
+    </div>
+</section>
+
 <section id="context">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Where This <span>Decision</span> Fits</h2>
-            <p>The agriculture sector decision chain</p>
+            <h2>Where this <span>decision fits</span></h2>
+            <p>Agriculture sector decision chain &middot; tactical, post-harvest horizon</p>
         </div>
-        <div class="decision-chain fade-in">
-            <div class="chain-step">
-                <i class="fas fa-calendar-alt" aria-hidden="true" style="color:var(--gold);margin-bottom:0.3rem;"></i>
-                Pre-Season
-                <span class="chain-sub">Seed &amp; field planning</span>
-            </div>
-            <span class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>
-            <div class="chain-step">
-                <i class="fas fa-tractor" aria-hidden="true" style="color:var(--gold);margin-bottom:0.3rem;"></i>
-                Planting
-                <span class="chain-sub">Equipment &amp; irrigation</span>
-            </div>
-            <span class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>
-            <div class="chain-step">
-                <i class="fas fa-leaf" aria-hidden="true" style="color:var(--gold);margin-bottom:0.3rem;"></i>
-                Growing
-                <span class="chain-sub">Pest &amp; nutrient mgmt</span>
-            </div>
-            <span class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>
-            <div class="chain-step">
-                <i class="fas fa-wheat-awn" aria-hidden="true" style="color:var(--gold);margin-bottom:0.3rem;"></i>
-                Harvest
-                <span class="chain-sub">Scheduling &amp; transport</span>
-            </div>
-            <span class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>
-            <div class="chain-step">
-                <i class="fas fa-warehouse" aria-hidden="true" style="color:var(--gold);margin-bottom:0.3rem;"></i>
-                Post-Harvest
-                <span class="chain-sub">Storage &amp; distribution</span>
-            </div>
-            <span class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></span>
-            <div class="chain-step active">
-                <i class="fas fa-chart-line" aria-hidden="true" style="margin-bottom:0.3rem;"></i>
-                Market &amp; Sales
-                <span class="chain-sub">Sell timing &amp; pricing</span>
-            </div>
+        <div class="decision-chain fade-in" aria-label="Agricultural decision chain">
+            <div class="chain-step">Strategic<span class="chain-sub">crops &amp; fields</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Workforce<span class="chain-sub">seasonal labour</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Growing<span class="chain-sub">irrigation &amp; pests</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Harvest<span class="chain-sub">scheduling</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step">Transport<span class="chain-sub">field to silo</span></div>
+            <div class="chain-arrow"><i class="fas fa-chevron-right" aria-hidden="true"></i></div>
+            <div class="chain-step active">Market &amp; Sales<span class="chain-sub">this page</span></div>
         </div>
     </div>
 </section>
 
-<!-- ══ SECTION 3 · The Problem ══ -->
-<section id="problem">
+<section id="formulation" class="formulation-section">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The <span>Problem</span></h2>
-            <p>When to sell under price uncertainty</p>
+            <h2>Problem &amp; <span>formulation</span></h2>
+            <p>Optimal stopping MDP with discrete price-state Markov chain</p>
         </div>
-        <div class="content-block fade-in">
-            <p>
-                You have a <strong>harvested crop in storage</strong> with a fixed selling deadline
-                (storage capacity, spoilage, or contract expiry). Each week the market price fluctuates
-                stochastically. The constraint is that the crop <strong>must be sold by the deadline</strong>,
-                and once sold, the decision is final. The question is: <em>at which week&rsquo;s price
-                should the sales manager sell to maximize expected revenue?</em>
-            </p>
 
-            <table class="mapping-table">
-                <thead>
-                    <tr>
-                        <th scope="col"></th>
-                        <th scope="col">Domain Concept</th>
-                        <th scope="col">OR Element</th>
-                    </tr>
-                </thead>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">OR family</div>
+                    <div class="problem-meta-value">Stochastic DP / MDP</div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Complexity</div>
+                    <div class="problem-meta-value">P (value iteration)</div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Solver realism</div>
+                    <div class="problem-meta-value"><span class="problem-realism">&starf;&starf;&starf; Exact on discrete grid</span></div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Reference</div>
+                    <div class="problem-meta-value">Bellman (1957)</div>
+                </div>
+            </div>
+
+            <h3>Sets &amp; indices</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
                 <tbody>
-                    <tr>
-                        <td><i class="fas fa-seedling" aria-hidden="true"></i></td>
-                        <td>Harvested crop (wheat, coffee, strawberries)</td>
-                        <td>Asset to be sold</td>
-                    </tr>
-                    <tr>
-                        <td><i class="fas fa-calendar-week" aria-hidden="true"></i></td>
-                        <td>Weeks remaining in selling window</td>
-                        <td>Time horizon T</td>
-                    </tr>
-                    <tr>
-                        <td><i class="fas fa-dollar-sign" aria-hidden="true"></i></td>
-                        <td>Weekly market price per tonne</td>
-                        <td>Stochastic state variable</td>
-                    </tr>
-                    <tr>
-                        <td><i class="fas fa-hand-holding-usd" aria-hidden="true"></i></td>
-                        <td>&ldquo;Sell now&rdquo; vs. &ldquo;Hold&rdquo;</td>
-                        <td>Action space {sell, hold}</td>
-                    </tr>
-                    <tr>
-                        <td><i class="fas fa-warehouse" aria-hidden="true"></i></td>
-                        <td>Storage cost per week</td>
-                        <td>Holding cost c<sub>h</sub></td>
-                    </tr>
-                    <tr>
-                        <td><i class="fas fa-chart-bar" aria-hidden="true"></i></td>
-                        <td>Total revenue from sale</td>
-                        <td>Objective: maximize E[revenue]</td>
-                    </tr>
+                    <tr><td>\(t \in \{0, 1, \ldots, T\}\)</td><td>Week index; \(t = 0\) is the decision being made now, \(t = T\) is the end of the marketing window</td><td>finite</td></tr>
+                    <tr><td>\(s \in S\)</td><td>Discrete market-price state (5&ndash;11 buckets around the long-run mean)</td><td>\(|S|\) buckets</td></tr>
                 </tbody>
             </table>
 
-            <div class="formulation">
-                <span class="form-label">Stochastic DP &mdash; Optimal Stopping Formulation</span>
-                <span class="keyword">maximize</span> &nbsp; <span class="variable">E[P<sub>&tau;</sub> &middot; Q &minus; c<sub>h</sub> &middot; &tau;]</span> &nbsp; <span class="comment">// expected revenue minus storage costs</span><br>
-                <span class="keyword">where</span> &nbsp; <span class="variable">&tau; &isin; {1, 2, &hellip;, T}</span> &nbsp; <span class="comment">// stopping time (week to sell)</span><br>
-                <span class="keyword">state</span> &nbsp; <span class="variable">(t, P<sub>t</sub>)</span> &nbsp; <span class="comment">// current period and price</span><br>
-                <span class="keyword">Bellman</span> &nbsp; <span class="variable">V<sub>t</sub>(p) = max(p &middot; Q &minus; c<sub>h</sub> &middot; t, &nbsp; E[V<sub>t+1</sub>(P<sub>t+1</sub>) | P<sub>t</sub>=p])</span><br>
-                <span class="keyword">boundary</span> &nbsp; <span class="variable">V<sub>T</sub>(p) = p &middot; Q &minus; c<sub>h</sub> &middot; T</span> &nbsp; <span class="comment">// forced sale at deadline</span>
+            <h3>Parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(p_s\)</td><td>Local cash price at state \(s\) (CBOT futures + local basis)</td><td>CAD / t</td></tr>
+                    <tr><td>\(P_{s,s'}\)</td><td>One-step price transition probability \(\Pr(s_{t+1} = s' \mid s_t = s)\)</td><td>probability</td></tr>
+                    <tr><td>\(c\)</td><td>Storage cost per tonne per week (interest + shrink + aeration)</td><td>CAD / t / wk</td></tr>
+                    <tr><td>\(\gamma\)</td><td>Per-week discount factor (\(\gamma = 1/(1+r)\))</td><td>\(0 < \gamma \leq 1\)</td></tr>
+                    <tr><td>\(p_F\)</td><td>Forced-sale price at terminal week \(T\) (market still clears)</td><td>CAD / t</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variables &amp; value function</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(a_t(s)\)</td><td>Action in state \(s\) at week \(t\): sell all remaining inventory, or hold</td><td>\(\{\text{sell}, \text{hold}\}\)</td></tr>
+                    <tr><td>\(V_t(s)\)</td><td>Expected discounted net revenue per tonne from week \(t\) onward, starting in state \(s\)</td><td>CAD / t</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Bellman equation</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Backward induction: terminal value is the forced-sale price minus any final storage cost; in every earlier week, value equals the maximum of selling now or holding for one week of stochastic price evolution:</p>
+            <div class="formula-block">
+                $$V_T(s) \;=\; p_F$$
+                $$V_t(s) \;=\; \max\!\Bigl\{\underbrace{p_s}_{\text{sell now}}\,,\ \underbrace{-\,c \;+\; \gamma \sum_{s' \in S} P_{s,s'} \, V_{t+1}(s')}_{\text{hold, pay storage, await next week}}\Bigr\} \qquad t < T$$
             </div>
+            <p class="formula-caption">Optimal action: \(a^*_t(s) = \text{sell}\) when the first argument is larger, else \(\text{hold}\). The problem is solvable in \(\mathcal{O}(T \cdot |S|^2)\) operations by filling the value table from \(t = T\) backward.</p>
 
-            <p>
-                The optimal policy is a <strong>threshold policy</strong>: at each period <em>t</em>,
-                sell if <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">P<sub>t</sub> &ge; p<sup>*</sup><sub>t</sub></span>,
-                where the reservation price
-                <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">p<sup>*</sup><sub>t</sub></span>
-                <strong>decreases</strong> as the deadline approaches.
-            </p>
-
-            <a href="../families/uncertainty.html" class="theory-link">
-                <i class="fas fa-arrow-right" aria-hidden="true"></i> See full Uncertainty Modeling theory and paradigms
-            </a>
+            <h3>Why this formulation works</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">&ldquo;When to sell&rdquo; is an optimal-stopping problem (McCall 1970): the state is the current observable price, the action space is binary, and the optimal policy has a monotone-threshold structure &mdash; for each week, there is a <em>reservation price</em> above which selling is optimal. The Markov-chain assumption discretizes that structure so it can be computed exactly without continuous stochastic calculus. The dual view (via Snell envelope) also makes hedging extensions natural.</p>
         </div>
     </div>
 </section>
 
-<!-- ══ SECTION 4 · Try It Yourself ══ -->
-<section id="interactive">
+<section id="mapping">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Try It <span>Yourself</span></h2>
-            <p>Find the optimal week to sell your harvest</p>
+            <h2>Real-world &rarr; <span>OR mapping</span></h2>
+            <p>Grain-marketing vocabulary translated to the MDP</p>
+        </div>
+        <div style="max-width:920px;margin:0 auto;">
+            <table class="mapping-table fade-in">
+                <thead><tr><th>In the grain office</th><th>In the MDP model</th></tr></thead>
+                <tbody>
+                    <tr><td>Calendar week after harvest</td><td>\(t\)</td></tr>
+                    <tr><td>Today's local cash price (futures + basis)</td><td>\(s\)</td></tr>
+                    <tr><td>Historical volatility &amp; trend &rarr; transition matrix</td><td>\(P_{s,s'}\)</td></tr>
+                    <tr><td>Monthly storage fee / interest / shrinkage</td><td>\(c\)</td></tr>
+                    <tr><td>Opportunity cost of capital tied up in unsold grain</td><td>\(1-\gamma\)</td></tr>
+                    <tr><td>Latest possible sale date (next harvest clearing)</td><td>\(T\)</td></tr>
+                    <tr><td>&ldquo;Should I sell today?&rdquo;</td><td>\(a^*_t(s)\)</td></tr>
+                    <tr><td>Expected profit per tonne under optimal policy</td><td>\(V_0(s)\)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Backward induction on a discrete price grid</p>
         </div>
 
         <div class="solver-panel fade-in">
-            <div class="solver-panel-header">
-                <h3><i class="fas fa-chart-line" aria-hidden="true"></i> Market Timing Optimizer</h3>
-                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">12 Weeks &middot; 500 Tonnes</span>
+            <div class="solver-header">
+                <div>
+                    <div class="solver-title">Market-timing MDP solver</div>
+                    <div class="solver-subtitle">Discrete Markov price chain &middot; exact value iteration &middot; O(T &middot; |S|&sup2;)</div>
+                </div>
+                <div class="problem-realism">&starf;&starf;&starf; Exact on grid</div>
             </div>
+
             <div class="solver-body">
-                <!-- 4a · Scenario Switcher -->
-                <div class="scenario-row">
-                    <span class="solver-section-label">Choose a Scenario</span>
-                    <div class="scenario-chips">
-                        <button class="algo-chip active" id="scn-0" onclick="loadScenario(0)">Prairie Wheat</button>
-                        <button class="algo-chip" id="scn-1" onclick="loadScenario(1)">Arabica Coffee</button>
-                        <button class="algo-chip" id="scn-2" onclick="loadScenario(2)">Salinas Strawberries</button>
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label for="horizon">Marketing horizon T (weeks)</label>
+                        <input type="number" id="horizon" value="36" min="4" max="52" step="1">
+                        <div class="control-help">From harvest to next crop year</div>
                     </div>
-                </div>
-                <div class="scenario-context-box" id="scenario-context">
-                    Illustrative example. A Saskatchewan cooperative holds 500 tonnes of Hard Red Spring Wheat after the September harvest. They have a 12-week selling window before storage costs erode margins. Weekly price follows a mean-reverting process around $280/tonne with moderate volatility&mdash;a textbook optimal stopping instance.
-                </div>
-
-                <!-- 4b · Problem Instance Inputs -->
-                <div class="solver-section-label">Market Parameters</div>
-                <div class="param-grid" id="paramGrid">
-                    <div class="param-item">
-                        <label>Quantity (tonnes)</label>
-                        <input type="number" class="param-input" id="paramQty" value="500" min="1" max="10000">
+                    <div class="control-group">
+                        <label for="priceLow">Low price state (CAD / t)</label>
+                        <input type="number" id="priceLow" value="180" min="50" max="800" step="5">
+                        <div class="control-help">Lowest bucket</div>
                     </div>
-                    <div class="param-item">
-                        <label>Selling Window (weeks)</label>
-                        <input type="number" class="param-input" id="paramWeeks" value="12" min="2" max="52">
+                    <div class="control-group">
+                        <label for="priceHigh">High price state (CAD / t)</label>
+                        <input type="number" id="priceHigh" value="280" min="60" max="1200" step="5">
                     </div>
-                    <div class="param-item">
-                        <label>Base Price ($/tonne)</label>
-                        <input type="number" class="param-input" id="paramBasePrice" value="280" min="10" max="50000">
+                    <div class="control-group">
+                        <label for="numStates">Number of price states</label>
+                        <input type="number" id="numStates" value="9" min="3" max="15" step="2">
+                        <div class="control-help">Odd &ge; 3 recommended</div>
                     </div>
-                    <div class="param-item">
-                        <label>Price Volatility (%)</label>
-                        <input type="number" class="param-input" id="paramVolatility" value="8" min="1" max="50">
-                    </div>
-                    <div class="param-item">
-                        <label>Storage Cost ($/tonne/wk)</label>
-                        <input type="number" class="param-input" id="paramStorage" value="3" min="0" max="500">
-                    </div>
-                    <div class="param-item">
-                        <label>Simulations</label>
-                        <input type="number" class="param-input" id="paramSims" value="1000" min="100" max="10000">
+                    <div class="control-group">
+                        <label for="volatility">Weekly volatility (persistence)</label>
+                        <input type="number" id="volatility" value="0.55" min="0.3" max="0.9" step="0.05">
+                        <div class="control-help">Prob. of staying in same state</div>
                     </div>
                 </div>
 
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
-                    <button class="algo-chip" onclick="resetDefaults()"><i class="fas fa-undo" aria-hidden="true" style="margin-right:4px;"></i>Reset Defaults</button>
-                    <button class="algo-chip" onclick="randomize()"><i class="fas fa-random" aria-hidden="true" style="margin-right:4px;"></i>Randomize</button>
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label for="drift">Weekly drift (CAD / t / wk)</label>
+                        <input type="number" id="drift" value="0.6" min="-10" max="10" step="0.1">
+                        <div class="control-help">Seasonal bias toward higher prices</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="storage">Storage cost c ($/t/wk)</label>
+                        <input type="number" id="storage" value="0.85" min="0" max="20" step="0.05">
+                        <div class="control-help">$2&ndash;4/t/month &rarr; 0.5&ndash;1.0/wk</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="discount">Weekly discount factor &gamma;</label>
+                        <input type="number" id="discount" value="0.999" min="0.90" max="1.00" step="0.001">
+                        <div class="control-help">1 / (1 + weekly rate)</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="forcedPrice">Forced-sale price at T ($/t)</label>
+                        <input type="number" id="forcedPrice" value="210" min="0" max="1000" step="5">
+                        <div class="control-help">Spot liquidation before next harvest</div>
+                    </div>
                 </div>
 
-                <!-- 4c · Solve Button -->
-                <button class="algo-chip active" onclick="solveAndCompare()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
-                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
-                    <span id="solveSpinner" style="display:none;margin-left:0.5rem;"><i class="fas fa-circle-notch fa-spin" aria-hidden="true"></i></span>
-                </button>
-
-                <!-- Visualization -->
-                <div class="solver-section-label">Price Path &amp; Sell Decisions</div>
-                <div class="solver-canvas-wrap">
-                    <canvas id="marketCanvas" width="900" height="420"></canvas>
-                </div>
-                <p class="solver-status" id="solver-status">Ready. Click &ldquo;Solve &amp; Compare All Algorithms&rdquo; to run.</p>
-
-                <!-- 4d · Comparison Table -->
-                <div id="comparisonContainer" style="display:none;margin-top:1.5rem;">
-                    <div class="solver-section-label">Algorithm Comparison</div>
-                    <table class="results-table" id="compareTable">
-                        <thead>
-                            <tr>
-                                <th scope="col">Algorithm</th>
-                                <th scope="col">Avg Revenue ($)</th>
-                                <th scope="col">Avg Sell Week</th>
-                                <th scope="col">Time (ms)</th>
-                            </tr>
-                        </thead>
-                        <tbody id="compareBody"></tbody>
-                    </table>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
                 </div>
 
-                <!-- 4e · Business Translation Panel -->
-                <div class="business-panel" id="businessPanel" style="display:none;">
-                    <div class="solver-section-label" style="margin-top:0;">
-                        <i class="fas fa-chart-line" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>
-                        What this means for your operation
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiValMid">&mdash;</div><div class="result-kpi-label">V&#8320;(midprice) ($/t)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiReserveNow">&mdash;</div><div class="result-kpi-label">Reservation @ t=0</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiReserveHalf">&mdash;</div><div class="result-kpi-label">Reservation @ t=T/2</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiForcedGap">&mdash;</div><div class="result-kpi-label">Gain vs forced-sell</div></div>
                     </div>
-                    <div class="biz-controls">
-                        <label class="biz-ctrl-label">
-                            Revenue per tonne gap ($)
-                            <input type="number" id="bizUnitCost" value="1"
-                                   min="1" max="100000" step="1"
-                                   oninput="updateBusinessPanel()">
-                        </label>
-                        <label class="biz-ctrl-label">
-                            Harvests per year
-                            <input type="number" id="bizOpsPerDay" value="2"
-                                   min="1" max="100" step="1"
-                                   oninput="updateBusinessPanel()">
-                        </label>
+
+                    <canvas id="canvasPolicy" width="920" height="380" aria-label="Optimal policy heatmap: sell (gold) vs hold (blue) per week and price state"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059;"></span>Sell now</span>
+                        <span><span class="legend-swatch" style="background:rgba(122,162,247,0.55);"></span>Hold</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b;"></span>Reservation threshold</span>
                     </div>
-                    <div class="biz-cards">
-                        <div class="biz-card">
-                            <span class="biz-val" id="bizGap">&mdash;</span>
-                            <span class="biz-label-text">Revenue gap per harvest<br><small>worst vs best algorithm</small></span>
-                        </div>
-                        <div class="biz-card">
-                            <span class="biz-val" id="bizDaily">&mdash;</span>
-                            <span class="biz-label-text">Cost per year<br><small id="bizDailyLabel">at 2 harvests/year</small></span>
-                        </div>
-                        <div class="biz-card">
-                            <span class="biz-val" id="bizAnnual">&mdash;</span>
-                            <span class="biz-label-text">10-year exposure<br><small>cumulative opportunity cost</small></span>
-                        </div>
+
+                    <div style="margin-top:1.4rem;">
+                        <canvas id="canvasValue" width="920" height="260" aria-label="Expected value per tonne vs weeks remaining, one line per starting price state"></canvas>
                     </div>
-                    <p class="biz-disclaimer">
-                        Illustrative estimates based on the scenario above. Adjust to model your operation.
+                </div>
+
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>How the MDP is built</h4>
+                    <p>
+                        The user specifies a price range \([p_L, p_H]\) discretized into \(|S|\) evenly-spaced
+                        states. Persistence (weekly volatility) determines the self-transition probability;
+                        the remaining mass splits between the state above and the state below, plus a small
+                        drift. Transitions out of the top state are absorbed back in; same for the bottom.
+                        Backward induction then fills the value table \(V_t(s)\) from \(t = T\) to \(t = 0\),
+                        and the optimal action \(a^*_t(s)\) is recovered by comparing the two arguments of
+                        the Bellman equation at each cell.
                     </p>
                 </div>
             </div>
@@ -1189,834 +514,477 @@
     </div>
 </section>
 
-<!-- ══ SECTION 5 · The Algorithms ══ -->
-<section id="algorithm">
+<section id="interpretation">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The <span>Algorithms</span></h2>
-            <p>Three approaches to optimal sell timing</p>
+            <h2>Reading the <span>solution</span></h2>
+            <p>What the heatmap and value curves reveal</p>
         </div>
-        <div class="content-block fade-in">
-
-            <!-- Key Difference Insight -->
-            <div class="algo-card" style="margin-bottom:1.5rem; border-left:3px solid var(--gold);">
-                <h3 style="color:var(--gold);margin-bottom:0.75rem;font-family:'Cormorant Garamond',serif;font-size:1.3rem;">
-                    <i class="fas fa-lightbulb" aria-hidden="true" style="margin-right:0.5rem;"></i>The key difference
-                </h3>
-                <p>
-                    When the wheat price sits at $285/tonne in week 4 of 12&mdash;slightly above the $280
-                    average&mdash;the <strong>Myopic Threshold</strong> sells immediately because the price
-                    exceeds the unconditional mean. The <strong>DP Backward Induction</strong> computes that
-                    with 8 weeks remaining, the expected value of continuing exceeds the immediate revenue,
-                    and holds. The <strong>Percentile Rule</strong> also holds, but for a cruder reason&mdash;$285
-                    hasn&rsquo;t crossed its fixed 75th-percentile threshold of ~$299. The DP adapts its
-                    threshold dynamically based on time remaining; the heuristics cannot.
-                </p>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Reservation price falls as \(T\) approaches.</strong> Early in the marketing window, the threshold to sell is high (the option to wait is valuable). As \(t \to T\), the threshold collapses toward the forced-sale price &mdash; the option runs out of time.</li>
+                    <li><strong>Storage cost shifts the threshold down.</strong> Higher \(c\) makes holding less attractive; the sell region expands to lower price states.</li>
+                    <li><strong>Persistence shapes patience.</strong> Higher volatility (lower persistence) means prices move around more &mdash; holding becomes more valuable at marginal states, and the sell region retreats to the very top.</li>
+                </ul>
             </div>
-
-            <!-- Algorithm 1: DP Backward Induction -->
-            <div class="algo-card">
-                <div class="algo-tag">Exact</div>
-                <h3>DP Backward Induction</h3>
-                <span class="algo-complexity">O(T &middot; S) &nbsp;|&nbsp; Optimal for discretized states</span>
-                <p>
-                    Works backwards from the deadline to compute the <strong>exact optimal reservation
-                    price</strong> at each week. At the final week, the farmer must sell at whatever price
-                    prevails. At each earlier week, the algorithm compares the immediate revenue against the
-                    expected future value&mdash;choosing to sell only when the price exceeds a computed threshold.
-                </p>
-                <div class="algo-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">Set the value at the final week T: for every possible price level, the value equals selling revenue minus cumulative storage cost.</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">Move to week T&minus;1. For each price level, compute the expected value of holding by averaging V(T) over all reachable prices at week T.</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">At each price level, compare immediate sell revenue against the expected continuation value. The reservation price is the threshold where these two are equal.</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">4</div>
-                    <div class="step-content">Repeat backward through all weeks. The result is a decreasing sequence of reservation prices: the farmer becomes less selective as the deadline approaches.</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">5</div>
-                    <div class="step-content">When a price path is realized, sell at the first week where the market price meets or exceeds the pre-computed threshold for that week.</div>
-                </div>
-            </div>
-
-            <!-- Algorithm 2: Myopic Threshold -->
-            <div class="algo-card">
-                <div class="algo-tag">Heuristic</div>
-                <h3>Myopic Threshold</h3>
-                <span class="algo-complexity">O(1) per decision &nbsp;|&nbsp; No optimality guarantee</span>
-                <p>
-                    The simplest rule: sell whenever the current price exceeds the <strong>unconditional mean</strong>
-                    of the price distribution. This ignores how much time remains and treats every week identically.
-                    It performs well when prices are symmetric and the selling window is short, but leaves money on
-                    the table when the window is long enough for large swings.
-                </p>
-                <div class="algo-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">Compute the unconditional expected price from the price distribution (e.g., $280/tonne for prairie wheat).</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">Each week, observe the market price. If price is at or above the mean, sell the entire crop immediately.</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">If the deadline arrives without the price ever reaching the mean, sell at the final week&rsquo;s price regardless.</div>
-                </div>
-            </div>
-
-            <!-- Algorithm 3: Percentile Rule -->
-            <div class="algo-card">
-                <div class="algo-tag">Heuristic</div>
-                <h3>Percentile Rule (75th)</h3>
-                <span class="algo-complexity">O(1) per decision &nbsp;|&nbsp; Conservative threshold</span>
-                <p>
-                    A more selective heuristic: sell only when the price reaches the <strong>75th percentile</strong>
-                    of the historical distribution. This strategy waits for &ldquo;high&rdquo; prices, which can
-                    capture upside in volatile markets. However, it risks reaching the deadline without ever
-                    triggering a sale, forcing the farmer to accept whatever price prevails at expiry.
-                </p>
-                <div class="algo-step">
-                    <div class="step-number">1</div>
-                    <div class="step-content">Compute the 75th percentile price from the distribution (e.g., ~$299/tonne for prairie wheat with 8% volatility).</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">2</div>
-                    <div class="step-content">Each week, observe the market price. If price is at or above the 75th percentile, sell the entire crop.</div>
-                </div>
-                <div class="algo-step">
-                    <div class="step-number">3</div>
-                    <div class="step-content">If the deadline arrives without a trigger, the farmer is forced to sell at the terminal price&mdash;which may be well below the average.</div>
-                </div>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- ══ SECTION 6 · Real-World Complexity ══ -->
-<section id="complexity">
-    <div class="container">
-        <div class="section-header fade-in">
-            <h2>Real-World <span>Complexity</span></h2>
-            <p>Why agricultural market timing goes beyond the basic model</p>
-        </div>
-        <div class="content-block fade-in">
-            <div class="complexity-box">
-                <h3><i class="fas fa-layer-group" aria-hidden="true"></i> Beyond Optimal Stopping</h3>
-                <ul class="complexity-list">
-                    <li><strong>Partial selling</strong> &mdash; Farmers can sell portions of the crop at different times rather than all-or-nothing, transforming the problem into a multi-stage stochastic program</li>
-                    <li><strong>Correlated commodity prices</strong> &mdash; Wheat, corn, and soybean prices move together; a comprehensive strategy must account for cross-commodity correlations and substitution effects</li>
-                    <li><strong>Storage degradation</strong> &mdash; Grain quality degrades over time (moisture, pests); perishables like strawberries lose 3&ndash;8% of marketable weight per week, adding a non-linear cost to holding</li>
-                    <li><strong>Forward contracts &amp; hedging</strong> &mdash; Cooperatives can lock in prices via futures contracts, creating a hybrid strategy between spot sales and hedging that requires joint optimization</li>
-                    <li><strong>Weather-driven supply shocks</strong> &mdash; A drought in a competing region can spike prices suddenly; the model must handle fat-tailed distributions, not just Gaussian price moves</li>
-                    <li><strong>Transportation &amp; logistics windows</strong> &mdash; Selling is not instantaneous&mdash;truck and rail availability constrains when grain can physically move to market, coupling the timing decision to logistics scheduling</li>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions the solver answers instantly</h4>
+                <ul>
+                    <li>What if weekly interest doubles? Drop \(\gamma\) to, say, 0.995 &mdash; the option-to-wait loses value and the hold region shrinks.</li>
+                    <li>What if futures have strong seasonal carry? Raise the drift parameter &mdash; the expected price path tilts up and the sell threshold rises.</li>
+                    <li>What if forward contracts lock in \(p_F\) early? Raise the forced-sale price &mdash; everyone's terminal outcome improves, and early-season hold regions expand.</li>
                 </ul>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ══ SECTION 7 · References ══ -->
-<section id="references">
+<section id="extensions">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Key <span>References</span></h2>
-            <p>Foundational works in stochastic inventory and optimal stopping</p>
+            <h2>Model <span>extensions</span></h2>
+            <p>Richer sales models that all reduce to stochastic DP</p>
         </div>
-        <div class="content-block fade-in">
-            <ul class="reference-list">
-                <li>
-                    <span class="ref-author">Arrow, K.J., Harris, T. &amp; Marschak, J.</span> (1951).
-                    <span class="ref-title">&ldquo;Optimal inventory policy.&rdquo;</span>
-                    <span class="ref-journal">Econometrica, 19(3), 250&ndash;272.</span>
-                    <a href="https://doi.org/10.2307/1906813" target="_blank" style="color:var(--gold);font-size:0.8rem;margin-left:0.3rem;"><i class="fas fa-external-link-alt" aria-hidden="true"></i> DOI</a>
-                </li>
-                <li>
-                    <span class="ref-author">Silver, E.A., Pyke, D.F. &amp; Thomas, D.J.</span> (2017).
-                    <span class="ref-title">&ldquo;Inventory and Production Management in Supply Chains.&rdquo;</span>
-                    <span class="ref-journal">4th ed. CRC Press.</span>
-                </li>
-                <li>
-                    <span class="ref-author">Hadley, G. &amp; Whitin, T.M.</span> (1963).
-                    <span class="ref-title">&ldquo;Analysis of Inventory Systems.&rdquo;</span>
-                    <span class="ref-journal">Prentice-Hall.</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-</section>
-
-<!-- ══ SECTION 8 · CTA + Footer ══ -->
-<section>
-    <div class="container">
-        <div class="cta-panel fade-in">
-            <h3>Need to optimize agricultural market timing?</h3>
-            <p>
-                From optimal sell timing to crop portfolio optimization and supply chain logistics,
-                mathematical modeling can transform your agricultural operations.
-                Let&rsquo;s discuss how Operations Research can work for you.
-            </p>
-            <div class="cta-links">
-                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
-                    <i class="fab fa-linkedin" aria-hidden="true"></i> Connect on LinkedIn
-                </a>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h5>Partial-sale policies</h5>
+                <p>Replace the binary sell/hold with a continuous action \(u_t \in [0, 1]\) representing the
+                fraction of the remaining stock to sell at week \(t\). The DP is still tractable via a
+                concave value function; the optimal policy is still a threshold but now &ldquo;how much&rdquo;
+                replaces &ldquo;whether&rdquo;.</p>
+                <a href="agriculture.html?lens=matrix#framework">See the tactical cell &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Partial observability (POMDP)</h5>
+                <p>Real grain traders don't observe the &ldquo;state&rdquo; &mdash; they observe noisy prices
+                that mix trend and transient shocks. A POMDP formulation marginalizes over the hidden trend
+                state; solvable via particle filtering + value iteration on the belief simplex.</p>
+                <a href="../families/stochastic.html">Stochastic family &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Hedging with futures</h5>
+                <p>Expand the action space to include futures-contract positions. The dual gain (reduced
+                variance) shifts the optimal threshold and is directly observable in dynamic hedging
+                strategies used by Canadian grain marketers.</p>
+                <a href="crop-selection.html">See: Crop Portfolio Selection &rarr;</a>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ── Disclaimer ── -->
-<section style="padding: 2rem 0;">
+<section id="references">
     <div class="container">
-        <div class="disclaimer-box">
-            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
-            Data shown is illustrative. Crop names, prices, volatility parameters, and storage costs
-            are representative scenarios for educational purposes and do not reflect any specific
-            agricultural cooperative or commodity exchange.
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs and permanent URLs</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Bellman, R. (1957).</div>
+                    <div class="reference-title"><em>Dynamic Programming.</em></div>
+                    <div class="reference-journal">Princeton University Press. Foundational text of dynamic programming and value iteration.</div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">McCall, J. J. (1970).</div>
+                    <div class="reference-title">&ldquo;Economics of information and job search.&rdquo;</div>
+                    <div class="reference-journal"><em>Quarterly Journal of Economics</em>, 84(1), 113&ndash;126. <a href="https://doi.org/10.2307/1879403" target="_blank" rel="noopener">doi:10.2307/1879403</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Schwartz, E. S., &amp; Smith, J. E. (2000).</div>
+                    <div class="reference-title">&ldquo;Short-term variations and long-term dynamics in commodity prices.&rdquo;</div>
+                    <div class="reference-journal"><em>Management Science</em>, 46(7), 893&ndash;911. <a href="https://doi.org/10.1287/mnsc.46.7.893.12034" target="_blank" rel="noopener">doi:10.1287/mnsc.46.7.893.12034</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Puterman, M. L. (1994).</div>
+                    <div class="reference-title"><em>Markov Decision Processes: Discrete Stochastic Dynamic Programming.</em></div>
+                    <div class="reference-journal">Wiley. <a href="https://doi.org/10.1002/9780470316887" target="_blank" rel="noopener">doi:10.1002/9780470316887</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Ahumada, O., &amp; Villalobos, J.&nbsp;R. (2009).</div>
+                    <div class="reference-title">&ldquo;Application of planning models in the agri-food supply chain: A review.&rdquo;</div>
+                    <div class="reference-journal"><em>European Journal of Operational Research</em>, 196(1), 1&ndash;20. <a href="https://doi.org/10.1016/j.ejor.2008.02.014" target="_blank" rel="noopener">doi:10.1016/j.ejor.2008.02.014</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Statistics Canada.</div>
+                    <div class="reference-title">Table 32-10-0359-01 &mdash; Estimated areas, yield, production, average farm price and total farm value of principal field crops.</div>
+                    <div class="reference-journal"><a href="https://www150.statcan.gc.ca/t1/tbl1/en/tv.action?pid=3210035901" target="_blank" rel="noopener">StatCan field crops</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">CME Group.</div>
+                    <div class="reference-title">Corn Futures market data &amp; volatility reports.</div>
+                    <div class="reference-journal"><a href="https://www.cmegroup.com/markets/agriculture/grains/corn.html" target="_blank" rel="noopener">cmegroup.com</a></div>
+                </div>
+            </div>
         </div>
     </div>
 </section>
 
-<!-- ── Footer ── -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Need to time grain sales<br>on your farm or cooperative?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<div class="disclaimer">
+    Data and numerical examples are illustrative (representative Quebec grain-oilseed farm). This is an educational tool, not production software or trading advice.
+</div>
+
 </main>
 
 <footer>
     <div class="container">
-        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+        <p>
+            <a href="agriculture.html">&larr; Back to Agriculture</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
     </div>
 </footer>
 
-<a href="../index.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
-
-<!-- ── Scroll to Top Button ── -->
-<button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})">
-    <i class="fas fa-chevron-up" aria-hidden="true"></i>
-</button>
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// Market Timing — Stochastic DP Interactive Demo
-// ═══════════════════════════════════════════════════════════════
-// <!-- TODO: add Python application file applications/agriculture_market_timing.py -->
+(function () {
+    'use strict';
 
-var canvas = document.getElementById('marketCanvas');
-var ctx = canvas.getContext('2d');
-
-// Hi-DPI support
-var dpr = window.devicePixelRatio || 1;
-var CW = 900, CH = 420;
-canvas.width = CW * dpr;
-canvas.height = CH * dpr;
-canvas.style.width = CW + 'px';
-canvas.style.height = CH + 'px';
-ctx.scale(dpr, dpr);
-
-// ── Color palette ──
-var COLORS = {
-    gold: '#C5A059',
-    green: '#64ffda',
-    red: '#ff6b6b',
-    blue: '#7aa2f7',
-    purple: '#bb9af7',
-    slate: '#8892B0',
-    slateLight: '#a8b2d1',
-    midnight: '#0A192F',
-    midnightLight: '#112240',
-    ivory: '#F8F9FA'
-};
-
-// ── Scenarios ──
-var _scenarios = [
-    {
-        name: 'Prairie Wheat',
-        context: 'Illustrative example. A Saskatchewan cooperative holds 500 tonnes of Hard Red Spring Wheat after the September harvest. They have a 12-week selling window before storage costs erode margins. Weekly price follows a mean-reverting process around $280/tonne with moderate volatility\u2014a textbook optimal stopping instance.',
-        qty: 500, weeks: 12, basePrice: 280, volatility: 8, storageCost: 3, sims: 1000
-    },
-    {
-        name: 'Arabica Coffee',
-        context: 'Illustrative example. A Colombian estate in Antioquia holds 80 tonnes of washed Arabica after the main harvest (October). With a 16-week selling window, the estate faces high price volatility driven by Brazilian frost reports and NYC futures\u2014a scenario where DP\u2019s adaptive thresholds significantly outperform fixed rules.',
-        qty: 80, weeks: 16, basePrice: 4200, volatility: 12, storageCost: 35, sims: 1000
-    },
-    {
-        name: 'Salinas Strawberries',
-        context: 'Illustrative example. A Salinas Valley farm holds 200 tonnes of fresh strawberries with only a 6-week selling window due to perishability. Spoilage reduces marketable quantity by 5% per week, and cold storage costs are high. The short horizon and degradation pressure make this a high-stakes timing decision.',
-        qty: 200, weeks: 6, basePrice: 1800, volatility: 10, storageCost: 50, sims: 1000
-    }
-];
-
-var _currentScenario = 0;
-var _lastSolutionResults = {};
-
-// ═══════════════════════════════════════════════════════════════
-// Scenario Loading
-// ═══════════════════════════════════════════════════════════════
-
-function loadScenario(i) {
-    _currentScenario = i;
-    var s = _scenarios[i];
-
-    // Update active chip
-    for (var idx = 0; idx < 3; idx++) {
-        var btn = document.getElementById('scn-' + idx);
-        if (idx === i) btn.classList.add('active');
-        else btn.classList.remove('active');
-    }
-
-    // Update context
-    document.getElementById('scenario-context').textContent = s.context;
-
-    // Populate inputs
-    document.getElementById('paramQty').value = s.qty;
-    document.getElementById('paramWeeks').value = s.weeks;
-    document.getElementById('paramBasePrice').value = s.basePrice;
-    document.getElementById('paramVolatility').value = s.volatility;
-    document.getElementById('paramStorage').value = s.storageCost;
-    document.getElementById('paramSims').value = s.sims;
-
-    // Update summary
-    document.getElementById('configSummary').textContent = s.weeks + ' Weeks \u00B7 ' + s.qty + ' Tonnes';
-
-    // Clear previous results
-    document.getElementById('comparisonContainer').style.display = 'none';
-    document.getElementById('businessPanel').style.display = 'none';
-    document.getElementById('solver-status').textContent = 'Ready. Click \u201CSolve & Compare All Algorithms\u201D to run.';
-    clearCanvas();
-}
-
-function readParams() {
-    return {
-        qty: parseInt(document.getElementById('paramQty').value) || 500,
-        weeks: parseInt(document.getElementById('paramWeeks').value) || 12,
-        basePrice: parseFloat(document.getElementById('paramBasePrice').value) || 280,
-        volatility: parseFloat(document.getElementById('paramVolatility').value) || 8,
-        storageCost: parseFloat(document.getElementById('paramStorage').value) || 3,
-        sims: parseInt(document.getElementById('paramSims').value) || 1000
-    };
-}
-
-function resetDefaults() { loadScenario(0); }
-
-function randomize() {
-    document.getElementById('paramQty').value = Math.round(100 + Math.random() * 900);
-    document.getElementById('paramWeeks').value = Math.round(4 + Math.random() * 20);
-    document.getElementById('paramBasePrice').value = Math.round(100 + Math.random() * 5000);
-    document.getElementById('paramVolatility').value = Math.round(3 + Math.random() * 25);
-    document.getElementById('paramStorage').value = Math.round(1 + Math.random() * 80);
-    var p = readParams();
-    document.getElementById('configSummary').textContent = p.weeks + ' Weeks \u00B7 ' + p.qty + ' Tonnes';
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Price Path Generation (Mean-Reverting Random Walk)
-// ═══════════════════════════════════════════════════════════════
-
-function generatePricePath(basePrice, volatility, weeks) {
-    var path = [basePrice];
-    var sigma = basePrice * (volatility / 100);
-    var meanReversion = 0.15;
-    for (var t = 1; t <= weeks; t++) {
-        var prev = path[t - 1];
-        var drift = meanReversion * (basePrice - prev);
-        var shock = sigma * (Math.random() + Math.random() + Math.random() - 1.5) * 0.816;
-        var next = prev + drift + shock;
-        next = Math.max(basePrice * 0.5, Math.min(basePrice * 1.8, next));
-        path.push(Math.round(next * 100) / 100);
-    }
-    return path;
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Algorithm Implementations
-// ═══════════════════════════════════════════════════════════════
-
-function dpBackwardInduction(params) {
-    var basePrice = params.basePrice, volatility = params.volatility;
-    var weeks = params.weeks, qty = params.qty, storageCost = params.storageCost;
-    var sigma = basePrice * (volatility / 100);
-    var nLevels = 50;
-    var pMin = Math.max(1, basePrice - 3 * sigma);
-    var pMax = basePrice + 3 * sigma;
-    var dpStep = (pMax - pMin) / (nLevels - 1);
-    var prices = [];
-    for (var i = 0; i < nLevels; i++) prices.push(pMin + i * dpStep);
-
-    var meanRev = 0.15;
-    function transProbs(fromPrice) {
-        var probs = [];
-        var total = 0;
-        for (var j = 0; j < nLevels; j++) {
-            var target = fromPrice + meanRev * (basePrice - fromPrice);
-            var diff = prices[j] - target;
-            var prob = Math.exp(-0.5 * (diff / sigma) * (diff / sigma));
-            probs.push(prob);
-            total += prob;
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = (h.scrollTop || b.scrollTop);
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            scrollProgress.style.width = (height > 0 ? (scrolled / height) * 100 : 0) + '%';
         }
-        for (var j2 = 0; j2 < nLevels; j2++) probs[j2] /= total;
-        return probs;
     }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-    var V = [];
-    var thresholds = new Array(weeks + 1);
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function (el) { io.observe(el); });
+    } else { fades.forEach(function (el) { el.classList.add('visible'); }); }
 
-    V[weeks] = [];
-    for (var i2 = 0; i2 < nLevels; i2++) {
-        V[weeks][i2] = prices[i2] * qty - storageCost * weeks * qty;
-    }
-    thresholds[weeks] = pMin;
-
-    for (var t = weeks - 1; t >= 0; t--) {
-        V[t] = [];
-        var foundThreshold = false;
-        thresholds[t] = pMax;
-
-        for (var i3 = 0; i3 < nLevels; i3++) {
-            var sellNow = prices[i3] * qty - storageCost * t * qty;
-            var tp = transProbs(prices[i3]);
-            var expCont = 0;
-            for (var j3 = 0; j3 < nLevels; j3++) {
-                expCont += tp[j3] * V[t + 1][j3];
+    // Build transition matrix P[s][s'] with persistence + drift
+    function buildTransition(S, persistence, driftStates) {
+        var P = [];
+        for (var s = 0; s < S; s++) {
+            P[s] = new Array(S).fill(0);
+            P[s][s] = persistence;
+            var off = (1 - persistence);
+            // Split off-diagonal mass with drift bias
+            var up = Math.min(1, Math.max(0, 0.5 + driftStates * 0.25));
+            var dn = 1 - up;
+            if (s + 1 < S && s - 1 >= 0) {
+                P[s][s + 1] = off * up;
+                P[s][s - 1] = off * dn;
+            } else if (s + 1 < S) {
+                P[s][s + 1] = off;
+            } else if (s - 1 >= 0) {
+                P[s][s - 1] = off;
+            } else {
+                P[s][s] += off;
             }
-            V[t][i3] = Math.max(sellNow, expCont);
-
-            if (!foundThreshold && sellNow >= expCont) {
-                thresholds[t] = prices[i3];
-                foundThreshold = true;
-            }
-        }
-        if (!foundThreshold) thresholds[t] = pMax + 1;
-    }
-
-    return thresholds;
-}
-
-function applyDP(pricePath, thresholds, params) {
-    var qty = params.qty, storageCost = params.storageCost;
-    for (var t = 0; t < pricePath.length; t++) {
-        if (pricePath[t] >= thresholds[t]) {
-            return { week: t, price: pricePath[t], revenue: pricePath[t] * qty - storageCost * t * qty };
-        }
-    }
-    var tLast = pricePath.length - 1;
-    return { week: tLast, price: pricePath[tLast], revenue: pricePath[tLast] * qty - storageCost * tLast * qty };
-}
-
-function applyMyopic(pricePath, params) {
-    var threshold = params.basePrice;
-    var qty = params.qty, storageCost = params.storageCost;
-    for (var t = 0; t < pricePath.length; t++) {
-        if (pricePath[t] >= threshold) {
-            return { week: t, price: pricePath[t], revenue: pricePath[t] * qty - storageCost * t * qty };
-        }
-    }
-    var tLast = pricePath.length - 1;
-    return { week: tLast, price: pricePath[tLast], revenue: pricePath[tLast] * qty - storageCost * tLast * qty };
-}
-
-function applyPercentile(pricePath, params) {
-    var sigma = params.basePrice * (params.volatility / 100);
-    var threshold = params.basePrice + 0.675 * sigma;
-    var qty = params.qty, storageCost = params.storageCost;
-    for (var t = 0; t < pricePath.length; t++) {
-        if (pricePath[t] >= threshold) {
-            return { week: t, price: pricePath[t], revenue: pricePath[t] * qty - storageCost * t * qty };
-        }
-    }
-    var tLast = pricePath.length - 1;
-    return { week: tLast, price: pricePath[tLast], revenue: pricePath[tLast] * qty - storageCost * tLast * qty };
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Solve & Compare
-// ═══════════════════════════════════════════════════════════════
-
-function solveAndCompare() {
-    var spinner = document.getElementById('solveSpinner');
-    spinner.style.display = 'inline';
-
-    setTimeout(function() {
-        var params = readParams();
-        var nSims = params.sims;
-
-        var t0dp = performance.now();
-        var thresholds = dpBackwardInduction(params);
-        var dpComputeTime = performance.now() - t0dp;
-
-        var paths = [];
-        for (var s = 0; s < nSims; s++) {
-            paths.push(generatePricePath(params.basePrice, params.volatility, params.weeks));
-        }
-
-        var dpResults = [], myopicResults = [], percentileResults = [];
-        var times = { dp: 0, myopic: 0, percentile: 0 };
-
-        var t0 = performance.now();
-        for (var s1 = 0; s1 < nSims; s1++) dpResults.push(applyDP(paths[s1], thresholds, params));
-        times.dp = performance.now() - t0 + dpComputeTime;
-
-        t0 = performance.now();
-        for (var s2 = 0; s2 < nSims; s2++) myopicResults.push(applyMyopic(paths[s2], params));
-        times.myopic = performance.now() - t0;
-
-        t0 = performance.now();
-        for (var s3 = 0; s3 < nSims; s3++) percentileResults.push(applyPercentile(paths[s3], params));
-        times.percentile = performance.now() - t0;
-
-        function avg(arr, key) {
+            // Normalize (safety)
             var sum = 0;
-            for (var k = 0; k < arr.length; k++) sum += arr[k][key];
-            return sum / arr.length;
+            for (var k = 0; k < S; k++) sum += P[s][k];
+            if (sum > 0) for (var k2 = 0; k2 < S; k2++) P[s][k2] /= sum;
+        }
+        return P;
+    }
+
+    // Value iteration: V[t][s], A[t][s] in {0=hold, 1=sell}
+    function solveMDP(prices, P, T, c, gamma, pF) {
+        var S = prices.length;
+        var V = [], A = [];
+        for (var t = 0; t <= T; t++) {
+            V.push(new Array(S).fill(0));
+            A.push(new Array(S).fill(0));
+        }
+        // Terminal
+        for (var s0 = 0; s0 < S; s0++) { V[T][s0] = pF; A[T][s0] = 1; }
+
+        for (var t2 = T - 1; t2 >= 0; t2--) {
+            for (var s = 0; s < S; s++) {
+                var sellValue = prices[s];
+                var holdValue = -c;
+                for (var sp = 0; sp < S; sp++) holdValue += gamma * P[s][sp] * V[t2 + 1][sp];
+                if (sellValue >= holdValue) {
+                    V[t2][s] = sellValue; A[t2][s] = 1;
+                } else {
+                    V[t2][s] = holdValue; A[t2][s] = 0;
+                }
+            }
+        }
+        return { V: V, A: A };
+    }
+
+    // Policy heatmap canvas
+    var CANVAS_W = 920, CANVAS_H = 380;
+    function renderPolicy(result, prices, T) {
+        var canvas = document.getElementById('canvasPolicy');
+        if (!canvas.getContext) return;
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = CANVAS_W * dpr;
+        canvas.height = CANVAS_H * dpr;
+        canvas.style.width = CANVAS_W + 'px';
+        canvas.style.height = CANVAS_H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+
+        var padL = 90, padR = 20, padT = 20, padB = 40;
+        var plotW = CANVAS_W - padL - padR;
+        var plotH = CANVAS_H - padT - padB;
+        var S = prices.length;
+        var cellW = plotW / (T + 1);
+        var cellH = plotH / S;
+
+        // Draw cells
+        for (var t = 0; t <= T; t++) {
+            for (var s = 0; s < S; s++) {
+                var x = padL + t * cellW;
+                var y = padT + (S - 1 - s) * cellH;
+                if (result.A[t][s] === 1) {
+                    ctx.fillStyle = '#C5A059';
+                } else {
+                    // Hold: shade by relative position to threshold (uniform for readability)
+                    ctx.fillStyle = 'rgba(122,162,247,0.55)';
+                }
+                ctx.fillRect(x, y, cellW, cellH);
+                ctx.strokeStyle = 'rgba(10,25,47,0.7)';
+                ctx.lineWidth = 0.5;
+                ctx.strokeRect(x, y, cellW, cellH);
+            }
         }
 
-        var summary = [
-            { name: 'DP Backward Induction', avgRevenue: avg(dpResults, 'revenue'), avgWeek: avg(dpResults, 'week'), timeMs: times.dp },
-            { name: 'Myopic Threshold', avgRevenue: avg(myopicResults, 'revenue'), avgWeek: avg(myopicResults, 'week'), timeMs: times.myopic },
-            { name: 'Percentile Rule (75th)', avgRevenue: avg(percentileResults, 'revenue'), avgWeek: avg(percentileResults, 'week'), timeMs: times.percentile }
-        ];
-
-        _lastSolutionResults = { algorithms: summary };
-
-        renderComparisonTable(summary);
-
-        var showPath = paths[0];
-        var showResults = {
-            dp: dpResults[0],
-            myopic: myopicResults[0],
-            percentile: percentileResults[0]
-        };
-        renderVisualization(showPath, showResults, thresholds, params);
-
-        updateBusinessPanel();
-
-        document.getElementById('solver-status').textContent =
-            'Simulated ' + nSims + ' price paths. Showing one representative path with all three sell decisions.';
-
-        spinner.style.display = 'none';
-    }, 50);
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Render Comparison Table (safe DOM methods)
-// ═══════════════════════════════════════════════════════════════
-
-function renderComparisonTable(summary) {
-    var container = document.getElementById('comparisonContainer');
-    var tbody = document.getElementById('compareBody');
-    container.style.display = 'block';
-
-    var bestRevenue = -Infinity;
-    for (var k = 0; k < summary.length; k++) {
-        if (summary[k].avgRevenue > bestRevenue) bestRevenue = summary[k].avgRevenue;
-    }
-
-    // Clear existing rows
-    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
-
-    for (var i = 0; i < summary.length; i++) {
-        var s = summary[i];
-        var isBest = Math.abs(s.avgRevenue - bestRevenue) < 0.01;
-
-        var tr = document.createElement('tr');
-
-        var tdName = document.createElement('td');
-        tdName.className = 'algo-label';
-        tdName.textContent = s.name;
-        tr.appendChild(tdName);
-
-        var tdRev = document.createElement('td');
-        if (isBest) tdRev.className = 'best-val';
-        tdRev.textContent = '$' + Math.round(s.avgRevenue).toLocaleString();
-        tr.appendChild(tdRev);
-
-        var tdWeek = document.createElement('td');
-        tdWeek.textContent = s.avgWeek.toFixed(1);
-        tr.appendChild(tdWeek);
-
-        var tdTime = document.createElement('td');
-        tdTime.textContent = s.timeMs.toFixed(1);
-        tr.appendChild(tdTime);
-
-        tbody.appendChild(tr);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════
-// Canvas Visualization
-// ═══════════════════════════════════════════════════════════════
-
-function clearCanvas() {
-    ctx.fillStyle = '#112240';
-    ctx.fillRect(0, 0, CW, CH);
-    ctx.fillStyle = '#8892B0';
-    ctx.font = '14px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Price path and sell decisions will appear here after solving.', CW / 2, CH / 2);
-}
-
-function renderVisualization(pricePath, decisions, thresholds, params) {
-    var pad = { top: 50, right: 40, bottom: 60, left: 80 };
-    var plotW = CW - pad.left - pad.right;
-    var plotH = CH - pad.top - pad.bottom;
-    var T = pricePath.length;
-
-    var allPrices = pricePath.slice();
-    for (var ti = 0; ti < T; ti++) {
-        if (thresholds[ti] && thresholds[ti] < params.basePrice * 2) allPrices.push(thresholds[ti]);
-    }
-    var pMin = Infinity, pMax = -Infinity;
-    for (var pi = 0; pi < allPrices.length; pi++) {
-        if (allPrices[pi] < pMin) pMin = allPrices[pi];
-        if (allPrices[pi] > pMax) pMax = allPrices[pi];
-    }
-    pMin *= 0.95;
-    pMax *= 1.05;
-
-    function xPos(t) { return pad.left + (t / (T - 1)) * plotW; }
-    function yPos(p) { return pad.top + plotH - ((p - pMin) / (pMax - pMin)) * plotH; }
-
-    // Clear
-    ctx.fillStyle = '#112240';
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Grid lines
-    ctx.strokeStyle = 'rgba(197,160,89,0.08)';
-    ctx.lineWidth = 1;
-    var nGrid = 5;
-    for (var gi = 0; gi <= nGrid; gi++) {
-        var gp = pMin + (gi / nGrid) * (pMax - pMin);
-        var gy = yPos(gp);
+        // Reservation-price line: for each t, the lowest selling price
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 2;
         ctx.beginPath();
-        ctx.moveTo(pad.left, gy);
-        ctx.lineTo(CW - pad.right, gy);
+        var started = false;
+        for (var tt = 0; tt <= T; tt++) {
+            var thresholdS = -1;
+            for (var ss = 0; ss < S; ss++) {
+                if (result.A[tt][ss] === 1) { thresholdS = ss; break; }
+            }
+            if (thresholdS === -1) continue;
+            var px = padL + tt * cellW + cellW / 2;
+            var py = padT + (S - 1 - thresholdS) * cellH + cellH / 2;
+            if (!started) { ctx.moveTo(px, py); started = true; } else { ctx.lineTo(px, py); }
+        }
         ctx.stroke();
 
-        ctx.fillStyle = COLORS.slate;
+        // Y labels (price)
+        ctx.fillStyle = '#8892B0';
         ctx.font = '11px JetBrains Mono, monospace';
         ctx.textAlign = 'right';
-        ctx.fillText('$' + Math.round(gp), pad.left - 8, gy + 4);
-    }
-
-    // X-axis labels
-    ctx.textAlign = 'center';
-    for (var xi = 0; xi < T; xi++) {
-        var xx = xPos(xi);
-        ctx.strokeStyle = 'rgba(197,160,89,0.05)';
-        ctx.beginPath();
-        ctx.moveTo(xx, pad.top);
-        ctx.lineTo(xx, pad.top + plotH);
-        ctx.stroke();
-
-        ctx.fillStyle = COLORS.slate;
-        ctx.font = '11px JetBrains Mono, monospace';
-        ctx.fillText('W' + xi, xx, pad.top + plotH + 20);
-    }
-
-    // Axis labels
-    ctx.fillStyle = COLORS.gold;
-    ctx.font = '12px Inter, sans-serif';
-    ctx.textAlign = 'center';
-    ctx.fillText('Week', CW / 2, CH - 10);
-    ctx.save();
-    ctx.translate(18, CH / 2);
-    ctx.rotate(-Math.PI / 2);
-    ctx.fillText('Price ($/tonne)', 0, 0);
-    ctx.restore();
-
-    // DP Threshold line (dashed)
-    ctx.setLineDash([6, 4]);
-    ctx.strokeStyle = 'rgba(100,255,218,0.4)';
-    ctx.lineWidth = 1.5;
-    ctx.beginPath();
-    var started = false;
-    for (var thi = 0; thi < T; thi++) {
-        var th = thresholds[thi];
-        if (th && th <= pMax * 1.1 && th >= pMin * 0.9) {
-            var thx = xPos(thi);
-            var thy = yPos(Math.min(Math.max(th, pMin), pMax));
-            if (!started) { ctx.moveTo(thx, thy); started = true; }
-            else ctx.lineTo(thx, thy);
+        ctx.textBaseline = 'middle';
+        for (var sy = 0; sy < S; sy++) {
+            var ylbl = padT + (S - 1 - sy) * cellH + cellH / 2;
+            ctx.fillText('$' + prices[sy].toFixed(0), padL - 8, ylbl);
         }
-    }
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Threshold label
-    if (started) {
-        ctx.fillStyle = 'rgba(100,255,218,0.6)';
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textAlign = 'left';
-        var labelT = Math.min(2, T - 1);
-        var labelTh = Math.min(Math.max(thresholds[labelT] || params.basePrice, pMin), pMax);
-        ctx.fillText('DP Threshold', xPos(labelT) + 5, yPos(labelTh) - 8);
-    }
-
-    // Price path (main line)
-    ctx.strokeStyle = COLORS.gold;
-    ctx.lineWidth = 2.5;
-    ctx.beginPath();
-    ctx.moveTo(xPos(0), yPos(pricePath[0]));
-    for (var li = 1; li < T; li++) {
-        ctx.lineTo(xPos(li), yPos(pricePath[li]));
-    }
-    ctx.stroke();
-
-    // Price dots
-    for (var di = 0; di < T; di++) {
-        ctx.fillStyle = COLORS.gold;
-        ctx.beginPath();
-        ctx.arc(xPos(di), yPos(pricePath[di]), 3, 0, Math.PI * 2);
-        ctx.fill();
-    }
-
-    // Sell decision markers
-    var markers = [
-        { key: 'dp', label: 'DP', color: COLORS.green, shape: 'diamond' },
-        { key: 'myopic', label: 'Myopic', color: COLORS.blue, shape: 'circle' },
-        { key: 'percentile', label: 'P75', color: COLORS.purple, shape: 'square' }
-    ];
-
-    for (var mi = 0; mi < markers.length; mi++) {
-        var m = markers[mi];
-        var d = decisions[m.key];
-        var mx = xPos(d.week);
-        var my = yPos(d.price);
-
-        ctx.fillStyle = m.color;
-        ctx.strokeStyle = m.color;
-        ctx.lineWidth = 2;
-
-        if (m.shape === 'diamond') {
-            ctx.beginPath();
-            ctx.moveTo(mx, my - 10);
-            ctx.lineTo(mx + 8, my);
-            ctx.lineTo(mx, my + 10);
-            ctx.lineTo(mx - 8, my);
-            ctx.closePath();
-            ctx.fill();
-        } else if (m.shape === 'circle') {
-            ctx.beginPath();
-            ctx.arc(mx, my, 8, 0, Math.PI * 2);
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(mx, my, 4, 0, Math.PI * 2);
-            ctx.fill();
-        } else {
-            ctx.fillRect(mx - 7, my - 7, 14, 14);
-        }
-
-        // Label
-        ctx.fillStyle = m.color;
-        ctx.font = 'bold 10px Inter, sans-serif';
+        // X labels (week)
         ctx.textAlign = 'center';
-        ctx.fillText(m.label, mx, my - 15);
-        ctx.font = '9px JetBrains Mono, monospace';
-        ctx.fillText('$' + Math.round(d.price), mx, my + 24);
-    }
-
-    // Legend
-    var legendX = CW - pad.right - 180;
-    var legendY = pad.top + 10;
-    ctx.fillStyle = 'rgba(10,25,47,0.85)';
-    ctx.fillRect(legendX - 8, legendY - 4, 190, 90);
-    ctx.strokeStyle = 'rgba(197,160,89,0.2)';
-    ctx.lineWidth = 1;
-    ctx.strokeRect(legendX - 8, legendY - 4, 190, 90);
-
-    ctx.font = '10px Inter, sans-serif';
-    ctx.textAlign = 'left';
-
-    ctx.fillStyle = COLORS.gold;
-    ctx.fillRect(legendX, legendY + 5, 16, 3);
-    ctx.fillStyle = COLORS.slateLight;
-    ctx.fillText('Market Price', legendX + 22, legendY + 10);
-
-    for (var lgi = 0; lgi < markers.length; lgi++) {
-        var lm = markers[lgi];
-        var ly = legendY + 22 + lgi * 20;
-        ctx.fillStyle = lm.color;
-        ctx.beginPath();
-        ctx.arc(legendX + 8, ly, 4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = COLORS.slateLight;
-        ctx.fillText(lm.label + ' sell @ W' + decisions[lm.key].week, legendX + 22, ly + 4);
-    }
-}
-
-clearCanvas();
-
-// ═══════════════════════════════════════════════════════════════
-// Business Panel
-// ═══════════════════════════════════════════════════════════════
-
-function updateBusinessPanel() {
-    if (!_lastSolutionResults.algorithms) return;
-
-    var panel = document.getElementById('businessPanel');
-    panel.style.display = 'block';
-
-    var algos = _lastSolutionResults.algorithms;
-    var best = -Infinity, worst = Infinity;
-    for (var i = 0; i < algos.length; i++) {
-        if (algos[i].avgRevenue > best) best = algos[i].avgRevenue;
-        if (algos[i].avgRevenue < worst) worst = algos[i].avgRevenue;
-    }
-    var gap = best - worst;
-
-    var unitCost = parseFloat(document.getElementById('bizUnitCost').value) || 1;
-    var opsPerYear = parseFloat(document.getElementById('bizOpsPerDay').value) || 2;
-
-    var annualCost = gap * unitCost * opsPerYear;
-    var decadeCost = annualCost * 10;
-
-    document.getElementById('bizGap').textContent = '$' + Math.round(gap).toLocaleString();
-    document.getElementById('bizDaily').textContent = '$' + Math.round(annualCost).toLocaleString();
-    document.getElementById('bizDailyLabel').textContent = 'at ' + opsPerYear + ' harvests/year';
-    document.getElementById('bizAnnual').textContent = '$' + Math.round(decadeCost).toLocaleString();
-}
-
-// ═══════════════════════════════════════════════════════════════
-// UI Behavior: Theme, Scroll, Fade-in
-// ═══════════════════════════════════════════════════════════════
-
-document.getElementById('themeToggle').addEventListener('click', function() {
-    var html = document.documentElement;
-    var current = html.getAttribute('data-theme');
-    html.setAttribute('data-theme', current === 'light' ? '' : 'light');
-});
-
-window.addEventListener('scroll', function() {
-    var scrollTop = window.scrollY;
-    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
-    var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-    document.getElementById('scrollProgress').style.width = progress + '%';
-
-    var btn = document.getElementById('scrollTopBtn');
-    if (scrollTop > 400) btn.classList.add('visible');
-    else btn.classList.remove('visible');
-});
-
-var fadeObserver = new IntersectionObserver(function(entries) {
-    for (var i = 0; i < entries.length; i++) {
-        if (entries[i].isIntersecting) {
-            entries[i].target.classList.add('visible');
+        ctx.textBaseline = 'top';
+        var xTickStep = Math.max(1, Math.floor(T / 10));
+        for (var tx = 0; tx <= T; tx += xTickStep) {
+            var xlbl = padL + tx * cellW + cellW / 2;
+            ctx.fillText('t=' + tx, xlbl, padT + plotH + 4);
         }
+
+        // Titles
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('WEEK', padL + plotW / 2, padT + plotH + 24);
+        ctx.save();
+        ctx.translate(24, padT + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('PRICE STATE (CAD / t)', 0, 0);
+        ctx.restore();
     }
-}, { threshold: 0.1 });
 
-var fadeEls = document.querySelectorAll('.fade-in');
-for (var fi = 0; fi < fadeEls.length; fi++) {
-    fadeObserver.observe(fadeEls[fi]);
-}
+    // Value curves canvas
+    var VAL_W = 920, VAL_H = 260;
+    function renderValues(result, prices, T) {
+        var canvas = document.getElementById('canvasValue');
+        if (!canvas.getContext) return;
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = VAL_W * dpr;
+        canvas.height = VAL_H * dpr;
+        canvas.style.width = VAL_W + 'px';
+        canvas.style.height = VAL_H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, VAL_W, VAL_H);
 
-// Initialize
-loadScenario(0);
+        var padL = 70, padR = 180, padT = 20, padB = 40;
+        var plotW = VAL_W - padL - padR;
+        var plotH = VAL_H - padT - padB;
+
+        // Find min / max V
+        var vMin = Infinity, vMax = -Infinity;
+        for (var t = 0; t <= T; t++) {
+            for (var s = 0; s < prices.length; s++) {
+                if (result.V[t][s] < vMin) vMin = result.V[t][s];
+                if (result.V[t][s] > vMax) vMax = result.V[t][s];
+            }
+        }
+        if (vMax <= vMin) vMax = vMin + 1;
+        var span = vMax - vMin;
+        vMin -= 0.05 * span;
+        vMax += 0.05 * span;
+
+        // Grid
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        ctx.lineWidth = 1;
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (var g = 0; g <= 4; g++) {
+            var v = vMin + (vMax - vMin) * g / 4;
+            var yy = padT + plotH - (g / 4) * plotH;
+            ctx.beginPath(); ctx.moveTo(padL, yy); ctx.lineTo(padL + plotW, yy); ctx.stroke();
+            ctx.fillText('$' + v.toFixed(0), padL - 6, yy);
+        }
+
+        // Color palette for price states
+        var LINE_COLORS = ['#ff6b6b','#ffcb8e','#C5A059','#D4AF37','#64ffda','#7aa2f7','#a8b2d1','#90ee90','#ffa0d1','#f8f9fa','#9b8cff'];
+
+        // Line per state
+        for (var s2 = 0; s2 < prices.length; s2++) {
+            ctx.strokeStyle = LINE_COLORS[s2 % LINE_COLORS.length];
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            for (var tt = 0; tt <= T; tt++) {
+                var px = padL + (tt / T) * plotW;
+                var py = padT + plotH - ((result.V[tt][s2] - vMin) / (vMax - vMin)) * plotH;
+                if (tt === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        }
+
+        // Legend
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.font = '11px Inter, sans-serif';
+        for (var s3 = prices.length - 1; s3 >= 0; s3--) {
+            var li = prices.length - 1 - s3;
+            var ly = padT + 8 + li * 16;
+            if (ly > padT + plotH - 8) continue;
+            ctx.fillStyle = LINE_COLORS[s3 % LINE_COLORS.length];
+            ctx.fillRect(padL + plotW + 12, ly - 5, 14, 2);
+            ctx.fillStyle = '#a8b2d1';
+            ctx.fillText('V(' + prices[s3].toFixed(0) + ')', padL + plotW + 32, ly);
+        }
+
+        // X axis labels
+        ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+        ctx.fillStyle = '#8892B0';
+        for (var txx = 0; txx <= T; txx += Math.max(1, Math.floor(T / 6))) {
+            var xlb = padL + (txx / T) * plotW;
+            ctx.fillText('t=' + txx, xlb, padT + plotH + 4);
+        }
+
+        // Titles
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('WEEK', padL + plotW / 2, padT + plotH + 22);
+        ctx.save();
+        ctx.translate(20, padT + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('V(s, t) ($/t)', 0, 0);
+        ctx.restore();
+    }
+
+    function runSolver() {
+        var T = parseInt(document.getElementById('horizon').value, 10) || 36;
+        var pLow = parseFloat(document.getElementById('priceLow').value) || 180;
+        var pHigh = parseFloat(document.getElementById('priceHigh').value) || 280;
+        var S = parseInt(document.getElementById('numStates').value, 10) || 9;
+        var persistence = parseFloat(document.getElementById('volatility').value) || 0.55;
+        var driftDollars = parseFloat(document.getElementById('drift').value) || 0.6;
+        var c = parseFloat(document.getElementById('storage').value) || 0.85;
+        var gamma = parseFloat(document.getElementById('discount').value) || 0.999;
+        var pF = parseFloat(document.getElementById('forcedPrice').value) || 210;
+
+        if (pHigh <= pLow) pHigh = pLow + 10;
+        if (S < 3) S = 3;
+        if (persistence < 0.05) persistence = 0.05;
+        if (persistence > 0.98) persistence = 0.98;
+
+        var prices = [];
+        for (var s = 0; s < S; s++) {
+            prices.push(pLow + (pHigh - pLow) * (S === 1 ? 0 : s / (S - 1)));
+        }
+        var stepDollars = (pHigh - pLow) / Math.max(1, S - 1);
+        // convert drift in $/wk to per-step probability bias
+        var driftStates = stepDollars > 0 ? (driftDollars / stepDollars) : 0;
+        if (driftStates > 1) driftStates = 1;
+        if (driftStates < -1) driftStates = -1;
+
+        var P = buildTransition(S, persistence, driftStates);
+        var res = solveMDP(prices, P, T, c, gamma, pF);
+
+        // KPIs
+        var midS = Math.floor(S / 2);
+        var V0mid = res.V[0][midS];
+        // Reservation price at t=0 and t=T/2
+        function reservationAt(t) {
+            for (var ss = 0; ss < S; ss++) {
+                if (res.A[t][ss] === 1) return prices[ss];
+            }
+            return prices[S - 1];
+        }
+        var reserveNow = reservationAt(0);
+        var reserveHalf = reservationAt(Math.floor(T / 2));
+        var forcedGap = V0mid - pF;
+
+        function fmt(v) { return '$' + v.toFixed(1); }
+        document.getElementById('kpiValMid').textContent = fmt(V0mid);
+        document.getElementById('kpiReserveNow').textContent = fmt(reserveNow);
+        document.getElementById('kpiReserveHalf').textContent = fmt(reserveHalf);
+        document.getElementById('kpiForcedGap').textContent = (forcedGap >= 0 ? '+' : '') + fmt(forcedGap);
+
+        renderPolicy(res, prices, T);
+        renderValues(res, prices, T);
+
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    document.getElementById('btnRun').addEventListener('click', runSolver);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('horizon').value = 36;
+        document.getElementById('priceLow').value = 180;
+        document.getElementById('priceHigh').value = 280;
+        document.getElementById('numStates').value = 9;
+        document.getElementById('volatility').value = 0.55;
+        document.getElementById('drift').value = 0.6;
+        document.getElementById('storage').value = 0.85;
+        document.getElementById('discount').value = 0.999;
+        document.getElementById('forcedPrice').value = 210;
+        runSolver();
+    });
+
+    runSolver();
+})();
 </script>
 </body>
 </html>
