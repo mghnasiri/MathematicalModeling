@@ -1,0 +1,1572 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Unit Commitment | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Unit Commitment (UC) is the day-ahead scheduling problem for power-system generators: decide which thermal units to start, stop, and run over 24 hours at minimum total cost, subject to start-up costs, minimum up/down times, ramp limits, and spinning reserve. Interactive MILP solver with priority-list, LP relaxation, and Lagrangian-relaxation algorithms.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/unit-commitment.html">
+    <meta property="og:title" content="Unit Commitment | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive MILP solver for the day-ahead unit commitment problem with priority-list, LP-relaxation, and Lagrangian-relaxation algorithms.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/unit-commitment.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+            --amber: #fbbf24;
+            --violet: #c084fc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; flex-wrap: wrap; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero { padding: 5rem 2rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(197,160,89,0.06) 0%, transparent 60%),
+                              radial-gradient(ellipse 40% 30% at 20% 70%, rgba(100,255,218,0.04) 0%, transparent 50%),
+                              radial-gradient(ellipse 40% 30% at 80% 70%, rgba(122,162,247,0.04) 0%, transparent 50%);
+            pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.3rem; opacity: 0.9; filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); animation: powerSurge 3s ease-in-out infinite; }
+        @keyframes powerSurge {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 18px rgba(197,160,89,0.7)); transform: scale(1.06); }
+        }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 0.9rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-abbrev { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 1rem; letter-spacing: 2px; margin-bottom: 1rem; }
+        .hero-subtitle { font-size: 1rem; color: var(--slate); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 1.2rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.2rem auto; }
+        .hero-desc { max-width: 820px; margin: 0 auto 1rem; color: var(--slate-light); font-size: 0.98rem; line-height: 1.9; }
+        .hero-tags { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.3rem; }
+        .hero-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 3px 10px; border-radius: 3px; letter-spacing: 1px; color: var(--gold); background: rgba(197,160,89,0.08); border: 1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-short { color: var(--blue); background: rgba(122,162,247,0.08); border-color: rgba(122,162,247,0.3); }
+        .hero-tag.tag-supply { color: var(--amber); background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); }
+
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.85rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .context-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width: 840px; margin: 0 auto; color: var(--slate-light); font-size: 0.96rem; line-height: 1.9; }
+        .context-block p { margin-bottom: 1.2rem; }
+        .context-block strong { color: var(--ivory); }
+        .context-block cite { color: var(--gold); font-style: normal; }
+        .historical-note { background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 4px; padding: 1.2rem 1.4rem; margin: 1.5rem 0; color: var(--slate-light); font-size: 0.92rem; line-height: 1.75; }
+        .historical-note-head { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+        .historical-note-head i { margin-right: 0.5rem; }
+
+        .formulation-grid { display: grid; grid-template-columns: 1fr; gap: 1.6rem; max-width: 1000px; margin: 0 auto; }
+        .formulation-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.6rem; }
+        .formulation-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; letter-spacing: 1.5px; color: var(--gold); margin-bottom: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 0.5rem; }
+        .formulation-card h3 span.ref { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--slate); letter-spacing: 0.5px; text-transform: none; font-weight: 400; margin-left: 0.5rem; }
+        .formulation-card p, .formulation-card ul { color: var(--slate-light); font-size: 0.9rem; margin-bottom: 0.8rem; }
+        .formulation-card ul { padding-left: 1.5rem; list-style: disc; }
+        .formulation-card li { margin-bottom: 0.3rem; }
+        .formulation-card strong { color: var(--ivory); }
+
+        .math-display { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem 1.4rem; margin: 1rem 0; overflow-x: auto; }
+        .math-display .katex { font-size: 1.05rem; }
+
+        .notation-table { width: 100%; margin: 1rem 0; border-collapse: collapse; }
+        .notation-table caption { caption-side: top; text-align: left; font-family: 'Inter', sans-serif; font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--slate); padding-bottom: 0.5rem; }
+        .notation-table th, .notation-table td { padding: 0.5rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); font-size: 0.86rem; vertical-align: top; }
+        .notation-table th { color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: 1px; font-size: 0.95rem; text-transform: uppercase; }
+        .notation-table td:first-child { min-width: 60px; color: var(--amber); font-family: 'JetBrains Mono', monospace; }
+        .notation-table td:nth-child(2) { color: var(--ivory); }
+        .notation-table td:last-child { color: var(--slate); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+        .data-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.4rem 1.4rem; margin-bottom: 1rem; }
+        .data-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 0.6rem; }
+        .data-card p { color: var(--slate-light); font-size: 0.88rem; line-height: 1.7; margin-bottom: 0.5rem; }
+        .data-table { width: 100%; margin-top: 0.8rem; font-size: 0.82rem; border-collapse: collapse; }
+        .data-table th, .data-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.08); text-align: right; }
+        .data-table th { color: var(--gold); text-align: left; font-family: 'Inter', sans-serif; font-weight: 500; letter-spacing: 0.5px; text-transform: uppercase; font-size: 0.72rem; }
+        .data-table td:first-child { text-align: left; color: var(--ivory); }
+        .data-table td { color: var(--slate-light); font-family: 'JetBrains Mono', monospace; }
+
+        .solver-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        @media (max-width: 900px) { .solver-grid { grid-template-columns: 1fr; } }
+
+        .solver-controls { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.4rem 1.3rem; }
+        .solver-controls h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 1rem; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 0.5rem; }
+        .control-group { margin-bottom: 1rem; }
+        .control-label { display: block; font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase; color: var(--slate); margin-bottom: 0.4rem; }
+        .control-row { display: flex; align-items: center; gap: 0.7rem; }
+        .solver-slider { flex: 1; accent-color: var(--gold); }
+        .size-display { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; min-width: 3rem; text-align: right; }
+
+        .algo-select { display: flex; flex-direction: column; gap: 0.4rem; }
+        .algo-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; color: var(--slate-light); font-size: 0.8rem; cursor: pointer; transition: all 0.25s; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected { background: rgba(197,160,89,0.1); border-color: var(--gold); color: var(--gold); }
+        .algo-chip input { accent-color: var(--gold); margin: 0; }
+        .algo-chip-desc { font-size: 0.68rem; color: var(--slate); display: block; margin-top: 0.1rem; letter-spacing: 0.3px; }
+
+        .solve-btn { width: 100%; margin-top: 0.5rem; padding: 0.8rem; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--midnight); border: none; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+        .solve-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top: 0.8rem; font-size: 0.75rem; color: var(--slate); font-style: italic; text-align: center; }
+
+        .solver-output { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.4rem 1.3rem; }
+        .solver-output h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 0.8rem; }
+        .canvas-wrap { position: relative; width: 100%; margin-bottom: 1rem; }
+        .canvas-wrap canvas { width: 100%; height: auto; display: block; background: var(--midnight); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; }
+        .canvas-caption { font-size: 0.72rem; color: var(--slate); text-align: center; margin-top: 0.3rem; font-style: italic; letter-spacing: 0.3px; }
+
+        .results-table { width: 100%; margin-top: 1rem; font-size: 0.82rem; border-collapse: collapse; }
+        .results-table th, .results-table td { padding: 0.45rem 0.7rem; text-align: right; border-bottom: 1px solid rgba(197,160,89,0.08); }
+        .results-table th { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .results-table td { color: var(--slate-light); font-family: 'JetBrains Mono', monospace; }
+        .results-table td:first-child, .results-table th:first-child { text-align: left; }
+
+        .results-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+        .res-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.8rem 0.9rem; }
+        .res-card-lbl { color: var(--slate); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .res-card-val { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 500; }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; font-size: 0.72rem; color: var(--slate-light); margin-bottom: 0.6rem; }
+        .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+        .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.3rem 1.3rem; }
+        .extension-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 1.3px; color: var(--gold); margin-bottom: 0.5rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.7rem; }
+        .extension-card .ext-ref { font-size: 0.78rem; color: var(--slate); font-style: italic; border-top: 1px solid rgba(197,160,89,0.1); padding-top: 0.5rem; }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.9rem; }
+        .related-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem 1.1rem; text-decoration: none; transition: all 0.25s; display: flex; flex-direction: column; gap: 0.3rem; }
+        .related-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ivory); letter-spacing: 0.5px; }
+        .related-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--gold); letter-spacing: 0.5px; }
+        .related-card-desc { font-size: 0.78rem; color: var(--slate); line-height: 1.5; }
+
+        .references-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width: 900px; margin: 0 auto; }
+        .reference-item { padding: 0.9rem 0; border-top: 1px solid rgba(197,160,89,0.1); display: grid; grid-template-columns: 2rem 1fr; gap: 0.6rem; }
+        .reference-item:first-of-type { border-top: none; }
+        .ref-num { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+        .ref-body { font-size: 0.88rem; line-height: 1.65; }
+        .ref-body .authors { color: var(--ivory); font-weight: 500; }
+        .ref-body .title { color: var(--slate-light); font-style: italic; }
+        .ref-body .journal { color: var(--slate); font-size: 0.82rem; }
+        .ref-body .journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        footer { text-align: center; padding: 2.5rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.82rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 0.9rem; font-size: 0.76rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(15px); transition: opacity 0.55s ease, transform 0.55s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.1rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.8rem; letter-spacing: 1.5px; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            section { padding: 2.8rem 0; }
+            .solver-grid { gap: 1.2rem; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Energy",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Unit Commitment",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/unit-commitment.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Unit Commitment</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-power-off" aria-hidden="true"></i></div>
+        <h1>Unit <span>Commitment</span></h1>
+        <p class="hero-abbrev">UC &middot; MILP</p>
+        <p class="hero-subtitle">Day-Ahead &middot; Binary Commitment &middot; Thermal Generation</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Which generators should a system operator start, stop, or keep running over the next 24 hours to
+            meet load at minimum total cost &mdash; accounting for the fuel each burns, the thousands of dollars
+            to fire up a cold boiler, the physical constraints on ramping, and the minimum time a steam turbine
+            must run once committed? This is the <strong>unit commitment problem</strong>: a mixed-integer
+            program that every grid operator in the world solves every single day.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-short">Short-term operations</span>
+            <span class="hero-tag tag-supply">Supply layer</span>
+            <span class="hero-tag">MILP</span>
+            <span class="hero-tag">Lagrangian</span>
+            <span class="hero-tag">Priority list</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Real-world decision &middot; mathematical characterization</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                Every evening around 10&nbsp;a.m. local time, the day-ahead market of a typical ISO &mdash; PJM,
+                MISO, CAISO, ERCOT in North America; Nord Pool in Europe; AEMO in Australia &mdash; closes.
+                By noon, the system operator must publish a <strong>24-hour schedule</strong>: which of the
+                hundreds to thousands of generators in its footprint will be committed (turned on) for each
+                hour of the next day, and which will stay offline. Each &ldquo;on&rdquo; generator will then
+                receive a dispatch instruction telling it exactly how many megawatts to produce.
+            </p>
+            <p>
+                The problem is harder than it sounds. A coal unit can take <strong>4&ndash;8 hours</strong>
+                to warm up from cold start and burns a significant amount of fuel doing so &mdash; typically
+                <strong>$2,000&ndash;$10,000</strong> per start. Once online, it must run for several hours
+                before it can be shut down (the <em>minimum up time</em>) and, if shut down, must stay off
+                for a minimum period (<em>minimum down time</em>) before restarting. Output can only change
+                at a bounded rate (<em>ramp rate</em>), typically a few megawatts per minute. The system must
+                also maintain <strong>spinning reserve</strong> &mdash; extra committed capacity held back
+                to cover the sudden loss of any single large unit.
+            </p>
+            <p>
+                These constraints turn what would otherwise be a simple least-cost dispatch into a
+                combinatorial optimization problem with a <strong>binary variable</strong> for each
+                generator-hour pair. With 500 generators over 24 hours, that's 12,000 binaries. Modern ISOs
+                solve unit-commitment instances with tens of thousands of binaries and millions of
+                continuous variables using branch-and-cut in Gurobi or CPLEX, routinely to an optimality
+                gap below <strong>0.1%</strong> in under five minutes.
+            </p>
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                Early UC was solved by <strong>priority-list heuristics</strong> (commit units in order of
+                average cost until demand is met). <cite>Garver (1962)</cite> gave the first integer-programming
+                formulation in <em>IEEE Trans. Power Apparatus and Systems</em>. In the 1980s and 90s
+                <strong>Lagrangian relaxation</strong> dominated industry practice &mdash; the 1983 ERCOT
+                deployment and the 1996 Electricit&eacute; de France scheduler both used it. Modern
+                mixed-integer solvers became competitive in the 2000s; tight-and-compact formulations
+                (<cite>Carri&oacute;n &amp; Arroyo, 2006</cite>; <cite>Morales-Espa&ntilde;a et&nbsp;al.,
+                2013</cite>) collapsed branch-and-bound times by an order of magnitude and made direct MILP
+                the new industry default.
+            </div>
+            <p>
+                Under high renewable penetration, the deterministic UC that served the industry for sixty
+                years is increasingly inadequate. Wind and solar forecast errors of 10&ndash;20% are routine;
+                committing only the units that a point forecast justifies leaves insufficient flexibility
+                to respond when the forecast misses. <strong>Stochastic UC</strong> (<cite>Takriti, Birge
+                &amp; Long, 1996</cite>; reviewed in <cite>Zheng, Wang &amp; Liu, 2015</cite>) optimizes
+                over a scenario tree; <strong>robust UC</strong> (<cite>Bertsimas et&nbsp;al., 2013</cite>)
+                optimizes against the worst outcome inside a budgeted uncertainty set; <strong>chance-constrained
+                UC</strong> guarantees feasibility with a specified probability. These variants form the
+                research frontier and are increasingly deployed in practice.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Three-binary MILP &middot; Carri&oacute;n &amp; Arroyo (2006)</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <p>We index generators by <span class="katex-inline">$i \in \mathcal{G}$</span> and hours by <span class="katex-inline">$t \in \mathcal{T} = \{1, \dots, T\}$</span>.</p>
+                <table class="notation-table">
+                    <caption>Sets, parameters, decision variables</caption>
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{G}$</td><td>Set of generators</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{T}$</td><td>Set of hours in horizon</td><td>&mdash;</td></tr>
+                        <tr><td>$D_t$</td><td>System load in hour $t$</td><td>MW</td></tr>
+                        <tr><td>$R_t$</td><td>Spinning-reserve requirement in hour $t$</td><td>MW</td></tr>
+                        <tr><td>$P_i^{\min}, P_i^{\max}$</td><td>Technical min and max of generator $i$</td><td>MW</td></tr>
+                        <tr><td>$RU_i, RD_i$</td><td>Ramp-up and ramp-down limits</td><td>MW/h</td></tr>
+                        <tr><td>$TU_i, TD_i$</td><td>Minimum up and down times</td><td>h</td></tr>
+                        <tr><td>$c_i(p)$</td><td>Variable production cost curve</td><td>$/h</td></tr>
+                        <tr><td>$SU_i$</td><td>Start-up cost of generator $i$</td><td>$</td></tr>
+                        <tr><td>$u_{i,t}$</td><td><strong>On/off status</strong> (binary)</td><td>{0,1}</td></tr>
+                        <tr><td>$v_{i,t}$</td><td><strong>Start-up indicator</strong> (binary)</td><td>{0,1}</td></tr>
+                        <tr><td>$w_{i,t}$</td><td><strong>Shut-down indicator</strong> (binary)</td><td>{0,1}</td></tr>
+                        <tr><td>$p_{i,t}$</td><td>Power output of generator $i$ in hour $t$</td><td>MW</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Objective<span class="ref">(total cost minimization)</span></h3>
+                <p>Minimize the sum of variable production cost, start-up cost, and no-load cost over all generators and hours:</p>
+                <div class="math-display">
+                    $$\min \quad \sum_{t \in \mathcal{T}} \sum_{i \in \mathcal{G}} \Big[\, c_i(p_{i,t}) \cdot u_{i,t} \;+\; SU_i \cdot v_{i,t} \,\Big] \qquad \text{(1)}$$
+                </div>
+                <p>
+                    The production cost curve $c_i(p)$ is typically quadratic ($a_i + b_i p + c_i p^2$) or piecewise-linear.
+                    In the dispatch step the quadratic curve produces the familiar equal-incremental-cost rule of
+                    economic dispatch; for the MILP we linearize it via tangent cuts.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>Power balance</strong>: total generation meets load in every hour.</p>
+                <div class="math-display">$$\sum_{i \in \mathcal{G}} p_{i,t} \;=\; D_t \qquad \forall t \in \mathcal{T} \qquad \text{(2)}$$</div>
+
+                <p><strong>Generation limits</strong>: output bounded by technical min/max when committed, zero when off.</p>
+                <div class="math-display">$$P_i^{\min} \, u_{i,t} \;\le\; p_{i,t} \;\le\; P_i^{\max} \, u_{i,t} \qquad \forall i, t \qquad \text{(3)}$$</div>
+
+                <p><strong>Start-up / shut-down logic</strong>: link the three binaries.</p>
+                <div class="math-display">$$v_{i,t} - w_{i,t} \;=\; u_{i,t} - u_{i,t-1} \qquad \forall i, t \qquad \text{(4)}$$
+                $$v_{i,t} + w_{i,t} \;\le\; 1 \qquad \forall i, t \qquad \text{(5)}$$</div>
+
+                <p><strong>Minimum up / down times</strong>: if just started, stay on for $TU_i$ hours; if just stopped, stay off for $TD_i$.</p>
+                <div class="math-display">$$\sum_{\tau = t}^{t+TU_i - 1} u_{i,\tau} \;\ge\; TU_i \cdot v_{i,t} \qquad \forall i, t \qquad \text{(6)}$$
+                $$\sum_{\tau = t}^{t+TD_i - 1} (1 - u_{i,\tau}) \;\ge\; TD_i \cdot w_{i,t} \qquad \forall i, t \qquad \text{(7)}$$</div>
+
+                <p><strong>Ramp limits</strong>: output cannot change faster than the machine allows.</p>
+                <div class="math-display">$$p_{i,t} - p_{i,t-1} \;\le\; RU_i \cdot u_{i,t-1} + P_i^{\min} \cdot v_{i,t} \qquad \forall i, t \qquad \text{(8)}$$
+                $$p_{i,t-1} - p_{i,t} \;\le\; RD_i \cdot u_{i,t} + P_i^{\min} \cdot w_{i,t} \qquad \forall i, t \qquad \text{(9)}$$</div>
+
+                <p><strong>Spinning-reserve adequacy</strong>: committed capacity must cover load plus reserve.</p>
+                <div class="math-display">$$\sum_{i \in \mathcal{G}} P_i^{\max} \, u_{i,t} \;\ge\; D_t + R_t \qquad \forall t \qquad \text{(10)}$$</div>
+
+                <p><strong>Binary and non-negativity</strong>:</p>
+                <div class="math-display">$$u_{i,t}, v_{i,t}, w_{i,t} \in \{0, 1\}; \quad p_{i,t} \ge 0 \qquad \forall i, t \qquad \text{(11)}$$</div>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Alternative: tight-and-compact formulation<span class="ref">Morales-Espa&ntilde;a et&nbsp;al. (2013)</span></h3>
+                <p>
+                    The three-binary formulation above is already much tighter than the classical one-binary
+                    formulation because constraints (4)&ndash;(5) expose start-up and shut-down as decision
+                    variables rather than inferring them from $u$ differences. <cite>Morales-Espa&ntilde;a,
+                    Latorre &amp; Ramos (2013)</cite> further tighten the LP relaxation by adding valid
+                    inequalities for the minimum up/down time constraints &mdash; producing an LP relaxation
+                    that in their computational study is typically within <strong>0.01&ndash;0.1%</strong>
+                    of the integer optimum. This collapses branch-and-bound times by an order of magnitude
+                    versus formulation (6)&ndash;(7) and is the formulation most commercial ISO tools use today.
+                </p>
+                <p>
+                    The trade-off is more constraints and a larger LP at each node of the branching tree &mdash;
+                    worth it on real instances because fewer nodes are explored.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>
+                    UC is <strong>NP-hard</strong>. <cite>Bard (1988)</cite> showed this by reduction from
+                    3-PARTITION. The complexity comes from the binary $u_{i,t}$ variables coupled across
+                    time through the minimum up/down time and ramp constraints. Without these
+                    couplings the problem decomposes into $|\mathcal{G}|$ independent single-generator
+                    problems; it is the coupling constraints (2), (6), and (10) that make it hard.
+                </p>
+                <p>
+                    Practical solvability depends on horizon length $T$, number of generators $|\mathcal{G}|$,
+                    and how tight the formulation is. The three-binary tight formulation of
+                    Carri&oacute;n &amp; Arroyo (2006) with the cuts of Morales-Espa&ntilde;a et&nbsp;al.
+                    (2013) routinely solves 24-hour instances with thousands of generators to sub-1% gap
+                    in minutes on commodity hardware.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+            <p>Benchmark libraries &middot; test systems</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>IEEE Reliability Test System (RTS-96 / RTS-GMLC)</h4>
+                    <p>
+                        The <a href="https://www.gridmod.org/node/36" target="_blank" rel="noopener">RTS-GMLC</a>
+                        (Reliability Test System &mdash; Grid Modernization Lab Consortium) extends the classic
+                        IEEE-RTS-96 to <strong>73 thermal units</strong> and <strong>25 renewable plants</strong>
+                        on a 73-bus three-area system with one year of hourly load and renewable profiles.
+                        It is the most common open benchmark for modern UC research.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>MATPOWER test cases</h4>
+                    <p>
+                        <a href="https://matpower.org/docs/" target="_blank" rel="noopener">MATPOWER</a>
+                        provides steady-state power-flow cases (case9, case30, case118, case300, case2383wp,
+                        case13659pegase) that are standard in academic OPF/UC research. Generator cost curves,
+                        limits, and network data are included.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>PGLIB-OPF benchmark library</h4>
+                    <p>
+                        The <a href="https://github.com/power-grid-lib/pglib-opf" target="_blank" rel="noopener">PGLIB-OPF</a>
+                        library maintained by the IEEE PES Task Force packages 350+ test systems from
+                        1-bus to 30,000-bus, covering North American, European, and Polish grids. Widely used
+                        to compare OPF solvers and convex relaxations.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Illustrative 8-unit pool (this page)</h4>
+                    <p>
+                        The interactive solver below uses a synthetic 8-generator pool spanning baseload
+                        coal through peaking oil and flexible hydro, with a characteristic 24-hour residential-
+                        commercial-industrial demand profile. Parameters are illustrative of US-northeast
+                        thermal fleets (<em>not</em> a specific utility's data) and serve as a pedagogical
+                        instance small enough to solve interactively in the browser.
+                    </p>
+                    <table class="data-table">
+                        <thead>
+                            <tr><th>Unit</th><th>Type</th><th>$P^{\min}$ (MW)</th><th>$P^{\max}$ (MW)</th><th>Marginal cost (\$/MWh)</th><th>Start-up (\$)</th><th>Min up (h)</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Coal-1</td><td>Baseload</td><td>100</td><td>350</td><td>25</td><td>5,000</td><td>4</td></tr>
+                            <tr><td>Coal-2</td><td>Baseload</td><td>80</td><td>300</td><td>28</td><td>4,500</td><td>4</td></tr>
+                            <tr><td>Gas-CC</td><td>Combined-cycle</td><td>50</td><td>250</td><td>35</td><td>2,000</td><td>2</td></tr>
+                            <tr><td>Gas-CT-1</td><td>Peaker</td><td>20</td><td>150</td><td>50</td><td>800</td><td>1</td></tr>
+                            <tr><td>Gas-CT-2</td><td>Peaker</td><td>20</td><td>120</td><td>55</td><td>700</td><td>1</td></tr>
+                            <tr><td>Gas-CT-3</td><td>Peaker</td><td>15</td><td>100</td><td>58</td><td>600</td><td>1</td></tr>
+                            <tr><td>Oil-Peak</td><td>Peaker</td><td>10</td><td>80</td><td>75</td><td>400</td><td>1</td></tr>
+                            <tr><td>Hydro</td><td>Flexible</td><td>0</td><td>200</td><td>5</td><td>0</td><td>1</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Explore three canonical UC algorithms &middot; generation-stack visualization</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="ucGens">Number of generators</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="ucGens" min="4" max="8" value="6">
+                        <span class="size-display" id="ucGensVal">6</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="ucPeak">Peak demand (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="ucPeak" min="400" max="1200" step="50" value="900">
+                        <span class="size-display" id="ucPeakVal">900</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="ucReserve">Spinning reserve (% peak)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="ucReserve" min="0" max="20" step="1" value="10">
+                        <span class="size-display" id="ucReserveVal">10%</span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:1.3rem;">Algorithm</h3>
+                <div class="algo-select" id="ucAlgos">
+                    <label class="algo-chip selected" data-algo="priority">
+                        <input type="radio" name="ucalgo" value="priority" checked>
+                        <span>Priority list<span class="algo-chip-desc">Merit-order commit, fast heuristic</span></span>
+                    </label>
+                    <label class="algo-chip" data-algo="lprelax">
+                        <input type="radio" name="ucalgo" value="lprelax">
+                        <span>LP relaxation<span class="algo-chip-desc">Linear lower bound (drop binaries)</span></span>
+                    </label>
+                    <label class="algo-chip" data-algo="lagrangian">
+                        <input type="radio" name="ucalgo" value="lagrangian">
+                        <span>Lagrangian relaxation<span class="algo-chip-desc">Dualize balance, subgradient iteration</span></span>
+                    </label>
+                </div>
+
+                <button class="solve-btn" id="ucSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve
+                </button>
+                <div class="solver-status" id="ucStatus">Adjust parameters and press Solve.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>Generation stack &amp; commitment</h3>
+                <div class="legend" id="ucLegend"></div>
+                <div class="canvas-wrap">
+                    <canvas id="ucStackCanvas" width="1100" height="420" aria-label="Stacked generation by technology over 24 hours"></canvas>
+                    <div class="canvas-caption">Stacked generation by technology (MW) &middot; 24-hour horizon &middot; white line = load</div>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="ucGanttCanvas" width="1100" height="220" aria-label="Unit commitment Gantt chart"></canvas>
+                    <div class="canvas-caption">Commitment schedule (filled = on, empty = off) &middot; per-unit rows</div>
+                </div>
+                <div class="results-summary" id="ucResultsSummary"></div>
+                <div id="ucResultsDetail"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>What a system operator reads from the schedule</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                The generation stack tells the operator <strong>which technologies carry which part of the
+                load</strong>. Baseload coal fills the floor of the stack because its marginal cost is
+                lowest among thermal units; gas combined-cycle sits above it because it is more efficient
+                than peakers but still more expensive than coal; peaking gas turbines and oil come online
+                only during the midday and evening peaks, when the cost to run them is exceeded by the value
+                of meeting the last megawatt of demand.
+            </p>
+            <p>
+                The commitment Gantt shows <strong>which units are paying the start-up cost</strong>. A
+                coal unit running flat for 24 hours pays start-up at most once (often zero, if it was
+                already running from the previous day); a gas peaker that fires for three hours in the
+                evening pays start-up $700&ndash;$800 for a brief revenue window &mdash; economics that
+                only work because the peak price spike is steep enough to cover it.
+            </p>
+            <p>
+                The <strong>LP relaxation bound</strong> is the UC theorist's most important metric. If
+                the LP relaxation objective equals the MILP objective, the LP relaxation is said to be
+                <em>exact</em>: the problem could have been solved as a pure LP. On tight formulations
+                (Morales-Espa&ntilde;a et&nbsp;al., 2013), the gap is typically 0.01&ndash;0.5% and
+                branch-and-bound closes it in seconds. On loose formulations the gap can be 5&ndash;15% and
+                branch-and-bound may not converge in practical time.
+            </p>
+            <p>
+                The <strong>Lagrangian relaxation</strong> takes a different approach: it dualizes the
+                demand-balance constraint (2), decomposing the problem into $|\mathcal{G}|$ independent
+                single-generator subproblems which can be solved in closed form. A subgradient method
+                updates the multipliers $\lambda_t$ (which have a natural interpretation as hourly
+                marginal prices) until the dual objective converges. The primal solution recovered from
+                the dual is usually infeasible; a repair step adjusts it to satisfy demand exactly. Lagrangian
+                was the workhorse of ISO practice from 1980 to roughly 2005 and remains useful today for
+                extremely large instances where commercial MILP struggles.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Where UC research lives today</p>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in" id="stochastic">
+                <h4>Stochastic Unit Commitment</h4>
+                <p>
+                    Wind and solar forecasts are wrong by 10&ndash;20% on average, and the commitment
+                    decision must be made before the forecast is fully resolved. Stochastic UC replaces
+                    the single forecast with a <strong>scenario tree</strong> and optimizes the expected
+                    cost over all realizations. First-stage decisions (commitments) are scenario-independent;
+                    second-stage decisions (dispatch) adapt to each scenario.
+                </p>
+                <p>
+                    The size of the extensive-form MILP scales with the scenario count, so practical solutions
+                    use scenario reduction (Gr&ouml;we-Kuska et&nbsp;al., 2003) or Benders decomposition.
+                </p>
+                <div class="ext-ref">Refs: Takriti, Birge &amp; Long (1996); Papavasiliou &amp; Oren (2013); Zheng, Wang &amp; Liu (2015).</div>
+            </div>
+            <div class="extension-card fade-in" id="robust">
+                <h4>Adjustable Robust UC</h4>
+                <p>
+                    Robust UC optimizes against the <strong>worst-case realization</strong> of uncertainty
+                    inside a budgeted uncertainty set &mdash; typically a box with a $\Gamma$-budget
+                    constraint (Bertsimas &amp; Sim, 2004) bounding the number of simultaneous deviations.
+                    The two-stage adjustable variant (Bertsimas et&nbsp;al., 2013) allows dispatch to
+                    depend on the realization, yielding less conservative schedules than the fully-static
+                    version.
+                </p>
+                <p>
+                    Column-and-constraint generation (Zhao &amp; Zeng, 2012) is the standard solution
+                    method. Performance under high renewable penetration is comparable to stochastic UC
+                    with less sensitivity to forecast distribution assumptions.
+                </p>
+                <div class="ext-ref">Refs: Bertsimas, Litvinov, Sun, Zhao &amp; Zheng (2013); Jiang, Zhang, Li &amp; Guan (2014).</div>
+            </div>
+            <div class="extension-card fade-in" id="scuc">
+                <h4>Security-Constrained UC (SCUC)</h4>
+                <p>
+                    SCUC extends UC with <strong>network constraints</strong> (DC-OPF power flow and line
+                    limits) and <strong>N&minus;1 contingency constraints</strong> (the schedule must
+                    remain feasible after any single generator or line outage). SCUC is what every US
+                    ISO actually solves as its day-ahead market clearing &mdash; a single monolithic
+                    MILP with tens of thousands of binaries and hundreds of thousands of continuous
+                    variables.
+                </p>
+                <p>
+                    Benders decomposition separates commitment (master) from dispatch-per-contingency
+                    (subproblems). Cuts from subproblems refine the master's feasible region.
+                </p>
+                <div class="ext-ref">Refs: Wang, Shahidehpour &amp; Li (2008); Wu, Shahidehpour &amp; Fu (2010).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Chance-constrained UC</h4>
+                <p>
+                    Requires that load-plus-reserve adequacy hold with probability at least $1-\alpha$ for
+                    a user-specified risk $\alpha$ (typically 5% or 1%). Yields a formulation less
+                    conservative than robust UC and with an interpretable reliability guarantee. When
+                    renewable forecast errors are Gaussian the chance constraints become second-order
+                    cones; for non-parametric distributions <em>scenario-approximation</em> replaces them
+                    with a sample of constraints.
+                </p>
+                <div class="ext-ref">Refs: Wang, Guan &amp; Wang (2012); Bienstock, Chertkov &amp; Harnett (2014).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Rolling-horizon UC</h4>
+                <p>
+                    In real-time operations the commitment schedule is re-optimized hourly or every
+                    fifteen minutes over a shrinking horizon, with the first period's decisions
+                    implemented and the remainder rolled forward. Fast re-solves favour
+                    tight-and-compact formulations and warm-started LP bases.
+                </p>
+                <div class="ext-ref">Refs: Tuohy et&nbsp;al. (2009); Silbernagl, Huber &amp; Brandenberg (2016).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Distributionally-robust UC</h4>
+                <p>
+                    Optimizes against the worst distribution in an <em>ambiguity set</em> defined by
+                    Wasserstein distance or moment conditions. Bridges stochastic and robust:
+                    reduces conservatism of robust optimization while tolerating distributional
+                    misspecification. Active research frontier, few industrial deployments yet.
+                </p>
+                <div class="ext-ref">Refs: Zhao &amp; Guan (2018); Duan, Fang, Liu, Lu, Wang &amp; Wu (2018).</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+            <p>Upstream, downstream, and cross-domain</p>
+        </div>
+        <div class="related-grid">
+            <a href="economic-dispatch.html" class="related-card fade-in">
+                <span class="related-card-tag">Next &middot; 5&ndash;15 min</span>
+                <span class="related-card-name">Economic Dispatch (ED)</span>
+                <span class="related-card-desc">The continuous-dispatch problem solved after UC has fixed the commitment. QP with equal-incremental-cost.</span>
+            </a>
+            <a href="optimal-power-flow.html" class="related-card fade-in">
+                <span class="related-card-tag">Network coupling</span>
+                <span class="related-card-name">Optimal Power Flow (OPF)</span>
+                <span class="related-card-desc">When transmission constraints matter, UC becomes SCUC and dispatch becomes SCED. OPF is the dispatch with grid physics.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Uncertainty</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">Stochastic and robust UC applied end-to-end to wind / solar uncertainty with storage and flexible demand.</span>
+            </a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Coupled resource</span>
+                <span class="related-card-name">Battery Storage Optimization</span>
+                <span class="related-card-desc">Batteries co-commit with generators in modern UC; their SOC-dynamics constraint couples hours.</span>
+            </a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in">
+                <span class="related-card-tag">Market view</span>
+                <span class="related-card-name">Electricity Market Clearing</span>
+                <span class="related-card-desc">UC becomes the day-ahead auction model when bids replace operator-owned cost curves. LMPs emerge as duals.</span>
+            </a>
+            <a href="../families/scheduling.html" class="related-card fade-in">
+                <span class="related-card-tag">OR family</span>
+                <span class="related-card-name">Scheduling family</span>
+                <span class="related-card-desc">UC is a multi-machine scheduling problem with start-up costs and minimum up/down times &mdash; cousin of flow shop with sequence-dependent setups.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs and permanent URLs</p>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in">
+                <span class="ref-num">[1]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Garver, L.&nbsp;L.</span> (1962).</div>
+                    <div class="title">&ldquo;Power generation scheduling by integer programming &mdash; development of theory.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Apparatus and Systems</em>, 81(3), 730&ndash;735. <a href="https://doi.org/10.1109/AIEEPAS.1962.4501405" target="_blank" rel="noopener">doi:10.1109/AIEEPAS.1962.4501405</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[2]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Padhy, N.&nbsp;P.</span> (2004).</div>
+                    <div class="title">&ldquo;Unit commitment &mdash; a bibliographical survey.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 19(2), 1196&ndash;1205. <a href="https://doi.org/10.1109/TPWRS.2003.821611" target="_blank" rel="noopener">doi:10.1109/TPWRS.2003.821611</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[3]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Carri&oacute;n, M., &amp; Arroyo, J.&nbsp;M.</span> (2006).</div>
+                    <div class="title">&ldquo;A computationally efficient mixed-integer linear formulation for the thermal unit commitment problem.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 21(3), 1371&ndash;1378. <a href="https://doi.org/10.1109/TPWRS.2006.876672" target="_blank" rel="noopener">doi:10.1109/TPWRS.2006.876672</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[4]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Morales-Espa&ntilde;a, G., Latorre, J.&nbsp;M., &amp; Ramos, A.</span> (2013).</div>
+                    <div class="title">&ldquo;Tight and compact MILP formulation for the thermal unit commitment problem.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 28(4), 4897&ndash;4908. <a href="https://doi.org/10.1109/TPWRS.2013.2251373" target="_blank" rel="noopener">doi:10.1109/TPWRS.2013.2251373</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[5]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Takriti, S., Birge, J.&nbsp;R., &amp; Long, E.</span> (1996).</div>
+                    <div class="title">&ldquo;A stochastic model for the unit commitment problem.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 11(3), 1497&ndash;1508. <a href="https://doi.org/10.1109/59.535691" target="_blank" rel="noopener">doi:10.1109/59.535691</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[6]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Zheng, Q.&nbsp;P., Wang, J., &amp; Liu, A.&nbsp;L.</span> (2015).</div>
+                    <div class="title">&ldquo;Stochastic optimization for unit commitment &mdash; a review.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 30(4), 1913&ndash;1924. <a href="https://doi.org/10.1109/TPWRS.2014.2355204" target="_blank" rel="noopener">doi:10.1109/TPWRS.2014.2355204</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[7]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Bertsimas, D., Litvinov, E., Sun, X.&nbsp;A., Zhao, J., &amp; Zheng, T.</span> (2013).</div>
+                    <div class="title">&ldquo;Adaptive robust optimization for the security-constrained unit commitment problem.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 28(1), 52&ndash;63. <a href="https://doi.org/10.1109/TPWRS.2012.2205021" target="_blank" rel="noopener">doi:10.1109/TPWRS.2012.2205021</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[8]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Wang, J., Shahidehpour, M., &amp; Li, Z.</span> (2008).</div>
+                    <div class="title">&ldquo;Security-constrained unit commitment with volatile wind-power generation.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 23(3), 1319&ndash;1327. <a href="https://doi.org/10.1109/TPWRS.2008.926719" target="_blank" rel="noopener">doi:10.1109/TPWRS.2008.926719</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[9]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Wood, A.&nbsp;J., Wollenberg, B.&nbsp;F., &amp; Shebl&eacute;, G.&nbsp;B.</span> (2013).</div>
+                    <div class="title"><em>Power Generation, Operation, and Control</em> (3rd ed.).</div>
+                    <div class="journal">Wiley. <a href="https://www.wiley.com/en-us/Power+Generation%2C+Operation%2C+and+Control%2C+3rd+Edition-p-9780471790556" target="_blank" rel="noopener">wiley.com</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[10]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Jiang, R., Zhang, M., Li, G., &amp; Guan, Y.</span> (2014).</div>
+                    <div class="title">&ldquo;Two-stage network constrained robust unit commitment problem.&rdquo;</div>
+                    <div class="journal"><em>European Journal of Operational Research</em>, 234(3), 751&ndash;762. <a href="https://doi.org/10.1016/j.ejor.2013.09.028" target="_blank" rel="noopener">doi:10.1016/j.ejor.2013.09.028</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[11]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Wang, Q., Guan, Y., &amp; Wang, J.</span> (2012).</div>
+                    <div class="title">&ldquo;A chance-constrained two-stage stochastic program for unit commitment with uncertain wind power output.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 27(1), 206&ndash;215. <a href="https://doi.org/10.1109/TPWRS.2011.2159522" target="_blank" rel="noopener">doi:10.1109/TPWRS.2011.2159522</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[12]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Bard, J.&nbsp;F.</span> (1988).</div>
+                    <div class="title">&ldquo;Short-term scheduling of thermal-electric generators using Lagrangian relaxation.&rdquo;</div>
+                    <div class="journal"><em>Operations Research</em>, 36(5), 756&ndash;766. <a href="https://doi.org/10.1287/opre.36.5.756" target="_blank" rel="noopener">doi:10.1287/opre.36.5.756</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    Generator parameters on this page are illustrative of US-northeast thermal fleets and are not a specific utility's data.
+    The in-browser solver is an educational demo; production UC uses commercial MILP solvers (Gurobi, CPLEX) on tight-and-compact formulations.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    io.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else {
+        fades.forEach(function(el){ el.classList.add('visible'); });
+    }
+
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$',  right: '$',  display: false}
+            ],
+            throwOnError: false
+        });
+    }
+    if (document.readyState === 'complete') { renderMath(); }
+    else { window.addEventListener('load', renderMath); }
+
+    /* ====================================================================
+       UC SOLVER
+       ==================================================================== */
+
+    var generatorPool = [
+        { id:'Coal-1',   type:'Coal',    pmin:100, pmax:350, a:900, b:22.5, c:0.015, startup:5000, minUp:4, minDown:3, color:'#ff6b6b' },
+        { id:'Coal-2',   type:'Coal',    pmin: 80, pmax:300, a:800, b:25.5, c:0.014, startup:4500, minUp:4, minDown:3, color:'#ff9f43' },
+        { id:'Gas-CC',   type:'Gas-CC',  pmin: 50, pmax:250, a:600, b:32.0, c:0.012, startup:2000, minUp:2, minDown:2, color:'#feca57' },
+        { id:'Gas-CT-1', type:'Gas-CT',  pmin: 20, pmax:150, a:300, b:47.0, c:0.020, startup: 800, minUp:1, minDown:1, color:'#64ffda' },
+        { id:'Gas-CT-2', type:'Gas-CT',  pmin: 20, pmax:120, a:280, b:52.0, c:0.022, startup: 700, minUp:1, minDown:1, color:'#7aa2f7' },
+        { id:'Gas-CT-3', type:'Gas-CT',  pmin: 15, pmax:100, a:260, b:55.0, c:0.024, startup: 600, minUp:1, minDown:1, color:'#c084fc' },
+        { id:'Oil-Peak', type:'Oil',     pmin: 10, pmax: 80, a:200, b:72.0, c:0.030, startup: 400, minUp:1, minDown:1, color:'#fb7185' },
+        { id:'Hydro',    type:'Hydro',   pmin:  0, pmax:200, a:  0, b: 4.5, c:0.000, startup:   0, minUp:1, minDown:1, color:'#38bdf8' }
+    ];
+
+    var demandProfile = [
+        0.55, 0.48, 0.45, 0.42, 0.43, 0.50, 0.65, 0.82,
+        0.92, 0.95, 0.93, 0.90, 0.85, 0.88, 0.92, 0.96,
+        1.00, 0.98, 0.95, 0.90, 0.82, 0.75, 0.68, 0.60
+    ];
+
+    function avgCost(gen){ return gen.a / gen.pmax + gen.b + gen.c * gen.pmax; }
+
+    function activeGenerators(nGens) {
+        var indexed = generatorPool.map(function(g, i){ return {gen: g, idx: i, ac: avgCost(g)}; });
+        indexed.sort(function(a,b){ return a.ac - b.ac; });
+        return indexed.slice(0, nGens).map(function(x){ return x.gen; });
+    }
+
+    function demand(peak) { return demandProfile.map(function(d){ return d * peak; }); }
+
+    function reserves(demandArr, pct) { return demandArr.map(function(d){ return d * pct; }); }
+
+    function dispatchLambda(gens, committed, D) {
+        var committedIdx = [];
+        for (var i = 0; i < gens.length; i++) if (committed[i]) committedIdx.push(i);
+
+        var sumMin = 0, sumMax = 0;
+        committedIdx.forEach(function(i){ sumMin += gens[i].pmin; sumMax += gens[i].pmax; });
+
+        if (D < sumMin - 1e-6 || D > sumMax + 1e-6) {
+            return { p: gens.map(function(){return 0;}), lambda: NaN, cost: Infinity, feasible: false };
+        }
+
+        function dispatchAt(lambda) {
+            var p = gens.map(function(){return 0;});
+            var total = 0;
+            committedIdx.forEach(function(i){
+                var g = gens[i];
+                var pi;
+                if (g.c < 1e-9) { pi = (lambda > g.b) ? g.pmax : g.pmin; }
+                else            { pi = (lambda - g.b) / (2 * g.c); }
+                if (pi < g.pmin) pi = g.pmin;
+                if (pi > g.pmax) pi = g.pmax;
+                p[i] = pi;
+                total += pi;
+            });
+            return { p: p, total: total };
+        }
+
+        var lo = 0, hi = 500;
+        for (var k = 0; k < 80; k++) {
+            var mid = 0.5 * (lo + hi);
+            var r = dispatchAt(mid);
+            if (r.total > D) hi = mid; else lo = mid;
+            if (Math.abs(r.total - D) < 1e-3 && k > 8) break;
+        }
+        var finalDisp = dispatchAt(0.5 * (lo + hi));
+        var residual = D - finalDisp.total;
+        if (Math.abs(residual) > 1e-2) {
+            var remaining = residual;
+            committedIdx.sort(function(a,b){ return gens[b].pmax - gens[a].pmax; });
+            for (var j = 0; j < committedIdx.length && Math.abs(remaining) > 1e-3; j++) {
+                var idx = committedIdx[j], g = gens[idx];
+                var cur = finalDisp.p[idx];
+                var newP = Math.max(g.pmin, Math.min(g.pmax, cur + remaining));
+                remaining -= (newP - cur);
+                finalDisp.p[idx] = newP;
+            }
+        }
+        var cost = 0;
+        committedIdx.forEach(function(i){
+            var g = gens[i], pi = finalDisp.p[i];
+            cost += g.a + g.b * pi + g.c * pi * pi;
+        });
+        return { p: finalDisp.p, lambda: 0.5 * (lo + hi), cost: cost, feasible: true };
+    }
+
+    function solvePriorityList(gens, demandArr, reserveArr) {
+        var T = demandArr.length;
+        var N = gens.length;
+        var order = gens.map(function(g,i){ return {i:i, ac: avgCost(g)}; })
+                         .sort(function(a,b){ return a.ac - b.ac; })
+                         .map(function(x){ return x.i; });
+        var u = [];
+        var schedule = [];
+        var costTotal = 0;
+        var startups = [];
+        var prevU = gens.map(function(){ return 0; });
+        var runLen = gens.map(function(){ return 0; });
+        var downLen = gens.map(function(){ return 999; });
+
+        for (var t = 0; t < T; t++) {
+            var newU = prevU.slice();
+            var committedCap = 0;
+            for (var k = 0; k < N; k++) if (newU[k]) committedCap += gens[k].pmax;
+            var need = demandArr[t] + reserveArr[t];
+
+            for (var idx = 0; idx < N; idx++) {
+                var i = order[idx];
+                if (committedCap >= need) break;
+                if (!newU[i] && downLen[i] >= gens[i].minDown) {
+                    newU[i] = 1;
+                    committedCap += gens[i].pmax;
+                }
+            }
+
+            for (var idx2 = N - 1; idx2 >= 0; idx2--) {
+                var i2 = order[idx2];
+                if (!newU[i2]) continue;
+                if (prevU[i2] && runLen[i2] < gens[i2].minUp) continue;
+                var slack = committedCap - gens[i2].pmax - need;
+                if (slack >= 0) {
+                    newU[i2] = 0;
+                    committedCap -= gens[i2].pmax;
+                }
+            }
+
+            var disp = dispatchLambda(gens, newU, demandArr[t]);
+            if (!disp.feasible) {
+                for (var kk = 0; kk < N; kk++) {
+                    var ii = order[kk];
+                    if (!newU[ii]) { newU[ii] = 1; break; }
+                }
+                disp = dispatchLambda(gens, newU, demandArr[t]);
+            }
+
+            var stepStartups = 0;
+            for (var s = 0; s < N; s++) {
+                if (newU[s] && !prevU[s]) {
+                    stepStartups++;
+                    costTotal += gens[s].startup;
+                }
+            }
+            startups.push(stepStartups);
+            costTotal += disp.cost;
+
+            for (var r = 0; r < N; r++) {
+                if (newU[r] === prevU[r]) {
+                    if (newU[r]) runLen[r]++; else downLen[r]++;
+                } else {
+                    if (newU[r]) { runLen[r] = 1; downLen[r] = 0; }
+                    else         { runLen[r] = 0; downLen[r] = 1; }
+                }
+            }
+
+            u.push(newU);
+            schedule.push(disp.p);
+            prevU = newU;
+        }
+
+        return { name: 'Priority list', u: u, p: schedule, startups: startups, totalCost: costTotal, algo: 'priority' };
+    }
+
+    function solveLPRelaxation(gens, demandArr, reserveArr) {
+        var T = demandArr.length;
+        var N = gens.length;
+        var u = [];
+        var p = [];
+        var costTotal = 0;
+        var orderByMarginal = gens.map(function(g, i){ return {i:i, mc: g.b}; })
+                                    .sort(function(a,b){ return a.mc - b.mc; });
+
+        for (var t = 0; t < T; t++) {
+            var uRow = gens.map(function(){ return 0; });
+            var pRow = gens.map(function(){ return 0; });
+            var remaining = demandArr[t];
+            for (var j = 0; j < orderByMarginal.length && remaining > 1e-6; j++) {
+                var idx = orderByMarginal[j].i;
+                var g = gens[idx];
+                var take = Math.min(remaining, g.pmax);
+                pRow[idx] = take;
+                uRow[idx] = take / g.pmax;
+                remaining -= take;
+            }
+            for (var i = 0; i < N; i++) {
+                var gi = gens[i];
+                costTotal += (gi.a * uRow[i]) + gi.b * pRow[i] + gi.c * pRow[i] * pRow[i];
+            }
+            u.push(uRow);
+            p.push(pRow);
+        }
+
+        return { name: 'LP relaxation', u: u, p: p, startups: gens.map(function(){ return 0; }), totalCost: costTotal, algo: 'lprelax', lowerBound: true };
+    }
+
+    function solveLagrangian(gens, demandArr, reserveArr) {
+        var T = demandArr.length;
+        var N = gens.length;
+        var lambda = demandArr.map(function(d){ return 30 + 0.05 * (d - 500); });
+        var stepSize = 0.6;
+        var maxIter = 30;
+        var bestPrimalCost = Infinity;
+        var bestU = null;
+
+        for (var iter = 0; iter < maxIter; iter++) {
+            var genTotal = gens.map(function(){ return new Array(T).fill(0); });
+            var uAll = gens.map(function(){ return new Array(T).fill(0); });
+
+            for (var gi = 0; gi < N; gi++) {
+                var g = gens[gi];
+                var V = new Array(T + 1).fill(null).map(function(){ return [Infinity, Infinity]; });
+                V[0][0] = 0;
+                var prev = new Array(T + 1).fill(null).map(function(){ return [null, null]; });
+
+                for (var t = 0; t < T; t++) {
+                    for (var from = 0; from <= 1; from++) {
+                        if (V[t][from] === Infinity) continue;
+                        for (var to = 0; to <= 1; to++) {
+                            var sc = (from === 0 && to === 1) ? g.startup : 0;
+                            var p = 0, dispCost = 0;
+                            if (to === 1) {
+                                if (g.c < 1e-9) { p = (lambda[t] > g.b) ? g.pmax : g.pmin; }
+                                else            { p = (lambda[t] - g.b) / (2 * g.c); }
+                                if (p < g.pmin) p = g.pmin;
+                                if (p > g.pmax) p = g.pmax;
+                                dispCost = g.a + g.b * p + g.c * p * p;
+                            }
+                            var reduced = sc + dispCost - lambda[t] * p;
+                            var cand = V[t][from] + reduced;
+                            if (cand < V[t+1][to]) {
+                                V[t+1][to] = cand;
+                                prev[t+1][to] = { from: from, p: p };
+                            }
+                        }
+                    }
+                }
+
+                var endState = V[T][0] <= V[T][1] ? 0 : 1;
+                var state = endState;
+                var pPath = new Array(T).fill(0);
+                var uPath = new Array(T).fill(0);
+                for (var tb = T; tb > 0; tb--) {
+                    var step = prev[tb][state];
+                    if (!step) break;
+                    pPath[tb-1] = step.p;
+                    uPath[tb-1] = (state === 1) ? 1 : 0;
+                    state = step.from;
+                }
+                genTotal[gi] = pPath;
+                uAll[gi] = uPath;
+            }
+
+            var gap = new Array(T).fill(0);
+            for (var tg = 0; tg < T; tg++) {
+                var sumP = 0;
+                for (var gi2 = 0; gi2 < N; gi2++) sumP += genTotal[gi2][tg];
+                gap[tg] = demandArr[tg] - sumP;
+            }
+            var step2 = stepSize * (10 / (iter + 10));
+            for (var tl = 0; tl < T; tl++) {
+                lambda[tl] = Math.max(0, lambda[tl] + step2 * gap[tl]);
+            }
+
+            var primalCost = 0;
+            var feasible = true;
+            for (var tp = 0; tp < T; tp++) {
+                var uT = [];
+                for (var gi3 = 0; gi3 < N; gi3++) uT.push(uAll[gi3][tp]);
+                var dsp = dispatchLambda(gens, uT, demandArr[tp]);
+                if (!dsp.feasible) { feasible = false; break; }
+                for (var gi4 = 0; gi4 < N; gi4++) {
+                    var prevUval = tp === 0 ? 0 : uAll[gi4][tp-1];
+                    if (uAll[gi4][tp] === 1 && prevUval === 0) primalCost += gens[gi4].startup;
+                }
+                primalCost += dsp.cost;
+            }
+            if (feasible && primalCost < bestPrimalCost) {
+                bestPrimalCost = primalCost;
+                bestU = uAll.map(function(row){ return row.slice(); });
+            }
+        }
+
+        if (!bestU || !isFinite(bestPrimalCost)) {
+            return solvePriorityList(gens, demandArr, reserveArr);
+        }
+
+        var uMat = [];
+        var pMat = [];
+        var startups = [];
+        for (var tR = 0; tR < T; tR++) {
+            var uRow = [];
+            for (var gi5 = 0; gi5 < N; gi5++) uRow.push(bestU[gi5][tR]);
+            var dsp2 = dispatchLambda(gens, uRow, demandArr[tR]);
+            uMat.push(uRow);
+            pMat.push(dsp2.p);
+            var st = 0;
+            for (var gi6 = 0; gi6 < N; gi6++) {
+                var prevU6 = tR === 0 ? 0 : bestU[gi6][tR-1];
+                if (bestU[gi6][tR] === 1 && prevU6 === 0) st++;
+            }
+            startups.push(st);
+        }
+
+        return { name: 'Lagrangian relaxation', u: uMat, p: pMat, startups: startups, totalCost: bestPrimalCost, algo: 'lagrangian' };
+    }
+
+    /* ============== CANVAS DRAWING ============== */
+    var T_HORIZON = 24;
+
+    function drawStackPlot(gens, result, demandArr) {
+        var cvs = document.getElementById('ucStackCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 60, r: 20, t: 24, b: 48 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+        var barW = plotW / T_HORIZON;
+
+        var yMax = 0;
+        for (var t = 0; t < T_HORIZON; t++) {
+            var s = 0;
+            for (var i = 0; i < gens.length; i++) s += result.p[t][i];
+            if (s > yMax) yMax = s;
+            if (demandArr[t] > yMax) yMax = demandArr[t];
+        }
+        yMax = Math.ceil(yMax / 100) * 100 + 100;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        ctx.lineWidth = 0.5;
+        for (var g = 0; g <= 5; g++) {
+            var gy = pad.t + (plotH / 5) * g;
+            ctx.beginPath();
+            ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + plotW, gy);
+            ctx.stroke();
+        }
+
+        for (var t2 = 0; t2 < T_HORIZON; t2++) {
+            var cum = 0;
+            var x = pad.l + t2 * barW;
+            for (var i2 = 0; i2 < gens.length; i2++) {
+                var p = result.p[t2][i2];
+                if (p <= 0) continue;
+                var h = (p / yMax) * plotH;
+                var y = pad.t + plotH - ((cum + p) / yMax) * plotH;
+                ctx.fillStyle = gens[i2].color;
+                ctx.fillRect(x + 0.5, y, barW - 1, h);
+                cum += p;
+            }
+        }
+
+        ctx.strokeStyle = '#F8F9FA';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var t3 = 0; t3 < T_HORIZON; t3++) {
+            var x2 = pad.l + (t3 + 0.5) * barW;
+            var y2 = pad.t + plotH - (demandArr[t3] / yMax) * plotH;
+            if (t3 === 0) ctx.moveTo(x2, y2); else ctx.lineTo(x2, y2);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH);
+        ctx.stroke();
+
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        for (var gt = 0; gt <= 5; gt++) {
+            var v = yMax * (1 - gt / 5);
+            var gy2 = pad.t + (plotH / 5) * gt;
+            ctx.fillText(Math.round(v) + ' MW', pad.l - 6, gy2 + 3);
+        }
+        ctx.textAlign = 'center';
+        for (var t4 = 0; t4 < T_HORIZON; t4 += 3) {
+            var x3 = pad.l + (t4 + 0.5) * barW;
+            ctx.fillText(t4 + ':00', x3, pad.t + plotH + 18);
+        }
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.fillText('Hour of day', pad.l + plotW / 2 - 30, pad.t + plotH + 36);
+    }
+
+    function drawGantt(gens, result) {
+        var cvs = document.getElementById('ucGanttCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 120, r: 20, t: 16, b: 32 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+        var rowH = plotH / gens.length;
+        var cellW = plotW / T_HORIZON;
+
+        for (var i = 0; i < gens.length; i++) {
+            var y = pad.t + i * rowH;
+            ctx.fillStyle = '#a8b2d1';
+            ctx.font = '11px "Inter", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(gens[i].id, pad.l - 8, y + rowH / 2 + 4);
+
+            for (var t = 0; t < T_HORIZON; t++) {
+                var x = pad.l + t * cellW;
+                var u = result.u[t][i];
+                var on = u >= 0.5;
+                if (on) {
+                    ctx.fillStyle = gens[i].color;
+                    ctx.globalAlpha = u === 1 ? 0.9 : 0.4;
+                    ctx.fillRect(x + 0.5, y + 2, cellW - 1, rowH - 4);
+                    ctx.globalAlpha = 1;
+                } else {
+                    ctx.strokeStyle = 'rgba(197,160,89,0.12)';
+                    ctx.lineWidth = 0.5;
+                    ctx.strokeRect(x + 0.5, y + 2, cellW - 1, rowH - 4);
+                }
+            }
+        }
+
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        for (var t2 = 0; t2 < T_HORIZON; t2 += 3) {
+            var x2 = pad.l + (t2 + 0.5) * cellW;
+            ctx.fillText(t2 + ':00', x2, pad.t + plotH + 16);
+        }
+    }
+
+    function buildLegend(gens) {
+        var legend = document.getElementById('ucLegend');
+        while (legend.firstChild) legend.removeChild(legend.firstChild);
+        gens.forEach(function(g){
+            var item = document.createElement('span');
+            item.className = 'legend-item';
+            var dot = document.createElement('span');
+            dot.className = 'legend-dot';
+            dot.style.background = g.color;
+            var label = document.createElement('span');
+            label.textContent = g.id + ' (' + g.type + ')';
+            item.appendChild(dot);
+            item.appendChild(label);
+            legend.appendChild(item);
+        });
+        var loadItem = document.createElement('span');
+        loadItem.className = 'legend-item';
+        var loadDot = document.createElement('span');
+        loadDot.className = 'legend-dot';
+        loadDot.style.background = '#F8F9FA';
+        var loadLabel = document.createElement('span');
+        loadLabel.textContent = 'Load curve';
+        loadItem.appendChild(loadDot);
+        loadItem.appendChild(loadLabel);
+        legend.appendChild(loadItem);
+    }
+
+    function formatMoney(x) {
+        if (!isFinite(x)) return '\u221e';
+        if (x >= 1e6) return '$' + (x / 1e6).toFixed(2) + 'M';
+        if (x >= 1e3) return '$' + (x / 1e3).toFixed(1) + 'k';
+        return '$' + Math.round(x);
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div');
+        card.className = 'res-card';
+        var lbl = document.createElement('div');
+        lbl.className = 'res-card-lbl';
+        lbl.textContent = label;
+        var val = document.createElement('div');
+        val.className = 'res-card-val';
+        val.textContent = value;
+        card.appendChild(lbl);
+        card.appendChild(val);
+        parent.appendChild(card);
+    }
+
+    function appendHeaderRow(thead, headers) {
+        var tr = document.createElement('tr');
+        headers.forEach(function(h){
+            var th = document.createElement('th');
+            th.textContent = h;
+            tr.appendChild(th);
+        });
+        thead.appendChild(tr);
+    }
+
+    function appendDataRow(tbody, cells) {
+        var tr = document.createElement('tr');
+        cells.forEach(function(c){
+            var td = document.createElement('td');
+            td.textContent = c;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    }
+
+    function renderResults(gens, result, demandArr) {
+        var summaryEl = document.getElementById('ucResultsSummary');
+        while (summaryEl.firstChild) summaryEl.removeChild(summaryEl.firstChild);
+
+        var totalStartups = result.startups.reduce(function(s,x){ return s+x; }, 0);
+        var maxCommit = 0;
+        for (var t = 0; t < T_HORIZON; t++) {
+            var c = 0;
+            for (var i = 0; i < gens.length; i++) c += result.u[t][i] >= 0.5 ? 1 : 0;
+            if (c > maxCommit) maxCommit = c;
+        }
+
+        appendCard(summaryEl, 'Algorithm', result.name);
+        appendCard(summaryEl, 'Total cost', formatMoney(result.totalCost));
+        appendCard(summaryEl, 'Start-ups', String(totalStartups));
+        appendCard(summaryEl, 'Max units online', maxCommit + ' / ' + gens.length);
+        if (result.lowerBound) { appendCard(summaryEl, 'LP bound type', 'Lower bound'); }
+
+        var detail = document.getElementById('ucResultsDetail');
+        while (detail.firstChild) detail.removeChild(detail.firstChild);
+        var table = document.createElement('table');
+        table.className = 'results-table';
+        var thead = document.createElement('thead');
+        appendHeaderRow(thead, ['Unit', 'Hours on', 'Avg output (MW)', 'Start-ups', 'Unit cost', 'Utilization']);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        gens.forEach(function(g, i){
+            var hoursOn = 0;
+            var sumP = 0;
+            var cost = 0;
+            var starts = 0;
+            var prevU = 0;
+            for (var t = 0; t < T_HORIZON; t++) {
+                var u = result.u[t][i] >= 0.5 ? 1 : 0;
+                hoursOn += u;
+                sumP += result.p[t][i];
+                cost += u * (g.a + g.b * result.p[t][i] + g.c * result.p[t][i] * result.p[t][i]);
+                if (u === 1 && prevU === 0) { starts++; cost += g.startup; }
+                prevU = u;
+            }
+            var avgP = hoursOn > 0 ? sumP / hoursOn : 0;
+            var util = hoursOn > 0 ? (avgP / g.pmax * 100).toFixed(0) + '%' : '—';
+            appendDataRow(tbody, [
+                g.id,
+                String(hoursOn),
+                avgP.toFixed(0),
+                String(starts),
+                formatMoney(cost),
+                util
+            ]);
+        });
+        table.appendChild(tbody);
+        detail.appendChild(table);
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('ucGens', 'ucGensVal', '');
+    bindSlider('ucPeak', 'ucPeakVal', '');
+    bindSlider('ucReserve', 'ucReserveVal', '%');
+
+    document.querySelectorAll('#ucAlgos .algo-chip').forEach(function(chip){
+        var radio = chip.querySelector('input');
+        chip.addEventListener('click', function(e){
+            if (e.target.tagName !== 'INPUT') radio.checked = true;
+            document.querySelectorAll('#ucAlgos .algo-chip').forEach(function(c){
+                c.classList.toggle('selected', c.querySelector('input').checked);
+            });
+        });
+    });
+
+    function runSolver() {
+        var nGens = parseInt(document.getElementById('ucGens').value, 10);
+        var peak = parseInt(document.getElementById('ucPeak').value, 10);
+        var rPct = parseInt(document.getElementById('ucReserve').value, 10) / 100;
+        var algo = document.querySelector('#ucAlgos input:checked').value;
+
+        var gens = activeGenerators(nGens);
+        var demandArr = demand(peak);
+        var reserveArr = reserves(demandArr, rPct);
+
+        buildLegend(gens);
+
+        var t0 = performance.now();
+        var result;
+        if (algo === 'priority')   result = solvePriorityList(gens, demandArr, reserveArr);
+        else if (algo === 'lprelax') result = solveLPRelaxation(gens, demandArr, reserveArr);
+        else                         result = solveLagrangian(gens, demandArr, reserveArr);
+        var t1 = performance.now();
+
+        drawStackPlot(gens, result, demandArr);
+        drawGantt(gens, result);
+        renderResults(gens, result, demandArr);
+
+        var status = document.getElementById('ucStatus');
+        status.textContent = 'Solved (' + result.name + ') in ' + (t1 - t0).toFixed(1) + ' ms';
+    }
+
+    document.getElementById('ucSolve').addEventListener('click', runSolver);
+
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>
