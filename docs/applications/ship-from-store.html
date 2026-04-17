@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Ship-from-Store | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Fulfil online orders from store inventory to reduce last-mile distance: joint decision over which store ships and whether to protect inventory for walk-in demand. MILP assignment with demand-protection shadow prices; Hu-Li-Shou 2022 review.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/ship-from-store.html">
+    <meta property="og:title" content="Ship-from-Store">
+    <meta property="og:description" content="Store-as-fulfilment-node with last-mile reduction + walk-in protection.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Ship-from-Store">
+    <meta name="twitter:description" content="Store-fulfilment with walk-in inventory protection.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/ship-from-store.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(100,255,218,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Retail & E-Commerce", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/retail-domain.html" },
+        { "@type": "ListItem", "position": 3, "name": "Ship-from-Store", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/ship-from-store.html" }
+      ] }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Ship-from-Store</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-truck-fast" aria-hidden="true"></i></div>
+        <h1>Ship-from-<span>Store</span></h1>
+        <p class="hero-subtitle">Store as last-mile node &middot; Walk-in protection</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Fulfil online orders directly from store inventory to shorten last-mile distance and
+            speed delivery &mdash; but <em>carefully</em>, because every unit shipped from a store
+            is a unit unavailable for the walk-in customer who arrives five minutes later.
+            Ship-from-store (SFS) is a restricted form of <a href="omnichannel-fulfillment.html">omnichannel
+            fulfilment</a> where only stores are candidate nodes; the retailer-specific twist is
+            a <strong>walk-in demand shadow price</strong> that adjusts the naive shipping-cost
+            objective upward by the expected lost margin on future walk-ins.
+            Canonical references: Bell, Gallino &amp; Moreno (2014, 2018); Hu, Li &amp; Shou (2022).
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>Stores double as mini-fulfilment centres in the e-commerce era</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">~40%</div><div class="impact-label">Share of U.S. omnichannel retailers&rsquo; online orders now fulfilled in part from store inventory (Walmart, Target, Macy&rsquo;s, Kohl&rsquo;s).</div><div class="impact-src">Source: NRF / Digital Commerce 360 retail-survey aggregates.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">1&ndash;3 days</div><div class="impact-label">Typical delivery-time reduction vs DC-only fulfilment when a local store has inventory &mdash; drives the &ldquo;fast shipping&rdquo; customer promise.</div><div class="impact-src">Source: Acimovi&cacute; &amp; Graves (2015); industry operations reports.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">5&ndash;15%</div><div class="impact-label">Walk-in demand loss when SFS is run naively (nearest-store always wins) vs. with walk-in-protection shadow prices.</div><div class="impact-src">Source: Hu, Li &amp; Shou (2022) review.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">+10 pp</div><div class="impact-label">Inventory-turn improvement documented at retailers that deployed SFS alongside markdown discipline &mdash; slower-turning store stock becomes e-commerce supply.</div><div class="impact-src">Source: Bell, Gallino &amp; Moreno (2018), <em>Management Science</em>.</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Operational routing &middot; with a strategic inventory-protection overlay</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            SFS fits between <em>general omnichannel fulfilment</em> (which is also allowed to ship from a DC or dark store) and <em>pure store operations</em>. The modelling question is: given an online order and a candidate store with inventory, what is the true total cost of shipping from that store? Naive answer = per-order shipping + labour. True answer = shipping + labour + <em>expected lost margin</em> on the walk-in that will find no stock. The difference matters most in fast-turning, high-margin categories.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Order arrives</strong><span class="chain-sub">SKU + zone</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Choose store</strong><span class="chain-sub">or fall-back to DC</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Pick &amp; ship</strong><span class="chain-sub">store labour</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Walk-in recovery</strong><span class="chain-sub">next replenishment</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>Assignment MIP plus walk-in protection shadow price</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">OR family</div><div class="problem-meta-value">Assignment with shadow prices</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Complexity</div><div class="problem-meta-value">LP (integer-valued)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Solver realism</div><div class="problem-meta-value"><span class="problem-realism">&starf;&starf;&starf; Greedy + protection</span></div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Bell-Gallino-Moreno (2014, 2018)</div></div>
+            </div>
+
+            <h3>Parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(i \in \mathcal{O}\)</td><td>Pending online order</td><td>finite</td></tr>
+                    <tr><td>\(j \in \mathcal{S}\)</td><td>Store (candidate SFS origin)</td><td>finite</td></tr>
+                    <tr><td>\(0\)</td><td>DC (fall-back option, always has stock)</td><td>&mdash;</td></tr>
+                    <tr><td>\(I_j\)</td><td>Store \(j\)&rsquo;s inventory for the SKU</td><td>units</td></tr>
+                    <tr><td>\(c_{ij}\)</td><td>Shipping cost from \(j\) to order \(i\) (includes labour)</td><td>$</td></tr>
+                    <tr><td>\(c_{i0}\)</td><td>Shipping cost from DC to order \(i\) (higher)</td><td>$</td></tr>
+                    <tr><td>\(\mu_j\)</td><td>Expected remaining walk-in demand at store \(j\) this cycle</td><td>units</td></tr>
+                    <tr><td>\(m\)</td><td>Gross margin on a walk-in sale</td><td>$ / unit</td></tr>
+                    <tr><td>\(\lambda_j(I)\)</td><td>Walk-in shadow price = probability the next walk-in is lost &times; margin, given current stock \(I\)</td><td>$</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variable</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(x_{ij}\)</td><td>1 if order \(i\) ships from store \(j\); 0 otherwise. \(x_{i0} = 1\) means ship from DC</td><td>binary</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Walk-in shadow price</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">When stock is abundant, the marginal cost of one more SFS unit is zero (plenty left for walk-ins). When stock is tight, it approaches the full walk-in margin. A simple closed-form uses the newsvendor critical-fractile intuition:</p>
+            <div class="formula-block">
+                $$\lambda_j(I) \;=\; m \cdot \bar F_j(I) \;=\; m \cdot \mathbb{P}(D^{\text{walk-in}}_j \geq I)$$
+            </div>
+            <p class="formula-caption">\(\bar F_j\) is the survival function of walk-in demand. When \(I\) is large, \(\bar F_j(I) \approx 0\) and SFS is free of walk-in cost. When \(I\) is small (or zero), \(\bar F_j(I) \approx 1\) and every SFS unit costs an expected walk-in margin. Bell-Gallino-Moreno 2018 implement a richer Bayesian version.</p>
+
+            <h3>Objective</h3>
+            <div class="formula-block">
+                $$\min \; \sum_{i \in \mathcal{O}} \sum_{j \in \mathcal{S} \cup \{0\}} \bigl(\, c_{ij} \;+\; \lambda_j(I_j - \text{SFS so far}_j) \,\bigr) \, x_{ij}$$
+            </div>
+            <p class="formula-caption">Each assignment pays the true cost: shipping+labour plus the walk-in shadow price evaluated at the post-assignment inventory level. DC has \(\lambda_0 = 0\) by convention.</p>
+
+            <h3>Constraints</h3>
+            <div class="formula-block">
+                $$\sum_{j} x_{ij} = 1 \;\;\forall\, i \qquad \sum_{i} x_{ij} \leq I_j \;\;\forall\, j \in \mathcal{S} \qquad x_{ij} \in \{0, 1\}$$
+            </div>
+            <p class="formula-caption">One assignment per order; store inventory capacity; DC has no capacity bound in the simplified version.</p>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>Greedy-assignment with and without walk-in protection &mdash; compare the two</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">SFS policy solver</div><div class="solver-subtitle">15 orders &middot; 4 stores + 1 DC &middot; Poisson walk-in demand</div></div>
+                <div class="problem-realism">&starf;&starf;&starf; Greedy + shadow</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="nOrders">Online orders</label><input type="number" id="nOrders" value="15" min="5" max="40" step="1"></div>
+                    <div class="control-group"><label for="margin">Walk-in margin \(m\) ($)</label><input type="number" id="margin" value="12" min="0" max="50" step="1"></div>
+                    <div class="control-group"><label for="dcCost">DC ship cost ($)</label><input type="number" id="dcCost" value="9" min="0" max="40" step="0.5"></div>
+                    <div class="control-group"><label for="storeBase">Store ship base cost ($)</label><input type="number" id="storeBase" value="3" min="0" max="40" step="0.5"></div>
+                    <div class="control-group"><label for="storeInv">Store inventory</label><input type="number" id="storeInv" value="5" min="0" max="30" step="1"></div>
+                    <div class="control-group"><label for="walkinMean">Walk-in mean per store</label><input type="number" id="walkinMean" value="4" min="0" max="20" step="0.5"></div>
+                    <div class="control-group"><label for="seed">Seed</label><input type="number" id="seed" value="17" min="1" max="9999" step="1"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiProt">&mdash;</div><div class="result-kpi-label">Protected policy cost ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiNaive">&mdash;</div><div class="result-kpi-label">Naive nearest-store cost ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLift">&mdash;</div><div class="result-kpi-label">Savings vs naive</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiSfsShare">&mdash;</div><div class="result-kpi-label">SFS share of orders</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiProtLost">&mdash;</div><div class="result-kpi-label">Expected walk-in loss (protected)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiNaiveLost">&mdash;</div><div class="result-kpi-label">Expected walk-in loss (naive)</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="440" aria-label="SFS assignment map with stores, DC, orders"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059; height:10px; width:12px;"></span>Store (gold fill = stock left, hollow = empty)</span>
+                        <span><span class="legend-swatch" style="background:#7aa2f7; height:10px; width:12px; border-radius:2px;"></span>DC (central fall-back)</span>
+                        <span><span class="legend-swatch" style="background:#64ffda; height:10px; width:10px; border-radius:50%;"></span>SFS-assigned order</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b; height:10px; width:10px; border-radius:50%;"></span>DC-assigned order</span>
+                    </div>
+                </div>
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        The scenario generator places 4 stores (fixed coords) + 1 DC (grid centre) + \(n\) online orders (random zones). Store \(j\)&rsquo;s walk-in survival function is approximated as Poisson with rate \(\mu_j\): \(\bar F_j(I) = \mathbb{P}(\text{Poisson}(\mu_j) \geq I)\). The <em>protected</em> policy assigns each order to the store / DC with minimum \(c_{ij} + \lambda_j(I_j - \text{used}_j)\), decremented after each assignment. The <em>naive</em> policy assigns to the nearest in-stock store (or DC). Expected walk-in loss for each policy is \(m \cdot \sum_j \mathbb{E}[(D^{\text{walk-in}}_j - I_j^{\text{left}})^+]\), computed via Poisson tail. Realistic savings of 2-10% typically emerge when walk-in demand is high relative to inventory.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Protected policy routes to DC more often as inventory dips.</strong> As a store depletes, the shadow price rises, eventually making DC cheaper. Naive policy keeps shipping from store and strands walk-ins.</li>
+                    <li><strong>High-margin SKUs get more protection.</strong> Double the margin and the shadow price doubles &mdash; fewer SFS, more DC.</li>
+                    <li><strong>DC fall-back costs the retailer slower delivery but saves walk-ins.</strong> The SLA penalty trade-off appears in the cross-link to omnichannel-fulfilment.</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions</h4>
+                <ul>
+                    <li>What if walk-in demand drops (seasonal low)? &mdash; shadow prices collapse; SFS becomes free; lift vs naive shrinks.</li>
+                    <li>What if store inventory is deeper? &mdash; same: shadow prices drop; protected and naive converge.</li>
+                    <li>What if DC ship cost doubles (fuel shock)? &mdash; fall-back is more expensive; protected policy is willing to risk more walk-in losses; SFS share rises.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Dynamic shadow prices</h5><p>Bell-Gallino-Moreno 2018: use a Bayesian filter to update walk-in demand belief as the cycle unfolds; Lagrangian look-ahead gives future-demand-aware pricing.</p></div>
+            <div class="extension-card fade-in"><h5>Multi-SKU</h5><p>When stores share labour but have separate per-SKU inventory, shadow prices couple across SKUs via the labour constraint.</p></div>
+            <div class="extension-card fade-in"><h5>Return-aware SFS</h5><p>Route online orders AWAY from zones with high return rates &mdash; saving reverse-logistics cost.</p><a href="returns-management-retail.html">Returns management &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Joint SFS + replenishment</h5><p>SFS depletes store stock faster than planned; replenishment policy must adapt (higher \(S\), more frequent delivery).</p><a href="store-replenishment.html">Store replenishment &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Omnichannel embedding</h5><p>SFS is one of several fulfilment modes; full model optimises across DC / SFS / BOPIS / dark store.</p><a href="omnichannel-fulfillment.html">Omnichannel fulfilment &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>BOPIS sibling</h5><p>BOPIS uses store inventory too, but customer picks up rather than ships &mdash; different labour and shadow-price structure.</p><a href="bopis-optimization.html">BOPIS &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Strategic capacity planning</h5><p>If SFS is a permanent channel, store labour and inventory should be designed for it &mdash; upstream decision.</p><a href="store-location.html">Store location &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Routing after assignment</h5><p>Once assigned, SFS orders batch into delivery routes &mdash; logistics last-mile problem.</p><a href="delivery-routing.html">Delivery routing &rarr;</a></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Bell, D. R., Gallino, S. &amp; Moreno, A. (2014).</div><div class="reference-title">How to win in an omnichannel world.</div><div class="reference-journal">MIT Sloan Management Review 56(1): 45&ndash;53.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Bell, D. R., Gallino, S. &amp; Moreno, A. (2018).</div><div class="reference-title">Offline showrooms in omnichannel retail: Demand and operational benefits.</div><div class="reference-journal">Management Science 64(4): 1629&ndash;1651. <a href="https://doi.org/10.1287/mnsc.2016.2684" rel="noopener">doi:10.1287/mnsc.2016.2684</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Acimovi&cacute;, J. &amp; Graves, S. C. (2015).</div><div class="reference-title">Making better fulfillment decisions on the fly in an online retail environment.</div><div class="reference-journal">M&amp;SOM 17(1): 34&ndash;51. <a href="https://doi.org/10.1287/msom.2014.0505" rel="noopener">doi:10.1287/msom.2014.0505</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Hu, M., Li, X. &amp; Shou, B. (2022).</div><div class="reference-title">Ship-from-store strategy in omnichannel retail.</div><div class="reference-journal">Operations Research (literature review and model).</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Gallino, S. &amp; Moreno, A. (2014).</div><div class="reference-title">Integration of online and offline channels in retail.</div><div class="reference-journal">Management Science 60(6): 1434&ndash;1451. <a href="https://doi.org/10.1287/mnsc.2014.1951" rel="noopener">doi:10.1287/mnsc.2014.1951</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Dong, L., Shi, C. &amp; Zhang, F. (2022).</div><div class="reference-title">Inventory strategy for omnichannel ship-from-store operations.</div><div class="reference-journal">Production and Operations Management.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Jasin, S. &amp; Sinha, A. (2015).</div><div class="reference-title">An LP-based correlated rounding scheme for multi-item ecommerce order fulfillment.</div><div class="reference-journal">Operations Research 63(6): 1336&ndash;1351. <a href="https://doi.org/10.1287/opre.2015.1441" rel="noopener">doi:10.1287/opre.2015.1441</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">(EJOR 2022).</div><div class="reference-title">The revival of retail stores via omnichannel operations.</div><div class="reference-journal">European Journal of Operational Research. <a href="https://doi.org/10.1016/j.ejor.2021.12.001" rel="noopener">doi:10.1016/j.ejor.2021.12.001</a></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">Ship-from-store sits in the <em>Place &times; Operational</em> cell &mdash; store inventory doubles as last-mile supply when walk-in shadow prices are respected.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational solver &middot; Poisson walk-in model and myopic assignment &middot; validate against your own walk-in demand distribution before scaling SFS.</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    // ─── SFS solver ───
+    function mulberry32(a) {
+        return function () {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+    var STORES = [
+        { name: 'S1', x: 25, y: 30 },
+        { name: 'S2', x: 70, y: 25 },
+        { name: 'S3', x: 40, y: 70 },
+        { name: 'S4', x: 80, y: 70 }
+    ];
+    var DC = { name: 'DC', x: 50, y: 50 };
+
+    function generate(n, seed) {
+        var rng = mulberry32(seed);
+        var orders = [];
+        for (var i = 0; i < n; i++) {
+            orders.push({ id: i + 1, x: rng() * 95 + 2.5, y: rng() * 95 + 2.5 });
+        }
+        return orders;
+    }
+    function dist(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx * dx + dy * dy); }
+
+    // Poisson PMF & survival
+    function poissonPmf(k, mu) {
+        // log-space to avoid overflow
+        var logP = -mu + k * Math.log(mu);
+        for (var i = 2; i <= k; i++) logP -= Math.log(i);
+        return Math.exp(logP);
+    }
+    function poissonSurvival(k, mu) {
+        // P(X >= k) = 1 - sum_{i=0}^{k-1} pmf(i)
+        if (k <= 0) return 1;
+        var sum = 0;
+        for (var i = 0; i < k; i++) sum += poissonPmf(i, mu);
+        return Math.max(0, 1 - sum);
+    }
+    // Expected shortfall E[(X - k)^+] for Poisson(mu)
+    function poissonExpectedShortfall(k, mu) {
+        var exp = 0;
+        // Truncate at mu + 8*sqrt(mu) for practical accuracy
+        var upper = Math.max(Math.ceil(mu + 8 * Math.sqrt(mu) + 5), k + 30);
+        for (var x = k + 1; x <= upper; x++) exp += (x - k) * poissonPmf(x, mu);
+        return exp;
+    }
+
+    function shipCost(o, j, storeBase) {
+        return storeBase + 0.08 * dist(o, STORES[j]);
+    }
+    function dcCost(o, baseDC) {
+        return baseDC + 0.05 * dist(o, DC);
+    }
+
+    function solveProtected(orders, params) {
+        var invLeft = STORES.map(function () { return params.storeInv; });
+        var decisions = orders.map(function (o) {
+            var best = { kind: 'dc', j: -1, cost: dcCost(o, params.dcCost) };
+            // Evaluate each store with shadow price
+            for (var j = 0; j < STORES.length; j++) {
+                if (invLeft[j] <= 0) continue;
+                var ship = shipCost(o, j, params.storeBase);
+                var postInv = invLeft[j] - 1;
+                var shadow = params.margin * poissonSurvival(postInv + 1, params.walkinMean); // P(D >= postInv+1) = probability next walk-in lost
+                var total = ship + shadow;
+                if (total < best.cost) {
+                    best = { kind: 'sfs', j: j, cost: total, shadow: shadow, ship: ship };
+                }
+            }
+            if (best.kind === 'sfs') invLeft[best.j] -= 1;
+            return best;
+        });
+        return { decisions: decisions, invLeft: invLeft };
+    }
+
+    function solveNaive(orders, params) {
+        var invLeft = STORES.map(function () { return params.storeInv; });
+        var decisions = orders.map(function (o) {
+            var bestJ = -1, bestD = Infinity;
+            for (var j = 0; j < STORES.length; j++) {
+                if (invLeft[j] <= 0) continue;
+                var d = dist(o, STORES[j]);
+                if (d < bestD) { bestD = d; bestJ = j; }
+            }
+            if (bestJ >= 0) {
+                invLeft[bestJ] -= 1;
+                return { kind: 'sfs', j: bestJ, cost: shipCost(o, bestJ, params.storeBase) };
+            }
+            return { kind: 'dc', j: -1, cost: dcCost(o, params.dcCost) };
+        });
+        return { decisions: decisions, invLeft: invLeft };
+    }
+
+    function expectedWalkinLoss(invLeft, params) {
+        var loss = 0;
+        for (var j = 0; j < invLeft.length; j++) {
+            loss += params.margin * poissonExpectedShortfall(invLeft[j], params.walkinMean);
+        }
+        return loss;
+    }
+    function totalCost(decisions) {
+        return decisions.reduce(function (acc, d) { return acc + d.cost; }, 0);
+    }
+
+    function render(orders, params, prot, naive) {
+        var protShip = totalCost(prot.decisions);
+        var naiveShip = totalCost(naive.decisions);
+        var protLost = expectedWalkinLoss(prot.invLeft, params);
+        var naiveLost = expectedWalkinLoss(naive.invLeft, params);
+        var protTotal = protShip + protLost;
+        var naiveTotal = naiveShip + naiveLost;
+
+        var sfsCount = prot.decisions.filter(function (d) { return d.kind === 'sfs'; }).length;
+        var pct = orders.length > 0 ? (sfsCount / orders.length) * 100 : 0;
+        var lift = naiveTotal > 0 ? ((naiveTotal - protTotal) / naiveTotal) * 100 : 0;
+
+        document.getElementById('kpiProt').textContent = '$' + protTotal.toFixed(1);
+        document.getElementById('kpiNaive').textContent = '$' + naiveTotal.toFixed(1);
+        document.getElementById('kpiLift').textContent = (lift >= 0 ? '+' : '') + lift.toFixed(1) + '%';
+        document.getElementById('kpiSfsShare').textContent = sfsCount + ' / ' + orders.length + ' (' + pct.toFixed(0) + '%)';
+        document.getElementById('kpiProtLost').textContent = '$' + protLost.toFixed(1);
+        document.getElementById('kpiNaiveLost').textContent = '$' + naiveLost.toFixed(1);
+
+        drawCanvas(orders, prot);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawCanvas(orders, prot) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, pad = 40;
+        ctx.clearRect(0, 0, W, H);
+        function xP(x) { return pad + x * (W - 2 * pad) / 100; }
+        function yP(y) { return pad + y * (H - 2 * pad) / 100; }
+
+        // Grid
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        for (var k = 0; k <= 10; k++) {
+            ctx.beginPath(); ctx.moveTo(xP(k * 10), yP(0)); ctx.lineTo(xP(k * 10), yP(100)); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(xP(0), yP(k * 10)); ctx.lineTo(xP(100), yP(k * 10)); ctx.stroke();
+        }
+
+        // Assignment lines
+        prot.decisions.forEach(function (d, i) {
+            var o = orders[i];
+            var target = d.kind === 'sfs' ? STORES[d.j] : DC;
+            ctx.strokeStyle = d.kind === 'sfs' ? 'rgba(100,255,218,0.4)' : 'rgba(255,107,107,0.35)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(xP(o.x), yP(o.y)); ctx.lineTo(xP(target.x), yP(target.y)); ctx.stroke();
+        });
+
+        // Orders
+        prot.decisions.forEach(function (d, i) {
+            var o = orders[i];
+            var color = d.kind === 'sfs' ? '#64ffda' : '#ff6b6b';
+            ctx.fillStyle = color;
+            ctx.beginPath(); ctx.arc(xP(o.x), yP(o.y), 5, 0, 2 * Math.PI); ctx.fill();
+        });
+
+        // DC (square blue)
+        ctx.fillStyle = '#7aa2f7';
+        ctx.fillRect(xP(DC.x) - 10, yP(DC.y) - 10, 20, 20);
+        ctx.strokeStyle = '#0A192F'; ctx.lineWidth = 2;
+        ctx.strokeRect(xP(DC.x) - 10, yP(DC.y) - 10, 20, 20);
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = 'bold 11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('DC', xP(DC.x), yP(DC.y) + 25);
+
+        // Stores (gold filled if stock left, hollow if empty)
+        STORES.forEach(function (s, j) {
+            var cx = xP(s.x), cy = yP(s.y);
+            var hasStock = prot.invLeft[j] > 0;
+            if (hasStock) {
+                ctx.fillStyle = '#C5A059';
+                ctx.fillRect(cx - 10, cy - 10, 20, 20);
+                ctx.strokeStyle = '#0A192F'; ctx.lineWidth = 2;
+                ctx.strokeRect(cx - 10, cy - 10, 20, 20);
+            } else {
+                ctx.fillStyle = 'rgba(197,160,89,0.15)';
+                ctx.fillRect(cx - 10, cy - 10, 20, 20);
+                ctx.strokeStyle = '#C5A059'; ctx.lineWidth = 2;
+                ctx.strokeRect(cx - 10, cy - 10, 20, 20);
+            }
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = 'bold 11px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(s.name + ' (' + prot.invLeft[j] + ')', cx, cy + 25);
+        });
+    }
+
+    function run() {
+        var params = {
+            n: parseInt(document.getElementById('nOrders').value, 10),
+            margin: parseFloat(document.getElementById('margin').value),
+            dcCost: parseFloat(document.getElementById('dcCost').value),
+            storeBase: parseFloat(document.getElementById('storeBase').value),
+            storeInv: parseInt(document.getElementById('storeInv').value, 10),
+            walkinMean: parseFloat(document.getElementById('walkinMean').value),
+            seed: parseInt(document.getElementById('seed').value, 10)
+        };
+        var orders = generate(params.n, params.seed);
+        var prot = solveProtected(orders, params);
+        var naive = solveNaive(orders, params);
+        render(orders, params, prot, naive);
+    }
+    document.getElementById('btnRun').addEventListener('click', run);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('nOrders').value = 15;
+        document.getElementById('margin').value = 12;
+        document.getElementById('dcCost').value = 9;
+        document.getElementById('storeBase').value = 3;
+        document.getElementById('storeInv').value = 5;
+        document.getElementById('walkinMean').value = 4;
+        document.getElementById('seed').value = 17;
+        run();
+    });
+    window.addEventListener('load', run);
+</script>
+</body>
+</html>
