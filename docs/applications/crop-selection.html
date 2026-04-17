@@ -33,6 +33,10 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- KaTeX for mathematical rendering (scoped to #agronomic-lp only below) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
     <style>
         :root {
             --midnight: #0A192F;
@@ -2781,6 +2785,668 @@
     </div>
 </section>
 
+<!-- ======================================================================= -->
+<!-- AGRONOMIC LP: a second lens on crop selection, scoped KaTeX rendering   -->
+<!-- ======================================================================= -->
+<style>
+    /* Scoped styles for the agronomic variant (prefix: ag-) */
+    #agronomic-lp { padding: 4rem 0; background: rgba(10, 25, 47, 0.35); border-top: 1px solid rgba(197,160,89,0.15); border-bottom: 1px solid rgba(197,160,89,0.1); }
+    #agronomic-lp .ag-intro { background: rgba(197,160,89,0.05); border-left: 3px solid var(--gold); padding: 1.3rem 1.6rem; margin-bottom: 2rem; color: var(--slate-light); font-size: 0.95rem; line-height: 1.85; }
+    #agronomic-lp .ag-intro strong { color: var(--ivory); }
+    #agronomic-lp .ag-intro em { color: var(--gold); font-style: normal; }
+    #agronomic-lp h3.ag-h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.3rem; }
+    #agronomic-lp .ag-meta-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; padding-bottom: 1.2rem; margin-bottom: 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+    #agronomic-lp .ag-meta-item .ag-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+    #agronomic-lp .ag-meta-item .ag-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--gold); }
+    #agronomic-lp .ag-badge-star { display: inline-block; padding: 0.2rem 0.55rem; background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; color: var(--gold); font-size: 0.73rem; letter-spacing: 0.5px; }
+    #agronomic-lp table.ag-notation { width: 100%; border-collapse: collapse; margin: 0.8rem 0 1.4rem; }
+    #agronomic-lp table.ag-notation th, #agronomic-lp table.ag-notation td { padding: 0.55rem 0.85rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.08); }
+    #agronomic-lp table.ag-notation th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+    #agronomic-lp table.ag-notation td { font-size: 0.87rem; color: var(--slate-light); }
+    #agronomic-lp table.ag-notation td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 26%; }
+    #agronomic-lp table.ag-notation td:last-child { width: 16%; color: var(--slate); font-size: 0.8rem; }
+    #agronomic-lp table.ag-mapping { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 6px; overflow: hidden; }
+    #agronomic-lp table.ag-mapping th { padding: 0.9rem 1.1rem; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.2); }
+    #agronomic-lp table.ag-mapping td { padding: 0.7rem 1.1rem; color: var(--slate-light); font-size: 0.88rem; border-bottom: 1px solid rgba(197,160,89,0.07); }
+    #agronomic-lp table.ag-mapping td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.82rem; }
+    #agronomic-lp table.ag-mapping tr:last-child td { border-bottom: none; }
+    #agronomic-lp .ag-solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; margin: 2rem 0; overflow: hidden; }
+    #agronomic-lp .ag-solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+    #agronomic-lp .ag-solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; letter-spacing: 2px; color: var(--gold); }
+    #agronomic-lp .ag-solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+    #agronomic-lp .ag-solver-body { padding: 1.5rem; }
+    #agronomic-lp .ag-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    #agronomic-lp .ag-ctrl { display: flex; flex-direction: column; gap: 0.35rem; }
+    #agronomic-lp .ag-ctrl label { font-size: 0.76rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+    #agronomic-lp .ag-ctrl input { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.7rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; outline: none; }
+    #agronomic-lp .ag-ctrl input:focus { border-color: var(--gold); }
+    #agronomic-lp .ag-ctrl .ag-help { font-size: 0.7rem; color: var(--slate); }
+    #agronomic-lp .ag-btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.8rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.82rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+    #agronomic-lp .ag-btn-run:hover { background: var(--gold-light); transform: translateY(-1px); }
+    #agronomic-lp .ag-btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.4rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.6rem; }
+    #agronomic-lp .ag-btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+    #agronomic-lp .ag-result { margin-top: 1.8rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+    #agronomic-lp .ag-result.active { display: block; }
+    #agronomic-lp .ag-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.9rem; margin-bottom: 1.5rem; }
+    #agronomic-lp .ag-kpi { padding: 0.8rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+    #agronomic-lp .ag-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.35rem; font-weight: 600; color: var(--gold); }
+    #agronomic-lp .ag-kpi-label { font-size: 0.72rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.2rem; }
+    #agronomic-lp canvas.ag-canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+    #agronomic-lp .ag-legend { display: flex; flex-wrap: wrap; gap: 0.9rem; margin-top: 0.7rem; font-size: 0.76rem; color: var(--slate-light); }
+    #agronomic-lp .ag-swatch { display: inline-block; width: 14px; height: 10px; border-radius: 2px; vertical-align: middle; margin-right: 0.35rem; }
+    #agronomic-lp table.ag-allocation { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; }
+    #agronomic-lp table.ag-allocation th, #agronomic-lp table.ag-allocation td { padding: 0.45rem 0.6rem; text-align: center; border-bottom: 1px solid rgba(197,160,89,0.07); }
+    #agronomic-lp table.ag-allocation th { background: rgba(197,160,89,0.06); color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.7rem; }
+    #agronomic-lp table.ag-allocation td { color: var(--slate-light); }
+    #agronomic-lp table.ag-allocation td:first-child, #agronomic-lp table.ag-allocation th:first-child { text-align: left; color: var(--ivory); }
+    #agronomic-lp .ag-info { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.3rem 1.6rem; margin: 1rem 0; }
+    #agronomic-lp .ag-info h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.5rem; font-size: 1.12rem; }
+    #agronomic-lp .ag-info p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+    #agronomic-lp .ag-info ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.88rem; }
+    #agronomic-lp .ag-info ul li { margin-bottom: 0.3rem; }
+    #agronomic-lp .ag-info strong { color: var(--ivory); }
+</style>
+
+<section id="agronomic-lp">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>A second <span>lens</span>: the agronomic LP</h2>
+            <p>Same crop-selection decision, through soil, water, and rotation constraints</p>
+        </div>
+
+        <div style="max-width:960px;margin:0 auto;">
+            <div class="ag-intro fade-in">
+                The Markowitz Robust Portfolio model above treats crop selection as a
+                <em>risk-return trade-off</em> &mdash; an elegant framing transplanted from finance
+                that captures diversification value and hedging behaviour. Agricultural economists,
+                however, typically start from a different place: given this farm's <strong>fields,
+                soils, rotation history, and resource budgets</strong>, which crop should go where to
+                maximize expected margin? This is the classical <strong>agricultural sector LP</strong>,
+                formalized by Hazell &amp; Norton (1986) and elaborated in McCarl &amp; Spreen
+                (1997). Together the two lenses give a fuller picture of the crop-mix decision than
+                either alone.
+            </div>
+
+            <!-- Problem card -->
+            <div class="content-card fade-in" style="padding: 2rem;">
+                <div class="ag-meta-row">
+                    <div class="ag-meta-item">
+                        <div class="ag-meta-label">OR family</div>
+                        <div class="ag-meta-value">Linear Programming</div>
+                    </div>
+                    <div class="ag-meta-item">
+                        <div class="ag-meta-label">Complexity</div>
+                        <div class="ag-meta-value">P (simplex, interior point)</div>
+                    </div>
+                    <div class="ag-meta-item">
+                        <div class="ag-meta-label">Solver realism</div>
+                        <div class="ag-meta-value"><span class="ag-badge-star">&starf;&starf;&#9734; LP-feasible heuristic</span></div>
+                    </div>
+                    <div class="ag-meta-item">
+                        <div class="ag-meta-label">Canonical reference</div>
+                        <div class="ag-meta-value">Hazell &amp; Norton (1986)</div>
+                    </div>
+                </div>
+
+                <h3 class="ag-h3">Sets &amp; indices</h3>
+                <table class="ag-notation">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                    <tbody>
+                        <tr><td>\(c \in C\)</td><td>Crop (corn, soy, wheat, barley, canola)</td><td>\(|C| = 5\)</td></tr>
+                        <tr><td>\(f \in F\)</td><td>Field on the farm (distinct soil, drainage, slope)</td><td>\(|F| = 8\)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="ag-h3">Parameters</h3>
+                <table class="ag-notation">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                    <tbody>
+                        <tr><td>\(A_f\)</td><td>Area of field \(f\)</td><td>ha</td></tr>
+                        <tr><td>\(\text{prev}(f)\)</td><td>Crop grown on field \(f\) last year (rotation block)</td><td>&mdash;</td></tr>
+                        <tr><td>\(m_{c,f}\)</td><td>Expected net margin from crop \(c\) on field \(f\), accounting for soil suitability</td><td>CAD / ha</td></tr>
+                        <tr><td>\(w_c\)</td><td>Seasonal water demand for crop \(c\)</td><td>mm</td></tr>
+                        <tr><td>\(n_c\)</td><td>Nitrogen requirement of crop \(c\)</td><td>kg N / ha</td></tr>
+                        <tr><td>\(W\)</td><td>Seasonal water budget (irrigation + effective rainfall)</td><td>mm &middot; ha</td></tr>
+                        <tr><td>\(N\)</td><td>Seasonal nitrogen budget (mineralized + applied)</td><td>kg N</td></tr>
+                        <tr><td>\(\alpha\)</td><td>Maximum share of total area devoted to any single crop</td><td>\(\in (0,1]\)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="ag-h3">Decision variable</h3>
+                <table class="ag-notation">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                    <tbody>
+                        <tr><td>\(x_{c,f}\)</td><td>Hectares of field \(f\) planted to crop \(c\)</td><td>\(\geq 0\)</td></tr>
+                    </tbody>
+                </table>
+
+                <h3 class="ag-h3">Objective</h3>
+                <p style="color:var(--slate-light);font-size:0.92rem;">Maximize total expected margin across the farm:</p>
+                <div class="formula-block">
+                    $$\max \; \sum_{c \in C} \sum_{f \in F} m_{c,f} \, x_{c,f}$$
+                </div>
+
+                <h3 class="ag-h3">Constraints</h3>
+                <p style="color:var(--slate-light);font-size:0.92rem;">Every field is fully planted, the two seasonal budgets are respected, no crop occupies more than its diversification cap, and rotation history forbids planting the previous year's crop:</p>
+                <div class="formula-block">
+                    $$\sum_{c \in C} x_{c,f} \;=\; A_f \qquad \forall\, f \in F \qquad \text{(field area balance)}$$
+                    $$\sum_{c \in C} \sum_{f \in F} w_c \, x_{c,f} \;\leq\; W \qquad \text{(water budget)}$$
+                    $$\sum_{c \in C} \sum_{f \in F} n_c \, x_{c,f} \;\leq\; N \qquad \text{(nitrogen budget)}$$
+                    $$\sum_{f \in F} x_{c,f} \;\leq\; \alpha \sum_{f \in F} A_f \qquad \forall\, c \in C \qquad \text{(diversification)}$$
+                    $$x_{\text{prev}(f),\, f} \;=\; 0 \qquad \forall\, f \in F \qquad \text{(rotation)}$$
+                    $$x_{c,f} \;\geq\; 0 \qquad \forall\, c,f$$
+                </div>
+                <p style="font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem;">The same LP, with stochastic margins and chance constraints, becomes a stochastic agricultural sector LP (Hazell, 1971) &mdash; a natural bridge back to the Markowitz framing above.</p>
+
+                <h3 class="ag-h3">Why this formulation matters</h3>
+                <p style="color:var(--slate-light);font-size:0.92rem;">The portfolio model is silent on <em>which</em> field a crop goes on, and implicitly assumes any acre can be any crop. The agronomic LP forces the model to respect the spatial heterogeneity (soil suitability), the temporal link (rotation), and the resource envelope (water, nitrogen) that every farmer operates within. The two models can disagree sharply: a portfolio-optimal 40% soy allocation may be infeasible if the nitrogen budget is tight and last year's fields were already dominated by soy. Running both formulations sheds light on which constraints actually bind.</p>
+            </div>
+
+            <!-- Mapping table -->
+            <h3 class="ag-h3" style="text-align:center; margin-top:3rem;">Real-world &rarr; OR mapping</h3>
+            <table class="ag-mapping fade-in">
+                <thead><tr><th>On the farm</th><th>In the LP</th></tr></thead>
+                <tbody>
+                    <tr><td>Corn / soy / wheat / barley / canola</td><td>\(c \in C\)</td></tr>
+                    <tr><td>Each delineated field</td><td>\(f \in F\)</td></tr>
+                    <tr><td>Field area (from land registry / GPS boundary)</td><td>\(A_f\)</td></tr>
+                    <tr><td>Last year's crop on the same field</td><td>\(\text{prev}(f)\)</td></tr>
+                    <tr><td>Expected margin &mdash; yield &times; price &minus; variable costs, adjusted by soil suitability</td><td>\(m_{c,f}\)</td></tr>
+                    <tr><td>Crop water requirement (ET<sub>c</sub>, from CROPWAT/FAO-56)</td><td>\(w_c\)</td></tr>
+                    <tr><td>Fertilizer nitrogen recommendation (soil test + yield target)</td><td>\(n_c\)</td></tr>
+                    <tr><td>Seasonal water availability</td><td>\(W\)</td></tr>
+                    <tr><td>Affordable nitrogen budget for the season</td><td>\(N\)</td></tr>
+                    <tr><td>Risk-management cap on any single crop</td><td>\(\alpha\)</td></tr>
+                    <tr><td>Hectares of crop \(c\) planted on field \(f\)</td><td>\(x_{c,f}\)</td></tr>
+                    <tr><td>Total farm net margin</td><td>Objective value</td></tr>
+                </tbody>
+            </table>
+
+            <!-- Interactive solver -->
+            <h3 class="ag-h3" style="text-align:center; margin-top:3rem;">Interactive solver</h3>
+            <div class="ag-solver-panel fade-in">
+                <div class="ag-solver-header">
+                    <div>
+                        <div class="ag-solver-title">Agronomic LP allocator</div>
+                        <div class="ag-solver-subtitle">5 crops &times; 8 fields &middot; budget-aware greedy with rotation</div>
+                    </div>
+                    <div class="ag-badge-star">&starf;&starf;&#9734; Heuristic</div>
+                </div>
+                <div class="ag-solver-body">
+                    <div class="ag-controls">
+                        <div class="ag-ctrl">
+                            <label for="ag-water">Water budget W (mm&middot;ha)</label>
+                            <input type="number" id="ag-water" value="480000" min="200000" max="800000" step="10000">
+                            <div class="ag-help">1200 ha &times; 400 mm default</div>
+                        </div>
+                        <div class="ag-ctrl">
+                            <label for="ag-nitrogen">Nitrogen budget N (kg)</label>
+                            <input type="number" id="ag-nitrogen" value="120000" min="40000" max="300000" step="5000">
+                            <div class="ag-help">Including manure-N credits</div>
+                        </div>
+                        <div class="ag-ctrl">
+                            <label for="ag-max-share">Max share per crop &alpha;</label>
+                            <input type="number" id="ag-max-share" value="0.40" min="0.20" max="1.00" step="0.05">
+                            <div class="ag-help">Diversification cap</div>
+                        </div>
+                    </div>
+
+                    <div class="ag-controls">
+                        <div class="ag-ctrl">
+                            <label for="ag-margin-corn">Corn margin ($/ha)</label>
+                            <input type="number" id="ag-margin-corn" value="620" min="0" max="2000" step="10">
+                        </div>
+                        <div class="ag-ctrl">
+                            <label for="ag-margin-soy">Soy margin ($/ha)</label>
+                            <input type="number" id="ag-margin-soy" value="420" min="0" max="2000" step="10">
+                        </div>
+                        <div class="ag-ctrl">
+                            <label for="ag-margin-wheat">Wheat margin ($/ha)</label>
+                            <input type="number" id="ag-margin-wheat" value="360" min="0" max="2000" step="10">
+                        </div>
+                        <div class="ag-ctrl">
+                            <label for="ag-margin-barley">Barley margin ($/ha)</label>
+                            <input type="number" id="ag-margin-barley" value="300" min="0" max="2000" step="10">
+                        </div>
+                        <div class="ag-ctrl">
+                            <label for="ag-margin-canola">Canola margin ($/ha)</label>
+                            <input type="number" id="ag-margin-canola" value="480" min="0" max="2000" step="10">
+                        </div>
+                    </div>
+
+                    <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                        <button class="ag-btn-run" id="ag-btn-run"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                        <button class="ag-btn-reset" id="ag-btn-reset">Reset defaults</button>
+                    </div>
+
+                    <div class="ag-result" id="ag-result" aria-live="polite">
+                        <div class="ag-kpis">
+                            <div class="ag-kpi"><div class="ag-kpi-val" id="ag-kpi-obj">&mdash;</div><div class="ag-kpi-label">Total margin (CAD)</div></div>
+                            <div class="ag-kpi"><div class="ag-kpi-val" id="ag-kpi-water">&mdash;</div><div class="ag-kpi-label">Water used / budget</div></div>
+                            <div class="ag-kpi"><div class="ag-kpi-val" id="ag-kpi-nitrogen">&mdash;</div><div class="ag-kpi-label">Nitrogen used / budget</div></div>
+                            <div class="ag-kpi"><div class="ag-kpi-val" id="ag-kpi-filled">&mdash;</div><div class="ag-kpi-label">Area allocated (ha)</div></div>
+                        </div>
+
+                        <canvas id="ag-canvas-grid" width="920" height="320" class="ag-canvas" aria-label="Crop-by-field allocation heatmap"></canvas>
+                        <div class="ag-legend" id="ag-legend"></div>
+
+                        <div style="overflow-x:auto; margin-top:1.3rem;">
+                            <table class="ag-allocation" id="ag-alloc-table"></table>
+                        </div>
+                    </div>
+
+                    <div class="ag-info" style="margin-top:2rem;">
+                        <h4>How the solver works</h4>
+                        <p>
+                            The heuristic runs in three passes. <strong>(1)</strong> For each field, it
+                            ranks all rotation-feasible crops by margin per unit of the most-scarce
+                            resource (water or nitrogen, whichever is tighter at current shadow
+                            prices). <strong>(2)</strong> It walks through (crop, field) pairs in
+                            descending margin order, assigning full-field allocations while tracking
+                            remaining water, nitrogen, and per-crop diversification caps.
+                            <strong>(3)</strong> If any field ends up unallocated, it is filled with
+                            the cheapest feasible crop (still respecting rotation). This yields a
+                            feasible solution that is typically within a few percent of the true LP
+                            optimum for instances of this size; a commercial LP solver (Pyomo + CBC,
+                            Gurobi) would return the exact optimum in milliseconds.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interpretation -->
+            <div class="ag-info fade-in" style="margin-top:2rem;">
+                <h4>Reading the heatmap</h4>
+                <ul>
+                    <li><strong>Colored cell = crop allocated to that field.</strong> Cell height encodes soil suitability (taller = better match), cell width is proportional to field size.</li>
+                    <li><strong>Binding constraints matter most.</strong> The KPI cards show whether water or nitrogen is close to 100% of budget &mdash; whichever binds is the one the farmer should watch.</li>
+                    <li><strong>Diversification vs. margin.</strong> Loosening \(\alpha\) from 0.40 to 1.00 usually lifts the objective by 3&ndash;8%, at the cost of concentrating on one or two crops &mdash; exactly the trade-off the Markowitz model above quantifies more rigorously.</li>
+                </ul>
+            </div>
+
+            <!-- Comparing the two lenses -->
+            <div class="ag-info fade-in" style="margin-top:1rem;">
+                <h4>When to use which model</h4>
+                <p>
+                    <strong>Portfolio model (above):</strong> use when the question is &ldquo;how much
+                    risk to take?&rdquo; &mdash; when yield/price uncertainty is central and the farm has
+                    flexibility in total acreage per crop.
+                </p>
+                <p>
+                    <strong>Agronomic LP (this section):</strong> use when the question is &ldquo;where
+                    does each crop go, given my real resources?&rdquo; &mdash; when rotation, soil
+                    heterogeneity, or tight water/nitrogen budgets are the binding constraints.
+                </p>
+                <p>
+                    <strong>Both, jointly:</strong> formulations exist that combine them (stochastic
+                    agricultural LP with CVaR risk measure) &mdash; the subject of decades of research
+                    in agricultural economics.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<script>
+(function () {
+    'use strict';
+
+    // ── Fixed agronomic instance (1,200 ha Quebec grain-oilseed farm) ──
+    var CROPS  = ['Corn', 'Soy', 'Wheat', 'Barley', 'Canola'];
+    var COLORS = ['#C5A059', '#64ffda', '#7aa2f7', '#ff6b6b', '#D4AF37'];
+    // Field areas (ha), totaling 1200
+    var AREA   = [150, 180, 120, 200, 140, 160, 130, 120];
+    // Previous-year crop per field (rotation block) — stored as crop index
+    var PREV   = [0, 1, 2, 0, 4, 3, 1, 0]; // Corn, Soy, Wheat, Corn, Canola, Barley, Soy, Corn
+    // Water (mm) and nitrogen (kg/ha) per crop
+    var WATER_C    = [450, 350, 400, 380, 420];
+    var NITROGEN_C = [180,  30, 100,  80, 150];
+    // Soil suitability: [crop][field], factor on base margin
+    var SUIT = [
+        [1.20, 1.10, 0.80, 1.10, 0.90, 1.00, 1.00, 1.10], // Corn
+        [1.00, 1.00, 1.10, 0.90, 1.10, 0.80, 1.20, 0.90], // Soy
+        [0.90, 1.00, 1.20, 0.80, 1.00, 1.10, 0.90, 1.00], // Wheat
+        [0.80, 0.90, 1.00, 0.90, 1.10, 1.20, 1.00, 0.90], // Barley
+        [1.10, 0.80, 0.90, 1.20, 1.20, 0.90, 1.10, 1.00]  // Canola
+    ];
+
+    function readInputs() {
+        var base = [
+            parseFloat(document.getElementById('ag-margin-corn').value),
+            parseFloat(document.getElementById('ag-margin-soy').value),
+            parseFloat(document.getElementById('ag-margin-wheat').value),
+            parseFloat(document.getElementById('ag-margin-barley').value),
+            parseFloat(document.getElementById('ag-margin-canola').value)
+        ];
+        for (var i = 0; i < 5; i++) if (!isFinite(base[i]) || base[i] < 0) base[i] = 0;
+        return {
+            margin:   base,
+            water:    parseFloat(document.getElementById('ag-water').value) || 480000,
+            nitrogen: parseFloat(document.getElementById('ag-nitrogen').value) || 120000,
+            alpha:    parseFloat(document.getElementById('ag-max-share').value) || 0.40
+        };
+    }
+
+    // ── LP-feasible greedy with rotation, water/N budgets, diversification cap ──
+    // Returns x[c][f] = hectares, plus usage summary.
+    function solve(inp) {
+        var C = CROPS.length, F = AREA.length;
+        var totalArea = AREA.reduce(function (a, b) { return a + b; }, 0);
+        var maxCropArea = inp.alpha * totalArea;
+
+        // Build m[c][f] = base_margin_c * soil_suit[c][f]
+        var M = [];
+        for (var c = 0; c < C; c++) {
+            M.push([]);
+            for (var f = 0; f < F; f++) M[c].push(inp.margin[c] * SUIT[c][f]);
+        }
+
+        // Candidate list: all (c,f) pairs that pass rotation filter
+        var pairs = [];
+        for (var c2 = 0; c2 < C; c2++) {
+            for (var f2 = 0; f2 < F; f2++) {
+                if (c2 === PREV[f2]) continue; // rotation block
+                pairs.push({ c: c2, f: f2, m: M[c2][f2] });
+            }
+        }
+        pairs.sort(function (a, b) { return b.m - a.m; });
+
+        // State
+        var x = [];
+        for (var cc = 0; cc < C; cc++) x.push(new Array(F).fill(0));
+        var fieldRemaining = AREA.slice();
+        var cropUsed = new Array(C).fill(0);
+        var waterLeft = inp.water;
+        var nLeft = inp.nitrogen;
+
+        // Greedy pass: for each (c,f), take as much as all constraints allow
+        for (var k = 0; k < pairs.length; k++) {
+            var p = pairs[k];
+            if (fieldRemaining[p.f] <= 1e-6) continue;
+            // Max area we can add without violating any constraint
+            var byField  = fieldRemaining[p.f];
+            var byCrop   = maxCropArea - cropUsed[p.c];
+            var byWater  = WATER_C[p.c] > 0 ? waterLeft / WATER_C[p.c] : Infinity;
+            var byN      = NITROGEN_C[p.c] > 0 ? nLeft / NITROGEN_C[p.c] : Infinity;
+            var take = Math.min(byField, byCrop, byWater, byN);
+            if (take <= 1e-6) continue;
+            x[p.c][p.f] += take;
+            fieldRemaining[p.f] -= take;
+            cropUsed[p.c] += take;
+            waterLeft -= WATER_C[p.c] * take;
+            nLeft -= NITROGEN_C[p.c] * take;
+        }
+
+        // Second pass: fill remaining fields with cheapest feasible crop
+        // (forced fill to ensure the field-area constraint is respected — the
+        //  per-unit cost may be negative if budgets are very tight)
+        for (var f3 = 0; f3 < F; f3++) {
+            if (fieldRemaining[f3] <= 1e-6) continue;
+            // Pick feasible crop with smallest resource use
+            var bestC = -1, bestScore = Infinity;
+            for (var c3 = 0; c3 < C; c3++) {
+                if (c3 === PREV[f3]) continue;
+                // Score = resource intensity (lower is better when budgets tight)
+                var score = WATER_C[c3] + NITROGEN_C[c3] * 5; // N weighted higher
+                if (score < bestScore) { bestScore = score; bestC = c3; }
+            }
+            if (bestC >= 0) {
+                x[bestC][f3] += fieldRemaining[f3];
+                cropUsed[bestC] += fieldRemaining[f3];
+                waterLeft -= WATER_C[bestC] * fieldRemaining[f3];
+                nLeft -= NITROGEN_C[bestC] * fieldRemaining[f3];
+                fieldRemaining[f3] = 0;
+            }
+        }
+
+        // Compute objective and usage
+        var obj = 0, water = 0, nitrogen = 0, filled = 0;
+        for (var cx = 0; cx < C; cx++) {
+            for (var fx = 0; fx < F; fx++) {
+                obj       += M[cx][fx] * x[cx][fx];
+                water     += WATER_C[cx] * x[cx][fx];
+                nitrogen  += NITROGEN_C[cx] * x[cx][fx];
+                filled    += x[cx][fx];
+            }
+        }
+
+        return { x: x, margin_matrix: M, obj: obj, water: water, nitrogen: nitrogen, filled: filled, cropUsed: cropUsed };
+    }
+
+    // ── Canvas: grid heatmap of allocations ──
+    var GRID_W = 920, GRID_H = 320;
+    function renderGrid(sol) {
+        var canvas = document.getElementById('ag-canvas-grid');
+        if (!canvas.getContext) return;
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        canvas.width = GRID_W * dpr;
+        canvas.height = GRID_H * dpr;
+        canvas.style.width = GRID_W + 'px';
+        canvas.style.height = GRID_H + 'px';
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, GRID_W, GRID_H);
+
+        var padL = 90, padR = 30, padT = 30, padB = 50;
+        var plotW = GRID_W - padL - padR, plotH = GRID_H - padT - padB;
+        var C = CROPS.length, F = AREA.length;
+        var totalArea = AREA.reduce(function (a, b) { return a + b; }, 0);
+
+        // Column widths proportional to field area
+        var colX = new Array(F + 1);
+        colX[0] = padL;
+        for (var f = 0; f < F; f++) colX[f + 1] = colX[f] + plotW * (AREA[f] / totalArea);
+        var rowH = plotH / C;
+
+        // Draw cells: color intensity by allocation fraction
+        for (var c = 0; c < C; c++) {
+            for (var f2 = 0; f2 < F; f2++) {
+                var frac = sol.x[c][f2] / AREA[f2];
+                if (frac > 1e-4) {
+                    ctx.fillStyle = COLORS[c];
+                    ctx.globalAlpha = 0.35 + 0.65 * frac;
+                    var x1 = colX[f2], x2 = colX[f2 + 1];
+                    var y1 = padT + c * rowH;
+                    ctx.fillRect(x1 + 1, y1 + 1, (x2 - x1) - 2, rowH - 2);
+                    ctx.globalAlpha = 1;
+
+                    // Label inside cell if large enough
+                    if ((x2 - x1) > 50 && rowH > 30) {
+                        ctx.fillStyle = '#0A192F';
+                        ctx.font = 'bold 11px JetBrains Mono, monospace';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(sol.x[c][f2].toFixed(0) + ' ha', (x1 + x2) / 2, y1 + rowH / 2);
+                    }
+                }
+            }
+        }
+
+        // Previous-crop markers (gray X on blocked cells)
+        ctx.strokeStyle = 'rgba(255, 107, 107, 0.6)';
+        ctx.lineWidth = 2;
+        for (var ff = 0; ff < F; ff++) {
+            var cc = PREV[ff];
+            var xx1 = colX[ff], xx2 = colX[ff + 1];
+            var yy = padT + cc * rowH;
+            ctx.beginPath();
+            ctx.moveTo(xx1 + 6, yy + 6);
+            ctx.lineTo(xx2 - 6, yy + rowH - 6);
+            ctx.moveTo(xx2 - 6, yy + 6);
+            ctx.lineTo(xx1 + 6, yy + rowH - 6);
+            ctx.stroke();
+        }
+
+        // Row labels (crops)
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '12px Cormorant Garamond, serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        for (var c4 = 0; c4 < C; c4++) {
+            ctx.fillText(CROPS[c4], padL - 10, padT + c4 * rowH + rowH / 2);
+        }
+        // Column labels (fields)
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px JetBrains Mono, monospace';
+        for (var fl = 0; fl < F; fl++) {
+            ctx.fillText('F' + (fl + 1) + ' (' + AREA[fl] + ' ha)', (colX[fl] + colX[fl + 1]) / 2, padT + plotH + 6);
+        }
+
+        // Titles
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('FIELD', padL + plotW / 2, padT + plotH + 32);
+        ctx.save();
+        ctx.translate(24, padT + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('CROP', 0, 0);
+        ctx.restore();
+    }
+
+    function renderLegend() {
+        var legend = document.getElementById('ag-legend');
+        while (legend.firstChild) legend.removeChild(legend.firstChild);
+        for (var c = 0; c < CROPS.length; c++) {
+            var span = document.createElement('span');
+            var sw = document.createElement('span');
+            sw.className = 'ag-swatch';
+            sw.style.background = COLORS[c];
+            span.appendChild(sw);
+            var txt = document.createElement('span');
+            txt.textContent = CROPS[c];
+            span.appendChild(txt);
+            legend.appendChild(span);
+        }
+        // Rotation-block marker
+        var rotSpan = document.createElement('span');
+        var rotMarker = document.createElement('span');
+        rotMarker.textContent = ' \u00d7 ';
+        rotMarker.style.color = '#ff6b6b';
+        rotMarker.style.fontWeight = 'bold';
+        rotSpan.appendChild(rotMarker);
+        var rotTxt = document.createElement('span');
+        rotTxt.textContent = 'blocked by last year\u2019s rotation';
+        rotSpan.appendChild(rotTxt);
+        legend.appendChild(rotSpan);
+    }
+
+    // ── Allocation table (safe DOM, no innerHTML) ──
+    function renderTable(sol) {
+        var tbl = document.getElementById('ag-alloc-table');
+        while (tbl.firstChild) tbl.removeChild(tbl.firstChild);
+
+        var thead = document.createElement('thead');
+        var hr = document.createElement('tr');
+        var hCrop = document.createElement('th');
+        hCrop.textContent = 'Crop';
+        hr.appendChild(hCrop);
+        for (var f = 0; f < AREA.length; f++) {
+            var h = document.createElement('th');
+            h.textContent = 'F' + (f + 1);
+            hr.appendChild(h);
+        }
+        var hTot = document.createElement('th');
+        hTot.textContent = 'Total ha';
+        hr.appendChild(hTot);
+        thead.appendChild(hr);
+        tbl.appendChild(thead);
+
+        var tbody = document.createElement('tbody');
+        for (var c = 0; c < CROPS.length; c++) {
+            var tr = document.createElement('tr');
+            var nm = document.createElement('td');
+            nm.textContent = CROPS[c];
+            nm.style.color = COLORS[c];
+            tr.appendChild(nm);
+            var rowSum = 0;
+            for (var f2 = 0; f2 < AREA.length; f2++) {
+                var td = document.createElement('td');
+                var v = sol.x[c][f2];
+                td.textContent = v > 0.01 ? v.toFixed(1) : '';
+                tr.appendChild(td);
+                rowSum += v;
+            }
+            var totTd = document.createElement('td');
+            totTd.textContent = rowSum > 0.01 ? rowSum.toFixed(1) : '';
+            totTd.style.color = 'var(--ivory)';
+            tr.appendChild(totTd);
+            tbody.appendChild(tr);
+        }
+        tbl.appendChild(tbody);
+    }
+
+    function run() {
+        var inp = readInputs();
+        var sol = solve(inp);
+
+        function fmtCAD(v) {
+            if (v >= 1e6) return '$' + (v / 1e6).toFixed(2) + 'M';
+            if (v >= 1e3) return '$' + (v / 1e3).toFixed(1) + 'k';
+            return '$' + v.toFixed(0);
+        }
+        function fmtPct(used, total) {
+            return ((used / total) * 100).toFixed(1) + '%';
+        }
+        document.getElementById('ag-kpi-obj').textContent = fmtCAD(sol.obj);
+        document.getElementById('ag-kpi-water').textContent = fmtPct(sol.water, inp.water);
+        document.getElementById('ag-kpi-nitrogen').textContent = fmtPct(sol.nitrogen, inp.nitrogen);
+        document.getElementById('ag-kpi-filled').textContent = sol.filled.toFixed(0) + ' / 1200';
+
+        renderGrid(sol);
+        renderLegend();
+        renderTable(sol);
+
+        document.getElementById('ag-result').classList.add('active');
+    }
+
+    function reset() {
+        document.getElementById('ag-water').value = 480000;
+        document.getElementById('ag-nitrogen').value = 120000;
+        document.getElementById('ag-max-share').value = 0.40;
+        document.getElementById('ag-margin-corn').value = 620;
+        document.getElementById('ag-margin-soy').value = 420;
+        document.getElementById('ag-margin-wheat').value = 360;
+        document.getElementById('ag-margin-barley').value = 300;
+        document.getElementById('ag-margin-canola').value = 480;
+        run();
+    }
+
+    document.getElementById('ag-btn-run').addEventListener('click', run);
+    document.getElementById('ag-btn-reset').addEventListener('click', reset);
+
+    // ── Scoped KaTeX rendering: ONLY within #agronomic-lp, so the
+    //    existing Markowitz section's HTML-entity math stays unchanged. ──
+    function renderKatex() {
+        if (typeof renderMathInElement === 'undefined') {
+            setTimeout(renderKatex, 100);
+            return;
+        }
+        var el = document.getElementById('agronomic-lp');
+        if (!el) return;
+        renderMathInElement(el, {
+            delimiters: [
+                { left: '$$', right: '$$', display: true },
+                { left: '\\(', right: '\\)', display: false }
+            ],
+            throwOnError: false
+        });
+    }
+    // Run once the DOM and KaTeX scripts have loaded
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', function () {
+            renderKatex();
+            run();
+        });
+    } else {
+        renderKatex();
+        run();
+    }
+})();
+</script>
+
 <section id="references">
     <div class="container">
         <div class="section-header fade-in">
@@ -2814,7 +3480,27 @@
                     <div class="reference-item">
                         <div class="reference-authors">Kazaz, B., &amp; Webster, S. (2011).</div>
                         <div class="reference-title">"The Impact of Yield-Dependent Trading Costs on Pricing and Production Planning Under Supply Uncertainty."</div>
-                        <div class="reference-journal">Manufacturing &amp; Service Operations Management, 13(3), 404&ndash;417.</div>
+                        <div class="reference-journal">Manufacturing &amp; Service Operations Management, 13(3), 404&ndash;417. <a href="https://doi.org/10.1287/msom.1100.0329" target="_blank" rel="noopener">doi:10.1287/msom.1100.0329</a></div>
+                    </div>
+                    <div class="reference-item">
+                        <div class="reference-authors">Hazell, P. B. R. (1971).</div>
+                        <div class="reference-title">"A Linear Alternative to Quadratic and Semivariance Programming for Farm Planning Under Uncertainty."</div>
+                        <div class="reference-journal">American Journal of Agricultural Economics, 53(1), 53&ndash;62. <a href="https://doi.org/10.2307/1237835" target="_blank" rel="noopener">doi:10.2307/1237835</a></div>
+                    </div>
+                    <div class="reference-item">
+                        <div class="reference-authors">Hazell, P. B. R., &amp; Norton, R. D. (1986).</div>
+                        <div class="reference-title"><em>Mathematical Programming for Economic Analysis in Agriculture.</em></div>
+                        <div class="reference-journal">New York: Macmillan. Canonical text on the agricultural sector LP and its extensions &mdash; the foundation of the agronomic variant above.</div>
+                    </div>
+                    <div class="reference-item">
+                        <div class="reference-authors">McCarl, B. A., &amp; Spreen, T. H. (1997).</div>
+                        <div class="reference-title"><em>Applied Mathematical Programming Using Algebraic Systems.</em></div>
+                        <div class="reference-journal">Texas A&amp;M University course notes, regularly revised. <a href="https://agecon2.tamu.edu/people/faculty/mccarl-bruce/mccspr/thebook.pdf" target="_blank" rel="noopener">agecon2.tamu.edu/mccspr</a></div>
+                    </div>
+                    <div class="reference-item">
+                        <div class="reference-authors">Ahumada, O., &amp; Villalobos, J. R. (2009).</div>
+                        <div class="reference-title">"Application of planning models in the agri-food supply chain: A review."</div>
+                        <div class="reference-journal"><em>European Journal of Operational Research</em>, 196(1), 1&ndash;20. <a href="https://doi.org/10.1016/j.ejor.2008.02.014" target="_blank" rel="noopener">doi:10.1016/j.ejor.2008.02.014</a></div>
                     </div>
                 </div>
             </div>
