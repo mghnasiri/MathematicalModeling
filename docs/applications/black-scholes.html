@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black-Scholes-Merton Option Pricing | Mathematical Modeling &amp; OR</title>
+    <meta name="description" content="Black-Scholes-Merton European option pricing under geometric Brownian motion: PDE, closed-form call and put, interactive Greeks. Educational demonstration, not investment advice.">
+    <meta property="og:title" content="Black-Scholes-Merton Option Pricing">
+    <meta property="og:description" content="Closed-form European option pricing with interactive Greeks, under the risk-neutral measure Q.">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/black-scholes.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --gold-dim:rgba(197,160,89,0.15); --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --purple:#bb9af7; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        .navbar { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:1rem 0; z-index:1000; border-bottom:1px solid rgba(197,160,89,0.1); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover,.nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .breadcrumb-nav { padding:0.8rem 0; background:rgba(10,25,47,0.5); border-bottom:1px solid rgba(197,160,89,0.1); margin-top:56px; }
+        .breadcrumb-nav ol { list-style:none; display:flex; gap:0.5rem; font-size:0.8rem; letter-spacing:1px; text-transform:uppercase; padding:0; margin:0; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); text-decoration:none; transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .hero { padding:5rem 2rem 3rem; text-align:center; position:relative; }
+        .hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(122,162,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(197,160,89,0.025) 1px,transparent 1px),radial-gradient(ellipse at 50% 30%,rgba(197,160,89,0.05) 0%,transparent 60%); background-size:60px 60px,60px 60px,100% 100%; pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:2.6rem; color:var(--gold); margin-bottom:1.2rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(197,160,89,0.35)) drop-shadow(0 0 30px rgba(122,162,247,0.15)); animation:marketFlicker 3s ease-in-out infinite; }
+        @keyframes marketFlicker { 0%,100%{filter:drop-shadow(0 0 10px rgba(197,160,89,0.35)) drop-shadow(0 0 30px rgba(122,162,247,0.15));} 50%{filter:drop-shadow(0 0 16px rgba(197,160,89,0.55)) drop-shadow(0 0 35px rgba(122,162,247,0.2));} }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:3px; margin-bottom:0.8rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-subtitle { font-size:0.95rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1rem; }
+        .badge-chip { display:inline-block; padding:0.25rem 0.8rem; background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.68rem; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; margin:0 0.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:780px; margin:0 auto 1.5rem; color:var(--slate-light); font-size:0.98rem; line-height:1.85; }
+        .disclaimer-callout { max-width:900px; margin:1.5rem auto 0; padding:0.9rem 1.4rem; background:linear-gradient(135deg,rgba(255,107,107,0.06),rgba(197,160,89,0.04)); border:1px solid rgba(255,107,107,0.25); border-left:3px solid var(--red); border-radius:4px; font-size:0.82rem; color:var(--slate-light); line-height:1.65; text-align:left; }
+        .disclaimer-callout strong { color:var(--ivory); font-weight:500; }
+        .disclaimer-callout .disclaimer-title { font-size:0.68rem; color:var(--red); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.4rem; }
+        .section-header { text-align:center; margin-bottom:2rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.4rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.82rem; letter-spacing:2px; text-transform:uppercase; }
+        .impact-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; margin-bottom:2.5rem; }
+        .impact-card { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1.3rem 1.2rem; }
+        .impact-card .impact-num { font-family:'Cormorant Garamond',serif; font-size:1.9rem; font-weight:500; color:var(--gold); line-height:1; margin-bottom:0.5rem; letter-spacing:1px; }
+        .impact-card .impact-label { color:var(--slate-light); font-size:0.85rem; line-height:1.6; margin-bottom:0.6rem; }
+        .impact-card .impact-src { font-size:0.67rem; color:var(--slate); letter-spacing:1px; text-transform:uppercase; }
+        .impact-card .impact-src a { color:var(--gold); text-decoration:none; }
+        .problem-card { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1.8rem; margin-bottom:1.5rem; }
+        .problem-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:500; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .problem-card p { color:var(--slate-light); font-size:0.92rem; line-height:1.8; margin-bottom:0.8rem; }
+        .problem-card strong { color:var(--ivory); font-weight:500; }
+        .problem-meta { display:flex; flex-wrap:wrap; gap:0.8rem; margin-bottom:1rem; padding-bottom:0.8rem; border-bottom:1px solid rgba(197,160,89,0.1); }
+        .problem-meta .meta-item { font-size:0.72rem; color:var(--slate); letter-spacing:1px; text-transform:uppercase; }
+        .problem-meta .meta-item strong { color:var(--gold); font-weight:500; }
+        .formula-block { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:0.8rem 0; font-size:0.92rem; color:var(--ivory); overflow-x:auto; }
+        .formula-block .form-label { font-family:'Inter',sans-serif; font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:500; margin-bottom:0.6rem; display:block; }
+        .formula-block .caption { font-size:0.78rem; color:var(--slate); font-style:italic; margin-top:0.6rem; text-align:center; }
+        .notation-table { width:100%; border-collapse:collapse; margin:0.6rem 0; font-size:0.88rem; }
+        .notation-table th { text-align:left; padding:0.5rem 0.8rem; font-family:'Inter',sans-serif; font-size:0.7rem; color:var(--gold); text-transform:uppercase; letter-spacing:1.5px; border-bottom:1px solid rgba(197,160,89,0.2); }
+        .notation-table td { padding:0.45rem 0.8rem; color:var(--slate-light); border-bottom:1px solid rgba(197,160,89,0.06); }
+        .notation-table td:first-child { font-family:'JetBrains Mono',monospace; color:var(--gold); width:18%; white-space:nowrap; }
+        .assumption-list { padding-left:1rem; }
+        .assumption-list li { color:var(--slate-light); font-size:0.88rem; line-height:1.8; margin-bottom:0.4rem; }
+        .assumption-list li strong { color:var(--ivory); font-weight:500; }
+        .solver-panel { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.2); border-radius:4px; margin-bottom:1.5rem; overflow:hidden; }
+        .solver-panel-header { padding:1rem 1.5rem; background:linear-gradient(135deg,rgba(197,160,89,0.08),transparent); border-bottom:1px solid rgba(197,160,89,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+        .solver-panel-header h3 { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:500; color:var(--gold); margin:0; letter-spacing:1px; }
+        .solver-panel-header h3 i { margin-right:0.5rem; }
+        .solver-body { padding:1.5rem; }
+        .solver-controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1.2rem; }
+        .control-group { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.1); border-radius:4px; padding:0.9rem 1rem; }
+        .control-group label { font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.4rem; display:block; font-weight:500; }
+        .control-group input[type="range"] { width:100%; accent-color:var(--gold); cursor:pointer; }
+        .control-group input[type="number"], .control-group select { width:100%; background:var(--midnight); border:1px solid rgba(197,160,89,0.2); color:var(--ivory); padding:0.35rem 0.6rem; border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .control-group .val-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.85rem; text-align:right; margin-top:0.2rem; }
+        .solver-canvas-wrap { background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; padding:0.5rem; margin-bottom:1rem; }
+        .solver-canvas-wrap canvas { width:100%; display:block; border-radius:2px; }
+        .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0.6rem; margin-bottom:1rem; }
+        .kpi { background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:3px; padding:0.7rem 0.8rem; text-align:center; }
+        .kpi .kpi-label { font-size:0.65rem; color:var(--slate); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:0.3rem; }
+        .kpi .kpi-val { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1.05rem; font-weight:500; }
+        .results-table { width:100%; border-collapse:collapse; font-size:0.85rem; margin-top:0.8rem; }
+        .results-table th { font-family:'Inter',sans-serif; font-size:0.7rem; font-weight:600; text-transform:uppercase; letter-spacing:1.5px; color:var(--gold); padding:0.6rem 0.8rem; border-bottom:1px solid rgba(197,160,89,0.2); text-align:left; }
+        .results-table td { padding:0.5rem 0.8rem; border-bottom:1px solid rgba(197,160,89,0.05); color:var(--slate-light); font-family:'JetBrains Mono',monospace; font-size:0.82rem; }
+        .complexity-box { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin-bottom:1rem; }
+        .complexity-box h3 { font-family:'Cormorant Garamond',serif; font-size:1.2rem; color:var(--gold); margin-bottom:0.6rem; letter-spacing:1.5px; }
+        .complexity-box h3 i { margin-right:0.5rem; }
+        .complexity-list { padding-left:1.1rem; }
+        .complexity-list li { color:var(--slate-light); font-size:0.87rem; line-height:1.8; margin-bottom:0.3rem; }
+        .complexity-list li strong { color:var(--ivory); font-weight:500; }
+        .reference-item { padding:1rem 0; border-bottom:1px solid rgba(197,160,89,0.08); }
+        .reference-item:last-child { border-bottom:none; }
+        .reference-item .ref-authors { color:var(--ivory); font-weight:500; font-size:0.9rem; }
+        .reference-item .ref-title { color:var(--slate-light); font-style:italic; font-size:0.86rem; margin-top:0.15rem; }
+        .reference-item .ref-journal { color:var(--slate); font-size:0.8rem; margin-top:0.15rem; }
+        .reference-item .ref-journal a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(197,160,89,0.4); }
+        .cta-panel { background:linear-gradient(135deg,rgba(197,160,89,0.08),rgba(122,162,247,0.04)); border:1px solid rgba(197,160,89,0.25); border-radius:4px; padding:2.5rem; text-align:center; }
+        .cta-panel h3 { font-family:'Cormorant Garamond',serif; font-size:1.7rem; font-weight:400; letter-spacing:2px; margin-bottom:0.8rem; color:var(--ivory); }
+        .cta-panel p { color:var(--slate-light); font-size:0.9rem; max-width:700px; margin:0 auto 1.5rem; line-height:1.8; }
+        .cta-links { display:flex; justify-content:center; gap:1rem; flex-wrap:wrap; }
+        .cta-link { display:inline-flex; align-items:center; gap:0.4rem; padding:0.6rem 1.4rem; border:1px solid rgba(197,160,89,0.4); border-radius:3px; color:var(--gold); text-decoration:none; font-size:0.76rem; text-transform:uppercase; letter-spacing:1.5px; transition:all 0.3s; }
+        .cta-link:hover { background:var(--gold); color:var(--midnight); }
+        footer { padding:2rem 0; text-align:center; border-top:1px solid rgba(197,160,89,0.1); }
+        footer p { color:var(--slate); font-size:0.78rem; letter-spacing:1px; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        section { padding:2.5rem 0; }
+        section.alt { background:var(--midnight-light); }
+        .fade-in { opacity:0; transform:translateY(18px); transition:opacity 0.5s ease, transform 0.5s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width: 768px) {
+            .hero h1 { font-size:2rem; letter-spacing:2px; }
+            .solver-controls { grid-template-columns:1fr 1fr; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Finance & Insurance","item":"https://mghnasiri.github.io/MathematicalModeling/applications/finance-domain.html"},
+      {"@type":"ListItem","position":3,"name":"Black-Scholes","item":"https://mghnasiri.github.io/MathematicalModeling/applications/black-scholes.html"}
+    ]}
+    </script>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link active" href="finance-domain.html">Finance</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="finance-domain.html">Finance &amp; Insurance</a></li>
+            <li style="color:var(--gold);">Black-Scholes-Merton</li>
+        </ol>
+    </div>
+</div>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-chart-line"></i></div>
+        <h1>Black-Scholes-Merton <span>Option Pricing</span></h1>
+        <div class="hero-subtitle">Derivative Pricing &middot; Continuous-time &middot; Sell-side</div>
+        <div>
+            <span class="badge-chip">Family 02</span>
+            <span class="badge-chip">Pricing</span>
+            <span class="badge-chip">PDE</span>
+            <span class="badge-chip">$\mathbb{Q}$-measure</span>
+        </div>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Black &amp; Scholes (1973) and Merton (1973) solved the European option pricing problem by constructing a
+            self-financing replicating portfolio. The result is a closed-form price for European calls and puts, a
+            parabolic PDE that any derivative must satisfy, and five partial derivatives &mdash; the <strong>Greeks</strong>
+            &mdash; that describe how the price moves with its inputs. The work won the 1997 Nobel Memorial Prize in
+            Economic Sciences and remains the single most-taught result in mathematical finance.
+        </p>
+
+        <div class="disclaimer-callout">
+            <div class="disclaimer-title"><i class="fas fa-exclamation-circle"></i> Educational Purpose</div>
+            This page is a <strong>mathematical demonstration</strong> of the Black-Scholes-Merton model. It is
+            <strong>not investment advice, options-trading guidance, or a hedging recommendation</strong>. The
+            assumptions below (constant volatility, continuous trading, no transaction costs) are systematically
+            violated in real markets, which motivates the many extensions cited at the end of this page.
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Why option pricing <span>matters</span></h2>
+            <p>Three anchor facts</p>
+        </div>
+        <div class="impact-row fade-in">
+            <div class="impact-card">
+                <div class="impact-num">$600 T+</div>
+                <div class="impact-label">notional value of OTC derivatives outstanding globally (2023) &mdash; a market whose pricing infrastructure rests squarely on the Black-Scholes-Merton framework and its descendants.</div>
+                <div class="impact-src">BIS Derivatives Statistics &middot; <a href="https://www.bis.org/statistics/derstats.htm" target="_blank" rel="noopener">bis.org</a></div>
+            </div>
+            <div class="impact-card">
+                <div class="impact-num">1997</div>
+                <div class="impact-label">Nobel Memorial Prize in Economic Sciences awarded to Robert C. Merton and Myron S. Scholes &ldquo;for a new method to determine the value of derivatives&rdquo;. Black had died in 1995.</div>
+                <div class="impact-src">Nobel Committee &middot; <a href="https://www.nobelprize.org/prizes/economic-sciences/1997/summary/" target="_blank" rel="noopener">nobelprize.org</a></div>
+            </div>
+            <div class="impact-card">
+                <div class="impact-num">&Delta; &Gamma; &Theta; &nu; &rho;</div>
+                <div class="impact-label">the five first- and second-order sensitivities &mdash; the <strong>Greeks</strong> &mdash; that every options desk monitors continuously. All have closed-form expressions under BSM.</div>
+                <div class="impact-src">Hull (2021) ch.19 &middot; <a href="https://www.pearson.com/en-us/subject-catalog/p/options-futures-and-other-derivatives/P200000006106" target="_blank" rel="noopener">pearson.com</a></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="alt">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>model</span></h2>
+            <p>Underlying dynamics, PDE, and closed-form price</p>
+        </div>
+
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <span class="meta-item">OR family: <strong>Derivative pricing</strong></span>
+                <span class="meta-item">Solver class: <strong>Closed-form / PDE</strong></span>
+                <span class="meta-item">Measure: <strong>Risk-neutral $\mathbb{Q}$</strong></span>
+                <span class="meta-item">Realism: <strong>&starf;&starf;&starf; Exact (under assumptions)</strong></span>
+            </div>
+
+            <h3>Notation</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td>$S_t$</td><td>Price of the non-dividend-paying underlying asset at time $t$</td></tr>
+                    <tr><td>$K$</td><td>Strike price of the option</td></tr>
+                    <tr><td>$T$</td><td>Maturity date of the option</td></tr>
+                    <tr><td>$\tau = T - t$</td><td>Time to maturity</td></tr>
+                    <tr><td>$r$</td><td>Continuously-compounded risk-free rate (constant)</td></tr>
+                    <tr><td>$\sigma$</td><td>Volatility of the underlying (constant, annualised)</td></tr>
+                    <tr><td>$W^{\mathbb{Q}}_t$</td><td>Standard Brownian motion under the risk-neutral measure $\mathbb{Q}$</td></tr>
+                    <tr><td>$V(S,t)$</td><td>Price of a European contingent claim with payoff $V(S_T,T) = g(S_T)$</td></tr>
+                    <tr><td>$C, P$</td><td>European call and put price respectively</td></tr>
+                    <tr><td>$N(\cdot), \phi(\cdot)$</td><td>Standard-normal cumulative and density functions</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Dynamics</h3>
+            <p>Under the risk-neutral measure $\mathbb{Q}$, the underlying follows a geometric Brownian motion with drift
+               equal to the risk-free rate:</p>
+            <div class="formula-block">
+                <span class="form-label">Underlying SDE (under $\mathbb{Q}$)</span>
+                $$ dS_t = r \, S_t \, dt + \sigma \, S_t \, dW^{\mathbb{Q}}_t $$
+                <div class="caption">Geometric Brownian motion with constant drift $r$ and constant volatility $\sigma$.</div>
+            </div>
+
+            <h3>Black-Scholes PDE</h3>
+            <p>Any self-financing replicating portfolio argument on an option $V(S,t)$ written on this underlying
+               shows that $V$ must satisfy a parabolic partial differential equation (no arbitrage):</p>
+            <div class="formula-block">
+                <span class="form-label">Black-Scholes PDE (Black &amp; Scholes 1973, Merton 1973)</span>
+                $$ \frac{\partial V}{\partial t} \;+\; \frac{1}{2}\sigma^2 S^2 \frac{\partial^2 V}{\partial S^2} \;+\; r S \frac{\partial V}{\partial S} \;-\; r V \;=\; 0 $$
+                <div class="caption">With terminal condition $V(S,T) = g(S)$ (the contract payoff).</div>
+            </div>
+
+            <h3>European call &amp; put &mdash; closed form</h3>
+            <p>For a European call with payoff $C_T = (S_T - K)^+$ and a European put with payoff $P_T = (K - S_T)^+$,
+               the PDE solves in closed form:</p>
+            <div class="formula-block">
+                <span class="form-label">European call price</span>
+                $$ C(S, t) \;=\; S \, N(d_1) \;-\; K e^{-r\tau} \, N(d_2) $$
+                <br>
+                <span class="form-label" style="margin-top:0.6rem;">European put price</span>
+                $$ P(S, t) \;=\; K e^{-r\tau} \, N(-d_2) \;-\; S \, N(-d_1) $$
+                <br>
+                <span class="form-label" style="margin-top:0.6rem;">where</span>
+                $$ d_1 \;=\; \frac{\ln(S/K) + (r + \tfrac{1}{2}\sigma^2)\tau}{\sigma\sqrt{\tau}}, \qquad d_2 \;=\; d_1 - \sigma\sqrt{\tau} $$
+                <div class="caption">Put-call parity: $C - P = S - K e^{-r\tau}$. Both prices satisfy the BSM PDE and the appropriate terminal condition.</div>
+            </div>
+
+            <h3>Greeks</h3>
+            <p>Five closed-form sensitivities. For a call:</p>
+            <div class="formula-block">
+                $$ \Delta = \frac{\partial C}{\partial S} = N(d_1), \qquad \Gamma = \frac{\partial^2 C}{\partial S^2} = \frac{\phi(d_1)}{S\sigma\sqrt{\tau}} $$
+                $$ \mathrm{Vega} = \frac{\partial C}{\partial \sigma} = S\,\phi(d_1)\sqrt{\tau} $$
+                $$ \Theta = \frac{\partial C}{\partial t} = -\frac{S\,\phi(d_1)\sigma}{2\sqrt{\tau}} - rK e^{-r\tau} N(d_2) $$
+                $$ \rho = \frac{\partial C}{\partial r} = K \tau e^{-r\tau} N(d_2) $$
+                <div class="caption">$\Gamma$ and Vega are the same sign for calls and puts; $\Delta_{put} = \Delta_{call} - 1$. Convention: $\Theta$ per year; many desks quote $\Theta/365$ per calendar day.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Assumptions <span>&amp; limitations</span></h2>
+            <p>All violated in real markets &mdash; which is why the extensions exist</p>
+        </div>
+        <div class="complexity-box fade-in">
+            <h3><i class="fas fa-list-check"></i> Black-Scholes model assumptions</h3>
+            <ul class="complexity-list assumption-list">
+                <li><strong>Geometric Brownian motion.</strong> Log-returns are normally distributed with constant drift and volatility. Real-market returns exhibit heavy tails, skew, and volatility clustering.</li>
+                <li><strong>Constant volatility $\sigma$.</strong> Empirically, implied volatility varies by strike (smile / skew) and by maturity (term structure). This is the single most-violated assumption; Heston (1993) and local-volatility models relax it.</li>
+                <li><strong>Constant risk-free rate $r$.</strong> Extensions: Merton (1973) already allows deterministic $r(t)$; stochastic-rate models use HJM / Vasicek curves.</li>
+                <li><strong>No dividends.</strong> Continuous dividend yield $q$ adds $-qS\,\partial_S V$ to the PDE. Discrete dividends require different treatment.</li>
+                <li><strong>No transaction costs.</strong> Real hedging incurs bid-ask, commissions, and market impact; transaction-cost models (Leland 1985) adjust the effective volatility.</li>
+                <li><strong>Continuous trading.</strong> The replicating portfolio rebalances continuously &mdash; impossible in practice. Discrete hedging errors scale with $\sqrt{\Delta t}$.</li>
+                <li><strong>No arbitrage; frictionless markets; unlimited borrow/lend at $r$.</strong> Foundation of the no-arbitrage pricing argument.</li>
+                <li><strong>European exercise only.</strong> American options (early exercise) have no closed form; they are priced via binomial trees, PDE with free boundary, or Monte Carlo with Longstaff-Schwartz regression.</li>
+                <li><strong>Single underlying.</strong> Multi-asset / basket / rainbow options require multi-dimensional extensions (correlated GBMs).</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="alt">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Set $(S, K, T, r, \sigma)$ and read the price and Greeks</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-calculator"></i> Black-Scholes Calculator</h3>
+                <span style="font-size:0.72rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">&starf;&starf;&starf; Exact under BSM assumptions</span>
+            </div>
+            <div class="solver-body">
+
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label>Underlying $S$</label>
+                        <input type="range" id="inS" min="10" max="200" step="1" value="100">
+                        <div class="val-display" id="outS">100.00</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Strike $K$</label>
+                        <input type="range" id="inK" min="10" max="200" step="1" value="100">
+                        <div class="val-display" id="outK">100.00</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Time to maturity $T$ (years)</label>
+                        <input type="range" id="inT" min="0.05" max="3" step="0.05" value="1">
+                        <div class="val-display" id="outT">1.00</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Risk-free rate $r$</label>
+                        <input type="range" id="inR" min="0" max="0.15" step="0.005" value="0.03">
+                        <div class="val-display" id="outR">3.00%</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Volatility $\sigma$</label>
+                        <input type="range" id="inSigma" min="0.05" max="1" step="0.01" value="0.25">
+                        <div class="val-display" id="outSigma">25.00%</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Option type</label>
+                        <select id="inType">
+                            <option value="call">Call</option>
+                            <option value="put">Put</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi"><div class="kpi-label">Price</div><div class="kpi-val" id="kpiPrice">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">Delta ($\Delta$)</div><div class="kpi-val" id="kpiDelta">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">Gamma ($\Gamma$)</div><div class="kpi-val" id="kpiGamma">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">Vega</div><div class="kpi-val" id="kpiVega">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">Theta ($\Theta$)/yr</div><div class="kpi-val" id="kpiTheta">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">Rho ($\rho$)</div><div class="kpi-val" id="kpiRho">&mdash;</div></div>
+                </div>
+
+                <div class="solver-canvas-wrap">
+                    <canvas id="priceCanvas" width="800" height="340" aria-label="Option price and payoff as a function of underlying"></canvas>
+                </div>
+                <p style="font-size:0.78rem;color:var(--slate);text-align:center;margin-top:0.4rem;">
+                    Thick line: option value $V(S,t)$ at present. Dashed line: payoff $g(S_T)$ at maturity. Vertical marker: current spot.
+                </p>
+            </div>
+        </div>
+
+        <div class="complexity-box fade-in" style="margin-top:1.2rem;">
+            <h3><i class="fas fa-exchange-alt"></i> Desk &harr; model mapping</h3>
+            <table class="results-table">
+                <thead><tr><th>On the desk</th><th>In the model</th></tr></thead>
+                <tbody>
+                    <tr><td>Spot price of the underlying</td><td>$S$ (or $S_0$)</td></tr>
+                    <tr><td>Contract strike</td><td>$K$</td></tr>
+                    <tr><td>Days to expiry / 365</td><td>$\tau$</td></tr>
+                    <tr><td>Implied volatility</td><td>$\sigma$ (the only unobservable; back-solved from market price)</td></tr>
+                    <tr><td>Risk-free curve at tenor $\tau$</td><td>$r$</td></tr>
+                    <tr><td>Per-unit-of-underlying hedge ratio</td><td>Delta ($\Delta$)</td></tr>
+                    <tr><td>Change in Delta per $\$$ change in underlying</td><td>Gamma ($\Gamma$)</td></tr>
+                    <tr><td>Time decay (per year)</td><td>Theta ($\Theta$)</td></tr>
+                    <tr><td>Sensitivity to volatility</td><td>Vega</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions <span>&amp; cousins</span></h2>
+            <p>The Black-Scholes assumptions relaxed, one axis at a time</p>
+        </div>
+        <div class="complexity-box fade-in">
+            <ul class="complexity-list">
+                <li><strong>Stochastic volatility</strong> &mdash; Heston (1993): $d\sigma_t^2$ is its own mean-reverting SDE; produces volatility smiles.</li>
+                <li><strong>Jump-diffusion</strong> &mdash; Merton (1976): underlying has occasional Poisson jumps; captures fat tails and short-term smile.</li>
+                <li><strong>Local volatility</strong> &mdash; Dupire (1994): $\sigma(S, t)$ calibrated from the entire implied-vol surface.</li>
+                <li><strong>American options</strong> &mdash; <a href="binomial-option-pricing.html" style="color:var(--gold);">Binomial tree</a> (Cox-Ross-Rubinstein 1979) or <a href="monte-carlo-option-pricing.html" style="color:var(--gold);">Longstaff-Schwartz Monte Carlo</a> (2001) handle early exercise.</li>
+                <li><strong>Exotic options</strong> &mdash; Asian (path average), barrier (knock-in/out), lookback, digital; usually priced via Monte Carlo or PDE with exotic boundary.</li>
+                <li><strong>Stochastic interest rates</strong> &mdash; combine BSM with HJM or short-rate models (<a href="short-rate-models.html" style="color:var(--gold);">Vasicek / CIR</a>).</li>
+                <li><strong>Transaction costs</strong> &mdash; Leland (1985) adjusts effective volatility; broader utility-based hedging models exist.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="alt">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Seminal papers, extensions, textbooks</p>
+        </div>
+        <div style="max-width:920px;margin:0 auto;" class="fade-in">
+            <div class="reference-item">
+                <div class="ref-authors">Black, F. &amp; Scholes, M. (1973).</div>
+                <div class="ref-title">The Pricing of Options and Corporate Liabilities.</div>
+                <div class="ref-journal"><em>Journal of Political Economy</em>, 81(3), 637&ndash;654. <a href="https://doi.org/10.1086/260062" target="_blank" rel="noopener">doi:10.1086/260062</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Merton, R. C. (1973).</div>
+                <div class="ref-title">Theory of Rational Option Pricing.</div>
+                <div class="ref-journal"><em>The Bell Journal of Economics and Management Science</em>, 4(1), 141&ndash;183. <a href="https://doi.org/10.2307/3003143" target="_blank" rel="noopener">doi:10.2307/3003143</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Cox, J. C., Ross, S. A. &amp; Rubinstein, M. (1979).</div>
+                <div class="ref-title">Option Pricing: A Simplified Approach.</div>
+                <div class="ref-journal"><em>Journal of Financial Economics</em>, 7(3), 229&ndash;263. <a href="https://doi.org/10.1016/0304-405X(79)90015-1" target="_blank" rel="noopener">doi:10.1016/0304-405X(79)90015-1</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Merton, R. C. (1976).</div>
+                <div class="ref-title">Option Pricing When Underlying Stock Returns Are Discontinuous.</div>
+                <div class="ref-journal"><em>Journal of Financial Economics</em>, 3(1&ndash;2), 125&ndash;144. <a href="https://doi.org/10.1016/0304-405X(76)90022-2" target="_blank" rel="noopener">doi:10.1016/0304-405X(76)90022-2</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Heston, S. L. (1993).</div>
+                <div class="ref-title">A Closed-Form Solution for Options with Stochastic Volatility with Applications to Bond and Currency Options.</div>
+                <div class="ref-journal"><em>The Review of Financial Studies</em>, 6(2), 327&ndash;343. <a href="https://doi.org/10.1093/rfs/6.2.327" target="_blank" rel="noopener">doi:10.1093/rfs/6.2.327</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Dupire, B. (1994).</div>
+                <div class="ref-title">Pricing with a Smile.</div>
+                <div class="ref-journal"><em>Risk</em>, 7(1), 18&ndash;20.</div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Leland, H. E. (1985).</div>
+                <div class="ref-title">Option Pricing and Replication with Transactions Costs.</div>
+                <div class="ref-journal"><em>The Journal of Finance</em>, 40(5), 1283&ndash;1301. <a href="https://doi.org/10.1111/j.1540-6261.1985.tb02383.x" target="_blank" rel="noopener">doi:10.1111/j.1540-6261.1985.tb02383.x</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Hull, J. C. (2021).</div>
+                <div class="ref-title">Options, Futures, and Other Derivatives, 11th ed.</div>
+                <div class="ref-journal">Pearson. ISBN 978-0-13-693997-9.</div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Shreve, S. E. (2004).</div>
+                <div class="ref-title">Stochastic Calculus for Finance II: Continuous-Time Models.</div>
+                <div class="ref-journal">Springer. ISBN 978-0-387-40101-0.</div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Bj&ouml;rk, T. (2019).</div>
+                <div class="ref-title">Arbitrage Theory in Continuous Time, 4th ed.</div>
+                <div class="ref-journal">Oxford University Press. ISBN 978-0-19-885161-5.</div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Wilmott, P. (2006).</div>
+                <div class="ref-title">Paul Wilmott on Quantitative Finance, 2nd ed.</div>
+                <div class="ref-journal">Wiley. ISBN 978-0-470-01870-5.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Related sub-applications</h3>
+            <p>Three standard numerical methods to price options when Black-Scholes fails &mdash; Americans, path-dependent payoffs, stochastic volatility, or jumps.</p>
+            <div class="cta-links">
+                <a href="finance-domain.html" class="cta-link"><i class="fas fa-compass"></i> Finance landscape</a>
+                <a href="binomial-option-pricing.html" class="cta-link"><i class="fas fa-project-diagram"></i> Binomial tree</a>
+                <a href="monte-carlo-option-pricing.html" class="cta-link"><i class="fas fa-dice"></i> Monte Carlo</a>
+                <a href="short-rate-models.html" class="cta-link"><i class="fas fa-wave-square"></i> Rate models</a>
+            </div>
+        </div>
+
+        <div class="disclaimer-callout fade-in" style="margin-top:1.5rem;">
+            <div class="disclaimer-title"><i class="fas fa-exclamation-circle"></i> Reminder &mdash; educational purpose only</div>
+            Implied volatility, Greeks, and option prices computed here assume constant $\sigma$ and $r$, continuous
+            trading, no transaction costs, and no dividends &mdash; systematically violated in real markets. Not
+            investment, hedging, or regulatory advice. Historical model performance never implies future results.
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="../index.html">&larr; Home</a> &ensp;&middot;&ensp; &copy; 2025 Mohammad Ghafourian Nasiri &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" defer
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<script>
+(function(){
+    "use strict";
+
+    /* Standard-normal CDF via Abramowitz & Stegun 7.1.26 rational approx */
+    function normCdf(x) {
+        var a1 =  0.254829592, a2 = -0.284496736, a3 =  1.421413741;
+        var a4 = -1.453152027, a5 =  1.061405429, p = 0.3275911;
+        var sign = (x < 0) ? -1 : 1;
+        var ax = Math.abs(x) / Math.sqrt(2);
+        var t = 1.0 / (1.0 + p * ax);
+        var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-ax * ax);
+        return 0.5 * (1.0 + sign * y);
+    }
+    function normPdf(x) {
+        return Math.exp(-0.5 * x * x) / Math.sqrt(2 * Math.PI);
+    }
+
+    function bsPrice(S, K, T, r, sigma, type) {
+        if (T <= 0) {
+            if (type === 'call') return Math.max(S - K, 0);
+            return Math.max(K - S, 0);
+        }
+        var d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma) * T) / (sigma * Math.sqrt(T));
+        var d2 = d1 - sigma * Math.sqrt(T);
+        if (type === 'call') {
+            return S * normCdf(d1) - K * Math.exp(-r*T) * normCdf(d2);
+        }
+        return K * Math.exp(-r*T) * normCdf(-d2) - S * normCdf(-d1);
+    }
+    function bsGreeks(S, K, T, r, sigma, type) {
+        if (T <= 0) {
+            return { d1:0, d2:0, delta:0, gamma:0, vega:0, theta:0, rho:0 };
+        }
+        var d1 = (Math.log(S/K) + (r + 0.5*sigma*sigma) * T) / (sigma * Math.sqrt(T));
+        var d2 = d1 - sigma * Math.sqrt(T);
+        var delta, theta, rho;
+        if (type === 'call') {
+            delta = normCdf(d1);
+            theta = -(S * normPdf(d1) * sigma) / (2 * Math.sqrt(T)) - r * K * Math.exp(-r*T) * normCdf(d2);
+            rho   =  K * T * Math.exp(-r*T) * normCdf(d2);
+        } else {
+            delta = normCdf(d1) - 1;
+            theta = -(S * normPdf(d1) * sigma) / (2 * Math.sqrt(T)) + r * K * Math.exp(-r*T) * normCdf(-d2);
+            rho   = -K * T * Math.exp(-r*T) * normCdf(-d2);
+        }
+        var gamma = normPdf(d1) / (S * sigma * Math.sqrt(T));
+        var vega  = S * normPdf(d1) * Math.sqrt(T);
+        return { d1:d1, d2:d2, delta:delta, gamma:gamma, vega:vega, theta:theta, rho:rho };
+    }
+
+    function fmt(x, dp) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(dp) : '\u2014'; }
+
+    function bindRange(id, out, formatter) {
+        var el = document.getElementById(id);
+        var o = document.getElementById(out);
+        function update() { o.textContent = formatter(parseFloat(el.value)); recompute(); }
+        el.addEventListener('input', update);
+        update();
+    }
+
+    function recompute() {
+        var S = parseFloat(document.getElementById('inS').value);
+        var K = parseFloat(document.getElementById('inK').value);
+        var T = parseFloat(document.getElementById('inT').value);
+        var r = parseFloat(document.getElementById('inR').value);
+        var sigma = parseFloat(document.getElementById('inSigma').value);
+        var type = document.getElementById('inType').value;
+
+        var price = bsPrice(S, K, T, r, sigma, type);
+        var g = bsGreeks(S, K, T, r, sigma, type);
+
+        document.getElementById('kpiPrice').textContent = fmt(price, 3);
+        document.getElementById('kpiDelta').textContent = fmt(g.delta, 4);
+        document.getElementById('kpiGamma').textContent = fmt(g.gamma, 5);
+        document.getElementById('kpiVega').textContent  = fmt(g.vega, 3);
+        document.getElementById('kpiTheta').textContent = fmt(g.theta, 3);
+        document.getElementById('kpiRho').textContent   = fmt(g.rho, 3);
+
+        drawCurve(S, K, T, r, sigma, type);
+    }
+
+    function drawCurve(S, K, T, r, sigma, type) {
+        var canvas = document.getElementById('priceCanvas');
+        if (!canvas) return;
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = 55;
+        var plotW = W - 2*pad, plotH = H - 2*pad;
+
+        var Smin = Math.max(1, S * 0.2);
+        var Smax = Math.max(Smin + 1, S * 2.2);
+        var priceMin = 0;
+        var priceMax = Math.max(5, Math.max(Smax - K, K - Smin) * 1.1);
+
+        function sx(v) { return pad + ((v - Smin) / (Smax - Smin)) * plotW; }
+        function sy(v) { return H - pad - ((v - priceMin) / (priceMax - priceMin)) * plotH; }
+
+        // grid
+        ctx.strokeStyle = 'rgba(197,160,89,0.05)';
+        ctx.lineWidth = 0.5;
+        for (var gx = 0; gx <= 10; gx++) {
+            var x = pad + plotW * gx / 10;
+            ctx.beginPath(); ctx.moveTo(x, pad); ctx.lineTo(x, H - pad); ctx.stroke();
+        }
+        for (var gy = 0; gy <= 10; gy++) {
+            var y = pad + plotH * gy / 10;
+            ctx.beginPath(); ctx.moveTo(pad, y); ctx.lineTo(W - pad, y); ctx.stroke();
+        }
+
+        // axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(pad, H - pad); ctx.lineTo(W - pad, H - pad); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(pad, pad); ctx.lineTo(pad, H - pad); ctx.stroke();
+
+        // axis labels
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Underlying S', W/2, H - 12);
+        ctx.save();
+        ctx.translate(16, H/2);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillText('Option value', 0, 0);
+        ctx.restore();
+
+        // axis ticks
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        for (var tx = 0; tx <= 5; tx++) {
+            var vx = Smin + (Smax - Smin) * tx / 5;
+            var px = sx(vx);
+            ctx.fillText(vx.toFixed(0), px, H - pad + 14);
+        }
+        ctx.textAlign = 'right';
+        for (var ty = 0; ty <= 5; ty++) {
+            var vy = priceMin + (priceMax - priceMin) * ty / 5;
+            var py = sy(vy);
+            ctx.fillText(vy.toFixed(1), pad - 6, py + 3);
+        }
+
+        // strike line
+        var kPx = sx(K);
+        ctx.strokeStyle = 'rgba(122,162,247,0.25)';
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath(); ctx.moveTo(kPx, pad); ctx.lineTo(kPx, H - pad); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#7aa2f7';
+        ctx.textAlign = 'left';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText('K=' + K.toFixed(0), kPx + 4, pad + 10);
+
+        // payoff (dashed, at maturity)
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.setLineDash([5, 4]);
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        var steps = 220;
+        for (var i = 0; i <= steps; i++) {
+            var s = Smin + (Smax - Smin) * i / steps;
+            var payoff = (type === 'call') ? Math.max(s - K, 0) : Math.max(K - s, 0);
+            var px2 = sx(s), py2 = sy(payoff);
+            if (i === 0) ctx.moveTo(px2, py2); else ctx.lineTo(px2, py2);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // option value (solid, at present)
+        ctx.strokeStyle = '#C5A059';
+        ctx.lineWidth = 2.4;
+        ctx.beginPath();
+        for (var i2 = 0; i2 <= steps; i2++) {
+            var s2 = Smin + (Smax - Smin) * i2 / steps;
+            var v = bsPrice(s2, K, T, r, sigma, type);
+            var px3 = sx(s2), py3 = sy(v);
+            if (i2 === 0) ctx.moveTo(px3, py3); else ctx.lineTo(px3, py3);
+        }
+        ctx.stroke();
+
+        // glow
+        ctx.strokeStyle = 'rgba(197,160,89,0.2)';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        for (var i3 = 0; i3 <= steps; i3++) {
+            var s3 = Smin + (Smax - Smin) * i3 / steps;
+            var v3 = bsPrice(s3, K, T, r, sigma, type);
+            var px4 = sx(s3), py4 = sy(v3);
+            if (i3 === 0) ctx.moveTo(px4, py4); else ctx.lineTo(px4, py4);
+        }
+        ctx.stroke();
+        ctx.lineWidth = 1;
+
+        // current spot marker
+        var sPx = sx(S);
+        var currentVal = bsPrice(S, K, T, r, sigma, type);
+        var sPy = sy(currentVal);
+        ctx.strokeStyle = 'rgba(100,255,218,0.4)';
+        ctx.setLineDash([2, 3]);
+        ctx.beginPath(); ctx.moveTo(sPx, pad); ctx.lineTo(sPx, H - pad); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#64ffda';
+        ctx.beginPath();
+        ctx.arc(sPx, sPy, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.textAlign = 'left';
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillText('S=' + S.toFixed(0) + ' V=' + currentVal.toFixed(2), sPx + 8, sPy - 6);
+
+        // legend
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        var lx = W - pad - 180, ly = pad + 18;
+        ctx.strokeStyle = '#C5A059'; ctx.lineWidth = 2.4;
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 24, ly); ctx.stroke();
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('V(S,t) — present value', lx + 30, ly + 3);
+
+        ctx.setLineDash([5, 4]); ctx.strokeStyle = '#ff6b6b'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(lx, ly + 16); ctx.lineTo(lx + 24, ly + 16); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillText('g(S_T) — payoff at T', lx + 30, ly + 19);
+    }
+
+    bindRange('inS', 'outS', function(v){ return v.toFixed(2); });
+    bindRange('inK', 'outK', function(v){ return v.toFixed(2); });
+    bindRange('inT', 'outT', function(v){ return v.toFixed(2); });
+    bindRange('inR', 'outR', function(v){ return (v*100).toFixed(2) + '%'; });
+    bindRange('inSigma', 'outSigma', function(v){ return (v*100).toFixed(2) + '%'; });
+    document.getElementById('inType').addEventListener('change', recompute);
+    recompute();
+
+    /* Fade-in */
+    var els = document.querySelectorAll('.fade-in');
+    var obs = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    els.forEach(function(el){ obs.observe(el); });
+})();
+</script>
+</body>
+</html>

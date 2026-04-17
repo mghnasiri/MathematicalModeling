@@ -16,24 +16,25 @@
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
     <title>Investment Portfolio Optimization | Mathematical Modeling &amp; Operations Research</title>
-    <meta name="description" content="Interactive Robust Portfolio Optimization demo using Markowitz mean-variance, Equal Weight, Min Variance, Max Return, and QP solver.">
+    <meta name="description" content="Markowitz mean-variance portfolio optimisation with four solvers (Equal Weight, Min Variance, Max Return, Mean-Variance QP) and an interactive asset / covariance editor. Educational demonstration.">
     <!-- Open Graph / Social Sharing -->
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Mohammad G. Nasiri">
     <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/portfolio.html">
     <meta property="og:title" content="Investment Portfolio Optimization | Mathematical Modeling &amp; Operations Research">
-    <meta property="og:description" content="Interactive Robust Portfolio Optimization demo using Markowitz mean-variance, Equal Weight, Min Variance, Max Return, and QP solver.">
+    <meta property="og:description" content="Markowitz mean-variance portfolio optimisation with four solvers (Equal Weight, Min Variance, Max Return, Mean-Variance QP) and an interactive asset / covariance editor. Educational demonstration.">
     <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="Investment Portfolio Optimization | Mathematical Modeling &amp; Operations Research">
-    <meta name="twitter:description" content="Interactive Robust Portfolio Optimization demo using Markowitz mean-variance, Equal Weight, Min Variance, Max Return, and QP solver.">
+    <meta name="twitter:description" content="Markowitz mean-variance portfolio optimisation with four solvers (Equal Weight, Min Variance, Max Return, Mean-Variance QP) and an interactive asset / covariance editor. Educational demonstration.">
     <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/portfolio.html" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
     <style>
         :root {
             --midnight: #0A192F;
@@ -2179,13 +2180,20 @@
 <!-- ── Hero ── -->
 <div class="hero">
     <div class="hero-icon hero-icon--finance"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
-    <h1>Investment <span>Portfolio</span></h1>
-    <div class="hero-subtitle">Robust Portfolio Optimization</div>
+    <h1>Markowitz <span>Mean-Variance Portfolio</span></h1>
+    <div class="hero-subtitle">Quadratic Programming &middot; Portfolio Optimisation &middot; Buy-side</div>
     <div class="gold-line" aria-hidden="true"></div>
     <p class="hero-desc">
-        How should you allocate capital across assets to balance return and risk?
-        Markowitz mean-variance optimization provides the mathematical foundation,
-        while robust extensions guard against estimation uncertainty.
+        How should capital be allocated across $n$ risky assets to balance expected return and variance?
+        Markowitz (1952) recast this as a <strong>quadratic program</strong>: minimise portfolio variance
+        subject to a target return, a budget constraint, and no short-selling. Sixty years of finance-OR
+        literature has extended the model &mdash; CVaR, robust, multi-period, factor-based &mdash; but the
+        single-period mean-variance program remains the canonical entry point.
+    </p>
+    <p class="hero-desc" style="font-size:0.88rem;color:var(--slate);margin-top:0.8rem;">
+        Related sub-applications: <a href="cvar-portfolio.html" style="color:var(--gold);text-decoration:none;border-bottom:1px dotted rgba(197,160,89,0.4);">CVaR Portfolio</a> (Rockafellar-Uryasev),
+        <a href="robust-portfolio-optimization.html" style="color:var(--gold);text-decoration:none;border-bottom:1px dotted rgba(197,160,89,0.4);">Robust Portfolio</a> (Goldfarb-Iyengar),
+        <a href="value-at-risk.html" style="color:var(--gold);text-decoration:none;border-bottom:1px dotted rgba(197,160,89,0.4);">Value at Risk &amp; ES</a>.
     </p>
 </div>
 
@@ -2199,38 +2207,72 @@
 
         <div class="content-block fade-in">
             <p>
-                Given <strong>n assets</strong> with expected returns <strong>&mu;</strong> and covariance matrix <strong>&Sigma;</strong>,
-                allocate capital weights <strong>w</strong> to maximize expected return while controlling portfolio variance.
-                The classic <strong>Markowitz mean-variance</strong> framework solves:
+                Given $n$ risky assets with <strong>expected-return vector</strong> $\mu \in \mathbb{R}^n$ and
+                <strong>covariance matrix</strong> $\Sigma \in \mathbb{R}^{n\times n}$ (symmetric, positive semidefinite),
+                choose portfolio weights $w \in \mathbb{R}^n$ to maximise expected return while controlling variance.
+                Markowitz (1952) posed this as a <strong>quadratic program</strong>. The utility-penalised form used
+                in this demo is:
             </p>
 
             <div class="formulation">
-                <span class="form-label">Mean-Variance Formulation</span>
-                <span class="keyword">maximize</span>&ensp; <span class="variable">&mu;</span><sup>T</sup><span class="variable">w</span> &minus; <span class="variable">&lambda;</span> &middot; <span class="variable">w</span><sup>T</sup><span class="variable">&Sigma;w</span><br>
-                <span class="keyword">subject to</span>&ensp; &sum;<span class="variable">w<sub>i</sub></span> = 1 <span class="comment">&emsp;// fully invested</span><br>
-                &emsp;&emsp;&emsp;&emsp;&emsp;&ensp; <span class="variable">w<sub>i</sub></span> &ge; 0 &emsp;&emsp;&emsp;&emsp; <span class="comment">// no short selling</span>
+                <span class="form-label">Mean-Variance Formulation (Markowitz, 1952)</span>
+                $$ \max_{w\in\mathbb{R}^n} \quad \mu^\top w \;-\; \lambda \, w^\top \Sigma w $$
+                $$ \text{s.t.} \quad \mathbf{1}^\top w = 1, \qquad w_i \ge 0 \;\; \forall i $$
+                <div style="font-size:0.8rem;color:var(--slate);margin-top:0.6rem;line-height:1.6;">
+                    (1) $\mathbf{1}^\top w = 1$ &mdash; fully invested, no cash buffer.<br>
+                    (2) $w_i \ge 0 \;\forall i$ &mdash; no short-selling (long-only).<br>
+                    (3) $\lambda \ge 0$ &mdash; risk-aversion parameter; sweeping $\lambda \in [\lambda_{\min}, \lambda_{\max}]$
+                    traces out the <strong>efficient frontier</strong> in $(\sigma, \mathbb{E}[r])$ space.
+                </div>
             </div>
 
             <p>
-                The parameter <strong>&lambda;</strong> (risk aversion) controls the tradeoff: high &lambda; penalizes
-                variance heavily, producing conservative portfolios; low &lambda; chases higher returns.
+                High $\lambda$ produces conservative, diversified portfolios; low $\lambda$ concentrates on the highest-return
+                assets. The solution is unique when $\Sigma$ is positive definite. Probabilities are taken under the
+                <strong>physical measure $\mathbb{P}$</strong> &mdash; this is a decision problem, not a pricing problem
+                (contrast with Black-Scholes, which operates under the risk-neutral measure $\mathbb{Q}$).
             </p>
-
-            <p>
-                The <strong>robust</strong> extension adds an uncertainty penalty on expected returns, acknowledging
-                that <strong>&mu;</strong> is estimated with error. With ellipsoidal uncertainty:
-            </p>
-
-            <div class="formulation">
-                <span class="form-label">Robust Formulation</span>
-                <span class="keyword">maximize</span>&ensp; <span class="variable">&mu;</span><sup>T</sup><span class="variable">w</span> &minus; <span class="variable">&delta;</span> &middot; &Vert;<span class="variable">&Sigma;</span><sup>&frac12;</sup><span class="variable">w</span>&Vert; &minus; <span class="variable">&lambda;</span> &middot; <span class="variable">w</span><sup>T</sup><span class="variable">&Sigma;w</span><br>
-                <span class="keyword">subject to</span>&ensp; &sum;<span class="variable">w<sub>i</sub></span> = 1, &ensp;<span class="variable">w<sub>i</sub></span> &ge; 0
-            </div>
 
             <div class="disclaimer-box">
                 <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Educational Demonstration</div>
-                Data shown is illustrative. This is not financial advice. Real portfolio construction requires
-                professional analysis of market conditions, regulatory constraints, and individual risk tolerance.
+                Data shown is illustrative. <strong>This is not financial advice.</strong> Real portfolio construction
+                requires professional analysis of market conditions, estimation-error diagnostics, transaction costs,
+                regulatory constraints, and individual risk tolerance. Historical model performance does not imply
+                future results.
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 1.5: Assumptions &amp; Limitations ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Assumptions <span>&amp; Limitations</span></h2>
+            <p>What this model assumes &mdash; and when those assumptions break</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-list-check" aria-hidden="true"></i> Explicit modelling assumptions</h3>
+                <ul class="complexity-list">
+                    <li><strong>Single period.</strong> One decision horizon; no rebalancing, no dynamic trading. Multi-period portfolio choice requires Merton-style continuous-time or multi-stage stochastic programming.</li>
+                    <li><strong>Known $\mu$ and $\Sigma$.</strong> Both are assumed known with certainty. In practice they are <em>estimated</em> from historical data and carry substantial error &mdash; the reason robust (Goldfarb-Iyengar) and Bayesian (Black-Litterman) variants exist.</li>
+                    <li><strong>Variance is a sufficient risk measure.</strong> Equivalent to Gaussian returns, or quadratic utility. Fat-tailed loss distributions are not captured &mdash; CVaR / Expected Shortfall addresses this explicitly.</li>
+                    <li><strong>Stationarity.</strong> $\mu$ and $\Sigma$ are constant over the horizon. Real returns exhibit volatility clustering (GARCH), regime shifts, and non-stationarity.</li>
+                    <li><strong>No transaction costs.</strong> No bid-ask spreads, commissions, market impact, or taxes. Real portfolios face 10-50 bps round-trip costs that make frequent rebalancing expensive.</li>
+                    <li><strong>No short-selling.</strong> $w_i \ge 0$ is a constraint. Dropping it (allowing $w_i &lt; 0$) yields the unconstrained mean-variance frontier with closed-form solution $w^* \propto \Sigma^{-1}(\mu - \gamma \mathbf{1})$.</li>
+                    <li><strong>Continuous, infinitely divisible weights.</strong> No lot sizes, no cardinality constraints. Cardinality-constrained variants ($|\{i : w_i &gt; 0\}| \le K$) are MIQPs and NP-hard.</li>
+                    <li><strong>No leverage.</strong> $\mathbf{1}^\top w = 1$ prevents borrowing. Real portfolios may use leverage up to regulatory limits (Reg&nbsp;T, Basel).</li>
+                </ul>
+                <p style="font-size:0.85rem;color:var(--slate-light);margin-top:1rem;line-height:1.7;">
+                    <strong>The "Markowitz enigma" (Michaud, 1989).</strong> Because $\mu$ is notoriously hard to estimate,
+                    a Markowitz solver that takes historical means at face value will produce portfolios that are
+                    extreme, highly concentrated, and unstable under small re-estimations of $\mu$.
+                    This pathology motivates <em>robust optimisation</em> (Ben-Tal &amp; Nemirovski 1998; Goldfarb &amp;
+                    Iyengar 2003), <em>Black-Litterman shrinkage</em>, and <em>resampled frontiers</em> &mdash; separate
+                    sub-applications on this site.
+                </p>
             </div>
         </div>
     </div>
@@ -2269,7 +2311,7 @@
                 <div class="solver-section-label">Covariance Matrix (Annualized)</div>
                 <div style="overflow-x:auto;margin-bottom:1rem;">
                     <table class="results-table" id="cov-table">
-                        <th scope="col"ead id="cov-head"></thead>
+                        <thead id="cov-head"></thead>
                         <tbody id="cov-body"></tbody>
                     </table>
                 </div>
@@ -2329,7 +2371,7 @@
                 <div class="solver-section-label">Detailed Results</div>
                 <div style="overflow-x: auto;">
                     <table class="results-table" id="results-table">
-                        <th scope="col"ead id="results-head">
+                        <thead id="results-head">
                             <tr>
                                 <th scope="col">Algorithm</th>
                                 <th scope="col">E[Return]</th>
@@ -2349,6 +2391,57 @@
                 </div>
 
                 <div class="solver-status" id="solver-status">Ready to optimize.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Section 2.5: Reading the results ── -->
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Reading the <span>Results</span></h2>
+            <p>Business terms &harr; math symbols, and the definitions behind the KPIs</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-exchange-alt" aria-hidden="true"></i> Real-world &harr; model mapping</h3>
+                <table class="results-table" style="margin-top:0.6rem;">
+                    <thead>
+                        <tr><th scope="col">On the desk</th><th scope="col">In the model</th></tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>Share of capital put into asset $i$</td><td>$w_i$</td></tr>
+                        <tr><td>Annualised expected return of asset $i$</td><td>$\mu_i$</td></tr>
+                        <tr><td>Covariance of asset $i$ and $j$ returns</td><td>$\Sigma_{ij}$</td></tr>
+                        <tr><td>Portfolio&rsquo;s expected annual return</td><td>$\mathbb{E}[r_p] = \mu^\top w$</td></tr>
+                        <tr><td>Portfolio&rsquo;s annual variance</td><td>$\sigma_p^2 = w^\top \Sigma w$</td></tr>
+                        <tr><td>Portfolio standard deviation (&ldquo;risk&rdquo;)</td><td>$\sigma_p = \sqrt{w^\top \Sigma w}$</td></tr>
+                        <tr><td>How aggressively the investor trades return for risk</td><td>$\lambda$</td></tr>
+                        <tr><td>&ldquo;Fully invested&rdquo; budget line</td><td>$\mathbf{1}^\top w = 1$</td></tr>
+                        <tr><td>Long-only constraint</td><td>$w_i \ge 0$</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="complexity-box" style="margin-top:1.2rem;">
+                <h3><i class="fas fa-book" aria-hidden="true"></i> Definitions of the reported KPIs</h3>
+                <ul class="complexity-list">
+                    <li><strong>E[Return]</strong> &mdash; portfolio expected return $\mathbb{E}[r_p] = \mu^\top w$ under the physical measure $\mathbb{P}$.</li>
+                    <li><strong>Std Dev ($\sigma_p$)</strong> &mdash; portfolio standard deviation $\sqrt{w^\top \Sigma w}$. This is the iconic <em>risk</em> axis on an efficient-frontier plot.</li>
+                    <li><strong>Sharpe ratio</strong> &mdash; risk-adjusted return
+                        $\displaystyle S = \frac{\mathbb{E}[r_p] - r_f}{\sigma_p}$ &mdash; Sharpe (1966, 1994). This page
+                        uses the demo convention $r_f = 0$, so the displayed Sharpe is simply $\mathbb{E}[r_p] / \sigma_p$.
+                        A real benchmark would subtract an appropriate risk-free rate. Sharpe is <em>not</em> the only
+                        performance metric &mdash; see Sortino (downside std only), Treynor (beta-scaled), Information
+                        ratio (vs benchmark), and Calmar (return/drawdown).</li>
+                    <li><strong>Time</strong> &mdash; wall-clock solve time for the algorithm, in ms. Pedagogical only; real
+                        solvers (Mosek, Gurobi, HiGHS, CVXPY) are far faster on problems of this size.</li>
+                    <li><strong>&num; Assets (in the weights panel)</strong> &mdash; count of $w_i &gt; 0.005$, i.e. positions
+                        with meaningful capital. A "diversified" portfolio keeps this close to $n$; a concentrated one
+                        shrinks it toward 1.</li>
+                </ul>
             </div>
         </div>
     </div>
@@ -2450,15 +2543,70 @@
             <ul class="reference-list">
                 <li>
                     <span class="ref-author">Markowitz, H.</span> (1952).
-                    <span class="ref-title">"Portfolio selection."</span>
-                    <span class="ref-journal">The Journal of Finance, 7(1), 77&ndash;91.</span>
-                    The foundational paper establishing mean-variance optimization as the basis of modern portfolio theory.
+                    <span class="ref-title">&ldquo;Portfolio Selection.&rdquo;</span>
+                    <span class="ref-journal"><em>The Journal of Finance</em>, 7(1), 77&ndash;91.
+                        <a href="https://doi.org/10.1111/j.1540-6261.1952.tb01525.x" target="_blank" rel="noopener">doi:10.1111/j.1540-6261.1952.tb01525.x</a></span>
+                    The founding paper of modern portfolio theory. Casts asset allocation as a quadratic program with $\mu$ and $\Sigma$.
+                </li>
+                <li>
+                    <span class="ref-author">Sharpe, W. F.</span> (1966).
+                    <span class="ref-title">&ldquo;Mutual Fund Performance.&rdquo;</span>
+                    <span class="ref-journal"><em>The Journal of Business</em>, 39(1), 119&ndash;138.
+                        <a href="https://doi.org/10.1086/294846" target="_blank" rel="noopener">doi:10.1086/294846</a></span>
+                    Introduces the reward-to-variability ratio, today called the Sharpe ratio.
+                </li>
+                <li>
+                    <span class="ref-author">Sharpe, W. F.</span> (1994).
+                    <span class="ref-title">&ldquo;The Sharpe Ratio.&rdquo;</span>
+                    <span class="ref-journal"><em>The Journal of Portfolio Management</em>, 21(1), 49&ndash;58.
+                        <a href="https://doi.org/10.3905/jpm.1994.409501" target="_blank" rel="noopener">doi:10.3905/jpm.1994.409501</a></span>
+                    Revised formulation clarifying the ex-ante vs ex-post distinction and proper use of the ratio.
+                </li>
+                <li>
+                    <span class="ref-author">Michaud, R. O.</span> (1989).
+                    <span class="ref-title">&ldquo;The Markowitz Optimization Enigma: Is &lsquo;Optimized&rsquo; Optimal?&rdquo;</span>
+                    <span class="ref-journal"><em>Financial Analysts Journal</em>, 45(1), 31&ndash;42.
+                        <a href="https://doi.org/10.2469/faj.v45.n1.31" target="_blank" rel="noopener">doi:10.2469/faj.v45.n1.31</a></span>
+                    The canonical statement of the estimation-error problem that motivates robust and Bayesian variants.
+                </li>
+                <li>
+                    <span class="ref-author">Ben-Tal, A., &amp; Nemirovski, A.</span> (1998).
+                    <span class="ref-title">&ldquo;Robust Convex Optimization.&rdquo;</span>
+                    <span class="ref-journal"><em>Mathematics of Operations Research</em>, 23(4), 769&ndash;805.
+                        <a href="https://doi.org/10.1287/moor.23.4.769" target="_blank" rel="noopener">doi:10.1287/moor.23.4.769</a></span>
+                    Foundational theory of robust optimisation, later applied directly to portfolio problems.
                 </li>
                 <li>
                     <span class="ref-author">Goldfarb, D., &amp; Iyengar, G.</span> (2003).
-                    <span class="ref-title">"Robust portfolio selection problems."</span>
-                    <span class="ref-journal">Mathematics of Operations Research, 28(1), 1&ndash;38.</span>
-                    Introduces robust formulations using ellipsoidal and polyhedral uncertainty sets for expected returns.
+                    <span class="ref-title">&ldquo;Robust Portfolio Selection Problems.&rdquo;</span>
+                    <span class="ref-journal"><em>Mathematics of Operations Research</em>, 28(1), 1&ndash;38.
+                        <a href="https://doi.org/10.1287/moor.28.1.1.14260" target="_blank" rel="noopener">doi:10.1287/moor.28.1.1.14260</a></span>
+                    Ellipsoidal and polyhedral uncertainty sets on $\mu$ and $\Sigma$; SOCP reformulation. Basis of this site&rsquo;s <a href="robust-portfolio-optimization.html" style="color:var(--gold);">robust-portfolio</a> sub-application.
+                </li>
+                <li>
+                    <span class="ref-author">Rockafellar, R. T., &amp; Uryasev, S.</span> (2000).
+                    <span class="ref-title">&ldquo;Optimization of Conditional Value-at-Risk.&rdquo;</span>
+                    <span class="ref-journal"><em>Journal of Risk</em>, 2(3), 21&ndash;41.
+                        <a href="https://doi.org/10.21314/JOR.2000.038" target="_blank" rel="noopener">doi:10.21314/JOR.2000.038</a></span>
+                    Replaces variance with the coherent Conditional Value-at-Risk measure; LP reformulation under scenarios. See the <a href="cvar-portfolio.html" style="color:var(--gold);">CVaR-portfolio</a> sub-application.
+                </li>
+                <li>
+                    <span class="ref-author">Fabozzi, F. J., Kolm, P. N., Pachamanova, D. A., &amp; Focardi, S. M.</span> (2007).
+                    <span class="ref-title"><em>Robust Portfolio Optimization and Management</em>.</span>
+                    <span class="ref-journal">Wiley. ISBN 978-0-471-92122-6.</span>
+                    Practitioner-level reference covering robust, Bayesian, and resampled approaches to the Markowitz enigma.
+                </li>
+                <li>
+                    <span class="ref-author">Cornuejols, G., &amp; T&uuml;t&uuml;nc&uuml;, R.</span> (2007).
+                    <span class="ref-title"><em>Optimization Methods in Finance</em>.</span>
+                    <span class="ref-journal">Cambridge University Press. ISBN 978-0-521-86170-2.</span>
+                    OR-first treatment of portfolio optimisation, including QP, SOCP, and SDP formulations with CPLEX / Mosek walkthroughs.
+                </li>
+                <li>
+                    <span class="ref-author">Luenberger, D. G.</span> (1998).
+                    <span class="ref-title"><em>Investment Science</em>.</span>
+                    <span class="ref-journal">Oxford University Press. ISBN 978-0-19-510809-5.</span>
+                    Classic textbook covering mean-variance theory, CAPM, arbitrage pricing, and related topics at graduate level.
                 </li>
             </ul>
         </div>
@@ -2469,17 +2617,35 @@
 <section>
     <div class="container">
         <div class="cta-panel fade-in">
-            <h3>Need Sophisticated Portfolio Optimization?</h3>
+            <h3>Related sub-applications</h3>
             <p>
-                From multi-asset allocation to risk budgeting and robust optimization,
-                real investment problems demand rigorous mathematical modeling and
-                domain expertise. Let's discuss your portfolio challenges.
+                This page covers the single-period Markowitz mean-variance programme. Close cousins within the
+                Finance &amp; Insurance domain pick up where it leaves off &mdash; addressing fat tails, estimation
+                error, and risk-measurement under coherent axioms.
             </p>
             <div class="cta-links">
-                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="cta-link" target="_blank" rel="noopener">
-                    <i class="fab fa-linkedin" aria-hidden="true"></i> LinkedIn
+                <a href="finance-domain.html" class="cta-link">
+                    <i class="fas fa-compass" aria-hidden="true"></i> Finance landscape
+                </a>
+                <a href="cvar-portfolio.html" class="cta-link">
+                    <i class="fas fa-chart-line" aria-hidden="true"></i> CVaR portfolio
+                </a>
+                <a href="robust-portfolio-optimization.html" class="cta-link">
+                    <i class="fas fa-shield-alt" aria-hidden="true"></i> Robust portfolio
+                </a>
+                <a href="value-at-risk.html" class="cta-link">
+                    <i class="fas fa-exclamation-triangle" aria-hidden="true"></i> VaR &amp; ES
                 </a>
             </div>
+        </div>
+
+        <div class="disclaimer-box fade-in" style="margin-top: 2rem; max-width: 900px; margin-left: auto; margin-right: auto;">
+            <div class="disclaimer-title"><i class="fas fa-exclamation-circle" aria-hidden="true"></i> Reminder &mdash; educational purpose only</div>
+            This page is an <strong>educational demonstration</strong> of the Markowitz quadratic program.
+            It is not investment, tax, legal, or regulatory advice. Returns, variances, and covariances are
+            illustrative; real-market data are non-stationary, fat-tailed, and estimated with error. Historical
+            model performance never implies future results. For actual portfolio decisions, consult a licensed
+            financial adviser.
         </div>
     </div>
 </section>
@@ -2495,6 +2661,8 @@
 <a href="../index.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Portfolio</a>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" defer onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
 <script>
 // ═══════════════════════════════════════════════════════════════
 // PORTFOLIO OPTIMIZATION ENGINE — FULLY INTERACTIVE

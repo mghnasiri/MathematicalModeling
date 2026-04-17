@@ -35,7 +35,7 @@ This is a **GitHub Pages site** with **135 self-contained HTML pages**, each pre
 | **Logistics & Transport** | 12 | CVRP, VRPTW, Hub-Spoke Design, Fleet Sizing, Gate Assignment |
 | **Agriculture** | 13 | Crop Selection, Harvest Scheduling, Irrigation Network, Water Allocation |
 | **Retail & E-Commerce** | 8 | Assortment Optimization, Store Location, Order Picking, Grocery Ordering |
-| **Finance & Insurance** | 4 | Portfolio Optimization, Market Timing (Stochastic DP) |
+| **Finance & Insurance** | 15 | Markowitz, CVaR, Robust Portfolio, Black-Scholes, Binomial, Monte Carlo, VaR/ES, Vasicek/CIR, Merton Credit, ALM, Optimal Execution, Real Options, Insurance Ratemaking, Systemic Risk |
 | **Construction** | 8 | Project Scheduling, Site Selection, Crew Assignment, Resource Leveling |
 | **Energy** | 8 | Unit Commitment, Economic Dispatch, Plant Siting, Storage Dispatch |
 | **Public Services** | 8 | School Location, Fire Station Siting, Transit Network, Evacuation Routing |
