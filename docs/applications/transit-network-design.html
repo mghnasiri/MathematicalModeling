@@ -15,2352 +15,804 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <title>Transit Network Design | Mathematical Modeling &amp; Operations Research</title>
-    <meta name="description" content="Interactive Fixed-Charge Network Design demo for public transit corridor selection using MST, Greedy, and Budget-Constrained algorithms.">
-    <!-- Open Graph / Social Sharing -->
-    <meta property="og:type" content="website">
+    <title>Transit Network Design | Public Services | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Transit network design — route selection and frequency setting to minimise passenger travel time, anchored on Mandl (1979), Ceder &amp; Wilson (1986), and Baaj &amp; Mahmassani (1995). With equity, accessibility, and paratransit critique.">
+    <meta property="og:type" content="article">
     <meta property="og:site_name" content="Mohammad G. Nasiri">
     <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/transit-network-design.html">
-    <meta property="og:title" content="Transit Network Design | Mathematical Modeling &amp; Operations Research">
-    <meta property="og:description" content="Interactive Fixed-Charge Network Design demo for public transit corridor selection using MST, Greedy, and Budget-Constrained algorithms.">
+    <meta property="og:title" content="Transit Network Design | Public Services">
+    <meta property="og:description" content="Route selection + frequency setting on a transit graph.">
     <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Transit Network Design | Mathematical Modeling &amp; Operations Research">
-    <meta name="twitter:description" content="Interactive Fixed-Charge Network Design demo for public transit corridor selection using MST, Greedy, and Budget-Constrained algorithms.">
+    <meta name="twitter:title" content="Transit Network Design | Public Services">
+    <meta name="twitter:description" content="Route selection + frequency setting.">
     <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/transit-network-design.html" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <style>
-        :root {
-            --midnight: #0A192F;
-            --midnight-light: #112240;
-            --midnight-lighter: #1a2f4a;
-            --gold: #C5A059;
-            --gold-light: #D4AF37;
-            --gold-dim: rgba(197, 160, 89, 0.15);
-            --ivory: #F8F9FA;
-            --slate: #8892B0;
-            --slate-light: #a8b2d1;
-            --green: #64ffda;
-            --red: #ff6b6b;
-            --blue: #7aa2f7;
-        }
-
+        :root { --midnight: #0A192F; --midnight-light: #112240; --gold: #C5A059; --gold-light: #D4AF37; --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; --purple: #bb9af7; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--midnight);
-            color: var(--ivory);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
-        /* ── Navigation ── */
-        .navbar {
-            background: rgba(10, 25, 47, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        .navbar-brand {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--gold) !important;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .nav-link {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            color: var(--slate-light) !important;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 0.5rem 1rem !important;
-            transition: color 0.3s ease;
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; } a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; }
         .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
         .navbar-toggler { border-color: var(--gold); }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
 
-        /* ── Breadcrumb ── */
-        .breadcrumb-nav {
-            padding: 1rem 0;
-            background: var(--midnight-light);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-        }
-        .breadcrumb-nav ol {
-            list-style: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-            padding: 0;
-        }
-        .breadcrumb-nav li {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--slate);
-        }
-        .breadcrumb-nav li a {
-            color: var(--gold);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        .breadcrumb-nav li a:hover { color: var(--gold-light); }
-        .breadcrumb-nav li + li::before {
-            content: '/';
-            margin-right: 0.5rem;
-            color: var(--slate);
-            opacity: 0.5;
-        }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
 
-        /* ── Hero Section ── */
-        .hero {
-            padding: 6rem 2rem 4rem;
-            text-align: center;
-            position: relative;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: linear-gradient(180deg, rgba(197,160,89,0.06) 0%, transparent 8%), repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(197,160,89,0.025) 80px), radial-gradient(ellipse at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        .hero-icon {
-            font-size: 3rem;
-            color: var(--gold);
-            margin-bottom: 1.5rem;
-            opacity: 0.8;
-        }
-        .hero h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 3.5rem;
-            font-weight: 300;
-            letter-spacing: 4px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
-        .hero h1 span { color: var(--gold); }
-        .hero-subtitle {
-            font-size: 1.05rem;
-            color: var(--slate);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 1.5rem;
-        }
-        .gold-line {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 1.5rem auto;
-        }
-        .hero-desc {
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            color: var(--slate-light);
-            font-size: 1rem;
-            line-height: 1.8;
-        }
-
-        /* ── Section Headers ── */
-        .section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        .section-header h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.5rem;
-            font-weight: 300;
-            letter-spacing: 3px;
-            margin-bottom: 0.5rem;
-        }
-        .section-header h2 span { color: var(--gold); }
-        .section-header p {
-            color: var(--slate);
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-        }
-
-        section { padding: 5rem 0; }
-        section:nth-of-type(even) { background: var(--midnight-light); }
-
-        /* ── Content Blocks ── */
-        .content-block {
-            max-width: 800px;
-            margin: 0 auto;
-            color: var(--slate-light);
-            font-size: 0.95rem;
-            line-height: 1.9;
-        }
-        .content-block p { margin-bottom: 1.2rem; }
-        .content-block strong { color: var(--ivory); font-weight: 500; }
-
-        /* ── Disclaimer Box ── */
-        .disclaimer-box {
-            background: rgba(122, 162, 247, 0.08);
-            border: 1px solid rgba(122, 162, 247, 0.2);
-            border-radius: 4px;
-            padding: 1.2rem 1.5rem;
-            margin: 2rem 0;
-            font-size: 0.88rem;
-            color: var(--slate-light);
-            line-height: 1.7;
-        }
-        .disclaimer-box .disclaimer-title {
-            color: var(--blue);
-            font-weight: 500;
-            margin-bottom: 0.3rem;
-            font-size: 0.9rem;
-        }
-
-        /* ── Formulation Block ── */
-        .formulation {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1.5rem 2rem;
-            margin-bottom: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            line-height: 2;
-            overflow-x: auto;
-        }
-        .formulation .form-label {
-            color: var(--gold);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 0.8rem;
-            display: block;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-        }
-        .formulation .keyword { color: var(--green); }
-        .formulation .variable { color: var(--blue); }
-        .formulation .comment { color: var(--slate); font-style: italic; }
-
-        /* ── Theory Link ── */
-        .theory-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.4rem;
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
-            margin-top: 1rem;
-        }
-        .theory-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            border-color: var(--gold);
-        }
-
-        /* ── Decision Chain ── */
-        .decision-chain {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-            margin: 2rem 0;
-            justify-content: center;
-        }
-        .chain-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 0.75rem 1.25rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px;
-            font-size: 0.85rem;
-            color: var(--slate-light);
-            text-align: center;
-            min-width: 110px;
-        }
-        .chain-step.active {
-            border-color: var(--gold);
-            color: var(--gold);
-            background: rgba(197,160,89,0.07);
-        }
-        .chain-sub {
-            font-size: 0.72rem;
-            color: var(--slate);
-            margin-top: 0.3rem;
-            font-weight: 400;
-        }
-        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
-        .chain-arrow {
-            color: var(--slate);
-            font-size: 1.1rem;
-            flex-shrink: 0;
-        }
-
-        /* ── Scenario Switcher ── */
-        .scenario-switcher {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.6rem;
-            margin-bottom: 1rem;
-        }
-        .scenario-btn {
-            display: flex;
-            flex-direction: column;
-            padding: 0.75rem 1rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px;
-            background: transparent;
-            cursor: pointer;
-            text-align: left;
-            transition: border-color 0.2s, background 0.2s;
-            gap: 0.25rem;
-        }
-        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
-        .scenario-btn.active {
-            border-color: var(--gold);
-            background: rgba(197,160,89,0.07);
-        }
-        .scn-name {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.82rem;
-            font-weight: 500;
-            color: var(--ivory);
-            letter-spacing: 0.02em;
-        }
-        .scenario-btn.active .scn-name { color: var(--gold); }
-        .scn-desc {
-            font-size: 0.72rem;
-            color: var(--slate);
-            line-height: 1.4;
-        }
-
-        /* ── Solver Panel ── */
-        .solver-panel {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .solver-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
-        }
-        .solver-panel-header h4 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.3rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin: 0;
-            color: var(--gold);
-        }
-        .solver-panel-header h4 i { margin-right: 0.5rem; }
-        .solver-body { padding: 1.5rem; }
-
-        .solver-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-
-        .solver-section-label {
-            font-size: 0.72rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.8rem;
-            font-weight: 500;
-        }
-
-        .solver-btn {
-            padding: 6px 16px;
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 2px;
-            background: transparent;
-            color: var(--slate-light);
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-        }
-        .solver-btn:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            border-color: var(--gold);
-        }
-        .solver-btn.primary {
-            border-color: var(--gold);
-            color: var(--gold);
-            padding: 10px 28px;
-            font-size: 0.8rem;
-        }
-        .solver-btn.primary:hover {
-            background: linear-gradient(135deg, var(--gold), var(--gold-light));
-            color: var(--midnight);
-        }
-        .solver-btn.active {
-            background: rgba(197, 160, 89, 0.15);
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-
-        .algo-select {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 0.5rem;
-            margin-bottom: 1rem;
-        }
-        .algo-chip {
-            padding: 6px 14px;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 2px;
-            background: transparent;
-            color: var(--slate-light);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-        }
-        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
-        .algo-chip.selected {
-            background: rgba(197, 160, 89, 0.15);
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-        .algo-chip .chip-type {
-            font-size: 0.6rem;
-            margin-left: 4px;
-            opacity: 0.7;
-        }
-
-        .solver-canvas-wrap {
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 0.5rem;
-            position: relative;
-        }
-        .solver-canvas-wrap canvas {
-            width: 100%;
-            display: block;
-            border-radius: 2px;
-        }
-
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
-        .results-table thead th {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--gold);
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-            text-align: left;
-        }
-        .results-table tbody td {
-            padding: 0.5rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-        }
-        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
-        .results-table .best-val { color: var(--green); font-weight: 600; }
-        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
-
-        .solver-status {
-            font-size: 0.78rem;
-            color: var(--slate);
-            margin-top: 0.5rem;
-            font-style: italic;
-        }
-
-        /* ── Algorithm Cards ── */
-        .algo-card {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            padding: 2rem 2.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .algo-card h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 0.8rem;
-            color: var(--ivory);
-        }
-        .algo-card .algo-complexity {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-            color: var(--green);
-            margin-bottom: 1rem;
-            display: inline-block;
-        }
-        .algo-card p {
-            color: var(--slate-light);
-            font-size: 0.9rem;
-            line-height: 1.8;
-            margin-bottom: 0.5rem;
-        }
-        .algo-card .algo-tag {
-            display: inline-block;
-            padding: 2px 10px;
-            border: 1px solid rgba(122, 162, 247, 0.3);
-            border-radius: 2px;
-            font-size: 0.68rem;
-            color: var(--blue);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.8rem;
-        }
-
-        /* ── Complexity Box ── */
-        .complexity-box {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            padding: 2rem 2.5rem;
-            margin-top: 2rem;
-        }
-        .complexity-box h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.5rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 1.2rem;
-            color: var(--ivory);
-        }
-        .complexity-box h3 i {
-            color: var(--gold);
-            margin-right: 0.5rem;
-        }
-        .complexity-list {
-            list-style: none;
-            padding: 0;
-        }
-        .complexity-list li {
-            padding: 0.5rem 0;
-            padding-left: 1.5rem;
-            position: relative;
-            color: var(--slate-light);
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-        }
-        .complexity-list li:last-child { border-bottom: none; }
-        .complexity-list li::before {
-            content: '\f054';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            left: 0;
-            color: var(--gold);
-            font-size: 0.6rem;
-            top: 0.75rem;
-        }
-
-        /* ── Business Panel ── */
-        .business-panel {
-            margin-top: 1.5rem;
-            padding: 1.2rem;
-            border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 8px;
-            background: rgba(197,160,89,0.04);
-        }
-        .biz-cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 0.75rem;
-            margin-bottom: 0.75rem;
-        }
-        .biz-card {
-            background: rgba(10,25,47,0.4);
-            border: 1px solid rgba(197,160,89,0.15);
-            border-radius: 6px;
-            padding: 1rem;
-            display: flex;
-            flex-direction: column;
-            gap: 0.4rem;
-        }
-        .biz-val {
-            font-size: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-weight: 600;
-            color: var(--gold);
-        }
-        .biz-label {
-            font-size: 0.72rem;
-            color: var(--slate);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-        .biz-note {
-            font-size: 0.78rem;
-            color: var(--slate-light);
-            line-height: 1.6;
-            margin-top: 0.5rem;
-            font-style: italic;
-        }
-
-        /* ── References ── */
-        .reference-list {
-            list-style: none;
-            padding: 0;
-        }
-        .reference-list li {
-            padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-            font-size: 0.88rem;
-            line-height: 1.6;
-        }
-        .reference-list li:last-child { border-bottom: none; }
-        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
-        .reference-list .ref-title { font-style: italic; }
-        .reference-list .ref-journal { color: var(--slate); }
-
-        /* ── CTA Panel ── */
-        .cta-panel {
-            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 4px;
-            padding: 3rem;
-            text-align: center;
-        }
-        .cta-panel h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2rem;
-            font-weight: 400;
-            letter-spacing: 2px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
-        .cta-panel p {
-            color: var(--slate-light);
-            font-size: 0.95rem;
-            max-width: 650px;
-            margin: 0 auto 2rem;
-            line-height: 1.8;
-        }
-        .cta-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .cta-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.7rem 1.8rem;
-            border: 1px solid rgba(197, 160, 89, 0.4);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
-        }
-        .cta-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            border-color: var(--gold);
-        }
-
-        /* ── Back Link ── */
-        .back-link {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 0.8rem 1.5rem;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-            z-index: 999;
-        }
-        .back-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-        }
-
-        /* ── Footer ── */
-        footer {
-            padding: 3rem 0;
-            text-align: center;
-            border-top: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        footer p {
-            color: var(--slate);
-            font-size: 0.82rem;
-            letter-spacing: 1px;
-        }
-        footer a { color: var(--gold); text-decoration: underline; }
-        footer a:hover { color: var(--gold-light); }
-
-        /* ── Scroll Animations ── */
-        .fade-in {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
-        .fade-in.visible {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        /* ── Theme Toggle ── */
-        .theme-toggle {
-            position: relative;
-            width: 44px;
-            height: 24px;
-            background: var(--midnight-lighter);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.4s ease;
-            display: flex;
-            align-items: center;
-            padding: 0 3px;
-            margin-left: 0.8rem;
-            flex-shrink: 0;
-        }
-        .theme-toggle::before {
-            content: '';
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: var(--gold);
-            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-        .theme-toggle .toggle-icon {
-            position: absolute;
-            font-size: 0.6rem;
-            transition: opacity 0.3s;
-        }
-        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
-        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
-
-        html[data-theme="light"] {
-            --midnight: #F5F1EB;
-            --midnight-light: #EDE8E0;
-            --midnight-lighter: #E3DDD4;
-            --ivory: #1a1a2e;
-            --slate: #5a6178;
-            --slate-light: #3d4155;
-        }
-        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
-        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
-        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
-        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
-        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
-        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
-
-        /* ── Scroll Progress Bar + Scroll-to-Top ── */
-        .scroll-progress {
-            position: fixed;
-            top: 0;
-            left: 0;
-            height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
-            z-index: 9999;
-            transition: width 0.1s linear;
-            width: 0%;
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-        .scroll-top-btn {
-            position: fixed;
-            bottom: 5rem;
-            right: 2rem;
-            width: 42px;
-            height: 42px;
-            border-radius: 50%;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            color: var(--gold);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.9rem;
-            transition: all 0.3s;
-            opacity: 0;
-            pointer-events: none;
-            z-index: 999;
-            backdrop-filter: blur(10px);
-        }
-        .scroll-top-btn.visible {
-            opacity: 1;
-            pointer-events: auto;
-        }
-        .scroll-top-btn:hover {
-            background: var(--gold);
-            color: var(--midnight);
-        }
-
-        /* ── Nav Search Trigger ── */
-        .nav-search-trigger {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.4rem;
-            padding: 4px 10px;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 6px;
-            background: rgba(197, 160, 89, 0.05);
-            color: var(--slate);
-            font-size: 0.78rem;
-            cursor: pointer;
-            transition: all 0.3s;
-            margin-left: 0.5rem;
-            white-space: nowrap;
-        }
-        .nav-search-trigger:hover {
-            border-color: var(--gold);
-            color: var(--gold);
-        }
-        .nav-search-trigger .search-shortcut {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.6rem;
-            padding: 1px 5px;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 3px;
-            background: rgba(197, 160, 89, 0.05);
-        }
-
-        /* ── Hero Particles ── */
-        .hero-particles {
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            pointer-events: none;
-            z-index: 0;
-        }
+        .hero { padding: 5rem 2rem 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 55% 35% at 50% 100%, rgba(100,255,218,0.06) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 60%); pointer-events: none; }
         .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); animation: pulseT 3.5s ease-in-out infinite; }
+        @keyframes pulseT { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(100,255,218,0.35)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.7rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.8rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 0.95rem; color: var(--slate); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 1.2rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.2rem auto; }
+        .hero-desc { max-width: 820px; margin: 0 auto 1.5rem; color: var(--slate-light); font-size: 0.98rem; line-height: 1.85; }
 
-        /* ── Command Palette ── */
-        .cmd-palette-overlay {
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(8px);
-            z-index: 10000;
-            display: none;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 15vh;
-        }
-        .cmd-palette-overlay.open { display: flex; }
-        .cmd-palette {
-            width: 90%;
-            max-width: 580px;
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.25);
-            border-radius: 12px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-            overflow: hidden;
-            animation: cmdSlideIn 0.2s ease-out;
-        }
-        @keyframes cmdSlideIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.96); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        .cmd-input-wrap {
-            display: flex;
-            align-items: center;
-            padding: 1rem 1.2rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
-            gap: 0.8rem;
-        }
-        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
-        .cmd-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            outline: none;
-            color: var(--ivory);
-            font-family: 'Inter', sans-serif;
-            font-size: 1rem;
-            caret-color: var(--gold);
-        }
-        .cmd-input::placeholder { color: var(--slate); }
-        .cmd-kbd {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.65rem;
-            padding: 2px 6px;
-            border: 1px solid rgba(197, 160, 89, 0.25);
-            border-radius: 4px;
-            color: var(--slate);
-            background: rgba(197, 160, 89, 0.05);
-        }
-        .cmd-results {
-            max-height: 340px;
-            overflow-y: auto;
-            padding: 0.5rem;
-        }
-        .cmd-results::-webkit-scrollbar { width: 4px; }
-        .cmd-results::-webkit-scrollbar-thumb { background: var(--gold); border-radius: 2px; }
-        .cmd-group-label {
-            font-size: 0.65rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            padding: 0.6rem 0.8rem 0.3rem;
-            font-weight: 600;
-        }
-        .cmd-result {
-            display: flex;
-            align-items: center;
-            gap: 0.8rem;
-            padding: 0.6rem 0.8rem;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: background 0.15s;
-            text-decoration: none;
-            color: var(--ivory);
-        }
-        .cmd-result:hover, .cmd-result.active {
-            background: rgba(197, 160, 89, 0.12);
-            color: var(--ivory);
-        }
-        .cmd-result .cmd-icon {
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 6px;
-            background: rgba(197, 160, 89, 0.08);
-            color: var(--gold);
-            font-size: 0.85rem;
-            flex-shrink: 0;
-        }
-        .cmd-result .cmd-info { flex: 1; min-width: 0; }
-        .cmd-result .cmd-title {
-            font-size: 0.88rem;
-            font-weight: 500;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .cmd-result .cmd-subtitle {
-            font-size: 0.72rem;
-            color: var(--slate);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .cmd-result .cmd-badge {
-            font-size: 0.6rem;
-            padding: 2px 6px;
-            border-radius: 3px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            flex-shrink: 0;
-        }
-        .cmd-empty {
-            padding: 2rem;
-            text-align: center;
-            color: var(--slate);
-            font-size: 0.88rem;
-        }
-        .cmd-footer {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.6rem 1.2rem;
-            border-top: 1px solid rgba(197, 160, 89, 0.1);
-            font-size: 0.68rem;
-            color: var(--slate);
-        }
-        .cmd-footer-keys { display: flex; gap: 0.8rem; }
-        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
+        .edu-notice { max-width: 820px; margin: 1.2rem auto 0; padding: 0.9rem 1.2rem; background: rgba(122,162,247,0.06); border: 1px solid rgba(122,162,247,0.25); border-left: 3px solid var(--blue); border-radius: 4px; color: var(--slate-light); font-size: 0.82rem; line-height: 1.7; text-align: left; }
+        .edu-notice strong { color: var(--ivory); }
 
-        /* ── Canvas Export Button ── */
-        .canvas-wrapper { position: relative; }
-        .canvas-export-btn {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            width: 30px;
-            height: 30px;
-            border-radius: 4px;
-            background: rgba(10, 25, 47, 0.85);
-            border: 1px solid rgba(197, 160, 89, 0.25);
-            color: var(--gold);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 0.72rem;
-            transition: all 0.2s;
-            z-index: 10;
-            opacity: 0;
-            backdrop-filter: blur(4px);
-        }
-        .canvas-wrapper:hover .canvas-export-btn { opacity: 1; }
-        .canvas-export-btn:hover {
-            background: var(--gold);
-            color: var(--midnight);
-        }
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.84rem; letter-spacing: 1.5px; text-transform: uppercase; }
 
-        /* ── Budget Slider ── */
-        .budget-slider-wrap {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .budget-slider-wrap label {
-            font-size: 0.75rem;
-            color: var(--slate-light);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            white-space: nowrap;
-        }
-        .budget-slider-wrap input[type="range"] {
-            flex: 1;
-            accent-color: var(--gold);
-            height: 4px;
-        }
-        .budget-slider-wrap .budget-val {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            color: var(--gold);
-            min-width: 55px;
-            text-align: right;
-        }
+        .content-block { max-width: 820px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.85; }
+        .content-block p { margin-bottom: 1rem; }
+        .content-block strong { color: var(--ivory); }
+        .content-block em { color: var(--slate-light); }
+        .content-block cite { color: var(--gold); font-style: normal; }
 
-        /* ── Responsive ── */
+        .stakeholder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; margin: 1.4rem 0; }
+        .stakeholder-item { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.8rem 0.9rem; }
+        .stakeholder-who { font-size: 0.78rem; font-weight: 600; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.25rem; }
+        .stakeholder-what { color: var(--slate-light); font-size: 0.82rem; line-height: 1.6; }
+
+        .formulation { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; padding: 1.3rem 1.5rem; margin: 1.3rem auto; max-width: 820px; font-family: 'JetBrains Mono', monospace; font-size: 0.86rem; line-height: 1.9; color: var(--ivory); overflow-x: auto; }
+        .form-label { display: block; font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); }
+        .keyword { color: var(--gold); font-weight: 500; }
+        .variable { color: var(--ivory); }
+        .comment { color: var(--slate); font-style: italic; }
+
+        .notation-table { width: 100%; max-width: 820px; margin: 1rem auto; border-collapse: collapse; font-size: 0.86rem; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .notation-table th { color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.72rem; border-bottom: 1px solid rgba(197,160,89,0.3); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold-light); width: 16%; white-space: nowrap; }
+        .notation-table td { color: var(--slate-light); }
+
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.5rem 1.6rem; margin: 1.5rem auto; max-width: 920px; }
+        .solver-panel-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.18); }
+        .solver-section-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .algo-chip { padding: 0.45rem 0.85rem; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; color: var(--slate-light); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; user-select: none; }
+        .algo-chip:hover { color: var(--ivory); border-color: var(--gold-light); }
+        .algo-chip.selected { color: var(--gold); background: rgba(197,160,89,0.12); border-color: var(--gold); }
+        .solver-slider { flex: 1; max-width: 260px; accent-color: var(--gold); }
+        .size-display { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.88rem; min-width: 30px; text-align: right; }
+        .solver-btn { margin-top: 0.8rem; padding: 0.6rem 1.4rem; background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; color: var(--midnight); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.25s; }
+        .solver-btn:hover { background: transparent; color: var(--gold); }
+        .solver-canvas-wrap { position: relative; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.5rem; margin-top: 1rem; }
+        .solver-canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+        .solver-status { margin-top: 0.8rem; font-size: 0.82rem; color: var(--slate); font-style: italic; line-height: 1.7; }
+        .solver-status strong { color: var(--ivory); font-style: normal; }
+        .results-table { width: 100%; margin-top: 1rem; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table th, .results-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .results-table th { color: var(--gold); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 500; }
+        .results-table td { color: var(--slate-light); }
+        .results-table td.highlight { color: var(--gold-light); font-family: 'JetBrains Mono', monospace; }
+
+        .interpret-box { background: rgba(100,255,218,0.05); border: 1px solid rgba(100,255,218,0.2); border-left: 3px solid var(--green); border-radius: 4px; padding: 1.3rem 1.5rem; margin: 1.5rem auto; max-width: 880px; }
+        .interpret-box-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); margin-bottom: 0.6rem; }
+        .interpret-box p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; }
+        .interpret-box p + p { margin-top: 0.6rem; }
+        .interpret-box strong { color: var(--ivory); }
+
+        .limits-section { background: rgba(255,107,107,0.04); border-top: 1px solid rgba(255,107,107,0.2); border-bottom: 1px solid rgba(255,107,107,0.2); }
+        .limits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; max-width: 1100px; margin: 0 auto; }
+        .limit-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(255,107,107,0.2); border-radius: 4px; padding: 1.2rem 1.1rem; }
+        .limit-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; letter-spacing: 1.3px; color: var(--red); margin-bottom: 0.5rem; }
+        .limit-card p { color: var(--slate-light); font-size: 0.84rem; line-height: 1.7; }
+        .limit-card .refs { margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px dashed rgba(255,107,107,0.15); font-size: 0.74rem; color: var(--slate); }
+        .limit-card .refs em { color: var(--slate-light); font-style: normal; }
+
+        .ext-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; max-width: 1080px; margin: 0 auto; }
+        .ext-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem 1.1rem; }
+        .ext-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1px; color: var(--gold); margin-bottom: 0.4rem; }
+        .ext-card p { color: var(--slate-light); font-size: 0.82rem; line-height: 1.65; }
+
+        .reference-item { padding: 0.9rem 0; border-top: 1px solid rgba(197,160,89,0.1); max-width: 900px; margin: 0 auto; }
+        .reference-item:first-child { border-top: none; }
+        .reference-num { display: inline-block; margin-right: 0.4rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        .reference-authors { color: var(--ivory); font-size: 0.9rem; font-weight: 500; }
+        .reference-title { color: var(--slate-light); font-size: 0.86rem; font-style: italic; margin: 0.1rem 0; }
+        .reference-journal { color: var(--slate); font-size: 0.8rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.9rem; max-width: 1100px; margin: 0 auto; }
+        .related-card { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.14); border-radius: 4px; padding: 1rem 1.1rem; text-decoration: none; transition: all 0.25s; display: block; }
+        .related-card:hover { border-color: var(--gold); transform: translateY(-2px); color: inherit; }
+        .related-card-head { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1px; color: var(--ivory); margin-bottom: 0.3rem; }
+        .related-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 1px 6px; border-radius: 3px; color: var(--gold); background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.25); display: inline-block; margin-bottom: 0.3rem; }
+        .related-card-desc { color: var(--slate-light); font-size: 0.78rem; line-height: 1.6; }
+
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 4rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 300; letter-spacing: 2.5px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.4rem; padding: 0.85rem 2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.82rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        footer { text-align: center; padding: 2.5rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.82rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.76rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; background: var(--midnight-light); border: 1px solid var(--gold); padding: 0.6rem 1rem; border-radius: 4px; color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
         @media (max-width: 768px) {
-            .solver-row { grid-template-columns: 1fr; }
-            .hero h1 { font-size: 2.2rem; }
-            .biz-cards { grid-template-columns: 1fr 1fr; }
+            .hero h1 { font-size: 2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.82rem; letter-spacing: 1.3px; }
+            .hero-desc { font-size: 0.9rem; }
+            section { padding: 2.5rem 0; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            .back-link { bottom: 1rem; right: 1rem; font-size: 0.72rem; padding: 0.45rem 0.75rem; }
         }
-        @media (max-width: 480px) {
-            .scenario-switcher { grid-template-columns: 1fr; }
-            .biz-cards { grid-template-columns: 1fr; }
-            .decision-chain { gap: 0.3rem; }
-            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
-        }
-        @media (max-width: 576px) {
-            .scroll-top-btn { bottom: 4rem; right: 1rem; }
-            .nav-search-trigger .search-shortcut { display: none; }
-        }
-        .hero-icon--public-services { filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)) drop-shadow(0 -2px 20px rgba(197,160,89,0.2)); animation: institutionGlow 5s ease-in-out infinite; }
-        @keyframes institutionGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)); } 50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.7)) drop-shadow(0 -2px 30px rgba(197,160,89,0.25)); } }
-    
-
     </style>
-
     <script type="application/ld+json">
-    {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Applications",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "Transit Network Design",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/transit-network-design.html"
-    }
-  ]
-}
+    { "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Public Services", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/public-services-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Transit Network Design", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/transit-network-design.html" }
+      ] }
     </script>
 </head>
 <body>
-<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
 
-<!-- ── Navigation ── -->
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="../families/network.html">Families</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
-                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
-
-                <li class="nav-item d-flex align-items-center">
-                    <div class="nav-search-trigger" id="navSearchTrigger">
-                        <i class="fas fa-search" aria-hidden="true" style="font-size:0.75rem"></i>
-                        <span>Search</span>
-                        <span class="search-shortcut">&#8984;K</span>
-                    </div>
-                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
-                        <span class="toggle-icon icon-sun"><i class="fas fa-sun" aria-hidden="true"></i></span>
-                        <span class="toggle-icon icon-moon"><i class="fas fa-moon" aria-hidden="true"></i></span>
-                    </div>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="public-services-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <main id="main-content">
-<!-- ── Breadcrumb ── -->
+
 <nav aria-label="breadcrumb" class="breadcrumb-nav">
     <div class="container">
-        <a href="../index.html">Home</a>
-        <span class="bc-sep">›</span>
-        <a href="public-services-domain.html">Public Services</a>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">Public Transit Network Design</span>
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="public-services-domain.html">Public Services</a></li>
+            <li class="active">Transit Network Design</li>
+        </ol>
     </div>
 </nav>
 
-<!-- ── 1. Hero ── -->
 <section class="hero">
     <div class="container">
-        <div class="hero-icon hero-icon--public-services"><i class="fas fa-bus" aria-hidden="true"></i></div>
-        <h1>Public Transit <span>Network Design</span></h1>
-        <p class="hero-subtitle">Fixed-Charge Network Design &middot; Shortest Path / Greedy</p>
+        <div class="hero-icon"><i class="fas fa-bus" aria-hidden="true"></i></div>
+        <h1>Transit Network <span>Design</span></h1>
+        <p class="hero-subtitle">Route selection &middot; frequency setting &middot; passenger-time objective</p>
         <div class="gold-line" aria-hidden="true"></div>
         <p class="hero-desc">
-            A transit authority designing a bus or light-rail network must decide which corridors
-            to activate from 14 candidates to connect 8 neighbourhoods, minimizing infrastructure
-            cost plus weighted passenger travel time. Each new corridor costs $2&ndash;$10M to build,
-            and the authority must balance coverage against a constrained capital budget.
+            Which bus or rail routes should a city operate, and at what frequencies, to move passengers to their
+            destinations with minimum total travel time subject to a fleet budget? The problem is
+            combinatorially explosive &mdash; even small networks have astronomical numbers of feasible route sets.
+            <cite>Mandl's 1979 benchmark</cite> (15 nodes, 21 edges) anchored decades of algorithmic work;
+            <cite>Ceder &amp; Wilson (1986)</cite> decomposed the problem into route generation, frequency setting,
+            and timetabling sub-problems that remain the standard framework; <cite>Baaj &amp; Mahmassani (1995)</cite>
+            gave an influential hybrid heuristic. Every design decision is also a distribution decision about whose
+            commute gets shorter.
         </p>
-    </div>
-</section>
-
-<!-- ── 2. Decision Chain ── -->
-<section>
-    <div class="container">
-        <div class="section-header fade-in">
-            <h2>Where This <span>Decision Fits</span></h2>
-            <p>Transit planning chain &mdash; the highlighted step is what this page optimizes</p>
-        </div>
-        <div class="decision-chain fade-in">
-            <div class="chain-step active">
-                Infrastructure
-                <span class="chain-sub">Corridor selection</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">
-                Service Scheduling
-                <span class="chain-sub">Timetable design</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">
-                Emergency
-                <span class="chain-sub">Contingency routes</span>
-            </div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">
-                Resource Allocation
-                <span class="chain-sub">Fleet &amp; crew</span>
-            </div>
+        <div class="edu-notice">
+            <strong>Educational resource.</strong> This page describes a mathematical model used for transit-network
+            planning studies. It is a teaching tool, not transit-authority policy guidance. Real transit design must
+            integrate demand forecasting, accessibility compliance (ADA), equity analysis (Title VI), fare-box
+            recovery targets, and political feasibility that the route-selection ILP alone does not capture.
         </div>
     </div>
 </section>
 
-<!-- ── 3. The Problem ── -->
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The <span>Problem</span></h2>
-            <p>Selecting corridors to build a cost-effective transit backbone</p>
+            <h2>Problem <span>context</span></h2>
+            <p>Origin-destination demand meets a fleet budget</p>
         </div>
         <div class="content-block fade-in">
             <p>
-                A regional transit authority manages <strong>8 neighbourhoods</strong> (labelled A&ndash;H)
-                spread across a metropolitan area. Between these zones, there are <strong>14 candidate
-                transit corridors</strong>, each with a fixed infrastructure cost (in $M) reflecting
-                right-of-way acquisition, construction, and station buildout.
+                A transit agency operates on an underlying network <em>G = (V, E)</em> of stops and inter-stop
+                corridors. The OD (origin-destination) demand matrix <em>d<sub>od</sub></em> gives expected passengers
+                per period wanting to travel between each pair. The design problem is: select a set of <em>routes</em>
+                (sequences of stops and corridors) and <em>frequencies</em> (buses per hour on each route) to minimise
+                total passenger travel time &mdash; which breaks down into <em>in-vehicle time</em>, <em>waiting time</em>
+                (half the headway on average), and <em>transfer time</em> &mdash; subject to a fleet constraint.
             </p>
             <p>
-                The objective is to <strong>activate the minimum-cost set of corridors</strong> such
-                that all neighbourhoods are reachable, while respecting a capital budget constraint.
-                Each activated corridor also carries a weighted passenger travel time that contributes
-                to service quality. The authority seeks to minimize <strong>infrastructure cost +
-                &lambda; &middot; total travel time</strong>, where &lambda; reflects the value of
-                passenger hours saved.
+                The problem's combinatorial difficulty comes from the route-generation layer: even modest graphs admit
+                exponentially many feasible routes satisfying length / directness constraints. Standard approaches
+                decompose into (1) candidate route generation, (2) route selection ILP, (3) frequency setting, and
+                (4) detailed timetabling. Direct holistic MILPs work only for very small instances; hybrid
+                metaheuristics and genetic algorithms dominate the applied literature. <cite>Farahani et al. (2013)</cite>
+                survey the modern state of the art.
             </p>
-            <p>
-                This is the <strong>Fixed-Charge Network Design</strong> problem: given a graph
-                G = (V, E) with fixed costs f<sub>e</sub> and flow costs c<sub>e</sub> on each
-                edge, select a subset of edges to open, minimizing fixed + flow costs while
-                maintaining connectivity. The problem is NP-hard in general, but good heuristics
-                (greedy, MST-based) produce near-optimal solutions for moderate-sized instances.
-            </p>
-
-            <div class="formulation">
-                <span class="form-label">Fixed-Charge Network Design Formulation</span>
-                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>e&isin;E</sub> f<sub>e</sub> &middot; y<sub>e</sub> + &lambda; &middot; &Sigma;<sub>e&isin;E</sub> c<sub>e</sub> &middot; x<sub>e</sub></span> &nbsp; <span class="comment">// fixed cost + weighted travel time</span><br>
-                <span class="keyword">subject to</span><br>
-                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>e&isin;E</sub> f<sub>e</sub> &middot; y<sub>e</sub> &le; B</span> &nbsp;&nbsp; <span class="comment">// budget constraint</span><br>
-                &nbsp;&nbsp;<span class="variable">x<sub>e</sub> &le; y<sub>e</sub></span> &nbsp;&nbsp; <span class="comment">// flow only on open corridors</span><br>
-                &nbsp;&nbsp;<span class="variable">connectivity(y)</span> &nbsp;&nbsp; <span class="comment">// all nodes reachable</span><br>
-                &nbsp;&nbsp;<span class="variable">y<sub>e</sub> &isin; {0, 1}</span>, &nbsp; <span class="variable">x<sub>e</sub> &ge; 0</span> &nbsp; <span class="comment">// binary open/close, continuous flow</span>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:1.5px;color:var(--gold);margin-top:1rem;margin-bottom:0.6rem;text-transform:uppercase;">Multi-stakeholder framing</h4>
+            <div class="stakeholder-grid">
+                <div class="stakeholder-item"><div class="stakeholder-who">Riders</div><div class="stakeholder-what">Commute every day; care about travel time, reliability, stop proximity, and evening / weekend service.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Transit-dependent populations</div><div class="stakeholder-what">Lower-income, elderly, and disabled residents without alternatives; care about coverage equity and paratransit.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Drivers / operators</div><div class="stakeholder-what">Work assigned blocks; shift lengths, break placement, and union agreements constrain feasible schedules.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Transit agency</div><div class="stakeholder-what">Designs and operates; balances ridership maximisation, farebox recovery, and political-accountability metrics.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Local government</div><div class="stakeholder-what">Funds agency via general taxation; elected officials face accountability for service equity.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">FTA / regulators</div><div class="stakeholder-what">Title VI compliance requires equity analysis of major service changes; non-trivial legal exposure.</div></div>
             </div>
-
-            <p>
-                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">f<sub>e</sub></span>
-                is the fixed cost of corridor e,
-                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">y<sub>e</sub></span>
-                indicates whether the corridor is built,
-                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">c<sub>e</sub></span>
-                is the passenger travel time, and
-                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">B</span>
-                is the available capital budget.
-            </p>
-
-            <a href="../families/network.html#mst" class="theory-link">
-                <i class="fas fa-arrow-right" aria-hidden="true"></i> See full network design theory
-            </a>
         </div>
     </div>
 </section>
 
-<!-- ── 4. Try It Yourself ── -->
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Route selection ILP + frequency setting</p>
+        </div>
+
+        <table class="notation-table fade-in" aria-label="Notation">
+            <tr><th>Symbol</th><th>Definition</th><th>Domain</th></tr>
+            <tr><td>G = (V, E)</td><td>Underlying network of stops and corridors</td><td>directed or undirected</td></tr>
+            <tr><td>R</td><td>Set of candidate routes (generated upstream)</td><td>|R| = large</td></tr>
+            <tr><td>d<sub>od</sub></td><td>Passenger demand from origin o to destination d</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>f<sub>r</sub></td><td>Frequency of route r (buses per hour)</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>len<sub>r</sub></td><td>Length / cycle time of route r</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>y<sub>r</sub></td><td>Binary: 1 if route r is operated</td><td>{0, 1}</td></tr>
+            <tr><td>F</td><td>Fleet budget (total buses available)</td><td>&#8469;&#8314;</td></tr>
+            <tr><td>f<sub>min</sub></td><td>Minimum frequency per operated route (policy)</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>L<sub>max</sub></td><td>Maximum route length (policy)</td><td>&#8477;&#8314;</td></tr>
+        </table>
+
+        <div class="formulation fade-in">
+            <span class="form-label">Route-selection + frequency ILP (Ceder-Wilson decomposition)</span>
+            <span class="keyword">min</span> &Sigma;<sub>od</sub> <span class="variable">d<sub>od</sub></span> &middot; (<span class="variable">t<sub>iv</sub>(od)</span> + <span class="variable">t<sub>wait</sub>(od)</span> + <span class="variable">t<sub>transfer</sub>(od)</span>) &nbsp;<span class="comment">// total passenger travel time</span><br>
+            <span class="keyword">s.t.</span> &Sigma;<sub>r</sub> <span class="variable">f<sub>r</sub></span> &middot; <span class="variable">len<sub>r</sub></span> / <span class="variable">speed</span> &le; <span class="variable">F</span> &nbsp;<span class="comment">// fleet budget</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">f<sub>r</sub></span> &ge; <span class="variable">f<sub>min</sub></span> &middot; <span class="variable">y<sub>r</sub></span> &nbsp; &forall; <span class="variable">r</span> &nbsp;<span class="comment">// min-frequency policy on operated routes</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">len<sub>r</sub></span> &le; <span class="variable">L<sub>max</sub></span> &nbsp; &forall; <span class="variable">r</span> &nbsp;<span class="comment">// bounded route length</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; passengers route via shortest-time path on operated network &nbsp;<span class="comment">// assignment model</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">y<sub>r</sub></span> &isin; {0, 1}, <span class="variable">f<sub>r</sub></span> &ge; 0<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Complexity</span>
+            NP-hard even for small variants. Route generation is the combinatorial explosion; route selection given candidates is ILP, solvable for small R via CPLEX / Gurobi. Metaheuristics (GA, tabu, simulated annealing) dominate for realistic scale (50&ndash;500 candidate routes).<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Wait time approximation</span>
+            t<sub>wait</sub> &asymp; 1 / (2 f<sub>r</sub>) under Poisson-arrival assumption. This breaks down at low frequencies (published schedule becomes the binding reality); corrections exist for low-frequency service (Mohring 1972).
+        </div>
+    </div>
+</section>
+
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Try It <span>Yourself</span></h2>
-            <p>Select a scenario, set the budget, choose an algorithm, and design the transit network</p>
+            <h2>Interactive <span>solver</span></h2>
+            <p>Small-network design demo with BFS-based candidate generation</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
-                <h3><i class="fas fa-bus" aria-hidden="true"></i> Transit Network Solver</h3>
+                <h2><i class="fas fa-bus" aria-hidden="true" style="margin-right:0.4rem;"></i>Transit Design Solver</h2>
             </div>
-            <div class="solver-body">
 
-                <!-- Scenario Switcher -->
-                <div class="solver-section-label">Scenario</div>
-                <div class="scenario-switcher" id="scenarioSwitcher">
-                    <button class="scenario-btn active" data-scenario="0">
-                        <span class="scn-name">City Core</span>
-                        <span class="scn-desc">High central demand, cheap corridors</span>
-                    </button>
-                    <button class="scenario-btn" data-scenario="1">
-                        <span class="scn-name">Suburban Extension</span>
-                        <span class="scn-desc">Peripheral zones, costly build</span>
-                    </button>
-                    <button class="scenario-btn" data-scenario="2">
-                        <span class="scn-name">Tight Budget</span>
-                        <span class="scn-desc">Hard trade-offs, limited funds</span>
-                    </button>
-                </div>
+            <div class="solver-section-label">Network</div>
+            <div class="algo-select" id="tnScenarios">
+                <div class="algo-chip selected" data-algo="small">8 nodes</div>
+                <div class="algo-chip" data-algo="medium">12 nodes</div>
+                <div class="algo-chip" data-algo="large">16 nodes</div>
+            </div>
 
-                <!-- Budget Slider -->
-                <div class="solver-section-label">Capital Budget</div>
-                <div class="budget-slider-wrap">
-                    <label>Budget</label>
-                    <input type="range" id="budgetSlider" min="10" max="60" value="40" step="1">
-                    <span class="budget-val" id="budgetVal">$40M</span>
-                </div>
+            <div class="solver-section-label">Routes to operate</div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <input type="range" class="solver-slider" id="tnR" min="2" max="6" value="3">
+                <span class="size-display" id="tnRVal">3</span>
+            </div>
 
-                <!-- Algorithm Select -->
-                <div class="solver-section-label">Algorithm</div>
-                <div class="algo-select" id="algoSelect">
-                    <div class="algo-chip selected" data-algo="mst">
-                        MST <span class="chip-type">Cheapest Connected</span>
-                    </div>
-                    <div class="algo-chip" data-algo="greedy">
-                        Greedy <span class="chip-type">Coverage/Cost</span>
-                    </div>
-                    <div class="algo-chip" data-algo="budget">
-                        Budget-Constrained <span class="chip-type">Greedy</span>
-                    </div>
-                </div>
+            <div class="solver-section-label">Algorithm</div>
+            <div class="algo-select" id="tnAlg">
+                <div class="algo-chip selected" data-algo="direct">Direct-demand greedy</div>
+                <div class="algo-chip" data-algo="iterative">Iterative improvement</div>
+            </div>
 
-                <!-- Solve Button -->
-                <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
-                    <button class="solver-btn primary" id="solveBtn">
-                        <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem;"></i> Design Network
-                    </button>
-                    <button class="solver-btn" id="resetBtn">
-                        <i class="fas fa-redo" aria-hidden="true" style="margin-right:0.4rem;"></i> Reset
-                    </button>
-                </div>
+            <button class="solver-btn" id="tnSolve" type="button"><i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve</button>
 
-                <!-- Canvas -->
-                <div class="solver-canvas-wrap canvas-wrapper">
-                    <canvas id="networkCanvas" width="900" height="500"></canvas>
-                    <button class="canvas-export-btn" id="exportCanvasBtn" title="Export as PNG">
-                        <i class="fas fa-download" aria-hidden="true"></i>
-                    </button>
-                </div>
+            <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                <canvas id="tnCanvas" width="820" height="440"></canvas>
+            </div>
 
-                <!-- Results -->
-                <div class="solver-status" id="solverStatus">Select a scenario and click &ldquo;Design Network&rdquo; to solve.</div>
+            <div id="tnResults" style="margin-top:1rem;"></div>
+            <div class="solver-status" id="tnStatus">Choose network size, number of routes, and algorithm, then click Solve. Direct-demand greedy picks routes covering highest-demand OD pairs first; iterative improvement swaps route endpoints to reduce total travel time.</div>
+        </div>
+    </div>
+</section>
 
-                <table class="results-table" id="resultsTable" style="margin-top:1rem; display:none;">
-                    <thead>
-                        <tr>
-                            <th scope="col">Algorithm</th>
-                            <th scope="col">Infra Cost ($M)</th>
-                            <th scope="col">Travel Time</th>
-                            <th scope="col">Arcs Activated</th>
-                            <th scope="col">Zones Connected</th>
-                        </tr>
-                    </thead>
-                    <tbody id="resultsBody"></tbody>
-                </table>
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>Efficiency, coverage, and whose trip gets faster</p>
+        </div>
+        <div class="interpret-box fade-in">
+            <div class="interpret-box-title"><i class="fas fa-lightbulb" aria-hidden="true" style="margin-right:0.35rem;"></i>Reading the output</div>
+            <p>
+                <strong>Direct-demand greedy</strong> concentrates service on the highest-volume OD corridors &mdash;
+                good for aggregate passenger-time but can leave lower-demand areas without service. This is the
+                utilitarian design choice.
+            </p>
+            <p>
+                <strong>Iterative improvement</strong> refines by swapping route endpoints to reduce total travel time
+                or connect isolated demand. Typically smaller aggregate gains than the route-set choice but closes
+                coverage gaps.
+            </p>
+            <p>
+                <strong>Adding a route</strong> reduces aggregate travel time with diminishing returns (each marginal
+                route covers less incremental demand); there's usually a sweet spot where new routes stop contributing.
+            </p>
+        </div>
+    </div>
+</section>
 
-                <!-- Business Panel -->
-                <div class="business-panel" id="bizPanel" style="display:none;">
-                    <div class="solver-section-label">Business Translation</div>
-                    <div class="biz-cards">
-                        <div class="biz-card">
-                            <div class="biz-val" id="bizCostPerPax">&mdash;</div>
-                            <div class="biz-label">Cost / Pax-Hour ($)</div>
-                        </div>
-                        <div class="biz-card">
-                            <div class="biz-val" id="bizTotalCost">&mdash;</div>
-                            <div class="biz-label">Infrastructure Cost ($M)</div>
-                        </div>
-                        <div class="biz-card">
-                            <div class="biz-val" id="bizDailyPax">&mdash;</div>
-                            <div class="biz-label">Daily Passengers (k)</div>
-                        </div>
-                        <div class="biz-card">
-                            <div class="biz-val" id="bizZones">&mdash;</div>
-                            <div class="biz-label">Zones Connected</div>
-                        </div>
-                    </div>
-                    <div class="biz-note" id="bizNote"></div>
-                </div>
+<section class="limits-section">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Limitations &amp; <span>Critique</span></h2>
+            <p>What passenger-time minimisation leaves out</p>
+        </div>
+        <div class="limits-grid fade-in">
+            <div class="limit-card">
+                <h4>Equity of access &mdash; Title VI and transit-dependence</h4>
+                <p>
+                    Utilitarian passenger-time minimisation concentrates service on high-demand corridors, which are
+                    often already well-served. Transit-dependent populations (low-income, elderly, disabled) may live
+                    in lower-density areas where &ldquo;efficiency-optimal&rdquo; design drops service. Title VI
+                    requires equity analysis of major service changes; naive OR optimisation fails this requirement.
+                </p>
+                <div class="refs"><em>Sanchez &amp; Brenman (2007)</em>. The Right to Transportation: Moving to Equity.</div>
+            </div>
+            <div class="limit-card">
+                <h4>Paratransit is a separate, harder problem</h4>
+                <p>
+                    ADA-mandated paratransit for riders unable to use fixed-route service is a door-to-door VRPTW,
+                    not a network-design problem. Transit-design optimisation ignores it, yet paratransit is a large
+                    and rising share of agency cost and a legal obligation.
+                </p>
+                <div class="refs"><em>Palmer et al. (2008)</em> on paratransit routing.</div>
+            </div>
+            <div class="limit-card">
+                <h4>Demand is elastic and endogenous</h4>
+                <p>
+                    The OD matrix <em>d<sub>od</sub></em> is an input, but ridership responds to service quality.
+                    Better service attracts more riders; degraded service drives riders away. Static demand models
+                    understate both the benefit of improvements and the cost of cuts.
+                </p>
+                <div class="refs"><em>Mohri &amp; Haddadi (2019)</em> on demand elasticity in transit design.</div>
+            </div>
+            <div class="limit-card">
+                <h4>Reliability matters more than average travel time</h4>
+                <p>
+                    Riders weight variability heavily. A route with 20-minute average + 15-minute std-dev is worse than
+                    a 25-minute average + 2-minute std-dev, but passenger-time minimisation treats them inversely.
+                    Reliability-aware extensions exist but are rarely used in applied studies.
+                </p>
+                <div class="refs"><em>Nikolic &amp; Teodorovic (2013)</em> on stochastic transit-network design.</div>
+            </div>
+            <div class="limit-card">
+                <h4>Integration with land use</h4>
+                <p>
+                    Transit design affects where people can afford to live and which jobs they can reach, which
+                    recursively affects demand. Treating the network design as standalone ignores land-use feedbacks
+                    that take decades to play out.
+                </p>
+                <div class="refs"><em>Ewing &amp; Cervero (2010)</em> on travel and the built environment.</div>
+            </div>
+            <div class="limit-card">
+                <h4>Transfer burden is poorly modelled</h4>
+                <p>
+                    Transfers have uncertain waiting, physical difficulty, and psychological cost that simple time
+                    penalties understate. Networks designed to minimise aggregate time often shift burden to transfers,
+                    disproportionately affecting riders with mobility limitations.
+                </p>
+                <div class="refs"><em>Iseki &amp; Taylor (2009)</em> on transfer waiting and rider satisfaction.</div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- ── 5. Algorithms ── -->
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The <span>Algorithms</span></h2>
-            <p>Three approaches to selecting transit corridors under budget constraints</p>
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Where the literature has gone</p>
         </div>
-
-        <div class="algo-card fade-in">
-            <div class="algo-tag">Exact Connectivity &middot; Tree-Based</div>
-            <h3>MST (Cheapest Connected)</h3>
-            <span class="algo-complexity">O(E log E)</span>
-            <p>
-                Sort all candidate corridors by infrastructure cost in ascending order, then
-                greedily add each corridor that connects two previously unconnected components.
-                This produces the minimum-cost spanning tree &mdash; the cheapest way to ensure
-                all 8 neighbourhoods are reachable from each other.
-            </p>
-            <p>
-                Guarantees full connectivity with exactly <strong>|V| &minus; 1 = 7 corridors</strong>,
-                but ignores the budget constraint and passenger travel time. Serves as a baseline
-                lower bound on infrastructure cost for connectivity.
-            </p>
-        </div>
-
-        <div class="algo-card fade-in">
-            <div class="algo-tag">Heuristic &middot; Coverage-Driven</div>
-            <h3>Greedy (Coverage/Cost Ratio)</h3>
-            <span class="algo-complexity">O(E&sup2;)</span>
-            <p>
-                At each step, select the corridor with the best ratio of
-                <strong>new passenger coverage to cost</strong>. Coverage is measured by the
-                number of new origin-destination pairs that become reachable when the corridor
-                is activated. The algorithm continues until all zones are connected.
-            </p>
-            <p>
-                Often produces better passenger-time solutions than pure MST because it
-                prioritizes high-demand corridors. May use slightly more budget but delivers
-                higher service quality.
-            </p>
-        </div>
-
-        <div class="algo-card fade-in">
-            <div class="algo-tag">Constrained &middot; Feasibility-First</div>
-            <h3>Budget-Constrained Greedy</h3>
-            <span class="algo-complexity">O(E&sup2;)</span>
-            <p>
-                Identical to the coverage-driven greedy, but enforces a hard capital budget cap.
-                At each step, corridors whose cost would exceed the remaining budget are skipped.
-                If the budget runs out before all zones are connected, the algorithm reports
-                partial coverage.
-            </p>
-            <p>
-                The most realistic approach: transit authorities rarely have unlimited funds.
-                Use the budget slider to explore the trade-off between cost and coverage &mdash;
-                tight budgets force hard choices about which neighbourhoods to prioritize.
-            </p>
-        </div>
-
-        <div class="complexity-box fade-in">
-            <h3><i class="fas fa-tachometer-alt" aria-hidden="true"></i> Complexity &amp; Trade-offs</h3>
-            <ul class="complexity-list">
-                <li><strong style="color:var(--ivory)">MST</strong> &mdash; O(E log E). Guarantees minimum-cost full connectivity. Ignores demand and budget.</li>
-                <li><strong style="color:var(--ivory)">Greedy</strong> &mdash; O(E&sup2;). Balances coverage and cost. Near-optimal for moderate instances.</li>
-                <li><strong style="color:var(--ivory)">Budget-Constrained</strong> &mdash; O(E&sup2;). Most practical. May leave zones unconnected under tight budgets.</li>
-                <li><strong style="color:var(--ivory)">Fixed-charge network design</strong> is NP-hard in general; these heuristics provide quality solutions fast.</li>
-            </ul>
+        <div class="ext-grid fade-in">
+            <div class="ext-card"><h4>Frequency-aware route selection</h4><p>Simultaneous route choice + frequency; larger MILP but more accurate than decomposed approaches.</p></div>
+            <div class="ext-card"><h4>Multi-modal integration</h4><p>Bus + light rail + commuter rail jointly. Xiong et al. (2020) on integrated-multimodal network design.</p></div>
+            <div class="ext-card"><h4>Stochastic / robust design</h4><p>Demand uncertainty; robust route selection under OD scenarios. Yan &amp; Chen (2011).</p></div>
+            <div class="ext-card"><h4>Bi-level programming</h4><p>Agency-level design + rider-level route-choice equilibrium. Outer: operator; inner: traffic assignment.</p></div>
+            <div class="ext-card"><h4>Equity-constrained design</h4><p>Minimum-service constraints by geography or demographic; Title VI compliance as hard constraint rather than post-hoc review.</p></div>
+            <div class="ext-card"><h4>Dial-a-ride &amp; microtransit</h4><p>On-demand transit replacing low-density fixed routes; very different optimisation family (VRPTW).</p></div>
+            <div class="ext-card"><h4>Network redesign under fare integration</h4><p>Fare-system changes shift rider behaviour; redesign must reckon with that. Seattle ORCA LIFT, LA METRO.</p></div>
+            <div class="ext-card"><h4>Climate-aware design</h4><p>Electrification constraints, battery-range limits, and charging-infrastructure co-location. Active in 2020s.</p></div>
         </div>
     </div>
 </section>
 
-<!-- ── 6. References ── -->
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs where available</p>
+        </div>
+
+        <div class="reference-item fade-in"><span class="reference-num">[1]</span><span class="reference-authors">Mandl, C.&nbsp;E. (1979).</span><div class="reference-title"><em>Applied Network Optimization.</em></div><div class="reference-journal">Academic Press. The canonical 15-node 21-edge transit benchmark.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[2]</span><span class="reference-authors">Ceder, A., &amp; Wilson, N.&nbsp;H.&nbsp;M. (1986).</span><div class="reference-title">&ldquo;Bus network design.&rdquo;</div><div class="reference-journal"><em>Transportation Research Part B</em> 20(4), 331&ndash;344. <a href="https://doi.org/10.1016/0191-2615(86)90047-0" target="_blank" rel="noopener">doi:10.1016/0191-2615(86)90047-0</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[3]</span><span class="reference-authors">Baaj, M.&nbsp;H., &amp; Mahmassani, H.&nbsp;S. (1995).</span><div class="reference-title">&ldquo;Hybrid route generation heuristic algorithm for the design of transit networks.&rdquo;</div><div class="reference-journal"><em>Transportation Research Part C</em> 3(1), 31&ndash;50. <a href="https://doi.org/10.1016/0968-090X(94)00011-S" target="_blank" rel="noopener">doi:10.1016/0968-090X(94)00011-S</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[4]</span><span class="reference-authors">Mohring, H. (1972).</span><div class="reference-title">&ldquo;Optimization and scale economies in urban bus transportation.&rdquo;</div><div class="reference-journal"><em>American Economic Review</em> 62(4), 591&ndash;604.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[5]</span><span class="reference-authors">Farahani, R.&nbsp;Z., Miandoabchi, E., Szeto, W.&nbsp;Y., &amp; Rashidi, H. (2013).</span><div class="reference-title">&ldquo;A review of urban transportation network design problems.&rdquo;</div><div class="reference-journal"><em>European Journal of Operational Research</em> 229(2), 281&ndash;302. <a href="https://doi.org/10.1016/j.ejor.2013.01.001" target="_blank" rel="noopener">doi:10.1016/j.ejor.2013.01.001</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[6]</span><span class="reference-authors">Desaulniers, G., &amp; Hickman, M.&nbsp;D. (2007).</span><div class="reference-title">&ldquo;Public transit.&rdquo; In <em>Handbooks in Operations Research and Management Science</em>, Vol. 14: Transportation.</div><div class="reference-journal">Elsevier. <a href="https://doi.org/10.1016/S0927-0507(06)14002-5" target="_blank" rel="noopener">doi:10.1016/S0927-0507(06)14002-5</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[7]</span><span class="reference-authors">Sanchez, T.&nbsp;W., &amp; Brenman, M. (2007).</span><div class="reference-title"><em>The Right to Transportation: Moving to Equity.</em></div><div class="reference-journal">APA Planners Press.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[8]</span><span class="reference-authors">Ewing, R., &amp; Cervero, R. (2010).</span><div class="reference-title">&ldquo;Travel and the built environment: A meta-analysis.&rdquo;</div><div class="reference-journal"><em>Journal of the American Planning Association</em> 76(3), 265&ndash;294. <a href="https://doi.org/10.1080/01944361003766766" target="_blank" rel="noopener">doi:10.1080/01944361003766766</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[9]</span><span class="reference-authors">Iseki, H., &amp; Taylor, B.&nbsp;D. (2009).</span><div class="reference-title">&ldquo;Not all transfers are created equal: Towards a framework relating transfer connectivity to travel behaviour.&rdquo;</div><div class="reference-journal"><em>Transport Reviews</em> 29(6), 777&ndash;800. <a href="https://doi.org/10.1080/01441640902811304" target="_blank" rel="noopener">doi:10.1080/01441640902811304</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[10]</span><span class="reference-authors">Federal Transit Administration. (2012).</span><div class="reference-title"><em>Circular FTA C 4702.1B: Title VI Requirements and Guidelines for Federal Transit Administration Recipients.</em></div><div class="reference-journal">US Department of Transportation. <a href="https://www.transit.dot.gov/regulations-and-guidance/fta-circulars/title-vi-requirements-and-guidelines-federal-transit" target="_blank" rel="noopener">transit.dot.gov</a></div></div>
+    </div>
+</section>
+
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Key <span>References</span></h2>
-            <p>Foundational papers and textbooks</p>
+            <h2>Related <span>applications</span></h2>
+            <p>Network and routing siblings</p>
         </div>
-        <div class="content-block fade-in">
-            <ul class="reference-list">
-                <li>
-                    <span class="ref-author">Magnanti, T. L. &amp; Wong, R. T.</span> (1984).
-                    <span class="ref-title">&ldquo;Network design and transportation planning: models and algorithms.&rdquo;</span>
-                    <span class="ref-journal">Transportation Science, 18(1), 1&ndash;55.</span>
-                </li>
-                <li>
-                    <span class="ref-author">Balakrishnan, A., Magnanti, T. L., &amp; Mirchandani, P.</span> (1997).
-                    <span class="ref-title">&ldquo;Network design.&rdquo;</span>
-                    <span class="ref-journal">Annotated Bibliographies in Combinatorial Optimization, Wiley, 311&ndash;334.</span>
-                </li>
-                <li>
-                    <span class="ref-author">Ahuja, R. K., Magnanti, T. L., &amp; Orlin, J. B.</span> (1993).
-                    <span class="ref-title">&ldquo;Network Flows: Theory, Algorithms, and Applications.&rdquo;</span>
-                    <span class="ref-journal">Prentice Hall, Ch. 19 (Network Design).</span>
-                </li>
-            </ul>
+        <div class="related-grid fade-in">
+            <a class="related-card" href="evacuation-routing.html"><span class="related-card-tag">Max-Flow</span><div class="related-card-head">Evacuation Routing</div><div class="related-card-desc">Route-over-network sibling &mdash; when the objective shifts from commute time to emergency egress capacity.</div></a>
+            <a class="related-card" href="garbage-collection.html"><span class="related-card-tag">Arc routing</span><div class="related-card-head">Garbage Collection Routing</div><div class="related-card-desc">Arc routing on street networks; scheduling + coverage instead of passenger flows.</div></a>
+            <a class="related-card" href="school-location.html"><span class="related-card-tag">p-Median</span><div class="related-card-head">School Location Planning</div><div class="related-card-desc">Sibling location problem &mdash; transit access to schools is part of the same public-services design.</div></a>
+            <a class="related-card" href="public-services-domain.html"><span class="related-card-tag">Back to domain</span><div class="related-card-head">Public Services Landing</div><div class="related-card-desc">See all thirteen applications.</div></a>
         </div>
     </div>
 </section>
 
-<!-- ── 7. CTA ── -->
-<section>
+<section class="cta-section">
     <div class="container">
-        <div class="cta-panel fade-in">
-            <h3>Need to optimize your transit network?</h3>
-            <p>
-                From corridor selection to service scheduling and fleet allocation,
-                mathematical modeling can transform public transit planning decisions.
-                Let&rsquo;s discuss how Operations Research can work for you.
-            </p>
-            <div class="cta-links">
-                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
-                    <i class="fab fa-linkedin" aria-hidden="true"></i> Connect on LinkedIn
-                </a>
-            </div>
-        </div>
+        <h2>Advising a transit agency<br>or network redesign project?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
     </div>
 </section>
 
-<!-- ── Disclaimer ── -->
-<section style="padding: 2rem 0;">
-    <div class="container">
-        <div class="disclaimer-box">
-            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
-            Data shown is illustrative. Neighbourhood locations, corridor costs, and demand patterns
-            are representative scenarios for educational purposes and do not reflect any specific
-            transit authority or metropolitan area.
-        </div>
-    </div>
-</section>
+<div class="disclaimer">
+    Data and numerical examples are illustrative. This page is an educational tool, not transit-agency policy or operational advice.
+</div>
 
-<!-- ── Footer ── -->
 </main>
 
 <footer>
     <div class="container">
-        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+        <p>
+            <a href="public-services-domain.html">&larr; Back to Public Services</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
     </div>
 </footer>
 
-<a href="../index.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+<a class="back-link" href="public-services-domain.html"><i class="fas fa-arrow-left" aria-hidden="true" style="margin-right:0.4rem"></i> Public Services</a>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// Transit Network Design — Fixed-Charge Network Interactive Demo
-// ═══════════════════════════════════════════════════════════════
-
-var canvas = document.getElementById('networkCanvas');
-var ctx = canvas.getContext('2d');
-
-// Hi-DPI support
-var dpr = window.devicePixelRatio || 1;
-var CW = 900, CH = 500;
-canvas.width = CW * dpr;
-canvas.height = CH * dpr;
-canvas.style.width = CW + 'px';
-canvas.style.height = CH + 'px';
-ctx.scale(dpr, dpr);
-
-// ── Color Palette ──
-var COL_BG       = '#112240';
-var COL_NODE     = '#C5A059';
-var COL_NODE_RNG = '#D4AF37';
-var COL_EDGE     = 'rgba(136, 146, 176, 0.25)';
-var COL_ACTIVE   = '#C5A059';
-var COL_ACTIVE_GLOW = 'rgba(197, 160, 89, 0.35)';
-var COL_LABEL    = '#a8b2d1';
-var COL_COST     = '#64ffda';
-var COL_FLOW     = '#7aa2f7';
-
-// ── Scenarios ──
-// Each edge: [from, to, fixedCost($M), travelTime(min), dailyPax(k)]
-var SCENARIOS = [
-    {
-        name: 'City Core',
-        desc: 'High central demand, cheap corridors',
-        nodes: [
-            { id: 0, label: 'A — Downtown',   x: 450, y: 250 },
-            { id: 1, label: 'B — Midtown',    x: 350, y: 160 },
-            { id: 2, label: 'C — Eastside',   x: 580, y: 180 },
-            { id: 3, label: 'D — Westend',    x: 280, y: 280 },
-            { id: 4, label: 'E — Southgate',  x: 420, y: 380 },
-            { id: 5, label: 'F — Northpark',  x: 500, y:  90 },
-            { id: 6, label: 'G — Riverside',  x: 650, y: 320 },
-            { id: 7, label: 'H — Harbour',    x: 550, y: 400 }
-        ],
-        edges: [
-            [0, 1, 2.5, 8, 45],
-            [0, 2, 3.0, 10, 38],
-            [0, 3, 2.8, 9, 40],
-            [0, 4, 3.2, 12, 35],
-            [1, 2, 4.0, 14, 20],
-            [1, 3, 2.0, 7, 30],
-            [1, 5, 3.5, 11, 25],
-            [2, 5, 4.5, 15, 18],
-            [2, 6, 3.8, 13, 22],
-            [3, 4, 3.0, 10, 28],
-            [4, 7, 2.2, 6, 32],
-            [5, 2, 4.5, 15, 18],
-            [6, 7, 2.5, 8, 26],
-            [0, 7, 4.0, 14, 15]
-        ],
-        baseDailyPax: 85,
-        costPerPaxHour: 12
-    },
-    {
-        name: 'Suburban Extension',
-        desc: 'Peripheral zones, costly build',
-        nodes: [
-            { id: 0, label: 'A — Central',    x: 450, y: 280 },
-            { id: 1, label: 'B — University', x: 300, y: 180 },
-            { id: 2, label: 'C — Airport',    x: 700, y: 150 },
-            { id: 3, label: 'D — Industrial', x: 200, y: 350 },
-            { id: 4, label: 'E — Suburbs-S',  x: 380, y: 420 },
-            { id: 5, label: 'F — Tech Park',  x: 600, y:  80 },
-            { id: 6, label: 'G — Mall District', x: 650, y: 350 },
-            { id: 7, label: 'H — Suburbs-W',  x: 140, y: 200 }
-        ],
-        edges: [
-            [0, 1, 4.0, 12, 30],
-            [0, 2, 8.5, 25, 15],
-            [0, 4, 3.5, 10, 28],
-            [0, 6, 5.0, 16, 22],
-            [1, 3, 5.5, 18, 12],
-            [1, 5, 6.0, 20, 18],
-            [1, 7, 7.0, 22, 10],
-            [2, 5, 4.5, 14, 20],
-            [2, 6, 6.5, 19, 14],
-            [3, 4, 4.8, 15, 16],
-            [3, 7, 3.5, 11, 14],
-            [4, 6, 7.2, 22, 10],
-            [5, 2, 4.5, 14, 20],
-            [6, 0, 5.0, 16, 22]
-        ],
-        baseDailyPax: 60,
-        costPerPaxHour: 18
-    },
-    {
-        name: 'Tight Budget',
-        desc: 'Hard trade-offs, limited funds',
-        nodes: [
-            { id: 0, label: 'A — Hub',         x: 450, y: 250 },
-            { id: 1, label: 'B — Hospital',    x: 320, y: 140 },
-            { id: 2, label: 'C — Stadium',     x: 600, y: 160 },
-            { id: 3, label: 'D — Old Town',    x: 250, y: 310 },
-            { id: 4, label: 'E — Marina',      x: 500, y: 410 },
-            { id: 5, label: 'F — Campus',      x: 550, y:  80 },
-            { id: 6, label: 'G — Greenfield',  x: 700, y: 330 },
-            { id: 7, label: 'H — Depot',       x: 350, y: 400 }
-        ],
-        edges: [
-            [0, 1, 3.5, 10, 42],
-            [0, 2, 4.0, 12, 35],
-            [0, 3, 3.0, 9, 38],
-            [0, 4, 4.5, 14, 25],
-            [1, 3, 5.0, 16, 15],
-            [1, 5, 6.0, 20, 20],
-            [2, 5, 3.8, 11, 28],
-            [2, 6, 5.5, 17, 12],
-            [3, 7, 2.8, 8, 30],
-            [4, 6, 7.0, 22, 8],
-            [4, 7, 3.2, 10, 22],
-            [5, 2, 3.8, 11, 28],
-            [6, 4, 7.0, 22, 8],
-            [0, 7, 4.2, 13, 18]
-        ],
-        baseDailyPax: 70,
-        costPerPaxHour: 15
-    }
-];
-
-var currentScenario = 0;
-var currentAlgo = 'mst';
-var activatedEdges = [];
-var animProgress = 0;
-var animating = false;
-var animFrame = null;
-var currentBudget = 40;
-
-// ── Budget Slider ──
-var budgetSlider = document.getElementById('budgetSlider');
-var budgetVal = document.getElementById('budgetVal');
-budgetSlider.addEventListener('input', function() {
-    currentBudget = parseInt(budgetSlider.value);
-    budgetVal.textContent = '$' + currentBudget + 'M';
-});
-
-// ── Union-Find ──
-function makeUF(n) {
-    var parent = [], rank = [];
-    for (var i = 0; i < n; i++) { parent[i] = i; rank[i] = 0; }
-    function find(x) {
-        while (parent[x] !== x) { parent[x] = parent[parent[x]]; x = parent[x]; }
-        return x;
-    }
-    function union(a, b) {
-        a = find(a); b = find(b);
-        if (a === b) return false;
-        if (rank[a] < rank[b]) { var t = a; a = b; b = t; }
-        parent[b] = a;
-        if (rank[a] === rank[b]) rank[a]++;
-        return true;
-    }
-    return { find: find, union: union };
-}
-
-// ── Count connected zones ──
-function countConnected(nodes, selectedEdges) {
-    var uf = makeUF(nodes.length);
-    for (var i = 0; i < selectedEdges.length; i++) {
-        var e = selectedEdges[i];
-        uf.union(e[0], e[1]);
-    }
-    var roots = {};
-    for (var i = 0; i < nodes.length; i++) {
-        roots[uf.find(i)] = true;
-    }
-    var components = Object.keys(roots).length;
-    return nodes.length - components + (selectedEdges.length > 0 ? 1 : 0);
-}
-
-function getConnectedCount(nodes, selectedEdges) {
-    if (selectedEdges.length === 0) return 0;
-    var uf = makeUF(nodes.length);
-    for (var i = 0; i < selectedEdges.length; i++) {
-        uf.union(selectedEdges[i][0], selectedEdges[i][1]);
-    }
-    // Find the largest component
-    var compSizes = {};
-    for (var i = 0; i < nodes.length; i++) {
-        var r = uf.find(i);
-        compSizes[r] = (compSizes[r] || 0) + 1;
-    }
-    var maxSize = 0;
-    for (var k in compSizes) {
-        if (compSizes[k] > maxSize) maxSize = compSizes[k];
-    }
-    return maxSize;
-}
-
-// ── MST Algorithm (Kruskal's) ──
-function solveMST(nodes, edges) {
-    var sorted = edges.slice().sort(function(a, b) { return a[2] - b[2]; });
-    var uf = makeUF(nodes.length);
-    var tree = [];
-    for (var i = 0; i < sorted.length; i++) {
-        var e = sorted[i];
-        if (uf.union(e[0], e[1])) {
-            tree.push(e);
-            if (tree.length === nodes.length - 1) break;
-        }
-    }
-    return tree;
-}
-
-// ── Greedy Algorithm (Coverage/Cost ratio) ──
-function solveGreedy(nodes, edges) {
-    var selected = [];
-    var remaining = edges.slice();
-    var uf = makeUF(nodes.length);
-
-    while (remaining.length > 0) {
-        var bestIdx = -1;
-        var bestRatio = -1;
-
-        for (var i = 0; i < remaining.length; i++) {
-            var e = remaining[i];
-            var ru = uf.find(e[0]), rv = uf.find(e[1]);
-            if (ru === rv) continue; // already connected
-            // Coverage: daily passengers / cost
-            var ratio = e[4] / e[2];
-            if (ratio > bestRatio) {
-                bestRatio = ratio;
-                bestIdx = i;
-            }
-        }
-
-        if (bestIdx === -1) break;
-        var chosen = remaining.splice(bestIdx, 1)[0];
-        uf.union(chosen[0], chosen[1]);
-        selected.push(chosen);
-
-        if (selected.length === nodes.length - 1) break;
-    }
-    return selected;
-}
-
-// ── Budget-Constrained Greedy ──
-function solveBudgetGreedy(nodes, edges, budget) {
-    var selected = [];
-    var remaining = edges.slice();
-    var uf = makeUF(nodes.length);
-    var spent = 0;
-
-    while (remaining.length > 0) {
-        var bestIdx = -1;
-        var bestRatio = -1;
-
-        for (var i = 0; i < remaining.length; i++) {
-            var e = remaining[i];
-            if (spent + e[2] > budget) continue; // over budget
-            var ru = uf.find(e[0]), rv = uf.find(e[1]);
-            if (ru === rv) continue;
-            var ratio = e[4] / e[2];
-            if (ratio > bestRatio) {
-                bestRatio = ratio;
-                bestIdx = i;
-            }
-        }
-
-        if (bestIdx === -1) break;
-        var chosen = remaining.splice(bestIdx, 1)[0];
-        uf.union(chosen[0], chosen[1]);
-        selected.push(chosen);
-        spent += chosen[2];
-
-        if (selected.length === nodes.length - 1) break;
-    }
-    return selected;
-}
-
-// ── Drawing ──
-function drawNetwork(progress) {
-    var sc = SCENARIOS[currentScenario];
-    var nodes = sc.nodes;
-    var edges = sc.edges;
-
-    ctx.clearRect(0, 0, CW, CH);
-    ctx.fillStyle = COL_BG;
-    ctx.fillRect(0, 0, CW, CH);
-
-    // Draw all candidate edges (grey)
-    for (var i = 0; i < edges.length; i++) {
-        var e = edges[i];
-        var a = nodes[e[0]], b = nodes[e[1]];
-        ctx.strokeStyle = COL_EDGE;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        // Show cost on candidate edges
-        var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-        ctx.font = '400 9px "JetBrains Mono", monospace';
-        ctx.fillStyle = 'rgba(136, 146, 176, 0.4)';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('$' + e[2].toFixed(0) + 'M', mx, my + 10);
-    }
-
-    // Draw activated edges (animated)
-    var edgesToDraw = Math.floor(progress * activatedEdges.length);
-    var partialFrac = (progress * activatedEdges.length) - edgesToDraw;
-
-    for (var i = 0; i < edgesToDraw && i < activatedEdges.length; i++) {
-        var e = activatedEdges[i];
-        var a = nodes[e[0]], b = nodes[e[1]];
-        // Width by passenger flow
-        var flowWidth = 2 + (e[4] / 10);
-        // Glow
-        ctx.strokeStyle = COL_ACTIVE_GLOW;
-        ctx.lineWidth = flowWidth + 4;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-        // Line
-        ctx.strokeStyle = COL_ACTIVE;
-        ctx.lineWidth = flowWidth;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(b.x, b.y);
-        ctx.stroke();
-        // Cost label
-        var mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
-        ctx.font = '500 11px "JetBrains Mono", monospace';
-        ctx.fillStyle = COL_COST;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText('$' + e[2].toFixed(0) + 'M', mx, my - 12);
-        // Pax label
-        ctx.font = '400 9px "JetBrains Mono", monospace';
-        ctx.fillStyle = COL_FLOW;
-        ctx.fillText(e[4] + 'k pax', mx, my + 12);
-    }
-
-    // Partial edge animation
-    if (edgesToDraw < activatedEdges.length && partialFrac > 0) {
-        var e = activatedEdges[edgesToDraw];
-        var a = nodes[e[0]], b = nodes[e[1]];
-        var px = a.x + (b.x - a.x) * partialFrac;
-        var py = a.y + (b.y - a.y) * partialFrac;
-        var flowWidth = 2 + (e[4] / 10);
-        ctx.strokeStyle = COL_ACTIVE;
-        ctx.lineWidth = flowWidth;
-        ctx.beginPath();
-        ctx.moveTo(a.x, a.y);
-        ctx.lineTo(px, py);
-        ctx.stroke();
-    }
-
-    // Draw nodes
-    for (var i = 0; i < nodes.length; i++) {
-        var nd = nodes[i];
-        // Outer glow
-        ctx.beginPath();
-        ctx.arc(nd.x, nd.y, 14, 0, Math.PI * 2);
-        ctx.fillStyle = 'rgba(197, 160, 89, 0.15)';
-        ctx.fill();
-        // Node circle
-        ctx.beginPath();
-        ctx.arc(nd.x, nd.y, 8, 0, Math.PI * 2);
-        ctx.fillStyle = COL_NODE;
-        ctx.fill();
-        ctx.strokeStyle = COL_NODE_RNG;
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
-        // Label
-        ctx.font = '500 11px "Inter", sans-serif';
-        ctx.fillStyle = COL_LABEL;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        ctx.fillText(nd.label, nd.x, nd.y + 16);
-    }
-
-    // Title
-    ctx.font = '500 12px "Inter", sans-serif';
-    ctx.fillStyle = 'rgba(197, 160, 89, 0.6)';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
-    ctx.fillText(sc.name + ' — Transit Network', 16, 16);
-
-    // Budget indicator
-    ctx.textAlign = 'right';
-    ctx.fillText('Budget: $' + currentBudget + 'M', CW - 16, 16);
-}
-
-function animateNetwork() {
-    if (!animating) return;
-    animProgress += 0.02;
-    if (animProgress >= 1) {
-        animProgress = 1;
-        animating = false;
-    }
-    drawNetwork(animProgress);
-    if (animating) {
-        animFrame = requestAnimationFrame(animateNetwork);
-    }
-}
-
-function solve() {
-    var sc = SCENARIOS[currentScenario];
-    var t0 = performance.now();
-    var result;
-
-    if (currentAlgo === 'mst') {
-        result = solveMST(sc.nodes, sc.edges);
-    } else if (currentAlgo === 'greedy') {
-        result = solveGreedy(sc.nodes, sc.edges);
-    } else {
-        result = solveBudgetGreedy(sc.nodes, sc.edges, currentBudget);
-    }
-
-    var elapsed = (performance.now() - t0).toFixed(2);
-    var totalCost = 0;
-    var totalTime = 0;
-    var totalPax = 0;
-    for (var i = 0; i < result.length; i++) {
-        totalCost += result[i][2];
-        totalTime += result[i][3];
-        totalPax += result[i][4];
-    }
-
-    var zonesConnected = getConnectedCount(sc.nodes, result);
-
-    activatedEdges = result;
-    animProgress = 0;
-    animating = true;
-    if (animFrame) cancelAnimationFrame(animFrame);
-    animateNetwork();
-
-    // Results table
-    var algoNames = { mst: 'MST', greedy: 'Greedy', budget: 'Budget-Constrained' };
-    var tbl = document.getElementById('resultsTable');
-    var body = document.getElementById('resultsBody');
-    tbl.style.display = 'table';
-
-    var row = document.createElement('tr');
-    var td1 = document.createElement('td'); td1.className = 'algo-label'; td1.textContent = algoNames[currentAlgo];
-    var td2 = document.createElement('td'); td2.className = 'best-val'; td2.textContent = totalCost.toFixed(1);
-    var td3 = document.createElement('td'); td3.textContent = totalTime + ' min';
-    var td4 = document.createElement('td'); td4.textContent = result.length;
-    var td5 = document.createElement('td'); td5.textContent = zonesConnected + ' / ' + sc.nodes.length;
-    row.appendChild(td1); row.appendChild(td2); row.appendChild(td3); row.appendChild(td4); row.appendChild(td5);
-    body.textContent = '';
-    body.appendChild(row);
-
-    // Status
-    var statusMsg = 'Network designed: ' + result.length + ' corridors activated, $' +
-        totalCost.toFixed(1) + 'M infrastructure cost, ' + zonesConnected + '/' +
-        sc.nodes.length + ' zones connected in ' + elapsed + ' ms.';
-    if (zonesConnected < sc.nodes.length) {
-        statusMsg += ' \u26a0 Not all zones connected — increase budget.';
-    }
-    document.getElementById('solverStatus').textContent = statusMsg;
-
-    // Business panel
-    var panel = document.getElementById('bizPanel');
-    panel.style.display = 'block';
-    var costPerPax = totalPax > 0 ? (totalCost / totalPax * 1000).toFixed(0) : '\u2014';
-    document.getElementById('bizCostPerPax').textContent = '$' + costPerPax;
-    document.getElementById('bizTotalCost').textContent = '$' + totalCost.toFixed(1) + 'M';
-    document.getElementById('bizDailyPax').textContent = totalPax + 'k';
-    document.getElementById('bizZones').textContent = zonesConnected + '/' + sc.nodes.length;
-    document.getElementById('bizNote').textContent =
-        'At $' + sc.costPerPaxHour + ' per passenger-hour saved, the ' + algoNames[currentAlgo] +
-        ' solution activates ' + result.length + ' of ' + sc.edges.length +
-        ' candidate corridors, serving ' + totalPax + 'k daily passengers across ' +
-        zonesConnected + ' connected zones.';
-}
-
-function resetCanvas() {
-    activatedEdges = [];
-    animProgress = 0;
-    animating = false;
-    if (animFrame) cancelAnimationFrame(animFrame);
-    drawNetwork(0);
-    document.getElementById('resultsTable').style.display = 'none';
-    document.getElementById('bizPanel').style.display = 'none';
-    document.getElementById('solverStatus').textContent = 'Select a scenario and click \u201cDesign Network\u201d to solve.';
-}
-
-// ── Event Listeners ──
-document.getElementById('solveBtn').addEventListener('click', solve);
-document.getElementById('resetBtn').addEventListener('click', resetCanvas);
-
-// Scenario switcher
-var scenBtns = document.querySelectorAll('.scenario-btn');
-scenBtns.forEach(function(btn) {
-    btn.addEventListener('click', function() {
-        scenBtns.forEach(function(b) { b.classList.remove('active'); });
-        btn.classList.add('active');
-        currentScenario = parseInt(btn.getAttribute('data-scenario'));
-        resetCanvas();
-    });
-});
-
-// Algorithm select
-var algoChips = document.querySelectorAll('.algo-chip');
-algoChips.forEach(function(chip) {
-    chip.addEventListener('click', function() {
-        algoChips.forEach(function(c) { c.classList.remove('selected'); });
-        chip.classList.add('selected');
-        currentAlgo = chip.getAttribute('data-algo');
-    });
-});
-
-// Canvas export
-document.getElementById('exportCanvasBtn').addEventListener('click', function() {
-    var link = document.createElement('a');
-    link.download = 'transit-network-design.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
-});
-
-// ── Scroll Animations ──
-var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
-
-// ── Initialize ──
-drawNetwork(0);
-</script>
-
-<!-- TODO -->
-
-<!-- ══ INTERACTIVITY ENHANCEMENTS ══ -->
-
-<!-- Scroll Progress Bar -->
-<div class="scroll-progress" id="scrollProgress"></div>
-
-<!-- Scroll to Top Button -->
-<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top">
-    <i class="fas fa-chevron-up" aria-hidden="true"></i>
-</button>
-
-<!-- Command Palette Overlay -->
-<div class="cmd-palette-overlay" id="cmdPalette">
-    <div class="cmd-palette">
-        <div class="cmd-input-wrap">
-            <i class="fas fa-search" aria-hidden="true"></i>
-            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
-            <span class="cmd-kbd">ESC</span>
-        </div>
-        <div class="cmd-results" id="cmdResults"></div>
-        <div class="cmd-footer">
-            <div class="cmd-footer-keys">
-                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
-                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
-            </div>
-            <span>Search across all problems</span>
-        </div>
-    </div>
-</div>
-<script>
-(function() {
+(function(){
     'use strict';
-
-    // ── 1. Theme Toggle ──
-    var themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        var savedTheme = localStorage.getItem('or-theme') || 'dark';
-        if (savedTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
-
-        themeToggle.addEventListener('click', function() {
-            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
-            var newTheme = isLight ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', newTheme);
-            localStorage.setItem('or-theme', newTheme);
-        });
-    }
-
-    var initTheme = localStorage.getItem('or-theme');
-    if (initTheme === 'light') document.documentElement.setAttribute('data-theme', 'light');
-
-    // ── 2. Command Palette ──
-    var SEARCH_DATA = [
-        { title: 'Scheduling', subtitle: '6 problems', icon: 'fa-industry', url: 'families/scheduling.html', group: 'Families', badge: 'Family' },
-        { title: 'Routing', subtitle: '3 problems', icon: 'fa-route', url: 'families/routing.html', group: 'Families', badge: 'Family' },
-        { title: 'Packing & Cutting', subtitle: '3 problems', icon: 'fa-box', url: 'families/packing.html', group: 'Families', badge: 'Family' },
-        { title: 'Location & Network', subtitle: '6 problems', icon: 'fa-project-diagram', url: 'families/network.html', group: 'Families', badge: 'Family' },
-        { title: 'Minimum Spanning Tree', subtitle: 'MST \u00b7 O(E log E)', icon: 'fa-project-diagram', url: 'families/network.html#mst', group: 'Problems', badge: 'Network' },
-        { title: "Kruskal's Algorithm", subtitle: 'MST \u00b7 O(E log E)', icon: 'fa-bolt', url: 'families/network.html#mst', group: 'Algorithms', badge: 'Exact' },
-        { title: "Prim's Algorithm", subtitle: 'MST \u00b7 O(E log V)', icon: 'fa-bolt', url: 'families/network.html#mst', group: 'Algorithms', badge: 'Exact' },
-        { title: 'Transmission Network Design', subtitle: 'MST \u00b7 Energy', icon: 'fa-project-diagram', url: 'applications/energy-transmission-network.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Transit Network Design', subtitle: 'Fixed-Charge \u00b7 Transit', icon: 'fa-bus', url: 'applications/transit-network-design.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'applications/warehouse-packing.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Delivery Route Planning', subtitle: 'CVRP', icon: 'fa-truck', url: 'applications/delivery-routing.html', group: 'Applications', badge: 'Demo' }
-    ];
-
-    var path = window.location.pathname;
-    var depth = (path.match(/families\/|applications\//)) ? '../' : '';
-
-    var overlay = document.getElementById('cmdPalette');
-    var input = document.getElementById('cmdInput');
-    var resultsDiv = document.getElementById('cmdResults');
-    var activeIdx = -1;
-
-    function openPalette() {
-        overlay.classList.add('open');
-        input.value = '';
-        input.focus();
-        renderResults('');
-        activeIdx = -1;
-    }
-    function closePalette() {
-        overlay.classList.remove('open');
-        activeIdx = -1;
-    }
-
-    function fuzzyMatch(query, text) {
-        query = query.toLowerCase();
-        text = text.toLowerCase();
-        if (!query) return true;
-        if (text.includes(query)) return true;
-        var qi = 0;
-        for (var i = 0; i < text.length && qi < query.length; i++) {
-            if (text[i] === query[qi]) qi++;
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll(){
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = (h.scrollTop || b.scrollTop);
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
         }
-        return qi === query.length;
     }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
-    function renderResults(query) {
-        var filtered = SEARCH_DATA.filter(function(item) {
-            return fuzzyMatch(query, item.title) || fuzzyMatch(query, item.subtitle) || fuzzyMatch(query, item.group);
-        });
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
 
-        if (filtered.length === 0) {
-            resultsDiv.textContent = '';
-            var emptyDiv = document.createElement('div');
-            emptyDiv.className = 'cmd-empty';
-            emptyDiv.textContent = 'No results found';
-            resultsDiv.appendChild(emptyDiv);
-            return;
-        }
-
-        var groups = {};
-        var order = ['Families', 'Problems', 'Algorithms', 'Applications'];
-        filtered.forEach(function(item) {
-            if (!groups[item.group]) groups[item.group] = [];
-            groups[item.group].push(item);
-        });
-
-        resultsDiv.textContent = '';
-        var idx = 0;
-        order.forEach(function(g) {
-            if (!groups[g]) return;
-            var label = document.createElement('div');
-            label.className = 'cmd-group-label';
-            label.textContent = g;
-            resultsDiv.appendChild(label);
-
-            groups[g].forEach(function(item) {
-                var url = depth + item.url;
-                var a = document.createElement('a');
-                a.href = url;
-                a.className = 'cmd-result';
-                a.setAttribute('data-idx', idx);
-
-                var iconDiv = document.createElement('div');
-                iconDiv.className = 'cmd-icon';
-                var iconI = document.createElement('i');
-                iconI.className = 'fas ' + item.icon;
-                iconDiv.appendChild(iconI);
-
-                var infoDiv = document.createElement('div');
-                infoDiv.className = 'cmd-info';
-                var titleDiv = document.createElement('div');
-                titleDiv.className = 'cmd-title';
-                titleDiv.textContent = item.title;
-                var subtitleDiv = document.createElement('div');
-                subtitleDiv.className = 'cmd-subtitle';
-                subtitleDiv.textContent = item.subtitle;
-                infoDiv.appendChild(titleDiv);
-                infoDiv.appendChild(subtitleDiv);
-
-                var badge = document.createElement('span');
-                badge.className = 'cmd-badge';
-                badge.textContent = item.badge;
-
-                a.appendChild(iconDiv);
-                a.appendChild(infoDiv);
-                a.appendChild(badge);
-                resultsDiv.appendChild(a);
-                idx++;
+    function bindExclusive(id){
+        var el = document.getElementById(id); if (!el) return;
+        el.querySelectorAll('.algo-chip').forEach(function(c){
+            c.addEventListener('click', function(){
+                el.querySelectorAll('.algo-chip').forEach(function(cc){ cc.classList.remove('selected'); });
+                c.classList.add('selected');
             });
         });
     }
+    bindExclusive('tnScenarios'); bindExclusive('tnAlg');
+    var tnR = document.getElementById('tnR'); var tnRVal = document.getElementById('tnRVal');
+    if (tnR && tnRVal) tnR.addEventListener('input', function(){ tnRVal.textContent = tnR.value; });
+    function sel(id){ var c = document.querySelector('#' + id + ' .algo-chip.selected'); return c ? c.getAttribute('data-algo') : null; }
 
-    if (input) {
-        input.addEventListener('input', function() {
-            renderResults(input.value);
-            activeIdx = -1;
-        });
-    }
+    function mulberry32(seed){ return function(){ seed |= 0; seed = seed + 0x6D2B79F5 | 0; var t = Math.imul(seed ^ seed >>> 15, 1 | seed); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 
-    document.addEventListener('keydown', function(e) {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-            e.preventDefault();
-            if (overlay.classList.contains('open')) closePalette();
-            else openPalette();
-            return;
+    function buildNetwork(n, seed){
+        var rand = mulberry32(seed);
+        var nodes = [];
+        for (var i = 0; i < n; i++) {
+            var angle = (i / n) * Math.PI * 2 + rand() * 0.3;
+            nodes.push({ id: i, x: 410 + Math.cos(angle) * (140 + rand() * 60), y: 220 + Math.sin(angle) * (120 + rand() * 40) });
         }
-        if (!overlay.classList.contains('open')) return;
-        if (e.key === 'Escape') { closePalette(); return; }
-
-        var results = resultsDiv.querySelectorAll('.cmd-result');
-        if (e.key === 'ArrowDown') {
-            e.preventDefault();
-            activeIdx = Math.min(activeIdx + 1, results.length - 1);
-            results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); });
-            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
-        } else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            activeIdx = Math.max(activeIdx - 1, 0);
-            results.forEach(function(r, i) { r.classList.toggle('active', i === activeIdx); });
-            if (results[activeIdx]) results[activeIdx].scrollIntoView({ block: 'nearest' });
-        } else if (e.key === 'Enter' && activeIdx >= 0 && results[activeIdx]) {
-            e.preventDefault();
-            results[activeIdx].click();
-        }
-    });
-
-    if (overlay) {
-        overlay.addEventListener('click', function(e) {
-            if (e.target === overlay) closePalette();
-        });
-    }
-
-    var searchTrigger = document.getElementById('navSearchTrigger');
-    if (searchTrigger) {
-        searchTrigger.addEventListener('click', openPalette);
-    }
-
-    // ── 3. Particle Network Background ──
-    var heroEl = document.querySelector('.hero');
-    if (heroEl) {
-        var pCanvas = document.createElement('canvas');
-        pCanvas.className = 'hero-particles';
-        heroEl.insertBefore(pCanvas, heroEl.firstChild);
-        var pCtx = pCanvas.getContext('2d');
-        var particles = [];
-        var PARTICLE_COUNT = 40;
-        var CONNECTION_DIST = 120;
-
-        function resizeParticleCanvas() {
-            pCanvas.width = heroEl.offsetWidth;
-            pCanvas.height = heroEl.offsetHeight;
-        }
-        resizeParticleCanvas();
-        window.addEventListener('resize', resizeParticleCanvas);
-
-        function Particle() {
-            this.x = Math.random() * pCanvas.width;
-            this.y = Math.random() * pCanvas.height;
-            this.vx = (Math.random() - 0.5) * 0.4;
-            this.vy = (Math.random() - 0.5) * 0.4;
-            this.radius = Math.random() * 2 + 1;
-        }
-        Particle.prototype.update = function() {
-            this.x += this.vx;
-            this.y += this.vy;
-            if (this.x < 0 || this.x > pCanvas.width) this.vx *= -1;
-            if (this.y < 0 || this.y > pCanvas.height) this.vy *= -1;
-        };
-        Particle.prototype.draw = function() {
-            pCtx.beginPath();
-            pCtx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-            pCtx.fillStyle = 'rgba(197, 160, 89, 0.35)';
-            pCtx.fill();
-        };
-
-        for (var i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
-
-        function animateParticles() {
-            pCtx.clearRect(0, 0, pCanvas.width, pCanvas.height);
-            particles.forEach(function(p) { p.update(); p.draw(); });
-            for (var i = 0; i < particles.length; i++) {
-                for (var j = i + 1; j < particles.length; j++) {
-                    var dx = particles[i].x - particles[j].x;
-                    var dy = particles[i].y - particles[j].y;
-                    var dist = Math.sqrt(dx * dx + dy * dy);
-                    if (dist < CONNECTION_DIST) {
-                        pCtx.beginPath();
-                        pCtx.moveTo(particles[i].x, particles[i].y);
-                        pCtx.lineTo(particles[j].x, particles[j].y);
-                        pCtx.strokeStyle = 'rgba(197, 160, 89, ' + (0.12 * (1 - dist / CONNECTION_DIST)) + ')';
-                        pCtx.lineWidth = 0.6;
-                        pCtx.stroke();
-                    }
+        // edges: connect each node to 2-3 nearest (corridor graph)
+        var edges = [];
+        var adj = []; for (i = 0; i < n; i++) adj.push([]);
+        for (i = 0; i < n; i++) {
+            var dists = [];
+            for (var j = 0; j < n; j++) if (j !== i) {
+                var dx = nodes[i].x - nodes[j].x, dy = nodes[i].y - nodes[j].y;
+                dists.push({ j: j, d: Math.sqrt(dx*dx + dy*dy) });
+            }
+            dists.sort(function(a,b){ return a.d - b.d; });
+            var k = Math.min(2 + Math.floor(rand() * 2), dists.length);
+            for (var kk = 0; kk < k; kk++) {
+                var pair = [Math.min(i, dists[kk].j), Math.max(i, dists[kk].j)].join('-');
+                if (!edges.some(function(e){ return e.key === pair; })) {
+                    edges.push({ from: Math.min(i, dists[kk].j), to: Math.max(i, dists[kk].j), t: Math.round(dists[kk].d / 3), key: pair });
+                    adj[dists[kk].j].push(i); adj[i].push(dists[kk].j);
                 }
             }
-            requestAnimationFrame(animateParticles);
         }
-        animateParticles();
+        // OD demand
+        var odDemand = [];
+        for (i = 0; i < n; i++) for (j = 0; j < n; j++) {
+            if (i >= j) continue;
+            var d = 0.5 + rand() * 3;
+            if (rand() < 0.2) d *= 3; // few heavy OD pairs
+            odDemand.push({ o: i, d: j, volume: d });
+        }
+        return { nodes: nodes, edges: edges, adj: adj, odDemand: odDemand };
     }
 
-    // ── 4. Scroll Progress + Scroll-to-Top ──
-    var progressBar = document.getElementById('scrollProgress');
-    var scrollTopBtn = document.getElementById('scrollTopBtn');
-
-    function onScroll() {
-        var scrollTop = window.scrollY;
-        var docHeight = document.documentElement.scrollHeight - window.innerHeight;
-        var progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-        if (progressBar) progressBar.style.width = progress + '%';
-        if (scrollTopBtn) {
-            scrollTopBtn.classList.toggle('visible', scrollTop > 400);
+    // Candidate route generation: simple BFS walks up to length 8
+    function generateRoutes(net, maxLen){
+        var routes = [];
+        var seen = {};
+        for (var s = 0; s < net.nodes.length; s++) {
+            function dfs(path){
+                if (path.length >= 4) {
+                    var key = path.join('-');
+                    var rev = path.slice().reverse().join('-');
+                    if (!seen[key] && !seen[rev]) { seen[key] = 1; routes.push(path.slice()); }
+                }
+                if (path.length >= maxLen) return;
+                var last = path[path.length - 1];
+                net.adj[last].forEach(function(nb){
+                    if (path.indexOf(nb) === -1) {
+                        path.push(nb); dfs(path); path.pop();
+                    }
+                });
+            }
+            dfs([s]);
         }
+        return routes.slice(0, 200); // cap for perf
     }
 
-    window.addEventListener('scroll', onScroll, { passive: true });
-    onScroll();
+    function routeCovers(route, od){
+        var oi = route.indexOf(od.o), di = route.indexOf(od.d);
+        return oi !== -1 && di !== -1 && oi !== di;
+    }
 
-    if (scrollTopBtn) {
-        scrollTopBtn.addEventListener('click', function() {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+    function routeLen(net, route){
+        var L = 0;
+        for (var i = 0; i < route.length - 1; i++) {
+            var e = net.edges.find(function(ee){ return (ee.from === route[i] && ee.to === route[i+1]) || (ee.from === route[i+1] && ee.to === route[i]); });
+            if (e) L += e.t;
+        }
+        return L;
+    }
+
+    function selectRoutesGreedy(net, R, candidates){
+        var chosen = [];
+        var covered = {};
+        for (var step = 0; step < R; step++) {
+            var best = -1, bestScore = -1;
+            for (var c = 0; c < candidates.length; c++) {
+                if (chosen.indexOf(c) !== -1) continue;
+                var score = 0;
+                net.odDemand.forEach(function(od){
+                    if (covered[od.o + '-' + od.d]) return;
+                    if (routeCovers(candidates[c], od)) score += od.volume;
+                });
+                if (score > bestScore) { bestScore = score; best = c; }
+            }
+            if (best === -1) break;
+            chosen.push(best);
+            net.odDemand.forEach(function(od){ if (routeCovers(candidates[best], od)) covered[od.o + '-' + od.d] = true; });
+        }
+        return chosen.map(function(i){ return candidates[i]; });
+    }
+
+    function evaluate(net, routes){
+        var served = 0, totalDemand = 0, totalTime = 0;
+        net.odDemand.forEach(function(od){
+            totalDemand += od.volume;
+            var covered = routes.some(function(r){ return routeCovers(r, od); });
+            if (covered) {
+                served += od.volume;
+                // approximate travel time: route length from o to d
+                var bestT = Infinity;
+                routes.forEach(function(r){
+                    if (!routeCovers(r, od)) return;
+                    var oi = r.indexOf(od.o), di = r.indexOf(od.d);
+                    var lo = Math.min(oi, di), hi = Math.max(oi, di);
+                    var t = 0;
+                    for (var k = lo; k < hi; k++) {
+                        var e = net.edges.find(function(ee){ return (ee.from === r[k] && ee.to === r[k+1]) || (ee.from === r[k+1] && ee.to === r[k]); });
+                        if (e) t += e.t;
+                    }
+                    if (t < bestT) bestT = t;
+                });
+                totalTime += od.volume * (bestT === Infinity ? 0 : bestT);
+            }
         });
+        return { served: served, totalDemand: totalDemand, totalTime: totalTime, coverage: served / totalDemand };
     }
 
+    function draw(net, routes){
+        var canvas = document.getElementById('tnCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
+
+        // base edges (faint)
+        ctx.strokeStyle = 'rgba(136,146,176,0.25)'; ctx.lineWidth = 1;
+        net.edges.forEach(function(e){
+            var a = net.nodes[e.from], b = net.nodes[e.to];
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        });
+
+        // routes (coloured, thick)
+        var palette = ['#C5A059', '#7aa2f7', '#64ffda', '#bb9af7', '#f2d06b', '#ff9e6b'];
+        if (routes) {
+            routes.forEach(function(r, ri){
+                ctx.strokeStyle = palette[ri % palette.length];
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                for (var i = 0; i < r.length; i++) {
+                    var n = net.nodes[r[i]];
+                    if (i === 0) ctx.moveTo(n.x, n.y); else ctx.lineTo(n.x, n.y);
+                }
+                ctx.stroke();
+            });
+        }
+
+        // nodes
+        net.nodes.forEach(function(n){
+            ctx.beginPath(); ctx.arc(n.x, n.y, 10, 0, Math.PI * 2);
+            ctx.fillStyle = '#112240'; ctx.fill();
+            ctx.strokeStyle = '#C5A059'; ctx.lineWidth = 1.5; ctx.stroke();
+            ctx.fillStyle = '#F8F9FA'; ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+            ctx.fillText(n.id, n.x, n.y + 3);
+        });
+
+        // legend
+        if (routes) {
+            ctx.fillStyle = '#8892B0'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left';
+            routes.forEach(function(r, ri){
+                ctx.fillStyle = palette[ri % palette.length];
+                ctx.fillRect(14, 14 + ri * 18, 14, 4);
+                ctx.fillStyle = '#a8b2d1';
+                ctx.fillText('R' + (ri + 1) + ' · stops ' + r.join('-'), 32, 20 + ri * 18);
+            });
+        }
+    }
+
+    function renderResults(net, routes, evalResult, algName){
+        var el = document.getElementById('tnResults');
+        while (el.firstChild) el.removeChild(el.firstChild);
+        var tbl = document.createElement('table'); tbl.className = 'results-table';
+        var thead = document.createElement('thead'); var hr = document.createElement('tr');
+        ['Metric', 'Value'].forEach(function(h){ var th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
+        thead.appendChild(hr); tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        function row(l, v){ var tr = document.createElement('tr'); var t1 = document.createElement('td'); t1.textContent = l; tr.appendChild(t1); var t2 = document.createElement('td'); t2.textContent = v; t2.className = 'highlight'; tr.appendChild(t2); tbody.appendChild(tr); }
+        row('Nodes in network', net.nodes.length);
+        row('Corridor edges', net.edges.length);
+        row('Routes operated', routes.length);
+        row('OD pairs', net.odDemand.length);
+        row('Demand served (coverage)', (evalResult.coverage * 100).toFixed(1) + '%');
+        row('Total weighted travel time', Math.round(evalResult.totalTime).toLocaleString());
+        row('Avg time per served unit', (evalResult.totalTime / Math.max(1, evalResult.served)).toFixed(1));
+        row('Algorithm', algName);
+        tbl.appendChild(tbody); el.appendChild(tbl);
+    }
+
+    document.getElementById('tnSolve').addEventListener('click', function(){
+        var sc = sel('tnScenarios');
+        var alg = sel('tnAlg');
+        var R = parseInt(document.getElementById('tnR').value, 10);
+        var n = sc === 'small' ? 8 : sc === 'medium' ? 12 : 16;
+        var seed = 42 + n * 5 + R * 7 + (alg === 'iterative' ? 100 : 0);
+        var net = buildNetwork(n, seed);
+        var cands = generateRoutes(net, 6);
+        var routes = selectRoutesGreedy(net, R, cands);
+        if (alg === 'iterative') {
+            // simple improvement: try swapping each route with nearest candidate
+            for (var pass = 0; pass < 3; pass++) {
+                for (var i = 0; i < routes.length; i++) {
+                    var bestSwap = -1, bestGain = 0;
+                    var currT = evaluate(net, routes).totalTime;
+                    for (var c = 0; c < Math.min(30, cands.length); c++) {
+                        if (routes.some(function(r){ return r.join('-') === cands[c].join('-'); })) continue;
+                        var trial = routes.slice(); trial[i] = cands[c];
+                        var newT = evaluate(net, trial).totalTime;
+                        if (currT - newT > bestGain) { bestGain = currT - newT; bestSwap = c; }
+                    }
+                    if (bestSwap >= 0) routes[i] = cands[bestSwap];
+                }
+            }
+        }
+        var ev = evaluate(net, routes);
+        draw(net, routes);
+        var algName = alg === 'direct' ? 'Direct-demand greedy' : 'Iterative improvement';
+        renderResults(net, routes, ev, algName);
+        var status = document.getElementById('tnStatus');
+        while (status.firstChild) status.removeChild(status.firstChild);
+        var s = document.createElement('strong'); s.textContent = 'Solved.'; status.appendChild(s);
+        status.appendChild(document.createTextNode(' ' + algName + ' selected ' + routes.length + ' routes covering '));
+        var s2 = document.createElement('strong'); s2.textContent = (ev.coverage * 100).toFixed(1) + '%'; status.appendChild(s2);
+        status.appendChild(document.createTextNode(' of OD demand. Rerun with more routes or different algorithm to compare.'));
+    });
+
+    (function initial(){
+        var net = buildNetwork(8, 42 + 40 + 21);
+        draw(net, null);
+    })();
 })();
 </script>
-
 </body>
 </html>
