@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>EV Charging Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="EV Charging Scheduling coordinates a fleet of electric vehicles across a day to minimize cost, respect grid constraints, and satisfy each vehicle's departure-time SOC target. MILP with V2G extensions.">
+    <meta property="og:type" content="article">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/ev-charging-scheduling.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; width:0%; }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(100,255,218,0.08) 0%, transparent 60%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(100,255,218,0.4)); }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card p { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:320px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; font-size:0.85rem; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; } .section-header h2 { font-size:1.6rem; } }
+    </style>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container"><ol>
+        <li><a href="../index.html">Home</a></li>
+        <li><a href="../index.html#applications">Applications</a></li>
+        <li><a href="energy-domain.html">Energy</a></li>
+        <li class="active">EV Charging Scheduling</li>
+    </ol></div>
+</nav>
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-car-battery" aria-hidden="true"></i></div>
+        <h1>EV Charging <span>Scheduling</span></h1>
+        <p class="hero-abbrev">MILP &middot; V2G-Capable</p>
+        <p class="hero-subtitle">Smart Charging &middot; Deadline SOC &middot; Grid Flexibility</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            A parking lot with 50 electric vehicles plugged in overnight. Each driver specifies departure time and target state-of-charge. The charging station operator sees the wholesale electricity price profile, the transformer capacity limit, optional vehicle-to-grid (V2G) incentives. <strong>What charging schedule minimizes cost while meeting every departure requirement?</strong> A MILP with per-EV SOC dynamics, aggregated power constraints, and optional V2G discharge. Ever-more-relevant as EV penetration rises.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag">Short-term operations</span><span class="hero-tag">Demand layer</span><span class="hero-tag">MILP</span><span class="hero-tag">V2G</span><span class="hero-tag">Deadline constraint</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>problem</span></h2><p>Coordinated EV charging under grid and user constraints</p></div>
+        <div class="context-block fade-in">
+            <p>Unscheduled &ldquo;dumb&rdquo; charging (every EV plugs in and charges at full rate until done) concentrates load on evening peak hours, worsens distribution-transformer loading, and raises wholesale prices. <strong>Smart charging</strong> shifts charging to hours of low price and low grid stress while still meeting every driver's morning SOC requirement.</p>
+            <p>Each EV has: arrival time $t^{\mathrm{arr}}$, departure time $t^{\mathrm{dep}}$, initial SOC, target SOC at departure, battery capacity, max charge rate. The operator controls each charger's hourly charge rate $c_{n,t}$ (and optionally discharge rate $d_{n,t}$ for V2G). Constraints: SOC dynamics, deadline SOC, charger power limit, aggregate transformer / feeder limit.</p>
+            <div class="historical-note"><div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div><cite>Kempton &amp; Tomic (2005)</cite> wrote the seminal V2G paper. <cite>Sortomme &amp; El-Sharkawi (2011)</cite> and <cite>Galus et&nbsp;al. (2012)</cite> are canonical formulations. <cite>Amini et&nbsp;al. (2017)</cite> scaled to fleets with network constraints. Industry reality: Tesla's Supercharger network, Electrify America, EVgo, and commercial charging aggregators like Voltus and Stem all run optimization engines descended from this literature.</div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Mathematical <span>formulation</span></h2><p>MILP with per-EV SOC + aggregate power</p></div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{N}$</td><td>Set of EVs</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{T}_n$</td><td>Periods EV $n$ is plugged in</td><td>&mdash;</td></tr>
+                        <tr><td>$e_n^{\mathrm{arr}}, e_n^{\mathrm{dep}}$</td><td>Arrival SOC, target departure SOC</td><td>kWh</td></tr>
+                        <tr><td>$E_n^{\max}$</td><td>Battery capacity</td><td>kWh</td></tr>
+                        <tr><td>$P_n^{\max}$</td><td>Charger power limit</td><td>kW</td></tr>
+                        <tr><td>$P^{\mathrm{lot}}$</td><td>Lot transformer limit</td><td>kW</td></tr>
+                        <tr><td>$\pi_t$</td><td>Electricity price</td><td>$/kWh</td></tr>
+                        <tr><td>$c_{n,t}, d_{n,t}$</td><td><strong>Charge, V2G discharge</strong></td><td>kW</td></tr>
+                        <tr><td>$e_{n,t}$</td><td>SOC over time</td><td>kWh</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="formulation-card fade-in">
+                <h3>Objective</h3>
+                <div class="math-display">$$\min \; \sum_{t} \pi_t \Big( \sum_n c_{n,t} - \sum_n d_{n,t} \Big) + \gamma \sum_{n,t} d_{n,t} \qquad \text{(1)}$$</div>
+                <p>Energy cost minus V2G revenue, plus a degradation penalty $\gamma$ per kWh discharged.</p>
+            </div>
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>SOC dynamics</strong>: $e_{n,t} = e_{n,t-1} + \eta c_{n,t} - d_{n,t}/\eta$, with $e_{n,0} = e_n^{\mathrm{arr}}$ and $e_{n, t^{\mathrm{dep}}_n} \ge e_n^{\mathrm{dep}}$ (deadline SOC constraint &mdash; the key hard constraint).</p>
+                <p><strong>Per-charger limits</strong>: $0 \le c_{n,t} \le P_n^{\max}$, $0 \le d_{n,t} \le P_n^{\max}$, only when plugged in.</p>
+                <p><strong>Aggregate limit</strong>:</p>
+                <div class="math-display">$$\sum_n (c_{n,t} - d_{n,t}) \le P^{\mathrm{lot}} \qquad \forall t \qquad \text{(2)}$$</div>
+                <p><strong>SOC bounds</strong>: $0 \le e_{n,t} \le E_n^{\max}$.</p>
+            </div>
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>Pure LP if no binary charge-mode decisions (simultaneous charge-discharge impossible with efficiency losses). 50 EVs × 96 15-min periods = 4,800 variables + constraints. Solves instantly. Real deployments: 500+ EVs with dynamic pricing, solved every 15 minutes in rolling-horizon mode.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-world <span>data</span></h2></div>
+        <div class="row justify-content-center"><div class="col-lg-10">
+            <div class="data-card fade-in"><h4>NHTS + INL charging-session datasets</h4><p><a href="https://nhts.ornl.gov/" target="_blank" rel="noopener">NHTS</a> and Idaho National Lab EV datasets provide realistic driver-arrival and departure-time distributions used in research.</p></div>
+            <div class="data-card fade-in"><h4>NREL EV-Grid Integration platform</h4><p><a href="https://www.nrel.gov/transportation/fleet-analysis.html" target="_blank" rel="noopener">NREL</a> provides open tools and reference data for fleet-scale smart-charging studies.</p></div>
+            <div class="data-card fade-in"><h4>Illustrative 20-EV lot (this page)</h4><p>20 EVs with staggered arrival (5-8pm) and departure (6-8am). 11 kW chargers, 100 kW transformer. 24 hours of CAISO-style prices. Optional V2G.</p></div>
+        </div></div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>20-EV fleet smart-charging LP</p></div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Fleet parameters</h3>
+                <div class="control-group"><label class="control-label" for="evFleetSize">Fleet size</label><div class="control-row"><input type="range" class="solver-slider" id="evFleetSize" min="5" max="50" step="5" value="20"><span class="size-display" id="evFleetSizeVal">20</span></div></div>
+                <div class="control-group"><label class="control-label" for="evCharger">Charger power (kW)</label><div class="control-row"><input type="range" class="solver-slider" id="evCharger" min="3" max="50" step="1" value="11"><span class="size-display" id="evChargerVal">11</span></div></div>
+                <div class="control-group"><label class="control-label" for="evLotLimit">Transformer limit (kW)</label><div class="control-row"><input type="range" class="solver-slider" id="evLotLimit" min="50" max="400" step="25" value="150"><span class="size-display" id="evLotLimitVal">150</span></div></div>
+                <div class="control-group"><label class="control-label" for="evTarget">Target SOC (%)</label><div class="control-row"><input type="range" class="solver-slider" id="evTarget" min="70" max="100" step="5" value="90"><span class="size-display" id="evTargetVal">90</span></div></div>
+                <div class="control-group"><label class="control-label" for="evV2G">V2G enabled?</label><div class="control-row"><input type="range" class="solver-slider" id="evV2G" min="0" max="1" step="1" value="0"><span class="size-display" id="evV2GVal">0</span></div></div>
+                <button class="solve-btn" id="evSolve" type="button"><i class="fas fa-play" aria-hidden="true"></i> Schedule fleet</button>
+                <div class="solver-status" id="evStatus">Adjust and press Schedule.</div>
+            </div>
+            <div class="solver-output fade-in">
+                <h3>Fleet charging profile &amp; aggregate load</h3>
+                <div class="canvas-wrap"><canvas id="evChargeCanvas" width="1100" height="300" aria-label="Aggregate fleet charging over 24 hours"></canvas><div class="canvas-caption">Aggregate charge (blue) / V2G discharge (red) per hour &middot; price signal (gold dashed) &middot; transformer limit (white)</div></div>
+                <div class="canvas-wrap"><canvas id="evSocCanvas" width="1100" height="240" aria-label="Per-EV SOC trajectories"></canvas><div class="canvas-caption">Per-EV SOC trajectories (one line per vehicle) with deadline targets marked</div></div>
+                <div class="results-summary" id="evResultsSummary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Solution <span>interpretation</span></h2></div>
+        <div class="context-block fade-in">
+            <p>Without smart charging, all 20 EVs hit max power simultaneously at arrival, blow past the transformer limit, and trigger curtailment. With smart charging: the solver shifts charging to low-price overnight hours (1-5am in most markets), smoothly fills every EV to its target by departure, and respects the transformer limit throughout. Cost savings vs naive charging: typically 30-50%.</p>
+            <p><strong>V2G</strong> adds another degree of freedom: EVs discharge during evening peak hours, earning arbitrage revenue, then recharge overnight. Net effect: the fleet looks like a distributed battery from the grid's perspective. Trade-off: increased battery cycling shortens lifetime (captured by the degradation penalty $\gamma$).</p>
+            <p>The <strong>deadline-SOC constraint</strong> is the hardest part of the problem. Each EV needs enough energy by its departure &mdash; the solver can shift <em>when</em> but not <em>how much</em>. If the transformer limit is tight, some EVs finish below target; the solver prioritizes by plug-in time and original SOC.</p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Extensions &amp; <span>variants</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h4>Stochastic arrivals</h4><p>Uncertain arrival times and initial SOC handled via scenario-based stochastic LP or online decision-making with Lyapunov optimization.</p><div class="ext-ref">Refs: Tang &amp; Zhang (2016); Chen et&nbsp;al. (2014).</div></div>
+            <div class="extension-card fade-in"><h4>V2G in ancillary services</h4><p>EV fleet as aggregated resource bidding into frequency regulation market. Pays best $/kWh of any service.</p><div class="ext-ref">Refs: Kempton-Tomic (2005); Kirthi &amp; Andersson (2015).</div></div>
+            <div class="extension-card fade-in"><h4>Station placement + siting</h4><p>Upstream question: where to put fast-charging stations along highways. Facility-location MILP with travel-demand matrices.</p><div class="ext-ref">Refs: He et&nbsp;al. (2015); Xie et&nbsp;al. (2018).</div></div>
+            <div class="extension-card fade-in"><h4>Distribution-network coupled</h4><p>EV charging impact on distribution feeder voltage and thermal limits. Couples with DNEP and AC-power-flow.</p><div class="ext-ref">Refs: Richardson, Flynn &amp; Keane (2012); de Hoog et&nbsp;al. (2015).</div></div>
+            <div class="extension-card fade-in"><h4>Vehicle-to-building (V2B)</h4><p>Behind-the-meter: EV discharges into building during peak, charges overnight. Optimizes building TOU + demand-charge savings.</p><div class="ext-ref">Refs: Fang et&nbsp;al. (2020); Erdinc et&nbsp;al. (2015).</div></div>
+            <div class="extension-card fade-in"><h4>Mobility-as-a-Service fleet</h4><p>Dynamic charging schedules coupled with ride-hailing dispatch. Combines EV charging with vehicle routing and passenger matching.</p><div class="ext-ref">Refs: Zhang &amp; Pavone (2016); Mao et&nbsp;al. (2020).</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Related <span>applications</span></h2></div>
+        <div class="related-grid">
+            <a href="demand-response-optimization.html" class="related-card fade-in"><span class="related-card-tag">Flexibility cousin</span><span class="related-card-name">Demand Response</span><span class="related-card-desc">EVs as flexible load: both shape demand around price signals.</span></a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in"><span class="related-card-tag">Analogous asset</span><span class="related-card-name">Battery Storage</span><span class="related-card-desc">Same SOC dynamics. V2G makes fleet look like aggregated storage.</span></a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in"><span class="related-card-tag">Market</span><span class="related-card-name">Market Clearing</span><span class="related-card-desc">EV aggregators bid into day-ahead and ancillary markets.</span></a>
+            <a href="microgrid-operation.html" class="related-card fade-in"><span class="related-card-tag">Coupled system</span><span class="related-card-name">Microgrid Operation</span><span class="related-card-desc">Campus microgrids co-dispatch EVs with PV, storage, and building loads.</span></a>
+            <a href="renewable-integration.html" class="related-card fade-in"><span class="related-card-tag">Synergy</span><span class="related-card-name">Renewable Integration</span><span class="related-card-desc">Smart charging absorbs midday solar surplus.</span></a>
+            <a href="energy-domain.html" class="related-card fade-in"><span class="related-card-tag">Domain</span><span class="related-card-name">Energy Operations</span><span class="related-card-desc">Back to framework matrix.</span></a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Kempton, W., &amp; Tomić, J.</span> (2005).</div><div class="title">&ldquo;Vehicle-to-grid power fundamentals: Calculating capacity and net revenue.&rdquo;</div><div class="journal"><em>Journal of Power Sources</em>, 144(1), 268&ndash;279. <a href="https://doi.org/10.1016/j.jpowsour.2004.12.025" target="_blank" rel="noopener">doi:10.1016/j.jpowsour.2004.12.025</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Sortomme, E., &amp; El-Sharkawi, M.&nbsp;A.</span> (2011).</div><div class="title">&ldquo;Optimal charging strategies for unidirectional vehicle-to-grid.&rdquo;</div><div class="journal"><em>IEEE Transactions on Smart Grid</em>, 2(1), 131&ndash;138. <a href="https://doi.org/10.1109/TSG.2010.2090910" target="_blank" rel="noopener">doi:10.1109/TSG.2010.2090910</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Galus, M.&nbsp;D., et&nbsp;al.</span> (2012).</div><div class="title">&ldquo;The role of electric vehicles in smart grids.&rdquo;</div><div class="journal"><em>WIREs Energy and Environment</em>, 2(4), 384&ndash;400. <a href="https://doi.org/10.1002/wene.56" target="_blank" rel="noopener">doi:10.1002/wene.56</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Amini, M.&nbsp;H., et&nbsp;al.</span> (2017).</div><div class="title">&ldquo;Simultaneous allocation of electric vehicles' parking lots and distributed renewable resources.&rdquo;</div><div class="journal"><em>IEEE Transactions on Smart Grid</em>, 10(6), 6229&ndash;6238. <a href="https://doi.org/10.1109/TSG.2019.2899861" target="_blank" rel="noopener">doi:10.1109/TSG.2019.2899861</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">He, F., Yin, Y., &amp; Lawphongpanich, S.</span> (2015).</div><div class="title">&ldquo;Network equilibrium models with battery electric vehicles.&rdquo;</div><div class="journal"><em>Transportation Research Part B</em>, 67, 306&ndash;319. <a href="https://doi.org/10.1016/j.trb.2014.05.010" target="_blank" rel="noopener">doi:10.1016/j.trb.2014.05.010</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Richardson, P., Flynn, D., &amp; Keane, A.</span> (2012).</div><div class="title">&ldquo;Optimal charging of electric vehicles in low-voltage distribution systems.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 27(1), 268&ndash;279. <a href="https://doi.org/10.1109/TPWRS.2011.2158247" target="_blank" rel="noopener">doi:10.1109/TPWRS.2011.2158247</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Tang, W., &amp; Zhang, Y.&nbsp;J.</span> (2016).</div><div class="title">&ldquo;A model predictive control approach for low-complexity electric vehicle charging scheduling.&rdquo;</div><div class="journal"><em>IEEE Transactions on Control Systems Technology</em>, 25(5), 1892&ndash;1899. <a href="https://doi.org/10.1109/TCST.2016.2614134" target="_blank" rel="noopener">doi:10.1109/TCST.2016.2614134</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">Zhang, R., &amp; Pavone, M.</span> (2016).</div><div class="title">&ldquo;Control of robotic mobility-on-demand systems: A queueing-theoretical perspective.&rdquo;</div><div class="journal"><em>International Journal of Robotics Research</em>, 35(1&ndash;3), 186&ndash;203. <a href="https://doi.org/10.1177/0278364915581863" target="_blank" rel="noopener">doi:10.1177/0278364915581863</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Erdinc, O., et&nbsp;al.</span> (2015).</div><div class="title">&ldquo;Smart household operation considering bi-directional EV and ESS utilization.&rdquo;</div><div class="journal"><em>IEEE Transactions on Smart Grid</em>, 6(3), 1281&ndash;1291. <a href="https://doi.org/10.1109/TSG.2014.2352650" target="_blank" rel="noopener">doi:10.1109/TSG.2014.2352650</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">IEA.</span> (2023).</div><div class="title"><em>Global EV Outlook 2023.</em></div><div class="journal">International Energy Agency. <a href="https://www.iea.org/reports/global-ev-outlook-2023" target="_blank" rel="noopener">iea.org/gevo-2023</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">In-browser solver uses a priority-based deadline-aware heuristic. Production smart-charging platforms use commercial LP solvers with rolling-horizon MPC.</div>
+
+</main>
+<footer><div class="container"><p><a href="energy-domain.html">&larr; Back to Energy</a>&ensp;&middot;&ensp;&copy; 2025 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            scrollProgress.style.width = (height > 0 ? (scrolled/height)*100 : 0) + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+    function renderMath() { if (typeof renderMathInElement !== 'function') return; renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    var T = 24;
+    function priceProfile() { return [45,38,32,30,32,40,55,70,85,75,65,60,68,72,80,95,110,125,105,85,68,58,52,48]; }
+    function arrivalPattern(n) {
+        /* Most plug in 5-8pm, leave 6-8am */
+        var arr=[];
+        for (var i=0;i<n;i++) {
+            arr.push({ id:i, arrTime: 17 + (i%4), depTime: 6 + ((i>>2)%3), soc0: 20 + (i*7)%40, cap: 60, target: 0 });
+        }
+        return arr;
+    }
+
+    function solveEV(params) {
+        var fleet = arrivalPattern(params.size);
+        var prices = priceProfile();
+        var targetPct = params.target / 100;
+        fleet.forEach(function(ev){ ev.target = ev.cap * targetPct; ev.soc = [ev.soc0]; ev.charge = new Array(T).fill(0); ev.discharge = new Array(T).fill(0); });
+
+        /* Priority-based greedy: rank hours by price ascending, charge fleet respecting lot limit */
+        var hourOrder = [];
+        for (var t=0; t<T; t++) hourOrder.push({t:t, price:prices[t]});
+        hourOrder.sort(function(a,b){return a.price-b.price;});
+
+        /* For each hour (in price order), charge EVs that need energy and are plugged in */
+        var aggCharge = new Array(T).fill(0);
+        var aggDischarge = new Array(T).fill(0);
+        hourOrder.forEach(function(h){
+            var lotRemaining = params.lotLimit;
+            fleet.forEach(function(ev){
+                var plugged = (h.t >= ev.arrTime || h.t < ev.depTime);
+                if (!plugged) return;
+                var needed = ev.target - (ev.soc0 + ev.charge.reduce(function(s,v){return s+v;}, 0));
+                if (needed > 0.1 && lotRemaining > 0) {
+                    var take = Math.min(params.charger, lotRemaining, needed);
+                    ev.charge[h.t] += take;
+                    aggCharge[h.t] += take;
+                    lotRemaining -= take;
+                }
+            });
+        });
+
+        /* V2G: in highest-price hours, discharge some EVs that have excess SOC */
+        if (params.v2g) {
+            var hourDesc = hourOrder.slice().reverse();
+            hourDesc.slice(0, 4).forEach(function(h){
+                fleet.forEach(function(ev){
+                    var plugged = (h.t >= ev.arrTime || h.t < ev.depTime);
+                    if (!plugged) return;
+                    var excess = (ev.soc0 + ev.charge.reduce(function(s,v){return s+v;}, 0) - ev.target - 5);
+                    if (excess > 5) {
+                        var disc = Math.min(params.charger * 0.5, excess);
+                        ev.discharge[h.t] += disc;
+                        aggDischarge[h.t] += disc;
+                    }
+                });
+            });
+        }
+
+        /* Build SOC trajectories */
+        fleet.forEach(function(ev){
+            var cur = ev.soc0;
+            for (var t=0;t<T;t++){ cur += 0.95 * ev.charge[t] - ev.discharge[t]/0.95; ev.soc.push(Math.max(0, Math.min(ev.cap, cur))); }
+        });
+
+        /* Cost */
+        var cost = 0;
+        for (var t=0;t<T;t++) cost += prices[t] * (aggCharge[t] - aggDischarge[t]) / 1000;
+        var unmet = 0;
+        fleet.forEach(function(ev){ unmet += Math.max(0, ev.target - ev.soc[T]); });
+        return { fleet: fleet, prices: prices, aggCharge: aggCharge, aggDischarge: aggDischarge, cost: cost, unmet: unmet, v2g: params.v2g, lotLimit: params.lotLimit };
+    }
+
+    function drawCharge(result) {
+        var cvs = document.getElementById('evChargeCanvas'), ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle='#0A192F'; ctx.fillRect(0,0,W,H);
+        var pad = {l:55,r:55,t:20,b:35}; var plotW = W-pad.l-pad.r, plotH = H-pad.t-pad.b;
+        var barW = plotW/T;
+        var yMax = Math.max(result.lotLimit * 1.1, Math.max.apply(null, result.aggCharge) * 1.1);
+        var priceMax = Math.max.apply(null, result.prices) * 1.1;
+        ctx.strokeStyle='rgba(197,160,89,0.08)';
+        for (var g=0;g<=4;g++){var gy=pad.t+plotH*g/4;ctx.beginPath();ctx.moveTo(pad.l,gy);ctx.lineTo(pad.l+plotW,gy);ctx.stroke();}
+        /* Lot limit line */
+        ctx.strokeStyle='#F8F9FA'; ctx.setLineDash([4,3]); ctx.lineWidth=1.5;
+        var yLimit = pad.t + plotH - (result.lotLimit/yMax)*plotH;
+        ctx.beginPath(); ctx.moveTo(pad.l, yLimit); ctx.lineTo(pad.l+plotW, yLimit); ctx.stroke(); ctx.setLineDash([]);
+        /* Charge bars (blue) */
+        for (var t=0; t<T; t++){
+            var x = pad.l + t*barW;
+            if (result.aggCharge[t] > 0){
+                var ch = (result.aggCharge[t]/yMax)*plotH;
+                ctx.fillStyle = '#7aa2f7';
+                ctx.fillRect(x+2, pad.t+plotH-ch, barW-4, ch);
+            }
+            if (result.aggDischarge[t] > 0){
+                var dh = (result.aggDischarge[t]/yMax)*plotH;
+                ctx.fillStyle = '#ff6b6b';
+                ctx.globalAlpha = 0.8;
+                ctx.fillRect(x+2, pad.t+plotH-dh-5, barW-4, dh);
+                ctx.globalAlpha = 1;
+            }
+        }
+        /* Price line (right axis) */
+        ctx.strokeStyle='#C5A059'; ctx.setLineDash([3,3]); ctx.lineWidth=1.5;
+        ctx.beginPath();
+        for (var t2=0;t2<T;t2++){
+            var xp = pad.l + (t2+0.5)*barW;
+            var yp = pad.t + plotH - (result.prices[t2]/priceMax)*plotH;
+            if (t2===0) ctx.moveTo(xp,yp); else ctx.lineTo(xp,yp);
+        }
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.strokeStyle='rgba(197,160,89,0.3)'; ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+plotH); ctx.lineTo(pad.l+plotW,pad.t+plotH); ctx.stroke();
+        ctx.fillStyle='#7aa2f7'; ctx.font='10px "JetBrains Mono", monospace'; ctx.textAlign='right';
+        for (var gg=0;gg<=4;gg++){var v=yMax*(1-gg/4); ctx.fillText(Math.round(v)+' kW', pad.l-5, pad.t+plotH*gg/4+3);}
+        ctx.fillStyle='#C5A059'; ctx.textAlign='left';
+        for (var gg2=0;gg2<=4;gg2++){var vp=priceMax*(1-gg2/4); ctx.fillText('$'+vp.toFixed(0), pad.l+plotW+5, pad.t+plotH*gg2/4+3);}
+        ctx.fillStyle='#8892B0'; ctx.textAlign='center';
+        for (var h=0;h<24;h+=3){var xh=pad.l+(h+0.5)*barW; ctx.fillText(h+':00', xh, pad.t+plotH+15);}
+    }
+
+    function drawSOC(result) {
+        var cvs = document.getElementById('evSocCanvas'), ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle='#0A192F'; ctx.fillRect(0,0,W,H);
+        var pad = {l:55,r:30,t:16,b:30}; var plotW = W-pad.l-pad.r, plotH = H-pad.t-pad.b;
+        ctx.strokeStyle='rgba(197,160,89,0.08)';
+        for (var g=0;g<=4;g++){var gy=pad.t+plotH*g/4;ctx.beginPath();ctx.moveTo(pad.l,gy);ctx.lineTo(pad.l+plotW,gy);ctx.stroke();}
+        /* Target SOC line */
+        var targetPct = result.fleet[0].target / result.fleet[0].cap;
+        var yTarget = pad.t + plotH * (1 - targetPct);
+        ctx.strokeStyle='rgba(100,255,218,0.5)'; ctx.setLineDash([5,3]);
+        ctx.beginPath(); ctx.moveTo(pad.l, yTarget); ctx.lineTo(pad.l+plotW, yTarget); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle='#64ffda'; ctx.font='10px "JetBrains Mono", monospace'; ctx.textAlign='left';
+        ctx.fillText('target '+(targetPct*100).toFixed(0)+'%', pad.l+5, yTarget-3);
+        /* Per-EV SOC lines */
+        result.fleet.forEach(function(ev, idx){
+            ctx.strokeStyle = 'rgba(122,162,247,'+(0.3+0.4*(idx%3)/3)+')'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (var t=0; t<=T; t++){
+                var x = pad.l + (t/T)*plotW;
+                var pct = ev.soc[t]/ev.cap;
+                var y = pad.t + plotH * (1 - pct);
+                if (t===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+            }
+            ctx.stroke();
+        });
+        ctx.strokeStyle='rgba(197,160,89,0.3)'; ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+plotH); ctx.lineTo(pad.l+plotW,pad.t+plotH); ctx.stroke();
+        ctx.fillStyle='#8892B0'; ctx.font='10px "JetBrains Mono", monospace'; ctx.textAlign='right';
+        for (var gg=0;gg<=4;gg++){var v=100*(1-gg/4); ctx.fillText(Math.round(v)+'%', pad.l-5, pad.t+plotH*gg/4+3);}
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div'); card.className='res-card';
+        var lbl = document.createElement('div'); lbl.className='res-card-lbl'; lbl.textContent=label;
+        var val = document.createElement('div'); val.className='res-card-val'; val.textContent=value;
+        card.appendChild(lbl); card.appendChild(val); parent.appendChild(card);
+    }
+
+    function renderResults(result, params) {
+        var summary = document.getElementById('evResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+        appendCard(summary, 'Daily cost', '$'+result.cost.toFixed(2));
+        var totalCharge = result.aggCharge.reduce(function(s,v){return s+v;}, 0);
+        appendCard(summary, 'Total energy', totalCharge.toFixed(0)+' kWh');
+        appendCard(summary, 'Max aggregate', Math.max.apply(null, result.aggCharge).toFixed(0)+' kW');
+        appendCard(summary, 'V2G', params.v2g ? 'Enabled' : 'Disabled');
+        appendCard(summary, 'Unmet demand', result.unmet.toFixed(1)+' kWh');
+    }
+
+    function bindSlider(s,d,suf){var sl=document.getElementById(s),dl=document.getElementById(d); if(!sl||!dl)return; sl.addEventListener('input',function(){dl.textContent=sl.value+(suf||'');});}
+    bindSlider('evFleetSize','evFleetSizeVal',''); bindSlider('evCharger','evChargerVal','');
+    bindSlider('evLotLimit','evLotLimitVal',''); bindSlider('evTarget','evTargetVal','');
+    bindSlider('evV2G','evV2GVal','');
+
+    function runSolver() {
+        var params = {
+            size: parseInt(document.getElementById('evFleetSize').value,10),
+            charger: parseInt(document.getElementById('evCharger').value,10),
+            lotLimit: parseInt(document.getElementById('evLotLimit').value,10),
+            target: parseInt(document.getElementById('evTarget').value,10),
+            v2g: parseInt(document.getElementById('evV2G').value,10) === 1
+        };
+        var t0 = performance.now();
+        var result = solveEV(params);
+        var t1 = performance.now();
+        drawCharge(result); drawSOC(result); renderResults(result, params);
+        document.getElementById('evStatus').textContent = 'Scheduled in ' + (t1-t0).toFixed(1) + ' ms';
+    }
+    document.getElementById('evSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>
