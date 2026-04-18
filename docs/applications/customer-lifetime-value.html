@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Customer Lifetime Value | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Estimate per-customer future value with Buy-Til-You-Die models (Pareto/NBD, BG/NBD) and use CLV to drive acquisition, retention, and personalisation budget allocation. Fader-Hardie-Lee 2005 framework with interactive solver.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/customer-lifetime-value.html">
+    <meta property="og:title" content="Customer Lifetime Value">
+    <meta property="og:description" content="BG/NBD + gamma-gamma CLV with interactive solver.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Customer Lifetime Value">
+    <meta name="twitter:description" content="BG/NBD CLV estimation.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/customer-lifetime-value.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(100,255,218,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Retail & E-Commerce", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/retail-domain.html" },
+        { "@type": "ListItem", "position": 3, "name": "Customer Lifetime Value", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/customer-lifetime-value.html" }
+      ] }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Customer Lifetime Value</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-coins" aria-hidden="true"></i></div>
+        <h1>Customer Lifetime <span>Value</span></h1>
+        <p class="hero-subtitle">BG/NBD &middot; Gamma-Gamma &middot; Buy-Til-You-Die</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Estimate <strong>per-customer expected future value</strong> from past
+            recency-frequency-monetary (RFM) data using the <em>Buy-Til-You-Die</em>
+            family of models &mdash; <strong>BG/NBD</strong> for transaction frequency
+            (with a Beta-Geometric drop-out process) and <strong>gamma-gamma</strong>
+            for spend per transaction. CLV underpins acquisition-budget allocation,
+            retention-treatment targeting, and personalisation reward shaping.
+            Foundational paper: Fader, Hardie &amp; Lee (2005).
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>Customer-centric retail starts with knowing what a customer is worth</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">5&times;</div><div class="impact-label">Cost ratio of acquiring a new customer vs retaining an existing one &mdash; the structural reason CLV is the right currency for marketing decisions.</div><div class="impact-src">Source: Bain &amp; Company; HBR retention research (long-cited industry benchmark).</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">~80/20</div><div class="impact-label">Pareto split of CLV in most retail bases &mdash; top 20% of customers generate ~80% of margin. Identifying them shapes loyalty and personalisation budgets.</div><div class="impact-src">Source: Fader (2012), <em>Customer Centricity</em>.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">Pareto/NBD</div><div class="impact-label">Schmittlein-Morrison-Colombo (1987) original model; BG/NBD (Fader et al. 2005) is the closed-form approximation that practitioners actually use.</div><div class="impact-src">Source: Schmittlein, Morrison &amp; Colombo (1987), <em>Management Science</em>.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">+10&ndash;30%</div><div class="impact-label">Marketing-ROI lift documented when retention spend is allocated proportional to CLV vs. uniform-per-customer or revenue-only.</div><div class="impact-src">Source: Reinartz &amp; Kumar (2003), <em>Journal of Marketing</em>.</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Strategic input to acquisition, retention, loyalty, and personalisation</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            CLV is not itself a decision &mdash; it is an <em>estimate</em> that downstream decisions consume. The classic uses are: <em>acquisition</em> (don&rsquo;t pay more than expected CLV to acquire a customer), <em>retention</em> (allocate save-the-customer spend in proportion to expected CLV), <em>loyalty</em> (which segments are worth a contract), and <em>personalisation</em> (CLV-aware reward shaping in the recommender). Decisions live in <a href="loyalty-program-design.html">loyalty design</a>, <a href="personalization-recommendation.html">personalisation</a>, <a href="promotional-planning.html">promotional planning</a>; CLV gives them a common scoring axis.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Transaction history</strong><span class="chain-sub">x, t_x, T per customer</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Estimate CLV</strong><span class="chain-sub">BG/NBD + GG</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Score &amp; rank</strong><span class="chain-sub">CLV percentile</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Allocate budget</strong><span class="chain-sub">retention, loyalty</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>BG/NBD frequency model + gamma-gamma spend model</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">Decision support</div><div class="problem-meta-value">Estimation, not optimisation</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Statistical model</div><div class="problem-meta-value">BG/NBD + Gamma-Gamma</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Inputs per customer</div><div class="problem-meta-value">RFM (x, t_x, T)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Fader-Hardie-Lee (2005)</div></div>
+            </div>
+
+            <h3>Per-customer summary statistics (RFM)</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(x\)</td><td>Number of repeat transactions observed (frequency)</td><td>integer</td></tr>
+                    <tr><td>\(t_x\)</td><td>Time of last transaction (recency)</td><td>weeks</td></tr>
+                    <tr><td>\(T\)</td><td>Length of observation window</td><td>weeks</td></tr>
+                    <tr><td>\(\bar{m}\)</td><td>Average spend per transaction (monetary)</td><td>$</td></tr>
+                </tbody>
+            </table>
+
+            <h3>BG/NBD frequency model</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Each customer has a latent purchase rate \(\lambda\) (Poisson) and a latent drop-out probability \(p\) per transaction (Beta-Geometric). Heterogeneity across customers is modelled by gamma and beta priors:</p>
+            <div class="formula-block">
+                $$\lambda \sim \mathrm{Gamma}(r, \alpha) \qquad p \sim \mathrm{Beta}(a, b)$$
+            </div>
+            <p style="color:var(--slate-light);font-size:0.92rem;">After a customer makes a transaction, they drop out with probability \(p\); otherwise they remain &ldquo;alive&rdquo;. The expected number of future transactions in a window of length \(t^{\ast}\), given history \((x, t_x, T)\), has a closed form (Fader et al. 2005, Eq. 7):</p>
+            <div class="formula-block">
+                $$\mathbb{E}\bigl[Y(t^{\ast}) \,\big|\, x, t_x, T\bigr] \;=\; \frac{(a + b + x - 1) / (a - 1) \,\bigl[1 - (\alpha / (\alpha + t^{\ast}))^{r+x} \,_2 F_1(\cdot)\bigr]}{1 + \mathbb{1}\{x &gt; 0\} \cdot (a / (b + x - 1)) \cdot (\alpha + T)^{r+x} / (\alpha + t_x)^{r+x}}$$
+            </div>
+            <p class="formula-caption">Practitioners use the <code>lifetimes</code> Python package or its R equivalent. The hypergeometric \(_2 F_1\) is evaluated numerically. For exposition we use a simplified expected-rate proxy in the solver below.</p>
+
+            <h3>Gamma-gamma spend model</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Spend per transaction is modelled separately. Each customer has a latent average-spend parameter, gamma-distributed; observed spends are gamma noise around it:</p>
+            <div class="formula-block">
+                $$\mathbb{E}[\bar M \,|\, x, \bar m] \;=\; \frac{(p \cdot \bar m \cdot x) + (q \cdot \nu)}{p \cdot x + q}$$
+            </div>
+            <p class="formula-caption">A Bayesian shrinkage estimator: blend the customer&rsquo;s observed average spend \(\bar m\) (weighted by \(p \cdot x\), proportional to evidence) with the population mean \(\nu\) (weighted by \(q\), the prior). Customers with few transactions get pulled toward the population mean; high-frequency customers keep their own average.</p>
+
+            <h3>Combined CLV (discounted)</h3>
+            <div class="formula-block">
+                $$\mathrm{CLV}_i \;=\; \mathbb{E}[Y_i(t^{\ast})] \cdot \mathbb{E}[\bar M_i] \cdot \mathrm{margin} \cdot \mathrm{DiscountFactor}(t^{\ast})$$
+            </div>
+            <p class="formula-caption">CLV = expected future transactions &times; expected spend per transaction &times; gross margin, discounted at the firm&rsquo;s cost of capital. Discount factor for continuous time is \(\int_0^{t^{\ast}} e^{-\delta t} \, dt\) per period; with monthly transactions and annual discount rate \(r\), use \((1+r)^{-1}\) per year.</p>
+
+            <h3>Decision-time use</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Sort customers by CLV; allocate retention/loyalty budget proportional to (predicted CLV) &minus; (cost-to-treat), pruning the tail where the cost dominates. The classical rule: spend up to (CLV &times; treatment-effect probability) per customer.</p>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>200 simulated customers &middot; BG/NBD-style proxy + gamma-gamma spend</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">CLV estimator</div><div class="solver-subtitle">Heterogeneous customer base &middot; CLV histogram + Pareto-share KPI</div></div>
+                <div class="problem-realism">&starf;&starf; Closed-form proxy</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="nCust">Customers</label><input type="number" id="nCust" value="200" min="20" max="1000" step="10"></div>
+                    <div class="control-group"><label for="horizon">Horizon \(t^{\ast}\) (weeks)</label><input type="number" id="horizon" value="52" min="4" max="260" step="1"><div class="control-help">Future window for CLV</div></div>
+                    <div class="control-group"><label for="margin">Gross margin</label><input type="number" id="margin" value="0.30" min="0.01" max="1" step="0.01"><div class="control-help">Fraction of spend that is profit</div></div>
+                    <div class="control-group"><label for="discount">Annual discount rate</label><input type="number" id="discount" value="0.10" min="0" max="0.50" step="0.01"><div class="control-help">Cost of capital</div></div>
+                    <div class="control-group"><label for="lambdaMean">Mean purchase rate (per yr)</label><input type="number" id="lambdaMean" value="6" min="0.5" max="50" step="0.5"></div>
+                    <div class="control-group"><label for="meanSpend">Mean spend per transaction</label><input type="number" id="meanSpend" value="35" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label for="seed">Seed</label><input type="number" id="seed" value="42" min="1" max="9999" step="1"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Estimate</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiTotal">&mdash;</div><div class="result-kpi-label">Total CLV ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiAvg">&mdash;</div><div class="result-kpi-label">Avg CLV per customer ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiTop20">&mdash;</div><div class="result-kpi-label">Top 20% share of CLV</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiZero">&mdash;</div><div class="result-kpi-label">Predicted dropouts</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiP90">&mdash;</div><div class="result-kpi-label">90th-percentile CLV ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiBudget">&mdash;</div><div class="result-kpi-label">Retention budget @ 50% CLV</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="380" aria-label="CLV histogram with Pareto cumulative curve"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059;"></span>CLV histogram</span>
+                        <span><span class="legend-swatch" style="background:#64ffda; height:14px;"></span>Cumulative CLV (Lorenz curve)</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b; height:14px;"></span>Top-20%-of-customers cutoff</span>
+                    </div>
+                </div>
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        For each simulated customer, we draw a latent purchase rate from \(\mathrm{Gamma}(r=2, \alpha = r / \lambda^{\text{mean}})\) and an alive/dropout state from \(\mathrm{Bernoulli}(0.85)\). Expected future transactions in window \(t^{\ast}\) is \(\lambda \cdot t^{\ast} \cdot \mathbb{1}\{\text{alive}\}\) (a deliberately simplified BG/NBD proxy &mdash; the full closed form involves \(_2 F_1\)). Per-transaction spend is drawn from \(\mathrm{Gamma}(\nu, \nu / m^{\text{mean}})\). CLV is the product of (expected transactions &times; expected spend &times; margin), discounted to present value at \((1+r)^{-t^{\ast}/52}\). The histogram and Lorenz curve summarise the full base; the &ldquo;top 20%&rdquo; KPI confirms the Pareto pattern.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Heavy right tail.</strong> CLV histograms are almost always right-skewed: most customers are low-value, a small minority are high-value. The mean is misleading; use the median or percentile cutoffs.</li>
+                    <li><strong>Pareto share.</strong> The top 20% typically owns 60-85% of CLV. The right number depends on category &mdash; subscriptions concentrate more, grocery less.</li>
+                    <li><strong>Dropouts dominate.</strong> Many customers never come back after the first purchase; the BG/NBD model encodes this directly via the dropout probability \(p\).</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions</h4>
+                <ul>
+                    <li>Discount rate up (10% &rarr; 25%)? &mdash; CLV shrinks; the top tail compresses.</li>
+                    <li>Horizon longer (1 year &rarr; 3 years)? &mdash; CLV grows but more uncertain; consider truncating.</li>
+                    <li>Margin halved? &mdash; total CLV halves; allocation rank doesn&rsquo;t change &mdash; budget per customer should scale by margin.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Pareto/NBD (original)</h5><p>Schmittlein-Morrison-Colombo 1987 model: continuous-time dropout, more general than BG/NBD. Closed form involves more numerical integration.</p></div>
+            <div class="extension-card fade-in"><h5>Contract / subscription CLV</h5><p>For subscription businesses, CLV simplifies to revenue / (1 - retention rate). Different model: discrete-time geometric churn.</p></div>
+            <div class="extension-card fade-in"><h5>CLV with covariates</h5><p>Time-varying covariates (channel, season, marketing exposure) added as multiplicative effects on \(\lambda\). Bayesian hierarchical extension.</p></div>
+            <div class="extension-card fade-in"><h5>Bayesian CLV (Cohort)</h5><p>Posterior distribution over CLV per customer, not just point estimate. Useful for calibrated decision-making under uncertainty.</p></div>
+            <div class="extension-card fade-in"><h5>CLV-aware acquisition</h5><p>Cap acquisition cost at expected new-customer CLV. Gupta-Lehmann 2003 acquisition / retention LP.</p></div>
+            <div class="extension-card fade-in"><h5>CLV-aware loyalty design</h5><p>Loyalty program rewards calibrated to retain high-CLV segments. Ties directly to <a href="loyalty-program-design.html">loyalty program design</a>.</p></div>
+            <div class="extension-card fade-in"><h5>RL with CLV reward</h5><p>Train a recommendation policy with long-term CLV as the reward signal, not single-session revenue. Active research frontier.</p><a href="personalization-recommendation.html">Personalisation &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Customer-base valuation</h5><p>Aggregate CLV is a balance-sheet asset (customer equity). Important in M&amp;A and valuation analyses. Gupta-Lehmann-Stuart 2004.</p></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Fader, P. S., Hardie, B. G. S. &amp; Lee, K. L. (2005).</div><div class="reference-title">RFM and CLV: Using iso-value curves for customer base analysis.</div><div class="reference-journal">Journal of Marketing Research 42(4): 415&ndash;430. <a href="https://doi.org/10.1509/jmkr.2005.42.4.415" rel="noopener">doi:10.1509/jmkr.2005.42.4.415</a> (BG/NBD canonical paper.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Schmittlein, D. C., Morrison, D. G. &amp; Colombo, R. (1987).</div><div class="reference-title">Counting your customers: Who are they and what will they do next?</div><div class="reference-journal">Management Science 33(1): 1&ndash;24. <a href="https://doi.org/10.1287/mnsc.33.1.1" rel="noopener">doi:10.1287/mnsc.33.1.1</a> (Pareto/NBD original.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Fader, P. S. &amp; Hardie, B. G. S. (2009).</div><div class="reference-title">Probability models for customer-base analysis.</div><div class="reference-journal">Journal of Interactive Marketing 23(1): 61&ndash;69. (Best practitioner overview.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Reinartz, W. J. &amp; Kumar, V. (2003).</div><div class="reference-title">The impact of customer relationship characteristics on profitable lifetime duration.</div><div class="reference-journal">Journal of Marketing 67(1): 77&ndash;99.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Gupta, S., Lehmann, D. R. &amp; Stuart, J. A. (2004).</div><div class="reference-title">Valuing customers.</div><div class="reference-journal">Journal of Marketing Research 41(1): 7&ndash;18. <a href="https://doi.org/10.1509/jmkr.41.1.7.25084" rel="noopener">doi:10.1509/jmkr.41.1.7.25084</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Fader, P. S. (2012, 2nd ed. 2020).</div><div class="reference-title">Customer Centricity: Focus on the Right Customers for Strategic Advantage.</div><div class="reference-journal">Wharton Digital Press.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Pfeifer, P. E., Haskins, M. E. &amp; Conroy, R. M. (2005).</div><div class="reference-title">Customer lifetime value, customer profitability, and the treatment of acquisition spending.</div><div class="reference-journal">Journal of Managerial Issues 17(1): 11&ndash;25.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Berger, P. D. &amp; Nasr, N. I. (1998).</div><div class="reference-title">Customer lifetime value: Marketing models and applications.</div><div class="reference-journal">Journal of Interactive Marketing 12(1): 17&ndash;30.</div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">CLV sits in the <em>Promotion &times; Strategic</em> cell &mdash; the customer-equity score that turns marketing budget into the most valuable currency: future cash flow.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational solver &middot; simplified BG/NBD-proxy and gamma-gamma &middot; production CLV uses the full hypergeometric closed form (e.g., the <code>lifetimes</code> Python package).</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    // ─── CLV solver ───
+    function mulberry32(a) {
+        return function () {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+    // Gamma sampling via Marsaglia-Tsang for shape >= 1
+    function gammaSample(rng, shape, scale) {
+        if (shape < 1) {
+            // boost: G(shape) = G(shape+1) * U^(1/shape)
+            return gammaSample(rng, shape + 1, scale) * Math.pow(rng(), 1 / shape);
+        }
+        var d = shape - 1.0 / 3.0;
+        var c = 1.0 / Math.sqrt(9.0 * d);
+        while (true) {
+            var x, v;
+            do {
+                // Box-Muller
+                var u1 = rng(), u2 = rng();
+                x = Math.sqrt(-2 * Math.log(u1)) * Math.cos(2 * Math.PI * u2);
+                v = 1.0 + c * x;
+            } while (v <= 0);
+            v = v * v * v;
+            var u = rng();
+            if (u < 1 - 0.0331 * x * x * x * x) return d * v * scale;
+            if (Math.log(u) < 0.5 * x * x + d * (1 - v + Math.log(v))) return d * v * scale;
+        }
+    }
+
+    function generateCustomers(n, lambdaMean, meanSpend, seed) {
+        var rng = mulberry32(seed);
+        var customers = [];
+        // lambda ~ Gamma(r=2, alpha = r / lambdaMean) — yields mean lambdaMean
+        var r = 2.0;
+        var lambdaScale = lambdaMean / r;
+        // Spend ~ Gamma(nu=4, scale = meanSpend / 4)
+        var nu = 4.0;
+        var spendScale = meanSpend / nu;
+        for (var i = 0; i < n; i++) {
+            var lambda = gammaSample(rng, r, lambdaScale); // per year
+            var alive = rng() < 0.85;
+            var spend = gammaSample(rng, nu, spendScale);
+            customers.push({ id: i, lambda: lambda, alive: alive, spend: spend });
+        }
+        return customers;
+    }
+
+    function computeCLV(customers, horizonWk, margin, discountAnnual) {
+        var horizonYr = horizonWk / 52.0;
+        var df = Math.pow(1.0 + discountAnnual, -horizonYr);
+        var clvs = customers.map(function (c) {
+            if (!c.alive) return 0;
+            var expectedTx = c.lambda * horizonYr; // simplified BG/NBD proxy
+            var clv = expectedTx * c.spend * margin * df;
+            return clv;
+        });
+        return clvs;
+    }
+
+    function summarise(clvs) {
+        var sorted = clvs.slice().sort(function (a, b) { return b - a; });
+        var n = sorted.length;
+        var total = sorted.reduce(function (a, b) { return a + b; }, 0);
+        var top20Count = Math.max(1, Math.floor(n * 0.2));
+        var top20Sum = sorted.slice(0, top20Count).reduce(function (a, b) { return a + b; }, 0);
+        var top20Share = total > 0 ? top20Sum / total : 0;
+        var p90 = sorted[Math.max(0, Math.floor(n * 0.10) - 1)] || 0;
+        var zeroCount = sorted.filter(function (v) { return v === 0; }).length;
+        return { total: total, avg: n > 0 ? total / n : 0, top20Share: top20Share, p90: p90, zeroCount: zeroCount, sorted: sorted };
+    }
+
+    function render(clvs) {
+        var s = summarise(clvs);
+        var budget = s.total * 0.5; // 50% of CLV as retention budget rule of thumb
+        document.getElementById('kpiTotal').textContent = '$' + s.total.toFixed(0);
+        document.getElementById('kpiAvg').textContent = '$' + s.avg.toFixed(2);
+        document.getElementById('kpiTop20').textContent = (s.top20Share * 100).toFixed(1) + '%';
+        document.getElementById('kpiZero').textContent = s.zeroCount;
+        document.getElementById('kpiP90').textContent = '$' + s.p90.toFixed(2);
+        document.getElementById('kpiBudget').textContent = '$' + budget.toFixed(0);
+
+        drawHistogram(s.sorted, s);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawHistogram(sorted, s) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 60, R = 60, T = 30, B = 50;
+        ctx.clearRect(0, 0, W, H);
+        var maxV = sorted[0] || 1;
+        var nBins = 30;
+        var binW = maxV / nBins;
+        var bins = new Array(nBins).fill(0);
+        sorted.forEach(function (v) {
+            var idx = Math.min(nBins - 1, Math.floor(v / binW));
+            bins[idx] += 1;
+        });
+        var maxCount = Math.max.apply(null, bins);
+
+        // axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+
+        // histogram bars
+        var slot = (W - L - R) / nBins;
+        ctx.fillStyle = 'rgba(197,160,89,0.7)';
+        for (var i = 0; i < nBins; i++) {
+            var h = (H - T - B) * (bins[i] / Math.max(maxCount, 1)) * 0.85;
+            ctx.fillRect(L + slot * i + 1, H - B - h, slot - 2, h);
+        }
+
+        // Lorenz / cumulative CLV (sorted descending, normalised)
+        var cumPct = [];
+        var cumSum = 0;
+        var totalSum = sorted.reduce(function (a, b) { return a + b; }, 0);
+        sorted.forEach(function (v) { cumSum += v; cumPct.push(totalSum > 0 ? cumSum / totalSum : 0); });
+        ctx.strokeStyle = '#64ffda';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var k = 0; k < cumPct.length; k++) {
+            var xx = L + (W - L - R) * (k / Math.max(1, cumPct.length - 1));
+            var yy = (H - B) - (H - T - B) * cumPct[k] * 0.85;
+            if (k === 0) ctx.moveTo(xx, yy); else ctx.lineTo(xx, yy);
+        }
+        ctx.stroke();
+
+        // Top-20% cutoff line
+        var x20 = L + (W - L - R) * 0.20;
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(x20, T); ctx.lineTo(x20, H - B);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Labels
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText('CLV bins ($, sorted descending)', (L + W - R) / 2, H - B + 32);
+        ctx.fillText('$0', L, H - B + 16);
+        ctx.fillText('$' + maxV.toFixed(0), W - R, H - B + 16);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText('top 20% &rarr;', x20 + 30, T + 15);
+        ctx.fillStyle = '#64ffda';
+        ctx.textAlign = 'right';
+        ctx.fillText('Cumulative %', W - R - 4, T + 14);
+    }
+
+    function run() {
+        var n = parseInt(document.getElementById('nCust').value, 10);
+        var horizon = parseFloat(document.getElementById('horizon').value);
+        var margin = parseFloat(document.getElementById('margin').value);
+        var discount = parseFloat(document.getElementById('discount').value);
+        var lambdaMean = parseFloat(document.getElementById('lambdaMean').value);
+        var meanSpend = parseFloat(document.getElementById('meanSpend').value);
+        var seed = parseInt(document.getElementById('seed').value, 10);
+        var customers = generateCustomers(n, lambdaMean, meanSpend, seed);
+        var clvs = computeCLV(customers, horizon, margin, discount);
+        render(clvs);
+    }
+    document.getElementById('btnRun').addEventListener('click', run);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('nCust').value = 200;
+        document.getElementById('horizon').value = 52;
+        document.getElementById('margin').value = 0.30;
+        document.getElementById('discount').value = 0.10;
+        document.getElementById('lambdaMean').value = 6;
+        document.getElementById('meanSpend').value = 35;
+        document.getElementById('seed').value = 42;
+        run();
+    });
+    window.addEventListener('load', run);
+</script>
+</body>
+</html>
