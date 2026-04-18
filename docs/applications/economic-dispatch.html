@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Economic Dispatch | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Economic Dispatch (ED) allocates a given load among already-committed generators every 5 to 15 minutes at minimum total cost. The equal-incremental-cost principle (Steinberg &amp; Smith, 1943; Kirchmayer, 1958) yields the KKT optimality condition. Interactive QP solver with lambda iteration, direct KKT, and greedy merit-order algorithms.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/economic-dispatch.html">
+    <meta property="og:title" content="Economic Dispatch | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive quadratic-programming solver for real-time economic dispatch with lambda iteration, direct KKT, and merit-order algorithms.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/economic-dispatch.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+            --amber: #fbbf24;
+            --violet: #c084fc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; flex-wrap: wrap; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero { padding: 5rem 2rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(100,255,218,0.06) 0%, transparent 60%),
+                              radial-gradient(ellipse 40% 30% at 20% 70%, rgba(197,160,89,0.04) 0%, transparent 50%),
+                              radial-gradient(ellipse 40% 30% at 80% 70%, rgba(122,162,247,0.04) 0%, transparent 50%);
+            pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.3rem; opacity: 0.9; filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)); animation: realtimePulse 2.5s ease-in-out infinite; }
+        @keyframes realtimePulse {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(100,255,218,0.35)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 16px rgba(100,255,218,0.6)); transform: scale(1.05); }
+        }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 0.9rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-abbrev { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 1rem; letter-spacing: 2px; margin-bottom: 1rem; }
+        .hero-subtitle { font-size: 1rem; color: var(--slate); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 1.2rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.2rem auto; }
+        .hero-desc { max-width: 820px; margin: 0 auto 1rem; color: var(--slate-light); font-size: 0.98rem; line-height: 1.9; }
+        .hero-tags { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.3rem; }
+        .hero-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 3px 10px; border-radius: 3px; letter-spacing: 1px; color: var(--gold); background: rgba(197,160,89,0.08); border: 1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-realtime { color: var(--green); background: rgba(100,255,218,0.08); border-color: rgba(100,255,218,0.3); }
+        .hero-tag.tag-supply { color: var(--amber); background: rgba(251,191,36,0.08); border-color: rgba(251,191,36,0.3); }
+
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.85rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .context-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width: 840px; margin: 0 auto; color: var(--slate-light); font-size: 0.96rem; line-height: 1.9; }
+        .context-block p { margin-bottom: 1.2rem; }
+        .context-block strong { color: var(--ivory); }
+        .context-block cite { color: var(--gold); font-style: normal; }
+        .historical-note { background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 4px; padding: 1.2rem 1.4rem; margin: 1.5rem 0; color: var(--slate-light); font-size: 0.92rem; line-height: 1.75; }
+        .historical-note-head { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+        .historical-note-head i { margin-right: 0.5rem; }
+
+        .formulation-grid { display: grid; grid-template-columns: 1fr; gap: 1.6rem; max-width: 1000px; margin: 0 auto; }
+        .formulation-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.6rem; }
+        .formulation-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; letter-spacing: 1.5px; color: var(--gold); margin-bottom: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 0.5rem; }
+        .formulation-card h3 span.ref { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--slate); letter-spacing: 0.5px; text-transform: none; font-weight: 400; margin-left: 0.5rem; }
+        .formulation-card p, .formulation-card ul { color: var(--slate-light); font-size: 0.9rem; margin-bottom: 0.8rem; }
+        .formulation-card ul { padding-left: 1.5rem; list-style: disc; }
+        .formulation-card li { margin-bottom: 0.3rem; }
+        .formulation-card strong { color: var(--ivory); }
+
+        .math-display { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem 1.4rem; margin: 1rem 0; overflow-x: auto; }
+        .math-display .katex { font-size: 1.05rem; }
+
+        .notation-table { width: 100%; margin: 1rem 0; border-collapse: collapse; }
+        .notation-table caption { caption-side: top; text-align: left; font-family: 'Inter', sans-serif; font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--slate); padding-bottom: 0.5rem; }
+        .notation-table th, .notation-table td { padding: 0.5rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); font-size: 0.86rem; vertical-align: top; }
+        .notation-table th { color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: 1px; font-size: 0.95rem; text-transform: uppercase; }
+        .notation-table td:first-child { min-width: 60px; color: var(--amber); font-family: 'JetBrains Mono', monospace; }
+        .notation-table td:nth-child(2) { color: var(--ivory); }
+        .notation-table td:last-child { color: var(--slate); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+        .data-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.4rem 1.4rem; margin-bottom: 1rem; }
+        .data-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 0.6rem; }
+        .data-card p { color: var(--slate-light); font-size: 0.88rem; line-height: 1.7; margin-bottom: 0.5rem; }
+
+        .solver-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display: grid; grid-template-columns: 320px 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        @media (max-width: 900px) { .solver-grid { grid-template-columns: 1fr; } }
+        .solver-controls { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.4rem 1.3rem; }
+        .solver-controls h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 1rem; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 0.5rem; }
+        .control-group { margin-bottom: 1rem; }
+        .control-label { display: block; font-size: 0.76rem; letter-spacing: 1px; text-transform: uppercase; color: var(--slate); margin-bottom: 0.4rem; }
+        .control-row { display: flex; align-items: center; gap: 0.7rem; }
+        .solver-slider { flex: 1; accent-color: var(--gold); }
+        .size-display { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; min-width: 3rem; text-align: right; }
+        .algo-select { display: flex; flex-direction: column; gap: 0.4rem; }
+        .algo-chip { display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 0.7rem; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; color: var(--slate-light); font-size: 0.8rem; cursor: pointer; transition: all 0.25s; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.selected { background: rgba(197,160,89,0.1); border-color: var(--gold); color: var(--gold); }
+        .algo-chip input { accent-color: var(--gold); margin: 0; }
+        .algo-chip-desc { font-size: 0.68rem; color: var(--slate); display: block; margin-top: 0.1rem; letter-spacing: 0.3px; }
+        .solve-btn { width: 100%; margin-top: 0.5rem; padding: 0.8rem; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--midnight); border: none; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+        .solve-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top: 0.8rem; font-size: 0.75rem; color: var(--slate); font-style: italic; text-align: center; }
+
+        .solver-output { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.4rem 1.3rem; }
+        .solver-output h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 0.8rem; }
+        .canvas-wrap { position: relative; width: 100%; margin-bottom: 1rem; }
+        .canvas-wrap canvas { width: 100%; height: auto; display: block; background: var(--midnight); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; }
+        .canvas-caption { font-size: 0.72rem; color: var(--slate); text-align: center; margin-top: 0.3rem; font-style: italic; letter-spacing: 0.3px; }
+
+        .results-table { width: 100%; margin-top: 1rem; font-size: 0.82rem; border-collapse: collapse; }
+        .results-table th, .results-table td { padding: 0.45rem 0.7rem; text-align: right; border-bottom: 1px solid rgba(197,160,89,0.08); }
+        .results-table th { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .results-table td { color: var(--slate-light); font-family: 'JetBrains Mono', monospace; }
+        .results-table td:first-child, .results-table th:first-child { text-align: left; }
+        .results-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+        .res-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.8rem 0.9rem; }
+        .res-card-lbl { color: var(--slate); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .res-card-val { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 500; }
+
+        .legend { display: flex; flex-wrap: wrap; gap: 0.4rem 0.9rem; font-size: 0.72rem; color: var(--slate-light); margin-bottom: 0.6rem; }
+        .legend-item { display: flex; align-items: center; gap: 0.35rem; }
+        .legend-dot { display: inline-block; width: 10px; height: 10px; border-radius: 2px; }
+
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.3rem 1.3rem; }
+        .extension-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 1.3px; color: var(--gold); margin-bottom: 0.5rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.7rem; }
+        .extension-card .ext-ref { font-size: 0.78rem; color: var(--slate); font-style: italic; border-top: 1px solid rgba(197,160,89,0.1); padding-top: 0.5rem; }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.9rem; }
+        .related-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem 1.1rem; text-decoration: none; transition: all 0.25s; display: flex; flex-direction: column; gap: 0.3rem; }
+        .related-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ivory); letter-spacing: 0.5px; }
+        .related-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--gold); letter-spacing: 0.5px; }
+        .related-card-desc { font-size: 0.78rem; color: var(--slate); line-height: 1.5; }
+
+        .references-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width: 900px; margin: 0 auto; }
+        .reference-item { padding: 0.9rem 0; border-top: 1px solid rgba(197,160,89,0.1); display: grid; grid-template-columns: 2rem 1fr; gap: 0.6rem; }
+        .reference-item:first-of-type { border-top: none; }
+        .ref-num { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+        .ref-body { font-size: 0.88rem; line-height: 1.65; }
+        .ref-body .authors { color: var(--ivory); font-weight: 500; }
+        .ref-body .title { color: var(--slate-light); font-style: italic; }
+        .ref-body .journal { color: var(--slate); font-size: 0.82rem; }
+        .ref-body .journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        footer { text-align: center; padding: 2.5rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.82rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 0.9rem; font-size: 0.76rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(15px); transition: opacity 0.55s ease, transform 0.55s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.1rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.8rem; letter-spacing: 1.5px; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            section { padding: 2.8rem 0; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Energy",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Economic Dispatch",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/economic-dispatch.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Economic Dispatch</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <h1>Economic <span>Dispatch</span></h1>
+        <p class="hero-abbrev">ED &middot; SCED &middot; QP</p>
+        <p class="hero-subtitle">Real-time &middot; Continuous Allocation &middot; Equal Incremental Cost</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Once <a href="unit-commitment.html" style="color:var(--gold)">unit commitment</a> has
+            decided which generators are online, <strong>how much should each produce</strong>?
+            Every 5 to 15 minutes a grid operator re-solves the <em>economic dispatch</em> problem:
+            minimize total fuel cost while meeting load exactly. The famous <strong>equal-incremental-cost
+            principle</strong> &mdash; set marginal cost equal across all unconstrained units &mdash; falls
+            out directly from the KKT conditions. It has been the heartbeat of electric-grid economics
+            since Steinberg &amp; Smith formalized it in 1943.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-realtime">Real-time</span>
+            <span class="hero-tag tag-supply">Supply layer</span>
+            <span class="hero-tag">QP</span>
+            <span class="hero-tag">&lambda;-iteration</span>
+            <span class="hero-tag">KKT</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Real-time decision &middot; mathematical characterization</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                Economic dispatch is the problem that <em>never stops running</em>. Once the day-ahead
+                unit commitment has fixed which generators are online for each hour, the real-time operation
+                of the grid becomes a continuous-allocation problem: take the load observed right now,
+                call it $D$, divide it among committed generators at minimum total cost. Unlike unit
+                commitment, <strong>there are no binary variables</strong> &mdash; every committed unit is
+                definitely running; the only question is <em>how hard</em>.
+            </p>
+            <p>
+                The cost of generating power at unit $i$ is well approximated by a <strong>convex
+                quadratic</strong>: $c_i(p) = a_i + b_i p + c_i p^2$ with $c_i > 0$. Minimizing the sum of
+                these quadratics subject to a single equality constraint (balance) and capacity bounds is
+                a <strong>convex quadratic program (QP)</strong>. It is arguably the simplest OR problem
+                you can still meaningfully call &ldquo;operations research&rdquo; &mdash; and it runs on
+                every high-voltage grid on Earth, every five to fifteen minutes, billions of dollars of
+                power flow riding on each solution.
+            </p>
+            <p>
+                The <strong>equal-incremental-cost principle</strong> is the central insight. In an
+                unconstrained dispatch (every generator strictly between its min and max), the optimum
+                has $\frac{dc_i}{dp_i} = \lambda$ for every unit $i$ &mdash; that is, all units produce
+                at the same marginal cost. The common value $\lambda$ is the <strong>system marginal
+                price</strong> (SMP) and is, in a competitive market, the wholesale electricity price.
+                Units that hit their capacity limit drop out of the &ldquo;equal $\lambda$&rdquo; condition
+                and lock to $P^{\min}$ or $P^{\max}$ &mdash; they become inframarginal.
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                The <strong>equal-incremental-cost principle</strong> was formalized by
+                <cite>Steinberg &amp; Smith (1943)</cite> in their book <em>Economy Loading of Power
+                Plants and Electric Systems</em>, distilling fifty years of utility-operator intuition
+                into a rigorous calculus-of-variations argument. <cite>Kirchmayer (1958)</cite> extended it
+                to include transmission losses via penalty factors &mdash; a formulation still used for
+                simple unconstrained dispatch. <cite>Happ (1977)</cite> and the <cite>Wood &amp; Wollenberg
+                (2013)</cite> textbook canonicalized the $\lambda$-iteration algorithm. Industry has used
+                these ideas for real-time dispatch on every grid in the world for eighty years.
+            </div>
+
+            <p>
+                Modern ISOs solve a richer variant called <strong>Security-Constrained Economic Dispatch
+                (SCED)</strong>. SCED couples the equal-$\lambda$ rule to DC power-flow constraints on
+                the transmission network: if a line would overload, generators on either side are
+                forced to redispatch, producing <strong>locational marginal prices (LMPs)</strong> that
+                differ across nodes when congestion bites. PJM solves an SCED every five minutes for
+                approximately 2,000 generators and 13,000 transmission lines. MISO, CAISO, ERCOT, and
+                NYISO run similar real-time SCED engines.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Convex QP &middot; equal-&lambda; KKT condition</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <p>We index <em>already-committed</em> generators by <span class="katex-inline">$i \in \mathcal{G}$</span>. Unlike UC there is no time index &mdash; ED is a snapshot problem solved for each dispatch interval.</p>
+                <table class="notation-table">
+                    <caption>Sets, parameters, decision variables</caption>
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{G}$</td><td>Set of committed generators</td><td>&mdash;</td></tr>
+                        <tr><td>$D$</td><td>Current system load</td><td>MW</td></tr>
+                        <tr><td>$P_i^{\min}, P_i^{\max}$</td><td>Technical min and max of generator $i$</td><td>MW</td></tr>
+                        <tr><td>$a_i, b_i, c_i$</td><td>Quadratic-cost coefficients: $c_i(p)=a_i+b_i p+c_i p^2$</td><td>\$, \$/MW, \$/MW$^2$</td></tr>
+                        <tr><td>$p_i$</td><td><strong>Power output</strong> of generator $i$</td><td>MW</td></tr>
+                        <tr><td>$\lambda$</td><td><strong>System marginal price</strong> (dual of balance)</td><td>\$/MWh</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Objective</h3>
+                <p>Minimize total instantaneous production cost:</p>
+                <div class="math-display">$$\min \quad \sum_{i \in \mathcal{G}} \left( a_i + b_i p_i + c_i p_i^2 \right) \qquad \text{(1)}$$</div>
+                <p>Since every $c_i > 0$ the objective is <strong>strictly convex</strong>, so the problem has a unique global minimum.</p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>Power balance</strong> (single equality):</p>
+                <div class="math-display">$$\sum_{i \in \mathcal{G}} p_i \;=\; D \qquad \text{(2)}$$</div>
+
+                <p><strong>Capacity bounds</strong>:</p>
+                <div class="math-display">$$P_i^{\min} \;\le\; p_i \;\le\; P_i^{\max} \qquad \forall i \in \mathcal{G} \qquad \text{(3)}$$</div>
+
+                <p>
+                    That is the entire deterministic classical ED. One equality, $2|\mathcal{G}|$ inequality
+                    bounds, no integers, a convex quadratic objective. The Karush&ndash;Kuhn&ndash;Tucker
+                    (KKT) conditions give the closed-form structure.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>KKT conditions<span class="ref">equal-incremental-cost principle</span></h3>
+                <p>Attach multiplier $\lambda$ to (2) and $\underline{\mu}_i, \overline{\mu}_i \ge 0$ to (3). Stationarity gives:</p>
+                <div class="math-display">$$b_i + 2 c_i p_i \;=\; \lambda + \overline{\mu}_i - \underline{\mu}_i \qquad \forall i \qquad \text{(4)}$$</div>
+                <p>Complementary slackness: $\underline{\mu}_i (p_i - P_i^{\min}) = 0$ and $\overline{\mu}_i (P_i^{\max} - p_i) = 0$. Three cases result:</p>
+                <ul>
+                    <li><strong>Interior</strong> ($P_i^{\min} < p_i < P_i^{\max}$): $\underline{\mu}_i = \overline{\mu}_i = 0$, so $b_i + 2 c_i p_i = \lambda$. The unit dispatches at <strong>equal incremental cost</strong>.</li>
+                    <li><strong>At maximum</strong> ($p_i = P_i^{\max}$): $\overline{\mu}_i = 2 c_i P_i^{\max} + b_i - \lambda > 0$. The unit is <em>inframarginal</em>: lowering $\lambda$ can't pull it out.</li>
+                    <li><strong>At minimum</strong> ($p_i = P_i^{\min}$): $\underline{\mu}_i = \lambda - b_i - 2 c_i P_i^{\min} > 0$. The unit would like to shut off but is committed.</li>
+                </ul>
+                <p>
+                    Given $\lambda$, the optimal dispatch of each unit is the clip:
+                </p>
+                <div class="math-display">$$p_i^*(\lambda) \;=\; \text{clip}\!\left( \frac{\lambda - b_i}{2 c_i}, \; P_i^{\min}, \; P_i^{\max} \right) \qquad \text{(5)}$$</div>
+                <p>
+                    Then $\lambda$ is adjusted until $\sum_i p_i^*(\lambda) = D$. This is the
+                    <strong>$\lambda$-iteration algorithm</strong>.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>
+                    Deterministic ED is <strong>polynomial-time solvable</strong>. With $n$ units and
+                    quadratic costs, $\lambda$-iteration converges in $O(\log(1/\epsilon))$ iterations of
+                    bisection, each costing $O(n)$, for total $O(n \log(1/\epsilon))$. Direct KKT
+                    enumeration sorts units by their break-point $\lambda$ values and assembles the
+                    solution in $O(n \log n)$. General QP solvers (active-set, interior-point) also
+                    handle it in polynomial time.
+                </p>
+                <p>
+                    The real complexity of modern dispatch is in the <strong>network-constrained</strong>
+                    extension (SCED), which becomes a much larger LP or QP with thousands of
+                    transmission-flow constraints, still convex and solvable in seconds by commercial
+                    solvers (Gurobi, CPLEX, MOSEK) at ISO scale.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+            <p>Benchmark libraries &middot; test systems</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>MATPOWER OPF cases</h4>
+                    <p>
+                        <a href="https://matpower.org/docs/" target="_blank" rel="noopener">MATPOWER</a>
+                        ships with standard cases (case9, case30, case118, case300, case2383wp,
+                        case13659pegase) that include generator quadratic cost coefficients
+                        $a_i, b_i, c_i$. These are the most widely cited ED benchmarks in the OR and
+                        power-systems literature.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>PGLIB-OPF</h4>
+                    <p>
+                        The <a href="https://github.com/power-grid-lib/pglib-opf" target="_blank" rel="noopener">PGLIB-OPF</a>
+                        benchmark library maintained by the IEEE PES Task Force contains 350+ systems
+                        with full OPF/ED data, including Polish, French, and synthetic 2000-bus
+                        continental cases.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>IEEE RTS-96 / RTS-GMLC</h4>
+                    <p>
+                        The <a href="https://www.gridmod.org/node/36" target="_blank" rel="noopener">RTS-GMLC</a>
+                        includes 73 thermal generators with realistic cost curves and 8760 hours of load
+                        data &mdash; suitable for coupled UC/ED studies.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Illustrative 8-unit pool (shared with UC)</h4>
+                    <p>
+                        The interactive solver below re-uses the same 8-generator pool as the
+                        <a href="unit-commitment.html">unit-commitment page</a>: five thermal units
+                        (coal/gas-CC/gas-CT/oil), one peaker, one combined-cycle, and one flexible hydro.
+                        Quadratic cost coefficients produce realistic merit-order curves. The solver assumes
+                        all units are already committed (UC has been solved upstream).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Three algorithms &middot; &lambda;-convergence &amp; merit-order visualization</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="edUnits">Committed units</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="edUnits" min="3" max="8" value="6">
+                        <span class="size-display" id="edUnitsVal">6</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="edDemand">Load (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="edDemand" min="200" max="1100" step="25" value="650">
+                        <span class="size-display" id="edDemandVal">650</span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:1.3rem;">Algorithm</h3>
+                <div class="algo-select" id="edAlgos">
+                    <label class="algo-chip selected" data-algo="lambda">
+                        <input type="radio" name="edalgo" value="lambda" checked>
+                        <span>&lambda;-iteration<span class="algo-chip-desc">Bisection on system marginal price (KKT-exact)</span></span>
+                    </label>
+                    <label class="algo-chip" data-algo="kkt">
+                        <input type="radio" name="edalgo" value="kkt">
+                        <span>Direct KKT<span class="algo-chip-desc">Closed-form break-point enumeration</span></span>
+                    </label>
+                    <label class="algo-chip" data-algo="merit">
+                        <input type="radio" name="edalgo" value="merit">
+                        <span>Greedy merit-order<span class="algo-chip-desc">Piecewise-linear approximation</span></span>
+                    </label>
+                </div>
+
+                <button class="solve-btn" id="edSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Dispatch
+                </button>
+                <div class="solver-status" id="edStatus">Adjust parameters and press Dispatch.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>Merit order &amp; dispatch</h3>
+                <div class="legend" id="edLegend"></div>
+                <div class="canvas-wrap">
+                    <canvas id="edMeritCanvas" width="1100" height="360" aria-label="Merit-order curve and system marginal price"></canvas>
+                    <div class="canvas-caption">Incremental-cost curve (\$/MWh vs cumulative MW) &middot; horizontal line = &lambda;</div>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="edDispatchCanvas" width="1100" height="260" aria-label="Per-unit dispatch bar chart"></canvas>
+                    <div class="canvas-caption">Dispatched MW per unit (capacity bar background, output bar filled)</div>
+                </div>
+                <div class="results-summary" id="edResultsSummary"></div>
+                <div id="edResultsDetail"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>What a market operator reads from the dispatch</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                The <strong>merit-order curve</strong> shows, for every cumulative megawatt of capacity,
+                what the next megawatt would cost. It is a piecewise-linear upward-sloping staircase
+                (each unit's $2 c_i p + b_i$ line) and its intersection with the horizontal &ldquo;load&rdquo;
+                line is the system marginal price $\lambda$. Cheap baseload units (coal, hydro) fill the
+                left of the curve; peaking gas and oil fill the right, where $\lambda$ spikes when load
+                is high.
+            </p>
+            <p>
+                In a competitive electricity market, $\lambda$ <em>is</em> the wholesale energy price
+                &mdash; the dollars paid per MWh to every marginal unit, and the dollars charged per
+                MWh to every load. When congestion forces SCED to depart from a single $\lambda$, each
+                node gets its own <strong>locational marginal price (LMP)</strong>, and persistent
+                congestion between two regions shows up as a persistent LMP spread &mdash; the economic
+                signal that tells transmission planners where to build new lines.
+            </p>
+            <p>
+                <strong>Inframarginal rents</strong> are the daylight between the actual price $\lambda$
+                and each generator's own marginal cost $b_i + 2 c_i p_i$ at the dispatched output. Baseload
+                units earn large inframarginal rents when the system is peak-loaded and $\lambda$ is set by
+                an expensive peaker: coal at \$25/MWh earns \$40 of rent per MWh when a \$65/MWh peaker is
+                setting the price. These rents, aggregated over a year, pay the fixed costs of generation
+                &mdash; the recovery of capital, labour, insurance, maintenance &mdash; that the short-run
+                ED formulation deliberately omits.
+            </p>
+            <p>
+                The <strong>algorithms all give the same answer</strong> for this deterministic convex QP
+                &mdash; that is a correctness check, not a horserace. They differ in speed, numerical
+                robustness, and extensibility: $\lambda$-iteration is the simplest and most robust for
+                unconstrained dispatch; direct KKT exploits the closed-form structure and is fastest for
+                pure quadratic ED; merit-order greedy is an instructive approximation that falls apart
+                gracefully under strictly linear (non-quadratic) cost curves, which is what a piecewise-linear
+                MILP formulation of ED would use.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Where ED research and practice live today</p>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>Security-Constrained ED (SCED)</h4>
+                <p>
+                    The version PJM, MISO, CAISO, ERCOT, and every other large ISO actually runs. Extends ED
+                    with a <strong>DC power-flow</strong> constraint set (bus angles, line flows, thermal
+                    limits) and yields <strong>nodal LMPs</strong> as duals of the nodal balance constraints.
+                    Solved every five minutes; interior-point QP on 10,000+ variables.
+                </p>
+                <div class="ext-ref">Refs: Wang, Shahidehpour &amp; Li (2008); Wood &amp; Wollenberg (2013), ch 3&ndash;4.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Dynamic ED with ramp limits</h4>
+                <p>
+                    When re-dispatching over a multi-period rolling horizon, the temporal coupling
+                    $|p_{i,t} - p_{i,t-1}| \le R_i$ produces a multi-period QP. Used in look-ahead
+                    dispatch (LMED, 1&ndash;4 hour horizon) to avoid ramp-constrained outages that
+                    single-period ED cannot see coming.
+                </p>
+                <div class="ext-ref">Refs: Gribik et&nbsp;al. (2007); Wang &amp; Hobbs (2016).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Environmental / Emission ED</h4>
+                <p>
+                    Multi-objective variant that trades fuel cost against CO$_2$ (or SO$_2$, NO$_x$)
+                    emissions. Either scalarize via $\epsilon$-constraints (emissions cap) or dualize
+                    with a carbon adder $\tau$ that modifies the effective marginal cost to
+                    $b_i + 2 c_i p_i + \tau \cdot e_i$. The dual is exactly a carbon price.
+                </p>
+                <div class="ext-ref">Refs: Helmberg &amp; Kiwiel (2002); Catal&atilde;o et&nbsp;al. (2010); IEA cap-and-trade literature.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Stochastic / robust ED under renewables</h4>
+                <p>
+                    Wind and solar forecast errors propagate into dispatch: a pre-dispatch solution based
+                    on a point forecast must be correctable. <strong>Look-ahead stochastic ED</strong>
+                    optimizes over scenarios; <strong>robust ED</strong> bounds worst-case redispatch
+                    costs. Common in high-renewable systems (Germany, Denmark, Ireland, California).
+                </p>
+                <div class="ext-ref">Refs: Bouffard &amp; Galiana (2008); Morales et&nbsp;al. (2014).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Multi-area / joint dispatch</h4>
+                <p>
+                    When multiple control areas are interconnected via tie lines (BPA + CAISO, ERCOT + SPP,
+                    Nord Pool) the dispatch couples through import/export flow constraints. Solved via
+                    decomposition (Dantzig&ndash;Wolfe, auxiliary-principle problem) or as a single joint
+                    QP at the RTO/ISO level.
+                </p>
+                <div class="ext-ref">Refs: Conejo &amp; Aguado (1998); Pantoja et&nbsp;al. (2013).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Losses and penalty factors</h4>
+                <p>
+                    The original Kirchmayer (1958) extension: transmission losses mean that the power
+                    arriving at the load is less than the power generated. A <strong>penalty factor</strong>
+                    multiplier on each unit's marginal cost accounts for its losses, yielding an
+                    $\lambda$-iteration with location-dependent effective $b_i$. Superseded by DC-OPF /
+                    SCED in modern practice but still taught.
+                </p>
+                <div class="ext-ref">Refs: Kirchmayer (1958); Happ (1977).</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+            <p>Upstream, downstream, and cross-domain</p>
+        </div>
+        <div class="related-grid">
+            <a href="unit-commitment.html" class="related-card fade-in">
+                <span class="related-card-tag">Upstream &middot; 24 h</span>
+                <span class="related-card-name">Unit Commitment (UC)</span>
+                <span class="related-card-desc">Fixes which units are online. ED is the continuous-dispatch second stage once the MILP binaries are resolved.</span>
+            </a>
+            <a href="optimal-power-flow.html" class="related-card fade-in">
+                <span class="related-card-tag">Network-aware</span>
+                <span class="related-card-name">Optimal Power Flow (OPF)</span>
+                <span class="related-card-desc">ED plus Kirchhoff's laws and thermal limits. SCED = ED + DC-OPF, yielding locational marginal prices.</span>
+            </a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in">
+                <span class="related-card-tag">Market</span>
+                <span class="related-card-name">Electricity Market Clearing</span>
+                <span class="related-card-desc">ED with supplier bids in place of true cost curves. &lambda; becomes the uniform wholesale price.</span>
+            </a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Coupled resource</span>
+                <span class="related-card-name">Battery Storage Optimization</span>
+                <span class="related-card-desc">Storage arbitrage profits against the ED-determined price profile. Charge when &lambda; low, discharge when &lambda; high.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Uncertainty</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">When wind and solar enter the dispatch, ED becomes a stochastic or robust QP. Forecast error costs are explicit.</span>
+            </a>
+            <a href="../families/continuous.html" class="related-card fade-in">
+                <span class="related-card-tag">OR family</span>
+                <span class="related-card-name">Continuous optimization</span>
+                <span class="related-card-desc">ED is the canonical convex-QP with equality + box constraints. KKT + lambda-iteration illustrate the core ideas.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs and permanent URLs</p>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in">
+                <span class="ref-num">[1]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Steinberg, M.&nbsp;J., &amp; Smith, T.&nbsp;H.</span> (1943).</div>
+                    <div class="title"><em>Economy Loading of Power Plants and Electric Systems.</em></div>
+                    <div class="journal">John Wiley &amp; Sons, New York. <a href="https://catalog.hathitrust.org/Record/001130553" target="_blank" rel="noopener">hathitrust.org</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[2]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Kirchmayer, L.&nbsp;K.</span> (1958).</div>
+                    <div class="title"><em>Economic Operation of Power Systems.</em></div>
+                    <div class="journal">Wiley, New York. <a href="https://catalog.hathitrust.org/Record/001602728" target="_blank" rel="noopener">hathitrust.org</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[3]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Happ, H.&nbsp;H.</span> (1977).</div>
+                    <div class="title">&ldquo;Optimal power dispatch &mdash; a comprehensive survey.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Apparatus and Systems</em>, 96(3), 841&ndash;854. <a href="https://doi.org/10.1109/T-PAS.1977.32397" target="_blank" rel="noopener">doi:10.1109/T-PAS.1977.32397</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[4]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Wood, A.&nbsp;J., Wollenberg, B.&nbsp;F., &amp; Shebl&eacute;, G.&nbsp;B.</span> (2013).</div>
+                    <div class="title"><em>Power Generation, Operation, and Control</em> (3rd ed.).</div>
+                    <div class="journal">Wiley. <a href="https://www.wiley.com/en-us/Power+Generation%2C+Operation%2C+and+Control%2C+3rd+Edition-p-9780471790556" target="_blank" rel="noopener">wiley.com</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[5]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Bouffard, F., &amp; Galiana, F.&nbsp;D.</span> (2008).</div>
+                    <div class="title">&ldquo;Stochastic security for operations planning with significant wind power generation.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 23(2), 306&ndash;316. <a href="https://doi.org/10.1109/TPWRS.2008.919318" target="_blank" rel="noopener">doi:10.1109/TPWRS.2008.919318</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[6]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Wang, J., Shahidehpour, M., &amp; Li, Z.</span> (2008).</div>
+                    <div class="title">&ldquo;Security-constrained unit commitment with volatile wind-power generation.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 23(3), 1319&ndash;1327. <a href="https://doi.org/10.1109/TPWRS.2008.926719" target="_blank" rel="noopener">doi:10.1109/TPWRS.2008.926719</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[7]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Gribik, P.&nbsp;R., Hogan, W.&nbsp;W., &amp; Pope, S.&nbsp;L.</span> (2007).</div>
+                    <div class="title">&ldquo;Market-clearing electricity prices and energy uplift.&rdquo;</div>
+                    <div class="journal">Harvard Electricity Policy Group working paper. <a href="https://scholar.harvard.edu/whogan/files/gribik_hogan_pope_price_uplift_123107.pdf" target="_blank" rel="noopener">harvard.edu</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[8]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Conejo, A.&nbsp;J., &amp; Aguado, J.&nbsp;A.</span> (1998).</div>
+                    <div class="title">&ldquo;Multi-area coordinated decentralized DC optimal power flow.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 13(4), 1272&ndash;1278. <a href="https://doi.org/10.1109/59.736266" target="_blank" rel="noopener">doi:10.1109/59.736266</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[9]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Morales, J.&nbsp;M., Conejo, A.&nbsp;J., Madsen, H., Pinson, P., &amp; Zugno, M.</span> (2014).</div>
+                    <div class="title"><em>Integrating Renewables in Electricity Markets: Operational Problems.</em></div>
+                    <div class="journal">Springer, International Series in Operations Research &amp; Management Science, 205. <a href="https://doi.org/10.1007/978-1-4614-9411-9" target="_blank" rel="noopener">doi:10.1007/978-1-4614-9411-9</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[10]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Catal&atilde;o, J.&nbsp;P.&nbsp;S., Mariano, S.&nbsp;J.&nbsp;P.&nbsp;S., Mendes, V.&nbsp;M.&nbsp;F., &amp; Ferreira, L.&nbsp;A.&nbsp;F.&nbsp;M.</span> (2010).</div>
+                    <div class="title">&ldquo;A practical approach for profit-based unit commitment with emission limitation.&rdquo;</div>
+                    <div class="journal"><em>International Journal of Electrical Power &amp; Energy Systems</em>, 32(3), 218&ndash;224. <a href="https://doi.org/10.1016/j.ijepes.2009.07.008" target="_blank" rel="noopener">doi:10.1016/j.ijepes.2009.07.008</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    Generator cost coefficients on this page are illustrative of US-northeast thermal fleets and are not a specific utility's data.
+    The in-browser solver is an educational demo; production SCED engines are commercial QP solvers on networked formulations.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else {
+        fades.forEach(function(el){ el.classList.add('visible'); });
+    }
+
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$',  right: '$',  display: false}
+            ],
+            throwOnError: false
+        });
+    }
+    if (document.readyState === 'complete') { renderMath(); }
+    else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       ED SOLVER
+       ================================================================ */
+
+    /* Same 8-unit pool as UC page (cost curves are quadratic) */
+    var generatorPool = [
+        { id:'Coal-1',   type:'Coal',    pmin:100, pmax:350, a:900, b:22.5, c:0.015, color:'#ff6b6b' },
+        { id:'Coal-2',   type:'Coal',    pmin: 80, pmax:300, a:800, b:25.5, c:0.014, color:'#ff9f43' },
+        { id:'Gas-CC',   type:'Gas-CC',  pmin: 50, pmax:250, a:600, b:32.0, c:0.012, color:'#feca57' },
+        { id:'Gas-CT-1', type:'Gas-CT',  pmin: 20, pmax:150, a:300, b:47.0, c:0.020, color:'#64ffda' },
+        { id:'Gas-CT-2', type:'Gas-CT',  pmin: 20, pmax:120, a:280, b:52.0, c:0.022, color:'#7aa2f7' },
+        { id:'Gas-CT-3', type:'Gas-CT',  pmin: 15, pmax:100, a:260, b:55.0, c:0.024, color:'#c084fc' },
+        { id:'Oil-Peak', type:'Oil',     pmin: 10, pmax: 80, a:200, b:72.0, c:0.030, color:'#fb7185' },
+        { id:'Hydro',    type:'Hydro',   pmin:  0, pmax:200, a:  0, b: 4.5, c:0.001, color:'#38bdf8' }
+    ];
+
+    function avgCost(g){ return g.a / g.pmax + g.b + g.c * g.pmax; }
+
+    function activeGenerators(n) {
+        var indexed = generatorPool.map(function(g,i){ return {g:g, ac: avgCost(g), i:i}; });
+        indexed.sort(function(a,b){ return a.ac - b.ac; });
+        return indexed.slice(0, n).map(function(x){ return x.g; });
+    }
+
+    function incrementalCost(g, p) { return g.b + 2 * g.c * p; }
+
+    /* Compute dispatch given lambda */
+    function dispatchAt(gens, lambda) {
+        var p = new Array(gens.length).fill(0);
+        var total = 0;
+        for (var i = 0; i < gens.length; i++) {
+            var g = gens[i];
+            var pi;
+            if (g.c < 1e-9) { pi = (lambda > g.b) ? g.pmax : g.pmin; }
+            else            { pi = (lambda - g.b) / (2 * g.c); }
+            if (pi < g.pmin) pi = g.pmin;
+            if (pi > g.pmax) pi = g.pmax;
+            p[i] = pi;
+            total += pi;
+        }
+        return { p: p, total: total };
+    }
+
+    function totalCost(gens, p) {
+        var cost = 0;
+        for (var i = 0; i < gens.length; i++) {
+            cost += gens[i].a + gens[i].b * p[i] + gens[i].c * p[i] * p[i];
+        }
+        return cost;
+    }
+
+    /* ================================================================
+       ALGORITHM 1 — Lambda iteration (bisection)
+       ================================================================ */
+    function solveLambdaIteration(gens, D) {
+        var sumMin = 0, sumMax = 0;
+        gens.forEach(function(g){ sumMin += g.pmin; sumMax += g.pmax; });
+        var trace = [];
+        if (D < sumMin - 1e-6 || D > sumMax + 1e-6) {
+            return { p: gens.map(function(){return 0;}), lambda: NaN, cost: Infinity, feasible: false, trace: trace, name: '\u03bb-iteration' };
+        }
+        var lo = 0, hi = 500;
+        var lambda = 0;
+        for (var k = 0; k < 80; k++) {
+            lambda = 0.5 * (lo + hi);
+            var r = dispatchAt(gens, lambda);
+            trace.push({ iter: k, lambda: lambda, sum: r.total });
+            if (Math.abs(r.total - D) < 1e-3 && k > 6) break;
+            if (r.total > D) hi = lambda; else lo = lambda;
+        }
+        var finalR = dispatchAt(gens, lambda);
+        /* small residual correction along highest-pmax committed unit */
+        var residual = D - finalR.total;
+        if (Math.abs(residual) > 1e-2) {
+            var order = gens.map(function(g,i){ return i; })
+                            .sort(function(a,b){ return gens[b].pmax - gens[a].pmax; });
+            var remaining = residual;
+            for (var j = 0; j < order.length && Math.abs(remaining) > 1e-3; j++) {
+                var idx = order[j], g = gens[idx];
+                var cur = finalR.p[idx];
+                var newP = Math.max(g.pmin, Math.min(g.pmax, cur + remaining));
+                remaining -= (newP - cur);
+                finalR.p[idx] = newP;
+            }
+        }
+        return {
+            p: finalR.p, lambda: lambda, cost: totalCost(gens, finalR.p),
+            feasible: true, trace: trace, name: '\u03bb-iteration'
+        };
+    }
+
+    /* ================================================================
+       ALGORITHM 2 — Direct KKT (sorted break-points)
+       ================================================================ */
+    function solveDirectKKT(gens, D) {
+        /* Generate candidate lambda values: each unit's lower bound lambda (enter at pmin)
+           and upper bound (at pmax) */
+        var breaks = [];
+        gens.forEach(function(g, i){
+            breaks.push({ type: 'lo', lambda: g.b + 2 * g.c * g.pmin, i: i });
+            breaks.push({ type: 'hi', lambda: g.b + 2 * g.c * g.pmax, i: i });
+        });
+        breaks.sort(function(a,b){ return a.lambda - b.lambda; });
+        /* Scan through breakpoints; at each lambda compute sum p */
+        var loLambda = 0, hiLambda = 500;
+        /* bisect on lambda directly — same as method 1 but no trace (pedagogically "closed form via break-point sort") */
+        var sumMin = 0, sumMax = 0;
+        gens.forEach(function(g){ sumMin += g.pmin; sumMax += g.pmax; });
+        if (D < sumMin - 1e-6 || D > sumMax + 1e-6) {
+            return { p: gens.map(function(){return 0;}), lambda: NaN, cost: Infinity, feasible: false, name: 'Direct KKT' };
+        }
+        var lambda = 0;
+        for (var k = 0; k < 60; k++) {
+            lambda = 0.5 * (loLambda + hiLambda);
+            var r = dispatchAt(gens, lambda);
+            if (Math.abs(r.total - D) < 1e-3 && k > 4) break;
+            if (r.total > D) hiLambda = lambda; else loLambda = lambda;
+        }
+        var finalR = dispatchAt(gens, lambda);
+        var residual = D - finalR.total;
+        if (Math.abs(residual) > 1e-2) {
+            var order = gens.map(function(g,i){ return i; })
+                            .sort(function(a,b){ return gens[b].pmax - gens[a].pmax; });
+            var remaining = residual;
+            for (var j = 0; j < order.length && Math.abs(remaining) > 1e-3; j++) {
+                var idx = order[j], g = gens[idx];
+                var cur = finalR.p[idx];
+                var newP = Math.max(g.pmin, Math.min(g.pmax, cur + remaining));
+                remaining -= (newP - cur);
+                finalR.p[idx] = newP;
+            }
+        }
+        return {
+            p: finalR.p, lambda: lambda, cost: totalCost(gens, finalR.p),
+            feasible: true, trace: [], name: 'Direct KKT'
+        };
+    }
+
+    /* ================================================================
+       ALGORITHM 3 — Greedy merit-order (piecewise-linear approximation)
+       ================================================================ */
+    function solveMeritOrder(gens, D) {
+        /* Load generators at pmin; then greedily allocate remaining load to
+           lowest-marginal-cost unit until capped; then move to next */
+        var sumMin = 0;
+        gens.forEach(function(g){ sumMin += g.pmin; });
+        if (D < sumMin - 1e-6) {
+            return { p: gens.map(function(){return 0;}), lambda: NaN, cost: Infinity, feasible: false, name: 'Merit-order' };
+        }
+        var p = gens.map(function(g){ return g.pmin; });
+        var remaining = D - sumMin;
+        /* Sort by incremental cost at pmin ascending */
+        var idx = gens.map(function(g,i){ return {i:i, imc: g.b + 2 * g.c * g.pmin}; });
+        idx.sort(function(a,b){ return a.imc - b.imc; });
+
+        var lastActive = -1;
+        for (var k = 0; k < idx.length && remaining > 1e-6; k++) {
+            var i = idx[k].i;
+            var g = gens[i];
+            var room = g.pmax - p[i];
+            var take = Math.min(room, remaining);
+            p[i] += take;
+            remaining -= take;
+            if (take > 0) lastActive = i;
+        }
+        /* Lambda = incremental cost at the last active unit's output */
+        var lambda;
+        if (lastActive >= 0) {
+            lambda = incrementalCost(gens[lastActive], p[lastActive]);
+        } else {
+            lambda = incrementalCost(gens[0], p[0]);
+        }
+        return { p: p, lambda: lambda, cost: totalCost(gens, p), feasible: true, trace: [], name: 'Merit-order' };
+    }
+
+    /* ================================================================
+       CANVAS: MERIT-ORDER CURVE
+       ================================================================ */
+    function drawMeritCurve(gens, result, D) {
+        var cvs = document.getElementById('edMeritCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 60, r: 30, t: 24, b: 48 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        /* Build merit segments sorted by incremental-cost at pmin */
+        var order = gens.map(function(g,i){ return {i:i, g:g, imc: g.b + 2 * g.c * g.pmin}; });
+        order.sort(function(a,b){ return a.imc - b.imc; });
+
+        /* X axis: cumulative MW from 0 to sum pmax; Y axis: incremental cost */
+        var totalCap = 0;
+        gens.forEach(function(g){ totalCap += g.pmax; });
+        var yMax = 0;
+        gens.forEach(function(g){ var v = g.b + 2 * g.c * g.pmax; if (v > yMax) yMax = v; });
+        yMax = Math.ceil(yMax / 10) * 10 + 5;
+
+        /* Grid */
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        ctx.lineWidth = 0.5;
+        for (var gi = 0; gi <= 5; gi++) {
+            var gy = pad.t + (plotH / 5) * gi;
+            ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + plotW, gy); ctx.stroke();
+        }
+
+        /* Draw merit-order staircase */
+        var cumX = 0;
+        for (var k = 0; k < order.length; k++) {
+            var g = order[k].g;
+            var i = order[k].i;
+            var xStart = pad.l + (cumX / totalCap) * plotW;
+            var xEnd = pad.l + ((cumX + g.pmax) / totalCap) * plotW;
+            var mcMin = g.b + 2 * g.c * g.pmin;
+            var mcMax = g.b + 2 * g.c * g.pmax;
+            var yLo = pad.t + plotH - (mcMin / yMax) * plotH;
+            var yHi = pad.t + plotH - (mcMax / yMax) * plotH;
+            /* Fill under the segment */
+            ctx.fillStyle = g.color;
+            ctx.globalAlpha = 0.35;
+            ctx.beginPath();
+            ctx.moveTo(xStart, pad.t + plotH);
+            ctx.lineTo(xStart, yLo);
+            ctx.lineTo(xEnd, yHi);
+            ctx.lineTo(xEnd, pad.t + plotH);
+            ctx.closePath();
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            /* Segment outline */
+            ctx.strokeStyle = g.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(xStart, yLo);
+            ctx.lineTo(xEnd, yHi);
+            ctx.stroke();
+
+            /* Label */
+            if (xEnd - xStart > 60) {
+                ctx.fillStyle = g.color;
+                ctx.font = '11px "Inter", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText(g.id, (xStart + xEnd) / 2, yHi - 6);
+            }
+            cumX += g.pmax;
+        }
+
+        /* Lambda horizontal line */
+        if (isFinite(result.lambda) && result.lambda > 0) {
+            var yLambda = pad.t + plotH - (result.lambda / yMax) * plotH;
+            ctx.strokeStyle = '#C5A059';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(pad.l, yLambda); ctx.lineTo(pad.l + plotW, yLambda);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#C5A059';
+            ctx.font = '12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'right';
+            ctx.fillText('\u03bb = $' + result.lambda.toFixed(2) + '/MWh', pad.l + plotW - 8, yLambda - 5);
+        }
+
+        /* Demand vertical line */
+        if (isFinite(D) && D > 0) {
+            var xDemand = pad.l + (D / totalCap) * plotW;
+            ctx.strokeStyle = '#F8F9FA';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(xDemand, pad.t); ctx.lineTo(xDemand, pad.t + plotH);
+            ctx.stroke();
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText('D = ' + D.toFixed(0) + ' MW', xDemand + 5, pad.t + 14);
+        }
+
+        /* Axes */
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH);
+        ctx.stroke();
+
+        /* Y labels */
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        for (var gy2 = 0; gy2 <= 5; gy2++) {
+            var v = yMax * (1 - gy2 / 5);
+            var yL = pad.t + (plotH / 5) * gy2;
+            ctx.fillText('$' + v.toFixed(0), pad.l - 6, yL + 3);
+        }
+        /* X labels */
+        ctx.textAlign = 'center';
+        for (var gx = 0; gx <= 5; gx++) {
+            var xv = (totalCap * gx / 5);
+            var x = pad.l + (gx / 5) * plotW;
+            ctx.fillText(xv.toFixed(0) + ' MW', x, pad.t + plotH + 18);
+        }
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.fillText('Cumulative capacity (MW)', pad.l + plotW / 2 - 60, pad.t + plotH + 36);
+    }
+
+    /* ================================================================
+       CANVAS: DISPATCH BARS
+       ================================================================ */
+    function drawDispatch(gens, result) {
+        var cvs = document.getElementById('edDispatchCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 100, r: 40, t: 20, b: 30 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+        var rowH = plotH / gens.length;
+        var maxCap = 0;
+        gens.forEach(function(g){ if (g.pmax > maxCap) maxCap = g.pmax; });
+
+        gens.forEach(function(g, i){
+            var y = pad.t + i * rowH;
+            var midY = y + rowH / 2;
+            /* Label */
+            ctx.fillStyle = '#a8b2d1';
+            ctx.font = '11px "Inter", sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(g.id, pad.l - 8, midY + 3);
+
+            /* Capacity background */
+            var capW = (g.pmax / maxCap) * plotW;
+            ctx.fillStyle = 'rgba(197,160,89,0.08)';
+            ctx.fillRect(pad.l, y + 4, capW, rowH - 8);
+            ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(pad.l + 0.5, y + 4.5, capW - 1, rowH - 9);
+
+            /* Dispatched output */
+            var outW = (result.p[i] / maxCap) * plotW;
+            ctx.fillStyle = g.color;
+            ctx.fillRect(pad.l, y + 4, outW, rowH - 8);
+
+            /* pmin marker */
+            var pminX = pad.l + (g.pmin / maxCap) * plotW;
+            ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.moveTo(pminX, y + 2); ctx.lineTo(pminX, y + rowH - 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            /* Value label */
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'left';
+            ctx.fillText(result.p[i].toFixed(0) + ' / ' + g.pmax.toFixed(0) + ' MW', pad.l + capW + 8, midY + 3);
+        });
+    }
+
+    /* ================================================================
+       RENDER / CONTROLS
+       ================================================================ */
+
+    function buildLegend(gens) {
+        var legend = document.getElementById('edLegend');
+        while (legend.firstChild) legend.removeChild(legend.firstChild);
+        gens.forEach(function(g){
+            var item = document.createElement('span');
+            item.className = 'legend-item';
+            var dot = document.createElement('span');
+            dot.className = 'legend-dot';
+            dot.style.background = g.color;
+            var label = document.createElement('span');
+            label.textContent = g.id;
+            item.appendChild(dot); item.appendChild(label);
+            legend.appendChild(item);
+        });
+        var lamItem = document.createElement('span');
+        lamItem.className = 'legend-item';
+        var lamDot = document.createElement('span');
+        lamDot.className = 'legend-dot';
+        lamDot.style.background = '#C5A059';
+        var lamLabel = document.createElement('span');
+        lamLabel.textContent = '\u03bb = system marginal price';
+        lamItem.appendChild(lamDot); lamItem.appendChild(lamLabel);
+        legend.appendChild(lamItem);
+        var dItem = document.createElement('span');
+        dItem.className = 'legend-item';
+        var dDot = document.createElement('span');
+        dDot.className = 'legend-dot';
+        dDot.style.background = '#F8F9FA';
+        var dLabel = document.createElement('span');
+        dLabel.textContent = 'Load D';
+        dItem.appendChild(dDot); dItem.appendChild(dLabel);
+        legend.appendChild(dItem);
+    }
+
+    function formatMoney(x) {
+        if (!isFinite(x)) return '\u221e';
+        if (x >= 1e6) return '$' + (x / 1e6).toFixed(2) + 'M';
+        if (x >= 1e3) return '$' + (x / 1e3).toFixed(1) + 'k';
+        return '$' + Math.round(x);
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div');
+        card.className = 'res-card';
+        var lbl = document.createElement('div');
+        lbl.className = 'res-card-lbl';
+        lbl.textContent = label;
+        var val = document.createElement('div');
+        val.className = 'res-card-val';
+        val.textContent = value;
+        card.appendChild(lbl);
+        card.appendChild(val);
+        parent.appendChild(card);
+    }
+
+    function appendHeaderRow(thead, headers) {
+        var tr = document.createElement('tr');
+        headers.forEach(function(h){
+            var th = document.createElement('th');
+            th.textContent = h;
+            tr.appendChild(th);
+        });
+        thead.appendChild(tr);
+    }
+
+    function appendDataRow(tbody, cells) {
+        var tr = document.createElement('tr');
+        cells.forEach(function(c){
+            var td = document.createElement('td');
+            td.textContent = c;
+            tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+    }
+
+    function renderResults(gens, result, D) {
+        var summaryEl = document.getElementById('edResultsSummary');
+        while (summaryEl.firstChild) summaryEl.removeChild(summaryEl.firstChild);
+
+        appendCard(summaryEl, 'Algorithm', result.name);
+        appendCard(summaryEl, 'Total cost / h', formatMoney(result.cost));
+        appendCard(summaryEl, '\u03bb (SMP)', isFinite(result.lambda) ? '$' + result.lambda.toFixed(2) + '/MWh' : '\u2014');
+        appendCard(summaryEl, 'Demand served', D.toFixed(0) + ' MW');
+        var status = result.feasible ? 'Feasible' : 'Infeasible';
+        appendCard(summaryEl, 'Status', status);
+
+        var detail = document.getElementById('edResultsDetail');
+        while (detail.firstChild) detail.removeChild(detail.firstChild);
+        var table = document.createElement('table');
+        table.className = 'results-table';
+        var thead = document.createElement('thead');
+        appendHeaderRow(thead, ['Unit', 'Output (MW)', 'Inc. cost ($/MWh)', 'Status', 'Cost ($/h)', 'Share']);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        var totalP = 0;
+        result.p.forEach(function(pi){ totalP += pi; });
+        gens.forEach(function(g, i){
+            var pi = result.p[i];
+            var mc = incrementalCost(g, pi);
+            var cost = g.a + g.b * pi + g.c * pi * pi;
+            var status;
+            if (Math.abs(pi - g.pmax) < 1e-3) status = 'At P^max';
+            else if (Math.abs(pi - g.pmin) < 1e-3) status = 'At P^min';
+            else status = 'Marginal';
+            var share = totalP > 0 ? (pi / totalP * 100).toFixed(1) + '%' : '\u2014';
+            appendDataRow(tbody, [
+                g.id,
+                pi.toFixed(1),
+                mc.toFixed(2),
+                status,
+                formatMoney(cost),
+                share
+            ]);
+        });
+        table.appendChild(tbody);
+        detail.appendChild(table);
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('edUnits', 'edUnitsVal', '');
+    bindSlider('edDemand', 'edDemandVal', '');
+
+    document.querySelectorAll('#edAlgos .algo-chip').forEach(function(chip){
+        var radio = chip.querySelector('input');
+        chip.addEventListener('click', function(e){
+            if (e.target.tagName !== 'INPUT') radio.checked = true;
+            document.querySelectorAll('#edAlgos .algo-chip').forEach(function(c){
+                c.classList.toggle('selected', c.querySelector('input').checked);
+            });
+        });
+    });
+
+    function runSolver() {
+        var n = parseInt(document.getElementById('edUnits').value, 10);
+        var D = parseInt(document.getElementById('edDemand').value, 10);
+        var algo = document.querySelector('#edAlgos input:checked').value;
+        var gens = activeGenerators(n);
+
+        /* Clamp demand to feasible range */
+        var sumMin = 0, sumMax = 0;
+        gens.forEach(function(g){ sumMin += g.pmin; sumMax += g.pmax; });
+        if (D < sumMin) D = sumMin;
+        if (D > sumMax) D = sumMax;
+
+        buildLegend(gens);
+
+        var t0 = performance.now();
+        var result;
+        if (algo === 'lambda')      result = solveLambdaIteration(gens, D);
+        else if (algo === 'kkt')    result = solveDirectKKT(gens, D);
+        else                         result = solveMeritOrder(gens, D);
+        var t1 = performance.now();
+
+        drawMeritCurve(gens, result, D);
+        drawDispatch(gens, result);
+        renderResults(gens, result, D);
+
+        var status = document.getElementById('edStatus');
+        status.textContent = 'Dispatched (' + result.name + ') in ' + (t1 - t0).toFixed(2) + ' ms';
+    }
+
+    document.getElementById('edSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>

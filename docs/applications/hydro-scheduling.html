@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Hydrothermal Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Hydrothermal Scheduling is the multi-stage stochastic optimization of reservoir releases and thermal backup generation under uncertain inflows. Solved by Stochastic Dual Dynamic Programming (SDDP, Pereira &amp; Pinto 1991). Interactive solver with water-value function and scenario fan visualization.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/hydro-scheduling.html">
+    <meta property="og:title" content="Hydrothermal Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Multi-stage stochastic optimization of reservoir operation via SDDP.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/hydro-scheduling.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; transition:width 0.1s linear; width:0%; box-shadow:0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { background:transparent; padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(100,255,218,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(197,160,89,0.05) 0%, transparent 50%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(100,255,218,0.4)); animation:waterPulse 3.4s ease-in-out infinite; }
+        @keyframes waterPulse { 0%,100% { filter:drop-shadow(0 0 10px rgba(100,255,218,0.4)); transform:scale(1); } 50% { filter:drop-shadow(0 0 18px rgba(100,255,218,0.7)); transform:scale(1.05); } }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto 1rem; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-medium { color:var(--amber); background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.3); }
+        .hero-tag.tag-supply { color:var(--amber); background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; line-height:1.75; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card h3 span.ref { font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--slate); letter-spacing:0.5px; text-transform:none; font-weight:400; margin-left:0.5rem; }
+        .formulation-card p { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table caption { caption-side:top; text-align:left; font-family:'Inter',sans-serif; font-size:0.78rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--slate); padding-bottom:0.5rem; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; vertical-align:top; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; margin-bottom:0.5rem; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:320px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.3s; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; letter-spacing:0.3px; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; transition:all 0.25s; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); letter-spacing:0.5px; }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; letter-spacing:2px; } .section-header h2 { font-size:1.6rem; letter-spacing:2px; } section { padding:2.8rem 0; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Applications","item":"https://mghnasiri.github.io/MathematicalModeling/applications/"},
+      {"@type":"ListItem","position":3,"name":"Energy","item":"https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html"},
+      {"@type":"ListItem","position":4,"name":"Hydrothermal Scheduling","item":"https://mghnasiri.github.io/MathematicalModeling/applications/hydro-scheduling.html"}
+    ]}
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Hydrothermal Scheduling</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-water" aria-hidden="true"></i></div>
+        <h1>Hydrothermal <span>Scheduling</span></h1>
+        <p class="hero-abbrev">SDDP &middot; Multi-stage SP</p>
+        <p class="hero-subtitle">Reservoir Management &middot; Water Value &middot; Thermal Backup</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Release the water in the reservoir now, or save it for later? Hydrothermal scheduling decides
+            how to operate a system of <strong>hydroelectric reservoirs coupled with thermal generation</strong>
+            over a medium-term horizon of weeks to a year, under stochastic inflows. Unlike short-term
+            dispatch (economic dispatch), the central question is <em>when</em> to use stored water &mdash;
+            a decision that couples today's generation cost to the expected value of water in future
+            periods. The canonical solution method, <strong>Stochastic Dual Dynamic Programming (SDDP)</strong>,
+            was developed by Pereira &amp; Pinto in 1991 and remains the industry standard in large
+            hydro systems from Brazil to Norway to Canada.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-medium">Medium-term</span>
+            <span class="hero-tag tag-supply">Supply layer</span>
+            <span class="hero-tag">Multi-stage SP</span>
+            <span class="hero-tag">SDDP</span>
+            <span class="hero-tag">Benders cuts</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Water value &middot; temporal coupling &middot; uncertainty</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                A hydroelectric reservoir is a <strong>battery measured in cubic meters</strong>. In a wet
+                month, inflows may exceed what the turbines can convert to electricity, and water must be
+                spilled (lost). In a dry month, inflows may be insufficient to meet demand and expensive
+                thermal backup must run. The operator's problem is to decide, each period, how much water
+                to release (generating hydro power now) versus how much to store (saving it for future,
+                potentially more valuable, periods).
+            </p>
+            <p>
+                The core trade-off is <strong>immediate cost vs expected future cost</strong>. Releasing
+                water now substitutes for expensive thermal generation today. Keeping water raises the
+                probability that future thermal costs are even lower (because inflows might come and we
+                will have plenty), but it also risks <strong>spilling</strong> if the reservoir overtops.
+                The optimal policy is characterized by a <strong>water-value function</strong> $V_t(v)$:
+                the expected cost-to-go at time $t$ given reservoir level $v$. A hydro unit dispatches if
+                and only if the immediate thermal-cost savings exceed the marginal water value &mdash; the
+                derivative $dV_t/dv$.
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                <strong>Pereira &amp; Pinto (1991)</strong> introduced <em>Stochastic Dual Dynamic
+                Programming (SDDP)</em> in <em>Mathematical Programming</em> &mdash; a breakthrough that
+                made hydrothermal scheduling tractable on continental scales. SDDP builds the water-value
+                function implicitly through <em>Benders cuts</em> computed on a scenario tree, rather
+                than explicitly discretizing reservoir levels (which suffers the curse of dimensionality
+                at $>$4 reservoirs). The Brazilian system operator (ONS) has run SDDP-based tools since
+                the mid-1990s; NorGrid (Norwegian hydro), BC Hydro (Canada), and Colombian XM all use
+                SDDP descendants. <cite>Shapiro et&nbsp;al. (2013)</cite> is the definitive modern SDDP
+                reference; the textbook <cite>Birge &amp; Louveaux (2011)</cite> situates it within the
+                broader stochastic programming literature.
+            </div>
+
+            <p>
+                Real hydrothermal systems have multiple reservoirs, cascaded (upstream releases flow to
+                downstream), with different storage capacities, inflow correlations, and environmental
+                constraints (minimum flows for fisheries, ramp rates for boat navigation, recreational-
+                use levels). The full multi-reservoir multi-stage stochastic program is extremely
+                high-dimensional; SDDP's advantage over straight dynamic programming is that it never
+                explicitly discretizes the state space. The in-browser solver below handles a
+                <strong>single reservoir, 12 weekly stages, 3 inflow scenarios</strong> with backward-
+                induction DP on a discretized reservoir level &mdash; pedagogically transparent but
+                not how production tools work.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Multi-stage stochastic program on reservoir state</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <caption>Sets, parameters, decision variables</caption>
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{T}$</td><td>Stages (weeks)</td><td>&mdash;</td></tr>
+                        <tr><td>$\Omega_t$</td><td>Inflow scenario set at stage $t$</td><td>&mdash;</td></tr>
+                        <tr><td>$D_t$</td><td>Load in stage $t$</td><td>MW</td></tr>
+                        <tr><td>$V^{\min}, V^{\max}$</td><td>Reservoir storage limits</td><td>m$^3$</td></tr>
+                        <tr><td>$\eta$</td><td>Hydro generation coefficient</td><td>MWh/m$^3$</td></tr>
+                        <tr><td>$H^{\max}$</td><td>Turbine capacity</td><td>MW</td></tr>
+                        <tr><td>$c_{\mathrm{th}}$</td><td>Thermal marginal cost</td><td>$/MWh</td></tr>
+                        <tr><td>$P_{\mathrm{th}}^{\max}$</td><td>Thermal capacity</td><td>MW</td></tr>
+                        <tr><td>$a_{t,\omega}$</td><td>Inflow in stage $t$, scenario $\omega$</td><td>m$^3$</td></tr>
+                        <tr><td>$v_{t,\omega}$</td><td><strong>Reservoir storage</strong> at end of stage</td><td>m$^3$</td></tr>
+                        <tr><td>$q_{t,\omega}$</td><td><strong>Turbine release</strong></td><td>m$^3$</td></tr>
+                        <tr><td>$s_{t,\omega}$</td><td>Spill</td><td>m$^3$</td></tr>
+                        <tr><td>$p^{\mathrm{th}}_{t,\omega}$</td><td>Thermal dispatch</td><td>MW</td></tr>
+                        <tr><td>$V_t(v)$</td><td><strong>Water-value function</strong></td><td>$</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Objective<span class="ref">expected total cost</span></h3>
+                <p>Minimize expected thermal generation cost over the horizon and scenario tree:</p>
+                <div class="math-display">
+                    $$\min \; \mathbb{E}\left[ \sum_{t \in \mathcal{T}} c_{\mathrm{th}} \, p^{\mathrm{th}}_{t,\omega} \, \tau_t \right] \qquad \text{(1)}$$
+                </div>
+                <p>where $\tau_t$ is stage duration (hours). No investment cost is modeled here &mdash; the hydro assets already exist.</p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Constraints (per stage $t$ and scenario $\omega$)</h3>
+                <p><strong>Reservoir balance</strong>: the master constraint coupling stages:</p>
+                <div class="math-display">
+                    $$v_{t,\omega} \;=\; v_{t-1, \omega'} + a_{t,\omega} - q_{t,\omega} - s_{t,\omega} \qquad \text{(2)}$$
+                </div>
+                <p>where $v_{t-1, \omega'}$ is the ending storage from the predecessor scenario. <strong>Storage and release bounds</strong>:</p>
+                <div class="math-display">
+                    $$V^{\min} \le v_{t,\omega} \le V^{\max}, \quad 0 \le q_{t,\omega}, s_{t,\omega} \qquad \text{(3)}$$
+                </div>
+                <p><strong>Hydro generation</strong> is proportional to release:</p>
+                <div class="math-display">
+                    $$p^{\mathrm{h}}_{t,\omega} \;=\; \eta \, q_{t,\omega}, \quad p^{\mathrm{h}}_{t,\omega} \le H^{\max} \qquad \text{(4)}$$
+                </div>
+                <p><strong>Demand balance</strong> (hydro + thermal = load):</p>
+                <div class="math-display">
+                    $$p^{\mathrm{h}}_{t,\omega} + p^{\mathrm{th}}_{t,\omega} \;=\; D_t \qquad \text{(5)}$$
+                </div>
+                <p><strong>Thermal limit</strong>:</p>
+                <div class="math-display">
+                    $$0 \le p^{\mathrm{th}}_{t,\omega} \le P_{\mathrm{th}}^{\max} \qquad \text{(6)}$$
+                </div>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Bellman equation<span class="ref">dynamic-programming recursion</span></h3>
+                <p>The water-value function satisfies:</p>
+                <div class="math-display">
+                    $$V_{t-1}(v) \;=\; \min_{q, s} \left\{ c_{\mathrm{th}} \, (D_t - \eta q) \, \tau_t + \mathbb{E}_\omega\big[ V_t(v + a_{t,\omega} - q - s) \big] \right\} \qquad \text{(7)}$$
+                </div>
+                <p>subject to (3)&ndash;(6). Solving this recursion backward from the terminal stage yields $V_t(v)$ for every $t$ and every feasible storage $v$. The optimal operating policy is:</p>
+                <div class="math-display">
+                    $$q^*_t(v) \;=\; \arg\min_{q} \left\{ -c_{\mathrm{th}} \, \eta \, q + \mathbb{E}_\omega\big[ V_t(v + a_{t,\omega} - q) \big] \right\}$$
+                </div>
+                <p>that is, <em>release until the marginal thermal-cost saving equals the marginal water value</em> $dV_t/dv$.</p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>SDDP — Pereira &amp; Pinto (1991)</h3>
+                <p>
+                    Stochastic Dual Dynamic Programming <strong>does not discretize the state space</strong>.
+                    Instead it constructs a piecewise-linear outer approximation of $V_t(v)$ using
+                    <strong>Benders cuts</strong> from sampled forward trajectories:
+                </p>
+                <p style="margin-left:1rem;">
+                    <strong>(i) Forward pass</strong>: sample an inflow trajectory, solve the stage LPs
+                    forward given current cuts.<br>
+                    <strong>(ii) Backward pass</strong>: using the sampled forward trajectory, compute
+                    dual variables on (2) and add one new Benders cut to each stage's outer approximation
+                    of $V_t$.<br>
+                    <strong>(iii) Repeat</strong> until confidence interval of upper bound (sampled
+                    expected cost) and lower bound (initial stage's LP objective) close.
+                </p>
+                <p>
+                    SDDP runs on systems with dozens of reservoirs and annual horizons. Brazilian ONS
+                    runs SDDP daily on <strong>180+ reservoirs</strong>. The only practical alternative
+                    at that scale is stochastic MPC combined with forward simulation.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>Brazilian NEWAVE / DECOMP</h4>
+                    <p>
+                        The <a href="https://www.ons.org.br/" target="_blank" rel="noopener">Brazilian system
+                        operator (ONS)</a> publishes monthly inflow scenarios and runs NEWAVE (long-term)
+                        and DECOMP (medium-term) SDDP tools on the country's 160+ reservoir system. The
+                        input data are among the most comprehensive public hydrothermal datasets.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Norwegian SINTEF ReOpt / EMPS</h4>
+                    <p>
+                        <a href="https://www.sintef.no/en/expertise/sintef-energy-research/" target="_blank" rel="noopener">SINTEF</a>
+                        maintains the EMPS (EFI's Multi-area Power market Simulator) which underpins
+                        Norwegian hydro planning. Norway's hydro share (95%+ of generation) makes water-value
+                        forecasting a core system operation.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>PSR SDDP / MSP2000</h4>
+                    <p>
+                        <a href="https://www.psr-inc.com/" target="_blank" rel="noopener">PSR Inc.</a>
+                        distributes SDDP, MSP2000 and related commercial tools used by 50+ utilities
+                        and ISOs worldwide. Tanzania, Colombia, Chile, Turkey, New Zealand all run
+                        SDDP-family tools operationally.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Illustrative single-reservoir (this page)</h4>
+                    <p>
+                        The in-browser solver handles a single reservoir with capacity
+                        1,200 m$^3 \times 10^6$ (scaled), 12 weekly stages, 3 inflow scenarios per stage
+                        (dry / normal / wet with equal probability), 200-MW turbine capacity, and
+                        500-MW thermal backup at $60/MWh. Weekly load cycles sinusoidally around 800 MW.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Backward-induction DP &middot; scenario fan visualization</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>System parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="hydroInflow">Mean inflow (m$^3$/s)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="hydroInflow" min="30" max="120" step="5" value="70">
+                        <span class="size-display" id="hydroInflowVal">70</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="hydroStartV">Initial reservoir (%)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="hydroStartV" min="10" max="90" step="5" value="60">
+                        <span class="size-display" id="hydroStartVVal">60%</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="hydroThermalCost">Thermal cost ($/MWh)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="hydroThermalCost" min="20" max="150" step="5" value="60">
+                        <span class="size-display" id="hydroThermalCostVal">60</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="hydroVariability">Inflow variability</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="hydroVariability" min="0.1" max="0.7" step="0.05" value="0.35">
+                        <span class="size-display" id="hydroVariabilityVal">0.35</span>
+                    </div>
+                </div>
+
+                <button class="solve-btn" id="hydroSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve SDDP
+                </button>
+                <div class="solver-status" id="hydroStatus">Adjust parameters and press Solve.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>Reservoir trajectory (scenario fan)</h3>
+                <div class="canvas-wrap">
+                    <canvas id="hydroReservoirCanvas" width="1100" height="340" aria-label="Reservoir trajectory"></canvas>
+                    <div class="canvas-caption">Reservoir storage over 12 weeks &middot; gold = mean policy &middot; thin blue = wet-scenario realizations &middot; thin red = dry</div>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="hydroDispatchCanvas" width="1100" height="240" aria-label="Hydro vs thermal dispatch"></canvas>
+                    <div class="canvas-caption">Stacked dispatch &middot; blue = hydro &middot; red = thermal &middot; white = load</div>
+                </div>
+                <div class="results-summary" id="hydroResultsSummary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>Reading the policy from the reservoir trajectory</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                The <strong>scenario fan</strong> shows how the reservoir evolves under different
+                realizations of uncertainty. If the operator follows the optimal policy, dry-year
+                trajectories (thin red lines) fall off the mean path as the reservoir draws down to
+                avoid thermal shortage; wet-year trajectories (thin blue) rise and may hit capacity,
+                triggering spill. The <strong>spread of the fan</strong> is a direct visual measure
+                of the system's exposure to hydrological uncertainty.
+            </p>
+            <p>
+                The <strong>dispatch chart</strong> shows what the operator actually does each week
+                on the mean-inflow trajectory: hydro fills what it can at zero marginal cost (plus
+                shadow water value), thermal fills the gap. The ratio of hydro to thermal depends on
+                season: inflow-rich weeks see heavy hydro and idle thermal; low-inflow weeks rely on
+                thermal. The <strong>thermal fraction</strong> over a year is the most-watched KPI in
+                hydro-heavy systems.
+            </p>
+            <p>
+                Under high thermal cost, the optimal policy pushes more hydro sooner (cheaper to burn
+                water now than gas). Under high inflow variability, the policy <em>reserves</em> more
+                storage &mdash; a buffer against the bad-case scenarios. Under low initial reservoir,
+                the policy is cautious early and accepts higher thermal cost to rebuild storage. All
+                three behaviors emerge from the water-value function's shape: steep near the empty
+                boundary (high penalty for running dry), flat near the full boundary (wasted capacity
+                if over-full).
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>Multi-reservoir SDDP</h4>
+                <p>
+                    Cascaded hydro systems where upstream releases become downstream inflows. State
+                    becomes a vector; SDDP's big advantage: it scales to 100+ reservoirs without
+                    discretizing. Brazilian ONS runs SDDP on 160+ reservoirs daily.
+                </p>
+                <div class="ext-ref">Refs: Pereira &amp; Pinto (1991); Shapiro, Tekaya, Da Costa &amp; Soares (2013).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Risk-averse SDDP (CVaR)</h4>
+                <p>
+                    Replaces expected cost with Conditional Value-at-Risk (CVaR) for risk-averse
+                    operation. Key when dry-year costs are catastrophic and decision-makers have
+                    asymmetric preferences.
+                </p>
+                <div class="ext-ref">Refs: Philpott &amp; de Matos (2012); Shapiro, Tekaya, Soares (2011).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Environmental &amp; fishery constraints</h4>
+                <p>
+                    Real hydro systems face minimum-flow requirements for aquatic ecosystems, maximum
+                    ramp rates for boat/recreation safety, and seasonal reservoir-level bounds for
+                    land use. These become added constraints in the stage LPs without changing the
+                    SDDP structure.
+                </p>
+                <div class="ext-ref">Refs: Cerisola, Latorre &amp; Ramos (2012); BC Hydro planning documents.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Hydro + renewable integration</h4>
+                <p>
+                    In renewable-heavy systems, hydro provides the fast-ramping backup to wind/solar.
+                    Medium-term scheduling must jointly forecast inflows and renewable generation;
+                    stochastic coupling expands the uncertainty set considerably.
+                </p>
+                <div class="ext-ref">Refs: Helseth, Gjelsvik, Mo &amp; Fosso (2013); de Queiroz (2016).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Hydro in electricity markets</h4>
+                <p>
+                    Hydro operators in competitive markets bid strategically, using their storage to
+                    arbitrage time-varying prices. Bi-level formulations with hydro at the upper level
+                    and market clearing at the lower level capture strategic behavior.
+                </p>
+                <div class="ext-ref">Refs: Fleten &amp; Kristoffersen (2008); Wallace &amp; Fleten (2003).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Pumped-storage optimization</h4>
+                <p>
+                    Pumped-storage reservoirs can pump water up during low-price hours and generate
+                    during peaks. The arbitrage math is essentially
+                    <a href="battery-storage-optimization.html" style="color:var(--gold);">battery storage
+                    optimization</a> but with inflow uncertainty on top.
+                </p>
+                <div class="ext-ref">Refs: Kazempour, Conejo &amp; Ruiz (2011); standard SDDP handbooks.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+        </div>
+        <div class="related-grid">
+            <a href="unit-commitment.html" class="related-card fade-in">
+                <span class="related-card-tag">Short-term &middot; coupling</span>
+                <span class="related-card-name">Unit Commitment</span>
+                <span class="related-card-desc">Medium-term hydro schedules feed weekly targets to short-term UC, where they become boundary conditions.</span>
+            </a>
+            <a href="economic-dispatch.html" class="related-card fade-in">
+                <span class="related-card-tag">Real-time coupling</span>
+                <span class="related-card-name">Economic Dispatch</span>
+                <span class="related-card-desc">Water value from SDDP is the opportunity cost of hydro in real-time ED, shaping the hydro bid stack.</span>
+            </a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Analogous asset</span>
+                <span class="related-card-name">Battery Storage Optimization</span>
+                <span class="related-card-desc">Batteries and reservoirs are both storage assets with state-of-charge dynamics. Different time scales, same math.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Integration</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">Hydro reservoirs are the cheapest large-scale balancing for wind/solar in systems lucky enough to have them.</span>
+            </a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in">
+                <span class="related-card-tag">Market bidding</span>
+                <span class="related-card-name">Electricity Market Clearing</span>
+                <span class="related-card-desc">Hydro operators bid water value into electricity markets; the clearing prices feed back into reservoir policy.</span>
+            </a>
+            <a href="../families/stochastic.html" class="related-card fade-in">
+                <span class="related-card-tag">OR family</span>
+                <span class="related-card-name">Stochastic Programming</span>
+                <span class="related-card-desc">SDDP is the defining application of multi-stage stochastic programming. Hydro was the motivating example for the whole field.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Pereira, M.&nbsp;V.&nbsp;F., &amp; Pinto, L.&nbsp;M.&nbsp;V.&nbsp;G.</span> (1991).</div><div class="title">&ldquo;Multi-stage stochastic optimization applied to energy planning.&rdquo;</div><div class="journal"><em>Mathematical Programming</em>, 52(1&ndash;3), 359&ndash;375. <a href="https://doi.org/10.1007/BF01582895" target="_blank" rel="noopener">doi:10.1007/BF01582895</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Shapiro, A., Tekaya, W., da Costa, J.&nbsp;P., &amp; Soares, M.&nbsp;P.</span> (2013).</div><div class="title">&ldquo;Risk-neutral and risk-averse Stochastic Dual Dynamic Programming method.&rdquo;</div><div class="journal"><em>European Journal of Operational Research</em>, 224(2), 375&ndash;391. <a href="https://doi.org/10.1016/j.ejor.2012.08.022" target="_blank" rel="noopener">doi:10.1016/j.ejor.2012.08.022</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Birge, J.&nbsp;R., &amp; Louveaux, F.</span> (2011).</div><div class="title"><em>Introduction to Stochastic Programming</em> (2nd ed.).</div><div class="journal">Springer Series in Operations Research and Financial Engineering. <a href="https://doi.org/10.1007/978-1-4614-0237-4" target="_blank" rel="noopener">doi:10.1007/978-1-4614-0237-4</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Philpott, A.&nbsp;B., &amp; de Matos, V.&nbsp;L.</span> (2012).</div><div class="title">&ldquo;Dynamic sampling algorithms for multi-stage stochastic programs with risk aversion.&rdquo;</div><div class="journal"><em>European Journal of Operational Research</em>, 218(2), 470&ndash;483. <a href="https://doi.org/10.1016/j.ejor.2011.10.056" target="_blank" rel="noopener">doi:10.1016/j.ejor.2011.10.056</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">Cerisola, S., Latorre, J.&nbsp;M., &amp; Ramos, A.</span> (2012).</div><div class="title">&ldquo;Stochastic dual dynamic programming applied to non-convex hydrothermal models.&rdquo;</div><div class="journal"><em>European Journal of Operational Research</em>, 218(3), 687&ndash;697. <a href="https://doi.org/10.1016/j.ejor.2011.11.040" target="_blank" rel="noopener">doi:10.1016/j.ejor.2011.11.040</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Fleten, S.-E., &amp; Kristoffersen, T.&nbsp;K.</span> (2008).</div><div class="title">&ldquo;Short-term hydropower production planning by stochastic programming.&rdquo;</div><div class="journal"><em>Computers &amp; Operations Research</em>, 35(8), 2656&ndash;2671. <a href="https://doi.org/10.1016/j.cor.2006.12.022" target="_blank" rel="noopener">doi:10.1016/j.cor.2006.12.022</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Helseth, A., Gjelsvik, A., Mo, B., &amp; Fosso, O.&nbsp;B.</span> (2013).</div><div class="title">&ldquo;A model for optimal scheduling of hydro thermal systems including pumped-storage and wind power.&rdquo;</div><div class="journal"><em>IET Generation, Transmission &amp; Distribution</em>, 7(12), 1426&ndash;1434. <a href="https://doi.org/10.1049/iet-gtd.2012.0639" target="_blank" rel="noopener">doi:10.1049/iet-gtd.2012.0639</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">de Queiroz, A.&nbsp;R.</span> (2016).</div><div class="title">&ldquo;Stochastic hydro-thermal scheduling optimization: An overview.&rdquo;</div><div class="journal"><em>Renewable and Sustainable Energy Reviews</em>, 62, 382&ndash;395. <a href="https://doi.org/10.1016/j.rser.2016.04.065" target="_blank" rel="noopener">doi:10.1016/j.rser.2016.04.065</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Wallace, S.&nbsp;W., &amp; Fleten, S.-E.</span> (2003).</div><div class="title">&ldquo;Stochastic programming models in energy.&rdquo;</div><div class="journal">In <em>Handbooks in Operations Research and Management Science</em>, Vol. 10. Elsevier. <a href="https://doi.org/10.1016/S0927-0507(03)10010-2" target="_blank" rel="noopener">doi:10.1016/S0927-0507(03)10010-2</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">Kazempour, S.&nbsp;J., Conejo, A.&nbsp;J., &amp; Ruiz, C.</span> (2011).</div><div class="title">&ldquo;Strategic generation investment using a complementarity approach.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 26(2), 940&ndash;948. <a href="https://doi.org/10.1109/TPWRS.2010.2069573" target="_blank" rel="noopener">doi:10.1109/TPWRS.2010.2069573</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    In-browser solver uses backward-induction DP on a discretized reservoir level with 12 weekly stages and 3 inflow scenarios.
+    Production hydro tools (PSR SDDP, MSP2000, NEWAVE, EMPS) handle hundreds of reservoirs via Benders cuts without discretization.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false });
+    }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       HYDRO SOLVER — backward-induction DP, 12 weeks, 3 inflow scenarios
+       ================================================================ */
+
+    var T_STAGES = 12;
+    var V_MAX = 1000;   /* reservoir capacity in scaled m^3 */
+    var V_MIN = 50;     /* dead storage */
+    var V_GRID_N = 40;  /* state-space discretization */
+    var ETA = 1.2;      /* MWh per m^3 (scaled) */
+    var H_MAX = 200;    /* turbine capacity MW */
+    var PTH_MAX = 500;  /* thermal capacity MW */
+    var SCENARIOS = 3;  /* dry / normal / wet */
+
+    function loadProfile(t) {
+        /* Sinusoidal weekly load: lowest in mid-year */
+        var avg = 800;
+        return avg + 120 * Math.sin(2 * Math.PI * t / T_STAGES + Math.PI / 2);
+    }
+
+    function inflowScenarios(t, meanInflow, variability) {
+        /* Seasonal variation: higher inflow in weeks 3-7 */
+        var seasonal = 1.0 + 0.4 * Math.sin(Math.PI * t / T_STAGES);
+        var base = meanInflow * seasonal * 0.6; /* scale to reservoir units */
+        return [
+            base * (1 - variability),     /* dry */
+            base,                          /* normal */
+            base * (1 + variability)       /* wet */
+        ];
+    }
+
+    /* State discretization */
+    function vAt(i) { return V_MIN + (V_MAX - V_MIN) * i / (V_GRID_N - 1); }
+    function iAt(v) {
+        var idx = Math.round((v - V_MIN) / (V_MAX - V_MIN) * (V_GRID_N - 1));
+        return Math.max(0, Math.min(V_GRID_N - 1, idx));
+    }
+
+    function immediateCost(thermal, thermalCost) {
+        return thermal * thermalCost * 168;  /* 168 hours / week */
+    }
+
+    /* Given current storage v and inflow a, and release q:
+       - Compute next storage, hydro output, thermal output
+       - Return cost and next state */
+    function stageTransition(v, a, q, D, thermalCost) {
+        var pHydro = Math.min(H_MAX, ETA * q);
+        q = pHydro / ETA; /* back out release consistent with turbine cap */
+        var vNext = v + a - q;
+        var spill = 0;
+        if (vNext > V_MAX) { spill = vNext - V_MAX; vNext = V_MAX; }
+        if (vNext < V_MIN) return null; /* infeasible */
+        var pThermal = Math.max(0, D - pHydro);
+        if (pThermal > PTH_MAX) return null; /* infeasible */
+        return {
+            vNext: vNext,
+            spill: spill,
+            pHydro: pHydro,
+            pThermal: pThermal,
+            cost: immediateCost(pThermal, thermalCost)
+        };
+    }
+
+    function solveDP(params) {
+        var mean = params.meanInflow;
+        var variability = params.variability;
+        var tCost = params.thermalCost;
+
+        /* Future cost table V[t][i] = expected cost-to-go at stage t with storage vAt(i) */
+        var V = [];
+        for (var t = 0; t <= T_STAGES; t++) {
+            V.push(new Array(V_GRID_N).fill(0));
+        }
+        /* Optimal release policy Q[t][i] in release units */
+        var Q = [];
+        for (var tt = 0; tt < T_STAGES; tt++) {
+            Q.push(new Array(V_GRID_N).fill(0));
+        }
+
+        /* Backward induction */
+        for (var t = T_STAGES - 1; t >= 0; t--) {
+            var D = loadProfile(t);
+            var infs = inflowScenarios(t, mean, variability);
+            /* Release grid */
+            var qOptions = [];
+            for (var qi = 0; qi <= 20; qi++) qOptions.push((qi / 20) * H_MAX / ETA);
+
+            for (var i = 0; i < V_GRID_N; i++) {
+                var v = vAt(i);
+                var bestCost = Infinity;
+                var bestQ = 0;
+                for (var qq = 0; qq < qOptions.length; qq++) {
+                    var q = qOptions[qq];
+                    /* Expected cost: average over scenarios */
+                    var eCost = 0;
+                    var feasible = true;
+                    for (var sc = 0; sc < SCENARIOS; sc++) {
+                        var trans = stageTransition(v, infs[sc], q, D, tCost);
+                        if (!trans) { feasible = false; break; }
+                        eCost += trans.cost + V[t+1][iAt(trans.vNext)];
+                    }
+                    if (!feasible) continue;
+                    eCost /= SCENARIOS;
+                    if (eCost < bestCost) { bestCost = eCost; bestQ = q; }
+                }
+                V[t][i] = isFinite(bestCost) ? bestCost : 1e12;
+                Q[t][i] = bestQ;
+            }
+        }
+
+        /* Forward simulation on three scenarios: dry, normal, wet realization tracks */
+        var trajectories = [];
+        for (var sc = 0; sc < SCENARIOS; sc++) {
+            var vPath = [];
+            var hPath = [];
+            var thPath = [];
+            var loadPath = [];
+            var vCur = params.startV;
+            for (var tt2 = 0; tt2 < T_STAGES; tt2++) {
+                var infs2 = inflowScenarios(tt2, mean, variability);
+                var qChoice = Q[tt2][iAt(vCur)];
+                var trans2 = stageTransition(vCur, infs2[sc], qChoice, loadProfile(tt2), tCost);
+                if (!trans2) {
+                    /* force clamp */
+                    qChoice = Math.min(qChoice, (vCur - V_MIN + infs2[sc]));
+                    if (qChoice < 0) qChoice = 0;
+                    trans2 = stageTransition(vCur, infs2[sc], qChoice, loadProfile(tt2), tCost);
+                    if (!trans2) {
+                        /* final fallback: flag as infeasible spot */
+                        vPath.push(vCur);
+                        hPath.push(0);
+                        thPath.push(loadProfile(tt2));
+                        loadPath.push(loadProfile(tt2));
+                        vCur = vCur;
+                        continue;
+                    }
+                }
+                vPath.push(trans2.vNext);
+                hPath.push(trans2.pHydro);
+                thPath.push(trans2.pThermal);
+                loadPath.push(loadProfile(tt2));
+                vCur = trans2.vNext;
+            }
+            trajectories.push({
+                label: sc === 0 ? 'Dry' : (sc === 1 ? 'Normal' : 'Wet'),
+                v: vPath, h: hPath, th: thPath, load: loadPath,
+                color: sc === 0 ? '#ff6b6b' : (sc === 1 ? '#C5A059' : '#7aa2f7')
+            });
+        }
+
+        return { V: V, Q: Q, trajectories: trajectories };
+    }
+
+    /* ============== CANVAS: RESERVOIR TRAJECTORY ============== */
+    function drawReservoir(result) {
+        var cvs = document.getElementById('hydroReservoirCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 65, r: 30, t: 20, b: 40 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        ctx.lineWidth = 0.5;
+        for (var g = 0; g <= 5; g++) {
+            var gy = pad.t + (plotH / 5) * g;
+            ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + plotW, gy); ctx.stroke();
+        }
+
+        /* Plot each scenario */
+        result.trajectories.forEach(function(traj){
+            ctx.strokeStyle = traj.color;
+            ctx.lineWidth = traj.label === 'Normal' ? 3 : 2;
+            ctx.globalAlpha = traj.label === 'Normal' ? 1 : 0.7;
+            ctx.beginPath();
+            for (var t = 0; t < traj.v.length; t++) {
+                var x = pad.l + (t + 0.5) * (plotW / T_STAGES);
+                var y = pad.t + plotH - (traj.v[t] / V_MAX) * plotH;
+                if (t === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+        });
+
+        /* Capacity bounds */
+        ctx.strokeStyle = 'rgba(255,107,107,0.3)';
+        ctx.setLineDash([3, 3]);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t + plotH - (V_MIN / V_MAX) * plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH - (V_MIN / V_MAX) * plotH);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('Vmin', pad.l + 4, pad.t + plotH - (V_MIN / V_MAX) * plotH - 3);
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH);
+        ctx.stroke();
+
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        for (var gg = 0; gg <= 5; gg++) {
+            var v = V_MAX * (1 - gg / 5);
+            var yL = pad.t + (plotH / 5) * gg;
+            ctx.fillText(Math.round(v) + ' m\u00b3', pad.l - 6, yL + 3);
+        }
+        ctx.textAlign = 'center';
+        for (var wk = 0; wk < T_STAGES; wk++) {
+            var xx = pad.l + (wk + 0.5) * (plotW / T_STAGES);
+            if (wk % 2 === 0) ctx.fillText('W' + (wk + 1), xx, pad.t + plotH + 16);
+        }
+
+        /* Legend */
+        ctx.textAlign = 'left';
+        ctx.font = '10px "Inter", sans-serif';
+        var lx = pad.l + 10, ly = pad.t + 14;
+        result.trajectories.forEach(function(traj, i){
+            ctx.strokeStyle = traj.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(lx, ly); ctx.lineTo(lx + 18, ly);
+            ctx.stroke();
+            ctx.fillStyle = '#a8b2d1';
+            ctx.fillText(traj.label, lx + 22, ly + 3);
+            lx += 90;
+        });
+    }
+
+    /* ============== CANVAS: DISPATCH ============== */
+    function drawDispatch(result) {
+        var cvs = document.getElementById('hydroDispatchCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 65, r: 30, t: 16, b: 32 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+        var barW = plotW / T_STAGES;
+        var traj = result.trajectories[1]; /* Normal scenario */
+
+        var yMax = 0;
+        traj.load.forEach(function(l){ if (l > yMax) yMax = l; });
+        yMax = Math.ceil(yMax / 100) * 100 + 100;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        for (var g = 0; g <= 4; g++) {
+            var gy = pad.t + (plotH / 4) * g;
+            ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + plotW, gy); ctx.stroke();
+        }
+
+        for (var t = 0; t < T_STAGES; t++) {
+            var x = pad.l + t * barW;
+            var hydroH = (traj.h[t] / yMax) * plotH;
+            var thermalH = (traj.th[t] / yMax) * plotH;
+            /* Hydro (blue) at bottom */
+            ctx.fillStyle = '#7aa2f7';
+            ctx.fillRect(x + 2, pad.t + plotH - hydroH, barW - 4, hydroH);
+            /* Thermal (red) on top */
+            ctx.fillStyle = '#ff6b6b';
+            ctx.globalAlpha = 0.85;
+            ctx.fillRect(x + 2, pad.t + plotH - hydroH - thermalH, barW - 4, thermalH);
+            ctx.globalAlpha = 1;
+        }
+
+        /* Load line */
+        ctx.strokeStyle = '#F8F9FA';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var t2 = 0; t2 < T_STAGES; t2++) {
+            var xL = pad.l + (t2 + 0.5) * barW;
+            var yL = pad.t + plotH - (traj.load[t2] / yMax) * plotH;
+            if (t2 === 0) ctx.moveTo(xL, yL); else ctx.lineTo(xL, yL);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH); ctx.stroke();
+
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        for (var gg = 0; gg <= 4; gg++) {
+            var v = yMax * (1 - gg / 4);
+            var yl = pad.t + (plotH / 4) * gg;
+            ctx.fillText(Math.round(v) + ' MW', pad.l - 6, yl + 3);
+        }
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div'); card.className = 'res-card';
+        var lbl = document.createElement('div'); lbl.className = 'res-card-lbl'; lbl.textContent = label;
+        var val = document.createElement('div'); val.className = 'res-card-val'; val.textContent = value;
+        card.appendChild(lbl); card.appendChild(val);
+        parent.appendChild(card);
+    }
+
+    function formatMoney(x) {
+        if (!isFinite(x)) return '\u221e';
+        if (x >= 1e6) return '$' + (x / 1e6).toFixed(2) + 'M';
+        if (x >= 1e3) return '$' + (x / 1e3).toFixed(0) + 'k';
+        return '$' + Math.round(x);
+    }
+
+    function renderResults(result, params) {
+        var summary = document.getElementById('hydroResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+
+        /* Compute metrics on Normal scenario */
+        var traj = result.trajectories[1];
+        var totalHydro = 0, totalThermal = 0, totalCost = 0;
+        for (var t = 0; t < T_STAGES; t++) {
+            totalHydro += traj.h[t] * 168;    /* MWh */
+            totalThermal += traj.th[t] * 168;
+            totalCost += traj.th[t] * 168 * params.thermalCost;
+        }
+        var thermalShare = totalThermal / (totalHydro + totalThermal);
+
+        appendCard(summary, 'Total cost (normal)', formatMoney(totalCost));
+        appendCard(summary, 'Hydro energy', (totalHydro / 1000).toFixed(0) + ' GWh');
+        appendCard(summary, 'Thermal energy', (totalThermal / 1000).toFixed(0) + ' GWh');
+        appendCard(summary, 'Thermal share', (thermalShare * 100).toFixed(1) + '%');
+        appendCard(summary, 'Final storage', Math.round(traj.v[traj.v.length - 1]) + ' m\u00b3');
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('hydroInflow', 'hydroInflowVal', '');
+    bindSlider('hydroStartV', 'hydroStartVVal', '%');
+    bindSlider('hydroThermalCost', 'hydroThermalCostVal', '');
+    bindSlider('hydroVariability', 'hydroVariabilityVal', '');
+
+    function runSolver() {
+        var params = {
+            meanInflow: parseInt(document.getElementById('hydroInflow').value, 10),
+            startV: (parseInt(document.getElementById('hydroStartV').value, 10) / 100) * V_MAX,
+            thermalCost: parseInt(document.getElementById('hydroThermalCost').value, 10),
+            variability: parseFloat(document.getElementById('hydroVariability').value)
+        };
+
+        var t0 = performance.now();
+        var result = solveDP(params);
+        var t1 = performance.now();
+
+        drawReservoir(result);
+        drawDispatch(result);
+        renderResults(result, params);
+
+        document.getElementById('hydroStatus').textContent = 'Solved DP in ' + (t1 - t0).toFixed(1) + ' ms';
+    }
+
+    document.getElementById('hydroSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>

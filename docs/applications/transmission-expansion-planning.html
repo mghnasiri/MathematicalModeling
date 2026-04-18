@@ -1,0 +1,1141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Transmission Expansion Planning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Transmission Expansion Planning (TEP) decides which new transmission lines to build over a multi-year horizon. Binary investment decisions coupled with DC-OPF operation. Interactive solver on Garver's classic 6-bus test network with iterative line addition.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/transmission-expansion-planning.html">
+    <meta property="og:title" content="Transmission Expansion Planning | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive MIP solver for transmission expansion planning on Garver's 6-bus test network.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/transmission-expansion-planning.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --gold-dim:rgba(197,160,89,0.15); --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; transition:width 0.1s linear; width:0%; box-shadow:0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { background:transparent; padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(122,162,247,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(197,160,89,0.05) 0%, transparent 50%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(122,162,247,0.4)); animation:gridBuildPulse 3.4s ease-in-out infinite; }
+        @keyframes gridBuildPulse { 0%,100% { filter:drop-shadow(0 0 10px rgba(122,162,247,0.4)); transform:scale(1); } 50% { filter:drop-shadow(0 0 18px rgba(122,162,247,0.7)); transform:scale(1.05); } }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto 1rem; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-long { color:var(--violet); background:rgba(192,132,252,0.08); border-color:rgba(192,132,252,0.3); }
+        .hero-tag.tag-transmission { color:var(--blue); background:rgba(122,162,247,0.08); border-color:rgba(122,162,247,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; line-height:1.75; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card h3 span.ref { font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--slate); letter-spacing:0.5px; text-transform:none; font-weight:400; margin-left:0.5rem; }
+        .formulation-card p, .formulation-card ul { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card ul { padding-left:1.5rem; list-style:disc; }
+        .formulation-card li { margin-bottom:0.3rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table caption { caption-side:top; text-align:left; font-family:'Inter',sans-serif; font-size:0.78rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--slate); padding-bottom:0.5rem; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; vertical-align:top; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; margin-bottom:0.5rem; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:340px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.3s; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; letter-spacing:0.3px; }
+        .results-table { width:100%; margin-top:1rem; font-size:0.82rem; border-collapse:collapse; }
+        .results-table th, .results-table td { padding:0.45rem 0.7rem; text-align:right; border-bottom:1px solid rgba(197,160,89,0.08); }
+        .results-table th { color:var(--gold); font-size:0.72rem; letter-spacing:0.5px; text-transform:uppercase; font-family:'Inter',sans-serif; font-weight:500; }
+        .results-table td { color:var(--slate-light); font-family:'JetBrains Mono',monospace; }
+        .results-table td:first-child, .results-table th:first-child { text-align:left; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; transition:all 0.25s; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); letter-spacing:0.5px; }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; letter-spacing:2px; } .section-header h2 { font-size:1.6rem; letter-spacing:2px; } section { padding:2.8rem 0; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Applications","item":"https://mghnasiri.github.io/MathematicalModeling/applications/"},
+      {"@type":"ListItem","position":3,"name":"Energy","item":"https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html"},
+      {"@type":"ListItem","position":4,"name":"Transmission Expansion Planning","item":"https://mghnasiri.github.io/MathematicalModeling/applications/transmission-expansion-planning.html"}
+    ]}
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Transmission Expansion Planning</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-tower-broadcast" aria-hidden="true"></i></div>
+        <h1>Transmission <span>Expansion Planning</span></h1>
+        <p class="hero-abbrev">TEP &middot; MIP &middot; Garver's problem</p>
+        <p class="hero-subtitle">Multi-year &middot; Line Investment &middot; Network Design</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Which new transmission lines should be built over the next decade, and which existing
+            corridors should be reinforced? <strong>Transmission Expansion Planning (TEP)</strong> is
+            the network-design half of long-term power-systems investment &mdash; complementary to
+            <a href="generation-expansion-planning.html" style="color:var(--gold)">Generation Expansion
+            Planning</a>. A single transmission line can cost $1&ndash;5 million per mile and takes 5 to
+            10 years to permit and construct. The problem is a mixed-integer program with binary
+            investment decisions and a DC-OPF operational subproblem, first formulated by Garver in 1970
+            and still an active research area six decades later.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-long">Long-term planning</span>
+            <span class="hero-tag tag-transmission">Transmission layer</span>
+            <span class="hero-tag">MIP</span>
+            <span class="hero-tag">DC-OPF subproblem</span>
+            <span class="hero-tag">N-1 security</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Long-horizon network investment</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                When a new wind farm comes online in West Texas, <em>how does the power reach the
+                Houston load center?</em> Existing transmission may be congested; the wind's output
+                may spill in high-wind hours because no line is available to carry it east. The
+                transmission planner's job is to identify the candidate new lines that would relieve
+                the bottleneck, calculate the cost of building each, and pick the portfolio that
+                maximizes social welfare &mdash; or equivalently, minimizes the sum of investment plus
+                expected operational cost (congestion rents, curtailment, out-of-merit dispatch).
+            </p>
+            <p>
+                The mathematical structure is a <strong>bilevel investment-operations MIP</strong>,
+                with the same two-layer skeleton as GEP. Upper level: binary investment variables
+                $x_\ell \in \{0, 1\}$ for each candidate line $\ell$. Lower level: a DC-OPF dispatch
+                in every period (or representative scenario) respecting Kirchhoff's laws and the
+                line-thermal-limit constraint that is now conditional on whether the line exists:
+                $-F_\ell^{\max} x_\ell \le f_\ell \le F_\ell^{\max} x_\ell$. TEP inherits the
+                polynomial-time tractability of DC-OPF at the operational level but the combinatorial
+                explosion from $2^{|\mathcal{L}_{\mathrm{cand}}|}$ investment portfolios.
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                <cite>Garver (1970)</cite> wrote the canonical TEP formulation in <em>IEEE Trans.
+                Power Apparatus and Systems</em>, introducing the 6-bus test network still used as
+                a benchmark today (this page's solver runs that exact network). <cite>Romero &amp;
+                Monticelli (1994)</cite> extended to DC-OPF-based formulations and introduced the
+                disjunctive &ldquo;big-M&rdquo; representation that is the modern workhorse.
+                <cite>Latorre et&nbsp;al. (2003)</cite> classified the main variants: static vs
+                dynamic, deterministic vs stochastic, single-stage vs multi-stage. <cite>Hemmati,
+                Hooshmand &amp; Khodabakhshian (2013)</cite> is the authoritative review; <cite>Mahdavi,
+                Antunez, Ajalli &amp; Romero (2019)</cite> brings it forward to renewable-heavy grids.
+            </div>
+
+            <p>
+                Modern TEP is increasingly coupled with <strong>generation expansion</strong> (joint
+                GEP-TEP), <strong>storage deployment</strong>, and <strong>uncertainty</strong>
+                (stochastic, robust, adjustable-robust). The key modern question is how much
+                transmission is needed to integrate the clean-energy transition: NREL's
+                <em>Interconnections Seam</em> study (2020) found that a US-scale seam with 30 GW of
+                inter-regional HVDC transmission could save $2&ndash;5 billion per year by 2050,
+                assuming net-zero targets are met. The underlying model is a joint GEP-TEP with
+                hourly dispatch.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>MIP with DC-OPF subproblem &middot; disjunctive &ldquo;big-M&rdquo;</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <caption>Sets, parameters, decision variables</caption>
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{N}$</td><td>Buses</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{L}_{\mathrm{ex}}$</td><td>Existing lines</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{L}_{\mathrm{cand}}$</td><td>Candidate (buildable) lines</td><td>&mdash;</td></tr>
+                        <tr><td>$I_\ell$</td><td>Investment cost of candidate line $\ell$</td><td>$</td></tr>
+                        <tr><td>$F_\ell^{\max}$</td><td>Thermal limit of line $\ell$</td><td>MW</td></tr>
+                        <tr><td>$b_\ell$</td><td>Susceptance of line $\ell$</td><td>pu</td></tr>
+                        <tr><td>$c_g$</td><td>Generation marginal cost at bus $g$</td><td>$/MWh</td></tr>
+                        <tr><td>$D_i$</td><td>Load at bus $i$</td><td>MW</td></tr>
+                        <tr><td>$M$</td><td>Big-M constant (disjunctive)</td><td>pu</td></tr>
+                        <tr><td>$x_\ell$</td><td><strong>Build decision</strong> for $\ell \in \mathcal{L}_{\mathrm{cand}}$</td><td>{0,1}</td></tr>
+                        <tr><td>$p_g$</td><td>Generation output</td><td>MW</td></tr>
+                        <tr><td>$\theta_i$</td><td>Bus angle</td><td>rad</td></tr>
+                        <tr><td>$f_\ell$</td><td>Line flow</td><td>MW</td></tr>
+                        <tr><td>$u_i$</td><td>Load shedding at bus $i$ (penalty)</td><td>MW</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Objective</h3>
+                <p>Minimize investment cost plus expected operational cost plus load-shed penalty:</p>
+                <div class="math-display">
+                    $$\min \; \sum_{\ell \in \mathcal{L}_{\mathrm{cand}}} I_\ell \, x_\ell + \sum_{s \in \mathcal{S}} \pi_s \Big( \sum_{g} c_g \, p_{g,s} + \sum_i \rho \, u_{i,s} \Big) \qquad \text{(1)}$$
+                </div>
+                <p>
+                    where $s$ indexes operational scenarios (typical periods, contingencies, or stochastic
+                    realizations) with probability $\pi_s$, and $\rho$ is a penalty for unserved load
+                    (Value of Lost Load, VOLL, typically $1,000&ndash;$10,000 per MWh).
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Operational constraints (per scenario $s$)</h3>
+                <p><strong>Bus balance</strong> at every bus $i$:</p>
+                <div class="math-display">
+                    $$\sum_{\ell \in i^+} f_{\ell,s} - \sum_{\ell \in i^-} f_{\ell,s} + \sum_{g \in i} p_{g,s} + u_{i,s} = D_{i,s} \qquad \forall i, s \qquad \text{(2)}$$
+                </div>
+                <p><strong>Existing line flow</strong> (DC approximation, standard):</p>
+                <div class="math-display">
+                    $$f_{\ell,s} = b_\ell (\theta_{i,s} - \theta_{j,s}) \qquad \forall \ell = (i,j) \in \mathcal{L}_{\mathrm{ex}} \qquad \text{(3)}$$
+                </div>
+                <p><strong>Candidate line flow, disjunctive</strong> (the "big-M" formulation):</p>
+                <div class="math-display">
+                    $$-M(1 - x_\ell) \le f_{\ell,s} - b_\ell (\theta_{i,s} - \theta_{j,s}) \le M(1 - x_\ell) \qquad \forall \ell \in \mathcal{L}_{\mathrm{cand}} \qquad \text{(4)}$$
+                </div>
+                <p>If $x_\ell = 1$, the equality (3) is enforced; if $x_\ell = 0$, the constraint becomes non-binding and flow is allowed to differ from angle difference (effectively the line doesn't exist).</p>
+                <p><strong>Thermal limit</strong> conditional on build:</p>
+                <div class="math-display">
+                    $$-F_\ell^{\max} x_\ell \le f_{\ell,s} \le F_\ell^{\max} x_\ell \qquad \forall \ell \in \mathcal{L}_{\mathrm{cand}}, s \qquad \text{(5)}$$
+                </div>
+                <p>(For existing lines: $-F_\ell^{\max} \le f_{\ell,s} \le F_\ell^{\max}$.)</p>
+                <p><strong>Generator limits, load-shed non-negativity</strong>:</p>
+                <div class="math-display">
+                    $$0 \le p_{g,s} \le P_g^{\max}, \quad u_{i,s} \ge 0, \quad x_\ell \in \{0, 1\} \qquad \text{(6)}$$
+                </div>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Multi-year extension</h3>
+                <p>
+                    The static formulation above fixes the build decision once; the multi-year dynamic TEP
+                    adds a year index: $x_{\ell, y}$ indicates whether line $\ell$ is built <em>by</em>
+                    year $y$, with accumulation $x_{\ell,y} \ge x_{\ell,y-1}$ (a built line stays built).
+                    Cost (1) is discounted: $\sum_y (1+r)^{-y} \ldots$. Multi-year TEP is what most
+                    real planners solve.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>N&minus;1 security constraint</h3>
+                <p>
+                    Real-world TEP must produce a plan that remains operable after any single element
+                    outage. The N&minus;1 formulation replicates constraints (2)&ndash;(5) once per
+                    contingency $k$: $f_{\ell,s,k}$, $\theta_{i,s,k}$, $u_{i,s,k}$. This explodes the
+                    LP size by a factor of $|K|$ (number of contingencies). Benders decomposition with
+                    contingency subproblems is the standard solution method.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity &amp; solution methods</h3>
+                <ul>
+                    <li><strong>Direct MIP</strong>: branch-and-cut on the disjunctive formulation, up to $\sim$100 candidate lines.</li>
+                    <li><strong>Benders decomposition</strong>: master problem chooses $x_\ell$; LP subproblems evaluate operational cost per scenario and cut back.</li>
+                    <li><strong>Constructive heuristics</strong>: start with no new lines, iteratively add the one with largest marginal benefit per investment dollar until improvement saturates.</li>
+                    <li><strong>Metaheuristics</strong>: genetic algorithms on the $x$ vector; popular in older TEP literature, less common now.</li>
+                    <li><strong>Column-and-constraint generation</strong>: for robust TEP with budget-of-uncertainty sets.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+            <p>Test networks &amp; production practice</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>Garver's 6-bus system (1970)</h4>
+                    <p>
+                        The canonical TEP benchmark: 6 buses, 3 generators, 5 load buses, 15 candidate
+                        line additions (including parallel additions to existing corridors). Garver's
+                        original paper gives the line data in per-unit; his optimal solution adds 4
+                        lines for a 20 pu-distance-weighted total investment. The interactive solver
+                        below uses this network.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>IEEE 24-bus and 118-bus test systems</h4>
+                    <p>
+                        Larger academic benchmarks extending from operations (RTS-96) to planning. Widely
+                        used for N&minus;1 secure TEP. <a href="https://matpower.org" target="_blank" rel="noopener">MATPOWER</a> provides ready network data.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>NREL Interconnections Seam Study</h4>
+                    <p>
+                        The <a href="https://www.nrel.gov/analysis/seams.html" target="_blank" rel="noopener">NREL Seams study</a>
+                        (2016&ndash;2020) is a US-scale TEP applied to integrate Eastern, Western, and
+                        ERCOT interconnections. It found macro-scale transmission expansion essential
+                        for net-zero scenarios and produced publicly available network data used in
+                        several subsequent research papers.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Regional TEP publications</h4>
+                    <p>
+                        US ISOs publish TEP studies annually. <strong>PJM's Regional Transmission
+                        Expansion Plan (RTEP)</strong> and <strong>MISO's MTEP</strong> are the
+                        highest-profile examples. These use commercial solvers (PROMOD, PowrSym) plus
+                        engineering judgment.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>TEP solver</span></h2>
+            <p>Garver's 6-bus network &middot; iterative constructive heuristic</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Scenario parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="tepBudget">Investment budget ($M)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="tepBudget" min="10" max="200" step="10" value="80">
+                        <span class="size-display" id="tepBudgetVal">80</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="tepLoadMult">Load multiplier</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="tepLoadMult" min="0.8" max="1.8" step="0.1" value="1.2">
+                        <span class="size-display" id="tepLoadMultVal">1.2&times;</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="tepVOLL">Value of lost load ($/MWh)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="tepVOLL" min="500" max="10000" step="500" value="3000">
+                        <span class="size-display" id="tepVOLLVal">3000</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="tepLineCostMult">Line cost scaling</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="tepLineCostMult" min="0.5" max="2" step="0.1" value="1">
+                        <span class="size-display" id="tepLineCostMultVal">1.0&times;</span>
+                    </div>
+                </div>
+
+                <button class="solve-btn" id="tepSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Plan network
+                </button>
+                <div class="solver-status" id="tepStatus">Adjust parameters and press Plan.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>6-bus network: existing + new</h3>
+                <div class="canvas-wrap">
+                    <canvas id="tepNetworkCanvas" width="1100" height="440" aria-label="Garver 6-bus network with existing and built candidate lines"></canvas>
+                    <div class="canvas-caption">Solid = existing/built &middot; dashed = candidate (not selected) &middot; colored by utilization &middot; load-shedding shown in red</div>
+                </div>
+                <div class="results-summary" id="tepResultsSummary"></div>
+                <div id="tepResultsDetail"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>Where and why new lines are needed</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                The network diagram shows the set of <strong>existing</strong> lines (solid) and every
+                <strong>candidate</strong> line (dashed if not selected, solid if selected by the
+                solver). A congested existing line is shaded red; an available but unused candidate is
+                thin-dashed grey. When the load multiplier is low, the existing network handles the
+                flow and no new lines are built. When load scales up, certain corridors become
+                bottlenecks and the solver <strong>adds the candidate line whose marginal benefit per
+                dollar is highest</strong> &mdash; typically a line that relieves the most congested
+                corridor or brings a stranded cheap generator into the load center.
+            </p>
+            <p>
+                The <strong>constructive heuristic</strong> used here (iteratively add the best
+                remaining candidate) is not guaranteed globally optimal, but it captures most of the
+                value and is standard in introductory TEP literature. Production TEP tools solve the
+                full disjunctive MIP.
+            </p>
+            <p>
+                The <strong>investment-vs-operational-cost trade-off</strong> is the central insight.
+                Building a line costs capital; not building it incurs ongoing operational cost
+                (congestion rent, out-of-merit dispatch, eventually load shedding). The solver picks
+                lines whose operational-cost savings over the planning horizon exceed their investment
+                cost. Sensitivity to VOLL and load multiplier tells you how robust the plan is to
+                alternative futures.
+            </p>
+            <p>
+                The <strong>dual of the line-limit constraint</strong> on a binding existing line is
+                the shadow value of transmission capacity &mdash; the LMP spread from
+                <a href="optimal-power-flow.html">OPF</a>. Persistent high shadow values across years
+                are the economic justification for building. That dual is both an output of TEP and,
+                conceptually, the reason TEP exists: the price signal from operations tells you where
+                to invest.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Modern TEP research directions</p>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>Stochastic &amp; robust TEP</h4>
+                <p>
+                    Uncertain demand growth, renewable siting, fuel prices, and policy motivate
+                    scenario-based stochastic or adaptive-robust formulations. Solutions hedge against
+                    worst-case realizations; policy trade-off between expected cost and worst-case
+                    resilience.
+                </p>
+                <div class="ext-ref">Refs: Yu, Chung &amp; Wong (2009); Munoz &amp; Hobbs (2016); Jabr (2013).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Joint GEP-TEP</h4>
+                <p>
+                    Co-optimize new generation and new transmission. Substantial savings versus
+                    sequential planning because generation siting can be chosen to minimize
+                    transmission need (or exploit cheap transmission).
+                </p>
+                <div class="ext-ref">Refs: Pozo, Contreras &amp; Sauma (2013); Sauma &amp; Oren (2006).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>AC-OPF-based TEP</h4>
+                <p>
+                    Replaces the DC subproblem with AC power-flow constraints. Captures reactive power,
+                    voltage, and loss effects. Nonconvex MINLP; practical only for small networks
+                    unless convex relaxations (SOCP/SDP) are used.
+                </p>
+                <div class="ext-ref">Refs: Bent, Coffrin &amp; Van Hentenryck (2013); Taylor (2015).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Bi-level / MPEC TEP</h4>
+                <p>
+                    When TEP anticipates a competitive market-clearing response, the lower level is the
+                    market-clearing LP and the upper level is the TNO's investment choice. MPEC with
+                    equilibrium constraints; used to study private vs social optima.
+                </p>
+                <div class="ext-ref">Refs: Sauma &amp; Oren (2007); Zugno, Morales, Pinson &amp; Madsen (2013).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>HVDC and multi-terminal networks</h4>
+                <p>
+                    Long-distance transmission is increasingly HVDC (controllable, low-loss) rather than
+                    AC. TEP with HVDC has different decision variables (converter stations, point-to-
+                    point capacity) and different optimal topologies (radial vs mesh). Key for
+                    continent-scale renewable integration.
+                </p>
+                <div class="ext-ref">Refs: Torbaghan et&nbsp;al. (2014); NREL Seams (2020).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Distribution Network Expansion (DNEP)</h4>
+                <p>
+                    TEP's sibling at the distribution voltage level: which new feeders to build,
+                    where to place transformers, how to upgrade under rising DER (solar rooftops, EV
+                    charging) penetration. Smaller networks but many more of them.
+                </p>
+                <div class="ext-ref">Refs: Munoz et&nbsp;al. (2018); Giannelos et&nbsp;al. (2018).</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+        </div>
+        <div class="related-grid">
+            <a href="generation-expansion-planning.html" class="related-card fade-in">
+                <span class="related-card-tag">Complement &middot; generation</span>
+                <span class="related-card-name">Generation Expansion (GEP)</span>
+                <span class="related-card-desc">TEP and GEP are substitutes: a new line may replace a local generator or vice versa. Joint GEP-TEP is the correct model.</span>
+            </a>
+            <a href="optimal-power-flow.html" class="related-card fade-in">
+                <span class="related-card-tag">Operational subproblem</span>
+                <span class="related-card-name">Optimal Power Flow</span>
+                <span class="related-card-desc">Each representative period in TEP is a DC-OPF. LMP spreads on binding lines drive investment signals.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Key driver</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">Bulk RE siting (west Texas wind, southwest solar) requires transmission buildout to load centers.</span>
+            </a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in">
+                <span class="related-card-tag">Economic signal</span>
+                <span class="related-card-name">Electricity Market Clearing</span>
+                <span class="related-card-desc">Persistent LMP spreads signal where TEP should invest. In bi-level TEP, market clearing is the lower level.</span>
+            </a>
+            <a href="../families/network.html" class="related-card fade-in">
+                <span class="related-card-tag">OR family</span>
+                <span class="related-card-name">Network flow &amp; design</span>
+                <span class="related-card-desc">TEP is a network-design problem with physical flow constraints (DC-OPF) instead of pure-capacity routing.</span>
+            </a>
+            <a href="construction-project-scheduling.html" class="related-card fade-in">
+                <span class="related-card-tag">Cross-domain</span>
+                <span class="related-card-name">Project Scheduling</span>
+                <span class="related-card-desc">The 5-10 year lead-time for transmission construction is itself a scheduling problem (RCPSP with permitting milestones).</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Garver, L.&nbsp;L.</span> (1970).</div><div class="title">&ldquo;Transmission network estimation using linear programming.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Apparatus and Systems</em>, PAS-89(7), 1688&ndash;1697. <a href="https://doi.org/10.1109/TPAS.1970.292825" target="_blank" rel="noopener">doi:10.1109/TPAS.1970.292825</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Romero, R., &amp; Monticelli, A.</span> (1994).</div><div class="title">&ldquo;A hierarchical decomposition approach for transmission network expansion planning.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 9(1), 373&ndash;380. <a href="https://doi.org/10.1109/59.317588" target="_blank" rel="noopener">doi:10.1109/59.317588</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Latorre, G., Cruz, R.&nbsp;D., Areiza, J.&nbsp;M., &amp; Villegas, A.</span> (2003).</div><div class="title">&ldquo;Classification of publications and models on transmission expansion planning.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 18(2), 938&ndash;946. <a href="https://doi.org/10.1109/TPWRS.2003.811168" target="_blank" rel="noopener">doi:10.1109/TPWRS.2003.811168</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Hemmati, R., Hooshmand, R.-A., &amp; Khodabakhshian, A.</span> (2013).</div><div class="title">&ldquo;State-of-the-art of transmission expansion planning: Comprehensive review.&rdquo;</div><div class="journal"><em>Renewable and Sustainable Energy Reviews</em>, 23, 312&ndash;319. <a href="https://doi.org/10.1016/j.rser.2013.03.015" target="_blank" rel="noopener">doi:10.1016/j.rser.2013.03.015</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">Mahdavi, M., Antunez, C.&nbsp;S., Ajalli, M., &amp; Romero, R.</span> (2019).</div><div class="title">&ldquo;Transmission expansion planning: Literature review and classification.&rdquo;</div><div class="journal"><em>IEEE Systems Journal</em>, 13(3), 3129&ndash;3140. <a href="https://doi.org/10.1109/JSYST.2018.2871793" target="_blank" rel="noopener">doi:10.1109/JSYST.2018.2871793</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Conejo, A.&nbsp;J., Baringo, L., Kazempour, S.&nbsp;J., &amp; Siddiqui, A.&nbsp;S.</span> (2016).</div><div class="title"><em>Investment in Electricity Generation and Transmission: Decision Making under Uncertainty.</em></div><div class="journal">Springer. <a href="https://doi.org/10.1007/978-3-319-29501-5" target="_blank" rel="noopener">doi:10.1007/978-3-319-29501-5</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Munoz, F.&nbsp;D., &amp; Hobbs, B.&nbsp;F.</span> (2016).</div><div class="title">&ldquo;Real options and transmission expansion planning under uncertainty.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 31(6), 4568&ndash;4577. <a href="https://doi.org/10.1109/TPWRS.2016.2527043" target="_blank" rel="noopener">doi:10.1109/TPWRS.2016.2527043</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">Sauma, E.&nbsp;E., &amp; Oren, S.&nbsp;S.</span> (2006).</div><div class="title">&ldquo;Proactive transmission planning under oligopolistic competition.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 21(3), 1443&ndash;1453. <a href="https://doi.org/10.1109/TPWRS.2006.879249" target="_blank" rel="noopener">doi:10.1109/TPWRS.2006.879249</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Bent, R., Coffrin, C., &amp; Van Hentenryck, P.</span> (2013).</div><div class="title">&ldquo;Transmission network expansion planning with AC-constraints.&rdquo;</div><div class="journal">Santa Fe Institute working paper / Los Alamos National Lab. <a href="https://www.osti.gov/biblio/1265919" target="_blank" rel="noopener">osti.gov/1265919</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">NREL.</span> (2020).</div><div class="title">&ldquo;Interconnections Seam Study.&rdquo;</div><div class="journal">National Renewable Energy Laboratory. <a href="https://www.nrel.gov/analysis/seams.html" target="_blank" rel="noopener">nrel.gov/seams</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    In-browser solver runs Garver's 6-bus benchmark with a greedy constructive heuristic. Production TEP uses branch-and-cut MIP with N-1 security and multi-year horizons.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false });
+    }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       TEP SOLVER — Garver's 6-bus network with greedy line addition
+       ================================================================ */
+
+    /* 6 buses in approximate hexagonal layout */
+    var buses = [
+        { id: 1, x: 0.20, y: 0.35, gen: 150, load:  80, isGen: true,  label: 'Bus 1 (Gen)' },
+        { id: 2, x: 0.50, y: 0.20, gen: 0,   load: 240, isGen: false, label: 'Bus 2' },
+        { id: 3, x: 0.80, y: 0.35, gen: 360, load:  40, isGen: true,  label: 'Bus 3 (Gen)' },
+        { id: 4, x: 0.75, y: 0.75, gen: 0,   load: 160, isGen: false, label: 'Bus 4' },
+        { id: 5, x: 0.45, y: 0.80, gen: 0,   load: 240, isGen: false, label: 'Bus 5' },
+        { id: 6, x: 0.15, y: 0.75, gen: 600, load:   0, isGen: true,  label: 'Bus 6 (Gen)' }
+    ];
+
+    /* Existing lines (Garver 1970) */
+    var existingLines = [
+        { from: 1, to: 2, cap: 100, exists: true },
+        { from: 1, to: 4, cap:  80, exists: true },
+        { from: 1, to: 5, cap: 100, exists: true },
+        { from: 2, to: 3, cap: 100, exists: true },
+        { from: 2, to: 4, cap: 100, exists: true },
+        { from: 3, to: 5, cap: 100, exists: true }
+    ];
+
+    /* Candidate lines (all 15 from Garver) */
+    var candidateLines = [
+        { from: 1, to: 3, cap: 100, cost:  38 },
+        { from: 1, to: 6, cap: 100, cost:  68 },
+        { from: 2, to: 5, cap: 100, cost:  31 },
+        { from: 2, to: 6, cap: 100, cost:  30 },
+        { from: 3, to: 4, cap: 100, cost:  59 },
+        { from: 3, to: 6, cap: 100, cost:  48 },
+        { from: 4, to: 5, cap: 100, cost:  63 },
+        { from: 4, to: 6, cap: 100, cost:  30 },
+        { from: 5, to: 6, cap: 100, cost:  61 },
+        { from: 1, to: 2, cap: 100, cost:  40 },  /* parallel to existing */
+        { from: 2, to: 3, cap: 100, cost:  20 },
+        { from: 2, to: 4, cap: 100, cost:  30 },
+        { from: 3, to: 5, cap: 100, cost:  20 },
+        { from: 1, to: 5, cap: 100, cost:  20 }
+    ];
+
+    function genMarginal(busId) {
+        /* Different generators have different marginal costs */
+        if (busId === 1) return 22;
+        if (busId === 3) return 38;
+        if (busId === 6) return 18;
+        return 0;
+    }
+
+    /* Simple DC-like dispatch: greedy from cheapest generators respecting capacity,
+       flow allocated proportionally to shortest path, line limits checked.
+       This is a simplification — a real DC-OPF LP would be more accurate. */
+
+    function dispatch(allLines, loadMult) {
+        /* Compute total load (scaled) and generation in merit order */
+        var totalLoad = 0;
+        buses.forEach(function(b){ totalLoad += b.load * loadMult; });
+
+        /* Rank generators by marginal cost ascending */
+        var gens = buses.filter(function(b){ return b.isGen; })
+                        .slice()
+                        .sort(function(a,b){ return genMarginal(a.id) - genMarginal(b.id); });
+        var remaining = totalLoad;
+        var dispatch = {};
+        gens.forEach(function(g){
+            var take = Math.min(remaining, g.gen);
+            dispatch[g.id] = take;
+            remaining -= take;
+        });
+        var unserved = Math.max(0, remaining);
+
+        /* Compute simplified line flows: for each bus with net injection, find
+           shortest path to each load bus; apportion. */
+        var adj = {};
+        buses.forEach(function(b){ adj[b.id] = []; });
+        allLines.forEach(function(l){
+            adj[l.from].push({ to: l.to, line: l, cap: l.cap });
+            adj[l.to].push({ to: l.from, line: l, cap: l.cap });
+        });
+
+        /* BFS shortest path */
+        function shortestPath(src, dst) {
+            var visited = {};
+            visited[src] = true;
+            var prev = {};
+            var queue = [src];
+            while (queue.length > 0) {
+                var u = queue.shift();
+                if (u === dst) break;
+                adj[u].forEach(function(edge){
+                    if (!visited[edge.to]) {
+                        visited[edge.to] = true;
+                        prev[edge.to] = { from: u, line: edge.line };
+                        queue.push(edge.to);
+                    }
+                });
+            }
+            if (!(dst in prev) && dst !== src) return null;
+            var path = [];
+            var cur = dst;
+            while (cur !== src) {
+                var step = prev[cur];
+                if (!step) break;
+                path.unshift({ from: step.from, to: cur, line: step.line });
+                cur = step.from;
+            }
+            return path;
+        }
+
+        /* Each line's net flow (MW) */
+        var lineFlow = {};
+        allLines.forEach(function(l){ lineFlow[l.from + '-' + l.to] = 0; });
+
+        /* Route net injections: positive at gens, negative at loads */
+        var netInject = {};
+        buses.forEach(function(b){
+            netInject[b.id] = (dispatch[b.id] || 0) - b.load * loadMult;
+        });
+
+        /* Greedy: for each gen bus (positive net), send to deficit buses (negative net) via shortest path */
+        for (var gi = 0; gi < gens.length; gi++) {
+            if (netInject[gens[gi].id] <= 0) continue;
+            buses.forEach(function(tb){
+                if (netInject[tb.id] >= -1e-3) return;
+                var amt = Math.min(netInject[gens[gi].id], -netInject[tb.id]);
+                if (amt <= 0) return;
+                var path = shortestPath(gens[gi].id, tb.id);
+                if (!path) return;
+                /* Distribute 'amt' along the path */
+                path.forEach(function(edge){
+                    var key = edge.line.from + '-' + edge.line.to;
+                    var direction = (edge.from === edge.line.from) ? 1 : -1;
+                    lineFlow[key] = (lineFlow[key] || 0) + direction * amt;
+                });
+                netInject[gens[gi].id] -= amt;
+                netInject[tb.id] += amt;
+            });
+        }
+
+        /* Cost */
+        var genCost = 0;
+        gens.forEach(function(g){ genCost += (dispatch[g.id] || 0) * genMarginal(g.id); });
+
+        /* Line overloads */
+        var overload = 0;
+        var flows = allLines.map(function(l){
+            var f = lineFlow[l.from + '-' + l.to] || 0;
+            var u = Math.abs(f) / l.cap;
+            if (u > 1) overload += (Math.abs(f) - l.cap);
+            return { from: l.from, to: l.to, flow: f, cap: l.cap, utilization: u, exists: l.exists !== undefined ? l.exists : true };
+        });
+
+        return { dispatch: dispatch, totalLoad: totalLoad, unserved: unserved, genCost: genCost, flows: flows, overload: overload };
+    }
+
+    function solveTEP(params) {
+        /* Start with just existing lines */
+        var builtCandidates = [];
+        var availableCandidates = candidateLines.slice();
+
+        var budgetRemaining = params.budget;
+        var iter = 0;
+
+        while (iter++ < 10 && budgetRemaining > 0) {
+            /* Current state */
+            var currentLines = existingLines.concat(builtCandidates);
+            var baselineResult = dispatch(currentLines, params.loadMult);
+            var baselineCost = baselineResult.genCost + baselineResult.unserved * params.voll + baselineResult.overload * 200;
+
+            /* Try adding each remaining candidate, evaluate benefit */
+            var bestCand = null;
+            var bestBenefit = 0;
+            for (var c = 0; c < availableCandidates.length; c++) {
+                var cand = availableCandidates[c];
+                var scaledCost = cand.cost * params.lineCostMult;
+                if (scaledCost > budgetRemaining) continue;
+                var withCand = currentLines.concat([{ from: cand.from, to: cand.to, cap: cand.cap, exists: true }]);
+                var r = dispatch(withCand, params.loadMult);
+                var newCost = r.genCost + r.unserved * params.voll + r.overload * 200;
+                var savings = baselineCost - newCost;
+                var benefit = savings / scaledCost;
+                if (savings > scaledCost * 0.5 && benefit > bestBenefit) {
+                    bestBenefit = benefit;
+                    bestCand = cand;
+                }
+            }
+            if (!bestCand) break;
+
+            builtCandidates.push({ from: bestCand.from, to: bestCand.to, cap: bestCand.cap, exists: true, candCost: bestCand.cost * params.lineCostMult });
+            availableCandidates = availableCandidates.filter(function(x){ return !(x.from === bestCand.from && x.to === bestCand.to); });
+            budgetRemaining -= bestCand.cost * params.lineCostMult;
+        }
+
+        /* Final dispatch */
+        var finalLines = existingLines.concat(builtCandidates);
+        var finalResult = dispatch(finalLines, params.loadMult);
+
+        /* Tag which lines are existing vs new */
+        var allFlows = finalResult.flows.map(function(f){
+            var isNew = builtCandidates.some(function(b){ return b.from === f.from && b.to === f.to; });
+            return Object.assign({}, f, { isNew: isNew });
+        });
+
+        /* Also enumerate unselected candidates (for display as dashed) */
+        var unselectedCandidates = availableCandidates.slice();
+
+        return {
+            builtCandidates: builtCandidates,
+            unselectedCandidates: unselectedCandidates,
+            flows: allFlows,
+            dispatch: finalResult.dispatch,
+            genCost: finalResult.genCost,
+            unserved: finalResult.unserved,
+            voll: params.voll,
+            budgetUsed: params.budget - budgetRemaining,
+            budgetRemaining: budgetRemaining
+        };
+    }
+
+    /* ============== NETWORK DIAGRAM ============== */
+    function drawNetwork(result, params) {
+        var cvs = document.getElementById('tepNetworkCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 60, r: 60, t: 40, b: 40 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        function bx(frac) { return pad.l + frac * plotW; }
+        function by(frac) { return pad.t + frac * plotH; }
+
+        /* Draw unselected candidates (dashed grey) first */
+        result.unselectedCandidates.forEach(function(c){
+            var a = buses[c.from - 1], b = buses[c.to - 1];
+            ctx.strokeStyle = 'rgba(136,146,176,0.35)';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([6, 4]);
+            ctx.beginPath();
+            ctx.moveTo(bx(a.x), by(a.y));
+            ctx.lineTo(bx(b.x), by(b.y));
+            ctx.stroke();
+            ctx.setLineDash([]);
+        });
+
+        /* Draw existing and built candidates */
+        result.flows.forEach(function(f){
+            var a = buses[f.from - 1], b = buses[f.to - 1];
+            var u = f.utilization;
+            var color = '#64ffda';
+            if (u > 1) color = '#ff6b6b';
+            else if (u > 0.95) color = '#ff9f43';
+            else if (u > 0.7) color = '#fbbf24';
+            else if (u > 0.4) color = '#7aa2f7';
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = f.isNew ? 3.5 : 2.5;
+            ctx.globalAlpha = 0.9;
+            if (f.isNew) {
+                /* New built line: thicker and distinct */
+                ctx.setLineDash([]);
+            }
+            ctx.beginPath();
+            ctx.moveTo(bx(a.x), by(a.y));
+            ctx.lineTo(bx(b.x), by(b.y));
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            /* Label */
+            var mx = bx((a.x + b.x) / 2);
+            var my = by((a.y + b.y) / 2);
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '10px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(Math.abs(f.flow).toFixed(0) + '/' + f.cap, mx, my - 5);
+            if (f.isNew) {
+                ctx.fillStyle = '#C5A059';
+                ctx.font = 'bold 10px "Inter", sans-serif';
+                ctx.fillText('NEW', mx, my + 12);
+            }
+        });
+
+        /* Draw buses */
+        buses.forEach(function(b){
+            ctx.fillStyle = b.isGen ? '#112240' : '#1a2f4a';
+            ctx.strokeStyle = b.isGen ? '#fbbf24' : '#C5A059';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(bx(b.x), by(b.y), 26, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = 'bold 12px "Cormorant Garamond", serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Bus ' + b.id, bx(b.x), by(b.y) - 2);
+
+            if (b.isGen) {
+                ctx.fillStyle = '#fbbf24';
+                ctx.font = '10px "JetBrains Mono", monospace';
+                var dispatchVal = result.dispatch[b.id] || 0;
+                ctx.fillText(dispatchVal.toFixed(0) + '/' + b.gen + ' MW', bx(b.x), by(b.y) + 12);
+            } else {
+                ctx.fillStyle = '#c084fc';
+                ctx.font = '10px "JetBrains Mono", monospace';
+                ctx.fillText((b.load * params.loadMult).toFixed(0) + ' MW', bx(b.x), by(b.y) + 12);
+            }
+        });
+
+        /* Legend */
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Existing / built line, by utilization:', 20, 20);
+        var items = [
+            { c: '#64ffda', l: '<40%' },
+            { c: '#7aa2f7', l: '40-70%' },
+            { c: '#fbbf24', l: '70-95%' },
+            { c: '#ff9f43', l: '95-100%' },
+            { c: '#ff6b6b', l: 'overloaded' }
+        ];
+        var xl = 250;
+        items.forEach(function(it){
+            ctx.fillStyle = it.c; ctx.fillRect(xl, 14, 12, 4);
+            ctx.fillStyle = '#a8b2d1'; ctx.font = '10px "Inter", sans-serif';
+            ctx.fillText(it.l, xl + 16, 20);
+            xl += 100;
+        });
+
+        /* Dashed candidate legend */
+        ctx.strokeStyle = 'rgba(136,146,176,0.5)';
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(xl, 17); ctx.lineTo(xl + 14, 17);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('candidate (not built)', xl + 18, 20);
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div');
+        card.className = 'res-card';
+        var lbl = document.createElement('div');
+        lbl.className = 'res-card-lbl';
+        lbl.textContent = label;
+        var val = document.createElement('div');
+        val.className = 'res-card-val';
+        val.textContent = value;
+        card.appendChild(lbl); card.appendChild(val);
+        parent.appendChild(card);
+    }
+    function appendHeaderRow(thead, headers) {
+        var tr = document.createElement('tr');
+        headers.forEach(function(h){ var th = document.createElement('th'); th.textContent = h; tr.appendChild(th); });
+        thead.appendChild(tr);
+    }
+    function appendDataRow(tbody, cells) {
+        var tr = document.createElement('tr');
+        cells.forEach(function(c){ var td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
+        tbody.appendChild(tr);
+    }
+
+    function formatMoney(x) {
+        if (!isFinite(x)) return '\u221e';
+        if (x >= 1e6) return '$' + (x / 1e6).toFixed(1) + 'M';
+        if (x >= 1e3) return '$' + (x / 1e3).toFixed(0) + 'k';
+        return '$' + Math.round(x);
+    }
+
+    function renderResults(result) {
+        var summary = document.getElementById('tepResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+
+        appendCard(summary, 'New lines built', String(result.builtCandidates.length));
+        appendCard(summary, 'Investment used', '$' + result.budgetUsed.toFixed(0) + 'M');
+        appendCard(summary, 'Hourly gen cost', formatMoney(result.genCost));
+        appendCard(summary, 'Unserved load', result.unserved.toFixed(1) + ' MW');
+        appendCard(summary, 'Budget remaining', '$' + result.budgetRemaining.toFixed(0) + 'M');
+
+        var detail = document.getElementById('tepResultsDetail');
+        while (detail.firstChild) detail.removeChild(detail.firstChild);
+
+        var table = document.createElement('table');
+        table.className = 'results-table';
+        var thead = document.createElement('thead');
+        appendHeaderRow(thead, ['Line', 'Type', 'Flow (MW)', 'Capacity', 'Utilization', 'Cost']);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        result.flows.forEach(function(f){
+            var util = (f.utilization * 100).toFixed(1) + '%';
+            var type = f.isNew ? 'NEW build' : 'Existing';
+            var cost = f.isNew ? (function(){
+                var b = result.builtCandidates.find(function(c){ return c.from === f.from && c.to === f.to; });
+                return b ? '$' + b.candCost.toFixed(0) + 'M' : '—';
+            })() : '—';
+            appendDataRow(tbody, ['Line ' + f.from + '-' + f.to, type, f.flow.toFixed(1), String(f.cap), util, cost]);
+        });
+        table.appendChild(tbody);
+        detail.appendChild(table);
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('tepBudget', 'tepBudgetVal', '');
+    bindSlider('tepLoadMult', 'tepLoadMultVal', '\u00d7');
+    bindSlider('tepVOLL', 'tepVOLLVal', '');
+    bindSlider('tepLineCostMult', 'tepLineCostMultVal', '\u00d7');
+
+    function runSolver() {
+        var params = {
+            budget: parseInt(document.getElementById('tepBudget').value, 10),
+            loadMult: parseFloat(document.getElementById('tepLoadMult').value),
+            voll: parseInt(document.getElementById('tepVOLL').value, 10),
+            lineCostMult: parseFloat(document.getElementById('tepLineCostMult').value)
+        };
+
+        var t0 = performance.now();
+        var result = solveTEP(params);
+        var t1 = performance.now();
+
+        drawNetwork(result, params);
+        renderResults(result);
+
+        document.getElementById('tepStatus').textContent = 'Planned in ' + (t1 - t0).toFixed(1) + ' ms (heuristic)';
+    }
+
+    document.getElementById('tepSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>

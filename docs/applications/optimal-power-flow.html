@@ -1,0 +1,1265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Optimal Power Flow | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Optimal Power Flow (OPF) minimizes generation cost subject to Kirchhoff's laws, line thermal limits, and voltage bounds. DC-OPF is a linearized LP; AC-OPF is a nonconvex NLP; SOCP/SDP relaxations provide convex lower bounds. Interactive DC-OPF solver on a 3-bus triangle network with locational marginal prices (LMPs).">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/optimal-power-flow.html">
+    <meta property="og:title" content="Optimal Power Flow | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive DC-OPF solver: minimize cost subject to Kirchhoff's laws and line limits. Shows LMP formation under congestion.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/optimal-power-flow.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a;
+            --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1;
+            --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; --amber: #fbbf24; --violet: #c084fc;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; flex-wrap: wrap; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero { padding: 5rem 2rem 3.5rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+            background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(122,162,247,0.08) 0%, transparent 60%),
+                              radial-gradient(ellipse 40% 30% at 20% 70%, rgba(100,255,218,0.04) 0%, transparent 50%),
+                              radial-gradient(ellipse 40% 30% at 80% 70%, rgba(197,160,89,0.05) 0%, transparent 50%);
+            pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.3rem; opacity: 0.9; filter: drop-shadow(0 0 10px rgba(122,162,247,0.4)); animation: gridPulse 3.2s ease-in-out infinite; }
+        @keyframes gridPulse {
+            0%, 100% { filter: drop-shadow(0 0 10px rgba(122,162,247,0.4)); transform: scale(1); }
+            50% { filter: drop-shadow(0 0 18px rgba(122,162,247,0.7)); transform: scale(1.05); }
+        }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 0.9rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-abbrev { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 1rem; letter-spacing: 2px; margin-bottom: 1rem; }
+        .hero-subtitle { font-size: 1rem; color: var(--slate); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 1.2rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.2rem auto; }
+        .hero-desc { max-width: 820px; margin: 0 auto 1rem; color: var(--slate-light); font-size: 0.98rem; line-height: 1.9; }
+        .hero-tags { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; margin-top: 1.3rem; }
+        .hero-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 3px 10px; border-radius: 3px; letter-spacing: 1px; color: var(--gold); background: rgba(197,160,89,0.08); border: 1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-short { color: var(--blue); background: rgba(122,162,247,0.08); border-color: rgba(122,162,247,0.3); }
+        .hero-tag.tag-transmission { color: var(--blue); background: rgba(122,162,247,0.08); border-color: rgba(122,162,247,0.3); }
+
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.85rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .context-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width: 840px; margin: 0 auto; color: var(--slate-light); font-size: 0.96rem; line-height: 1.9; }
+        .context-block p { margin-bottom: 1.2rem; }
+        .context-block strong { color: var(--ivory); }
+        .context-block cite { color: var(--gold); font-style: normal; }
+        .historical-note { background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 4px; padding: 1.2rem 1.4rem; margin: 1.5rem 0; color: var(--slate-light); font-size: 0.92rem; line-height: 1.75; }
+        .historical-note-head { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gold); margin-bottom: 0.5rem; }
+
+        .formulation-grid { display: grid; grid-template-columns: 1fr; gap: 1.6rem; max-width: 1000px; margin: 0 auto; }
+        .formulation-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.6rem; }
+        .formulation-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.35rem; font-weight: 500; letter-spacing: 1.5px; color: var(--gold); margin-bottom: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 0.5rem; }
+        .formulation-card h3 span.ref { font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--slate); letter-spacing: 0.5px; text-transform: none; font-weight: 400; margin-left: 0.5rem; }
+        .formulation-card p, .formulation-card ul { color: var(--slate-light); font-size: 0.9rem; margin-bottom: 0.8rem; }
+        .formulation-card ul { padding-left: 1.5rem; list-style: disc; }
+        .formulation-card li { margin-bottom: 0.3rem; }
+        .formulation-card strong { color: var(--ivory); }
+
+        .math-display { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem 1.4rem; margin: 1rem 0; overflow-x: auto; }
+        .math-display .katex { font-size: 1.05rem; }
+
+        .notation-table { width: 100%; margin: 1rem 0; border-collapse: collapse; }
+        .notation-table caption { caption-side: top; text-align: left; font-family: 'Inter', sans-serif; font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--slate); padding-bottom: 0.5rem; }
+        .notation-table th, .notation-table td { padding: 0.5rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); font-size: 0.86rem; vertical-align: top; }
+        .notation-table th { color: var(--gold); font-family: 'Cormorant Garamond', serif; font-weight: 500; letter-spacing: 1px; font-size: 0.95rem; text-transform: uppercase; }
+        .notation-table td:first-child { min-width: 60px; color: var(--amber); font-family: 'JetBrains Mono', monospace; }
+        .notation-table td:nth-child(2) { color: var(--ivory); }
+        .notation-table td:last-child { color: var(--slate); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+
+        .data-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.4rem 1.4rem; margin-bottom: 1rem; }
+        .data-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.1rem; letter-spacing: 1.2px; color: var(--gold); margin-bottom: 0.6rem; }
+        .data-card p { color: var(--slate-light); font-size: 0.88rem; line-height: 1.7; margin-bottom: 0.5rem; }
+
+        .solver-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display: grid; grid-template-columns: 340px 1fr; gap: 1.5rem; max-width: 1200px; margin: 0 auto; }
+        @media (max-width: 900px) { .solver-grid { grid-template-columns: 1fr; } }
+        .solver-controls { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.4rem 1.3rem; }
+        .solver-controls h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.15); padding-bottom: 0.5rem; }
+        .control-group { margin-bottom: 0.9rem; }
+        .control-label { display: block; font-size: 0.74rem; letter-spacing: 1px; text-transform: uppercase; color: var(--slate); margin-bottom: 0.35rem; }
+        .control-row { display: flex; align-items: center; gap: 0.7rem; }
+        .solver-slider { flex: 1; accent-color: var(--gold); }
+        .size-display { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.82rem; min-width: 3rem; text-align: right; }
+        .solve-btn { width: 100%; margin-top: 0.5rem; padding: 0.8rem; background: linear-gradient(135deg, var(--gold), var(--gold-light)); color: var(--midnight); border: none; border-radius: 4px; font-family: 'Inter', sans-serif; font-size: 0.85rem; font-weight: 500; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; }
+        .solve-btn:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top: 0.8rem; font-size: 0.75rem; color: var(--slate); font-style: italic; text-align: center; }
+
+        .solver-output { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.4rem 1.3rem; }
+        .solver-output h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gold); letter-spacing: 1.5px; margin-bottom: 0.8rem; }
+        .canvas-wrap { position: relative; width: 100%; margin-bottom: 1rem; }
+        .canvas-wrap canvas { width: 100%; height: auto; display: block; background: var(--midnight); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; }
+        .canvas-caption { font-size: 0.72rem; color: var(--slate); text-align: center; margin-top: 0.3rem; font-style: italic; letter-spacing: 0.3px; }
+
+        .results-table { width: 100%; margin-top: 1rem; font-size: 0.82rem; border-collapse: collapse; }
+        .results-table th, .results-table td { padding: 0.45rem 0.7rem; text-align: right; border-bottom: 1px solid rgba(197,160,89,0.08); }
+        .results-table th { color: var(--gold); font-size: 0.72rem; letter-spacing: 0.5px; text-transform: uppercase; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .results-table td { color: var(--slate-light); font-family: 'JetBrains Mono', monospace; }
+        .results-table td:first-child, .results-table th:first-child { text-align: left; }
+        .results-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+        .res-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.8rem 0.9rem; }
+        .res-card-lbl { color: var(--slate); font-size: 0.68rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .res-card-val { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 1.05rem; font-weight: 500; }
+        .res-card-val.congested { color: var(--red); }
+
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.3rem 1.3rem; }
+        .extension-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 1.3px; color: var(--gold); margin-bottom: 0.5rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; margin-bottom: 0.7rem; }
+        .extension-card .ext-ref { font-size: 0.78rem; color: var(--slate); font-style: italic; border-top: 1px solid rgba(197,160,89,0.1); padding-top: 0.5rem; }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.9rem; }
+        .related-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem 1.1rem; text-decoration: none; transition: all 0.25s; display: flex; flex-direction: column; gap: 0.3rem; }
+        .related-card:hover { border-color: var(--gold); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ivory); letter-spacing: 0.5px; }
+        .related-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--gold); letter-spacing: 0.5px; }
+        .related-card-desc { font-size: 0.78rem; color: var(--slate); line-height: 1.5; }
+
+        .references-section { background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width: 900px; margin: 0 auto; }
+        .reference-item { padding: 0.9rem 0; border-top: 1px solid rgba(197,160,89,0.1); display: grid; grid-template-columns: 2rem 1fr; gap: 0.6rem; }
+        .reference-item:first-of-type { border-top: none; }
+        .ref-num { color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; }
+        .ref-body { font-size: 0.88rem; line-height: 1.65; }
+        .ref-body .authors { color: var(--ivory); font-weight: 500; }
+        .ref-body .title { color: var(--slate-light); font-style: italic; }
+        .ref-body .journal { color: var(--slate); font-size: 0.82rem; }
+        .ref-body .journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        footer { text-align: center; padding: 2.5rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.82rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 0.9rem; font-size: 0.76rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(15px); transition: opacity 0.55s ease, transform 0.55s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.1rem; letter-spacing: 2px; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            section { padding: 2.8rem 0; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Energy", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Optimal Power Flow", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/optimal-power-flow.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Optimal Power Flow</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-project-diagram" aria-hidden="true"></i></div>
+        <h1>Optimal <span>Power Flow</span></h1>
+        <p class="hero-abbrev">OPF &middot; DC-OPF &middot; AC-OPF</p>
+        <p class="hero-subtitle">Kirchhoff's Laws &middot; Line Limits &middot; LMP Formation</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            When a generator a thousand kilometres from the load is cheaper than one right next door,
+            should we dispatch it? Only if the transmission network can carry the flow without
+            overheating any line and without violating the physics of alternating current. The
+            <strong>optimal power flow (OPF)</strong> problem adds grid physics to economic dispatch:
+            Kirchhoff's current law, the nonlinear power-flow equations, line thermal limits, voltage
+            bounds. It is the <em>foundational</em> power-systems optimization problem &mdash; formulated
+            by Carpentier in 1962 and still an active research frontier sixty years later.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-short">Short-term operations</span>
+            <span class="hero-tag tag-transmission">Transmission layer</span>
+            <span class="hero-tag">LP / NLP</span>
+            <span class="hero-tag">SOCP relaxation</span>
+            <span class="hero-tag">LMP</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Grid physics meets least-cost dispatch</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                Economic dispatch alone tells us <em>how much</em> each generator should produce to meet load
+                at minimum cost. OPF answers the harder question: <strong>given that electricity flows
+                according to Kirchhoff's laws through a network of transmission lines with thermal limits,
+                is the ED solution actually deliverable?</strong> If not, the operator must redispatch: force
+                cheap generation down and expensive generation up until the flow pattern respects every
+                line's rating.
+            </p>
+            <p>
+                There are two main OPF formulations. <strong>DC-OPF</strong> linearizes the full AC
+                power-flow equations around three standard assumptions: voltage magnitudes equal 1 per-unit
+                everywhere, line resistance is negligible relative to reactance, and voltage-angle differences
+                are small enough that $\sin(\theta_i - \theta_j) \approx \theta_i - \theta_j$. Under these
+                approximations, power flow is a <em>linear</em> function of bus injections, and OPF becomes
+                a <strong>linear program</strong> (or QP if costs are quadratic). DC-OPF is fast, reliable,
+                and used for day-ahead markets and unit commitment across almost every ISO in the world.
+            </p>
+            <p>
+                <strong>AC-OPF</strong> keeps the full nonlinear power-flow equations and tracks both
+                voltage magnitudes and angles on every bus. Active and reactive power are both modeled;
+                voltage bounds and reactive-power limits become binding constraints. The problem becomes
+                a <strong>nonconvex nonlinear program (NLP)</strong>. Solvers use interior-point
+                (Newton-like) or sequential quadratic programming; convergence is not guaranteed and
+                finding a global optimum on meshed networks is provably NP-hard.
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                <strong>Carpentier (1962)</strong> wrote the first AC-OPF formulation in French as a
+                technical note at Electricit&eacute; de France; the paper in <em>Bulletin de la
+                Soci&eacute;t&eacute; Fran&ccedil;aise des &Eacute;lectriciens</em> is still widely
+                cited. <cite>Dommel &amp; Tinney (1968)</cite> gave the first practical Newton-based
+                solver. The <cite>Cain, O'Neill &amp; Castillo (2012)</cite> FERC technical report
+                &mdash; commissioned because the ISO industry needed a clean reconstruction of OPF
+                formulations &mdash; is the most cited single modern reference. <cite>Low (2014)</cite>
+                proved that the SOCP relaxation of AC-OPF is <em>exact</em> on radial (tree) distribution
+                networks, shifting an entire sub-field. <cite>Molzahn &amp; Hiskens (2019)</cite> is the
+                current state-of-the-art survey of convex relaxations and approximations.
+            </div>
+
+            <p>
+                In liberalized markets, OPF determines <strong>Locational Marginal Prices (LMPs)</strong>.
+                When the network is unconstrained and every line has slack, all buses have the same LMP
+                and it equals the system marginal cost $\lambda$ &mdash; the same $\lambda$ that comes out
+                of economic dispatch. When a line congests, LMPs diverge: buses on the import side of the
+                congestion see high LMPs; buses on the export side see low LMPs. The <strong>LMP spread</strong>
+                is the dual of the congested-line constraint and measures the economic value of adding
+                transmission capacity &mdash; a direct input into expansion-planning models
+                (<a href="transmission-expansion-planning.html">TEP</a>).
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>DC-OPF (linear) and AC-OPF (nonconvex)</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <caption>Sets, parameters, decision variables</caption>
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{N}$</td><td>Set of buses (nodes)</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{L}$</td><td>Set of transmission lines</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{G}$</td><td>Set of generators</td><td>&mdash;</td></tr>
+                        <tr><td>$b_\ell$</td><td>Susceptance of line $\ell = (i,j)$, equal to $1/x_\ell$</td><td>pu</td></tr>
+                        <tr><td>$F_\ell^{\max}$</td><td>Thermal limit of line $\ell$</td><td>MW</td></tr>
+                        <tr><td>$D_i$</td><td>Load at bus $i$</td><td>MW</td></tr>
+                        <tr><td>$P_g^{\min}, P_g^{\max}$</td><td>Limits of generator $g$</td><td>MW</td></tr>
+                        <tr><td>$c_g(p)$</td><td>Cost curve of generator $g$</td><td>$/h</td></tr>
+                        <tr><td>$p_g$</td><td><strong>Generator output</strong></td><td>MW</td></tr>
+                        <tr><td>$\theta_i$</td><td><strong>Bus voltage angle</strong></td><td>rad</td></tr>
+                        <tr><td>$f_\ell$</td><td>Line flow (DC-OPF)</td><td>MW</td></tr>
+                        <tr><td>$V_i, \delta_i$</td><td>Bus voltage magnitude and angle (AC-OPF)</td><td>pu, rad</td></tr>
+                        <tr><td>$p_i^{\mathrm{net}}$</td><td>Net injection at bus $i$, $p_i^{\mathrm{net}} = \sum_{g \in i} p_g - D_i$</td><td>MW</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>DC-OPF <span class="ref">linearized, LP</span></h3>
+                <p>Minimize total generation cost subject to the linearized power-flow equations:</p>
+                <div class="math-display">$$\min_{p, \theta, f} \quad \sum_{g \in \mathcal{G}} c_g(p_g) \qquad \text{(1)}$$</div>
+                <p>subject to:</p>
+                <p><strong>Line flow</strong> &mdash; the DC approximation:</p>
+                <div class="math-display">$$f_\ell = b_\ell (\theta_i - \theta_j) \qquad \forall \ell = (i,j) \in \mathcal{L} \qquad \text{(2)}$$</div>
+                <p><strong>Bus balance</strong> (Kirchhoff's current law at each bus):</p>
+                <div class="math-display">$$\sum_{\ell : \ell \text{ enters } i} f_\ell - \sum_{\ell : \ell \text{ leaves } i} f_\ell + p_i^{\mathrm{net}} = 0 \qquad \forall i \qquad \text{(3)}$$</div>
+                <p><strong>Thermal limits</strong> on lines:</p>
+                <div class="math-display">$$-F_\ell^{\max} \le f_\ell \le F_\ell^{\max} \qquad \forall \ell \qquad \text{(4)}$$</div>
+                <p><strong>Generator limits</strong>:</p>
+                <div class="math-display">$$P_g^{\min} \le p_g \le P_g^{\max} \qquad \forall g \qquad \text{(5)}$$</div>
+                <p><strong>Reference bus</strong> (fix one angle to break degeneracy):</p>
+                <div class="math-display">$$\theta_{\mathrm{slack}} = 0 \qquad \text{(6)}$$</div>
+                <p>
+                    With linear or piecewise-linear cost curves, this is a pure LP; with quadratic costs,
+                    a convex QP. Either way, polynomial-time and solved by every commercial solver (Gurobi,
+                    CPLEX, MOSEK, HiGHS) in seconds for ISO-scale networks (10,000&ndash;30,000 buses).
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>PTDF formulation <span class="ref">angle-free DC-OPF</span></h3>
+                <p>
+                    An equivalent DC-OPF representation eliminates the angle variables $\theta$ using the
+                    <strong>Power Transfer Distribution Factors</strong> (PTDFs). Let $H \in \mathbb{R}^{|\mathcal{L}| \times |\mathcal{N}|}$ be the PTDF matrix; each entry $H_{\ell i}$ is the fraction of an MW injected at bus $i$ and withdrawn at the slack that flows through line $\ell$. Then:
+                </p>
+                <div class="math-display">$$f_\ell = \sum_i H_{\ell i} \, p_i^{\mathrm{net}} \qquad \text{(7)}$$</div>
+                <p>
+                    PTDFs are computed once from the network susceptance matrix; the resulting LP has only
+                    generator outputs as variables (plus slack for line limits) and is usually smaller than
+                    the angle-based formulation. Most ISO production solvers use a PTDF-based LP.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>AC-OPF <span class="ref">nonconvex NLP &middot; Carpentier (1962)</span></h3>
+                <p>
+                    The full AC formulation tracks voltage magnitude $V_i$ and angle $\delta_i$ at every
+                    bus. Active and reactive power balance at each bus involve the complex admittance
+                    matrix $Y = G + jB$:
+                </p>
+                <div class="math-display">$$P_i = V_i \sum_j V_j (G_{ij} \cos(\delta_i - \delta_j) + B_{ij} \sin(\delta_i - \delta_j)) \qquad \text{(8)}$$</div>
+                <div class="math-display">$$Q_i = V_i \sum_j V_j (G_{ij} \sin(\delta_i - \delta_j) - B_{ij} \cos(\delta_i - \delta_j)) \qquad \text{(9)}$$</div>
+                <p>
+                    Constraints (8)&ndash;(9) are <strong>nonlinear and nonconvex</strong>. Voltage
+                    magnitudes are bounded ($V_i^{\min} \le V_i \le V_i^{\max}$), reactive-power limits
+                    apply to generators, and line limits now involve apparent power $|S_\ell| \le S_\ell^{\max}$.
+                    AC-OPF is <strong>NP-hard</strong> in general (<cite>Lehmann, Grastien, Van Hentenryck,
+                    2016</cite>); interior-point codes (IPOPT, KNITRO) find local optima reliably on most
+                    real systems but cannot guarantee global optimality.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Convex relaxations <span class="ref">Low (2014), Molzahn &amp; Hiskens (2019)</span></h3>
+                <p>
+                    The AC-OPF nonconvexity can often be relaxed to a <strong>convex cone program</strong>:
+                </p>
+                <ul>
+                    <li><strong>SOCP relaxation</strong> (Jabr, 2006): uses variables $c_{ij} = V_i V_j \cos(\delta_i - \delta_j)$, $s_{ij} = V_i V_j \sin(\delta_i - \delta_j)$, and the quadratic equality $c_{ij}^2 + s_{ij}^2 = (V_i V_j)^2$. Relaxed to a second-order cone, this gives a convex program whose optimum is a lower bound on AC-OPF. <cite>Low (2014)</cite> proved <em>exactness</em> on radial (tree) networks: the relaxation gap is zero.</li>
+                    <li><strong>SDP relaxation</strong> (Bai &amp; Wei, 2008): drops the rank-one constraint on a positive-semidefinite voltage matrix, yielding a tighter but larger convex program.</li>
+                    <li><strong>QC / moment relaxations</strong>: progressively tighter hierarchies that converge to the AC-OPF optimum.</li>
+                </ul>
+                <p>
+                    The survey <cite>Molzahn &amp; Hiskens (2019)</cite> gives a comprehensive comparison:
+                    on meshed networks SOCP is loose, SDP is tighter but expensive, and QC is a practical
+                    middle ground for research problems up to a few thousand buses.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>
+                    <strong>DC-OPF</strong> is a convex LP/QP, polynomial-time solvable.
+                    <strong>AC-OPF</strong> is NP-hard in general.
+                    <strong>Security-constrained OPF (SC-OPF)</strong> adds N&minus;1 contingency constraints
+                    (one set of flow limits per potential line or generator outage) and is also polynomial
+                    if DC, exponentially larger but still tractable via Benders decomposition.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+            <p>Benchmark networks &middot; test systems</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>MATPOWER cases</h4>
+                    <p>
+                        <a href="https://matpower.org" target="_blank" rel="noopener">MATPOWER</a> is
+                        the standard open-source OPF research platform. Its bundled cases &mdash;
+                        case9, case14, case30, case57, case118, case300, case2383wp,
+                        case13659pegase &mdash; range from 9 buses (didactic) to 13,659 buses (European
+                        continental grid). Each case has full AC data, generator cost curves, line
+                        limits, and voltage bounds. MATPOWER is the source of almost every academic OPF
+                        benchmark result published.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>PGLIB-OPF benchmark library</h4>
+                    <p>
+                        The <a href="https://github.com/power-grid-lib/pglib-opf" target="_blank" rel="noopener">PGLIB-OPF</a>
+                        library packages 350+ systems in three operating scenarios (typical operations,
+                        congested operations, N&minus;1 secure). Maintained by the IEEE PES Task Force,
+                        it is the benchmark standard for AC-OPF research post-2015.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>3-bus triangle (this page)</h4>
+                    <p>
+                        The interactive solver below uses a canonical pedagogical example: a three-bus
+                        ring with two generators at buses 1 and 2 and load at bus 3, connected by three
+                        equal-reactance transmission lines. The analytical PTDFs are
+                        $H_{(1,2) \gets 1} = \tfrac{1}{3}$, $H_{(1,3) \gets 1} = \tfrac{2}{3}$ etc., and
+                        the LP has three variables (line flows) plus two generator outputs. Simple
+                        enough to solve by hand, rich enough to show LMP formation under congestion.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>DC-OPF solver</span></h2>
+            <p>3-bus triangle &middot; LMP formation under congestion</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Network parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="opfLoad">Load at bus 3 (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="opfLoad" min="100" max="600" step="10" value="400">
+                        <span class="size-display" id="opfLoadVal">400</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="opfGen1Cap">Gen-1 capacity (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="opfGen1Cap" min="200" max="700" step="25" value="500">
+                        <span class="size-display" id="opfGen1CapVal">500</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="opfGen1Cost">Gen-1 marginal cost ($/MWh)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="opfGen1Cost" min="15" max="60" step="1" value="25">
+                        <span class="size-display" id="opfGen1CostVal">25</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="opfGen2Cost">Gen-2 marginal cost ($/MWh)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="opfGen2Cost" min="20" max="90" step="1" value="45">
+                        <span class="size-display" id="opfGen2CostVal">45</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="opfLineLimit">Line 1&ndash;3 limit (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="opfLineLimit" min="50" max="400" step="10" value="180">
+                        <span class="size-display" id="opfLineLimitVal">180</span>
+                    </div>
+                </div>
+
+                <button class="solve-btn" id="opfSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve DC-OPF
+                </button>
+                <div class="solver-status" id="opfStatus">Adjust parameters and press Solve.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>Network flows &amp; LMPs</h3>
+                <div class="canvas-wrap">
+                    <canvas id="opfNetworkCanvas" width="1100" height="440" aria-label="3-bus triangle network diagram"></canvas>
+                    <div class="canvas-caption">Triangle network &middot; generator output, line flows (colored by congestion), LMPs per bus</div>
+                </div>
+                <div class="results-summary" id="opfResultsSummary"></div>
+                <div id="opfResultsDetail"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>What LMPs reveal about the network</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                When <strong>no line is congested</strong>, every bus sees the same LMP and it equals the
+                cheapest marginal-cost generator that is <em>unconstrained at max</em>. In the 3-bus
+                triangle, if Gen-1 is cheap and uncongested, LMP at all three buses equals Gen-1's marginal
+                cost. ED and OPF give the same answer.
+            </p>
+            <p>
+                When <strong>line 1&ndash;3 binds</strong>, Gen-1 cannot supply all of bus 3's load
+                directly; some load at bus 3 must be served by the more expensive Gen-2 via lines 1-2 and
+                2-3, or directly via line 2-3. The LMP at bus 3 rises to reflect the binding constraint
+                &mdash; typically settling at Gen-2's marginal cost or somewhere between Gen-1 and Gen-2
+                depending on the PTDFs. Gen-1's bus stays at its marginal cost. The <strong>LMP
+                spread</strong> between buses is the shadow price of the line limit.
+            </p>
+            <p>
+                <strong>Counterflow and loop flow</strong> are the subtle things. In a meshed network,
+                injecting at one bus affects <em>every</em> line &mdash; a PTDF of 0.3 on line A means
+                30% of your injection flows there, 70% elsewhere. Sometimes relieving congestion on one
+                line requires <em>increasing</em> counterflow on another. OPF handles this automatically;
+                ED alone cannot.
+            </p>
+            <p>
+                Over time, <strong>persistent LMP spreads</strong> tell transmission planners where to
+                build new lines &mdash; this is the economic signal feeding
+                <a href="transmission-expansion-planning.html">TEP</a>. Persistent LMP spread at a
+                generator's bus tells that generator it will earn lower revenue than an unconstrained
+                dispatch would suggest &mdash; this feeds
+                <a href="generation-expansion-planning.html">GEP</a> and market-participant decision-making.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>From DC-OPF to contingency-secured, stochastic, distributed</p>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>AC-OPF (nonconvex NLP)</h4>
+                <p>
+                    Full grid physics: voltage magnitudes, reactive power, apparent-power limits. Solved
+                    by interior-point (IPOPT, KNITRO) or sequential convex programming on each PGLIB-OPF
+                    case. Local optimality only; no global guarantees on meshed networks.
+                </p>
+                <div class="ext-ref">Refs: Carpentier (1962); Dommel &amp; Tinney (1968); Cain-O'Neill-Castillo (2012).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>SOCP / SDP relaxations</h4>
+                <p>
+                    Convex relaxations of AC-OPF. SOCP is provably exact on radial networks; SDP is
+                    tighter but expensive. A major modern research frontier with deep connections to
+                    polynomial optimization and the moment/SOS hierarchy.
+                </p>
+                <div class="ext-ref">Refs: Jabr (2006); Bai &amp; Wei (2008); Low (2014); Molzahn &amp; Hiskens (2019).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Security-constrained OPF (SC-OPF)</h4>
+                <p>
+                    Adds N&minus;1 contingency constraints: the schedule must remain feasible after any
+                    single line or generator outage. Solved by Benders decomposition with a master OPF
+                    plus one subproblem per contingency. Every US ISO's day-ahead market clears an SCOPF.
+                </p>
+                <div class="ext-ref">Refs: Monticelli, Pereira &amp; Granville (1987); Capitanescu (2016).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Chance-constrained OPF (CC-OPF)</h4>
+                <p>
+                    Under renewable forecast uncertainty, require that line flows stay below limits with
+                    probability $\ge 1-\alpha$. For Gaussian uncertainty the constraints become
+                    second-order cones; for general distributions, scenario-approximation or DRO.
+                </p>
+                <div class="ext-ref">Refs: Bienstock, Chertkov &amp; Harnett (2014); Roald et&nbsp;al. (2017).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Distributed OPF &middot; ADMM</h4>
+                <p>
+                    Decompose a large OPF into per-area subproblems coordinated via boundary flow /
+                    angle constraints using the Alternating Direction Method of Multipliers. Enables
+                    multi-area / multi-ISO dispatch without a centralized optimizer.
+                </p>
+                <div class="ext-ref">Refs: Kim &amp; Baldick (1997); Molzahn et&nbsp;al. (2017).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>AC power flow via machine learning</h4>
+                <p>
+                    Train a neural network to predict AC-OPF solutions orders of magnitude faster than
+                    interior-point. Post-hoc feasibility projection restores constraint satisfaction.
+                    Active 2020+ research frontier with safety-critical caveats.
+                </p>
+                <div class="ext-ref">Refs: Pan, Zhao &amp; Chen (2019); Donti et&nbsp;al. (2021) DC3.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+            <p>Upstream, downstream, cross-domain</p>
+        </div>
+        <div class="related-grid">
+            <a href="economic-dispatch.html" class="related-card fade-in">
+                <span class="related-card-tag">ED without network</span>
+                <span class="related-card-name">Economic Dispatch</span>
+                <span class="related-card-desc">OPF = ED + grid physics. When all lines uncongested, the two solutions coincide.</span>
+            </a>
+            <a href="unit-commitment.html" class="related-card fade-in">
+                <span class="related-card-tag">Upstream &middot; 24 h</span>
+                <span class="related-card-name">Unit Commitment</span>
+                <span class="related-card-desc">Combined with OPF gives SCUC: the day-ahead clearing of every major ISO.</span>
+            </a>
+            <a href="transmission-expansion-planning.html" class="related-card fade-in">
+                <span class="related-card-tag">Downstream &middot; multi-year</span>
+                <span class="related-card-name">Transmission Expansion Planning</span>
+                <span class="related-card-desc">Persistent LMP spreads tell planners where to invest. TEP puts DC-OPF inside a bilevel investment MIP.</span>
+            </a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in">
+                <span class="related-card-tag">Market view</span>
+                <span class="related-card-name">Electricity Market Clearing</span>
+                <span class="related-card-desc">LMPs are the prices ISOs publish. OPF duals = LMPs.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Uncertainty</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">Stochastic and chance-constrained OPF under wind/solar forecast error.</span>
+            </a>
+            <a href="../families/network.html" class="related-card fade-in">
+                <span class="related-card-tag">OR family</span>
+                <span class="related-card-name">Network flow</span>
+                <span class="related-card-desc">OPF is a network-flow LP with physics-based flow constraints (PTDFs) instead of free-choice flow.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs and permanent URLs</p>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in">
+                <span class="ref-num">[1]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Carpentier, J.</span> (1962).</div>
+                    <div class="title">&ldquo;Contribution &agrave; l'&eacute;tude du dispatching &eacute;conomique.&rdquo;</div>
+                    <div class="journal"><em>Bulletin de la Soci&eacute;t&eacute; Fran&ccedil;aise des &Eacute;lectriciens</em>, 3(8), 431&ndash;447.</div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[2]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Dommel, H.&nbsp;W., &amp; Tinney, W.&nbsp;F.</span> (1968).</div>
+                    <div class="title">&ldquo;Optimal power flow solutions.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Apparatus and Systems</em>, 87(10), 1866&ndash;1876. <a href="https://doi.org/10.1109/TPAS.1968.292150" target="_blank" rel="noopener">doi:10.1109/TPAS.1968.292150</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[3]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Cain, M.&nbsp;B., O'Neill, R.&nbsp;P., &amp; Castillo, A.</span> (2012).</div>
+                    <div class="title">&ldquo;History of optimal power flow and formulations.&rdquo;</div>
+                    <div class="journal">Federal Energy Regulatory Commission staff technical paper. <a href="https://www.ferc.gov/sites/default/files/2020-05/acopf-1-history-formulation-testing.pdf" target="_blank" rel="noopener">ferc.gov/acopf-1</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[4]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Low, S.&nbsp;H.</span> (2014).</div>
+                    <div class="title">&ldquo;Convex relaxation of optimal power flow &mdash; Part I: Formulations and equivalence; Part II: Exactness.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Control of Network Systems</em>, 1(1&ndash;2). <a href="https://doi.org/10.1109/TCNS.2014.2309732" target="_blank" rel="noopener">doi:10.1109/TCNS.2014.2309732</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[5]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Molzahn, D.&nbsp;K., &amp; Hiskens, I.&nbsp;A.</span> (2019).</div>
+                    <div class="title"><em>A Survey of Relaxations and Approximations of the Power Flow Equations.</em></div>
+                    <div class="journal">Foundations and Trends in Electric Energy Systems, 4(1&ndash;2). <a href="https://doi.org/10.1561/3100000012" target="_blank" rel="noopener">doi:10.1561/3100000012</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[6]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Jabr, R.&nbsp;A.</span> (2006).</div>
+                    <div class="title">&ldquo;Radial distribution load flow using conic programming.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 21(3), 1458&ndash;1459. <a href="https://doi.org/10.1109/TPWRS.2006.879234" target="_blank" rel="noopener">doi:10.1109/TPWRS.2006.879234</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[7]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Bai, X., Wei, H., Fujisawa, K., &amp; Wang, Y.</span> (2008).</div>
+                    <div class="title">&ldquo;Semidefinite programming for optimal power flow problems.&rdquo;</div>
+                    <div class="journal"><em>International Journal of Electrical Power &amp; Energy Systems</em>, 30(6&ndash;7), 383&ndash;392. <a href="https://doi.org/10.1016/j.ijepes.2007.12.003" target="_blank" rel="noopener">doi:10.1016/j.ijepes.2007.12.003</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[8]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Monticelli, A., Pereira, M.&nbsp;V.&nbsp;F., &amp; Granville, S.</span> (1987).</div>
+                    <div class="title">&ldquo;Security-constrained optimal power flow with post-contingency corrective rescheduling.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 2(1), 175&ndash;180. <a href="https://doi.org/10.1109/TPWRS.1987.4335095" target="_blank" rel="noopener">doi:10.1109/TPWRS.1987.4335095</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[9]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Bienstock, D., Chertkov, M., &amp; Harnett, S.</span> (2014).</div>
+                    <div class="title">&ldquo;Chance-constrained optimal power flow: Risk-aware network control under uncertainty.&rdquo;</div>
+                    <div class="journal"><em>SIAM Review</em>, 56(3), 461&ndash;495. <a href="https://doi.org/10.1137/130910312" target="_blank" rel="noopener">doi:10.1137/130910312</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[10]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Zimmerman, R.&nbsp;D., Murillo-S&aacute;nchez, C.&nbsp;E., &amp; Thomas, R.&nbsp;J.</span> (2011).</div>
+                    <div class="title">&ldquo;MATPOWER: Steady-state operations, planning, and analysis tools for power systems research and education.&rdquo;</div>
+                    <div class="journal"><em>IEEE Transactions on Power Systems</em>, 26(1), 12&ndash;19. <a href="https://doi.org/10.1109/TPWRS.2010.2051168" target="_blank" rel="noopener">doi:10.1109/TPWRS.2010.2051168</a></div>
+                </div>
+            </div>
+            <div class="reference-item fade-in">
+                <span class="ref-num">[11]</span>
+                <div class="ref-body">
+                    <div><span class="authors">Capitanescu, F.</span> (2016).</div>
+                    <div class="title">&ldquo;Critical review of recent advances and further developments needed in AC optimal power flow.&rdquo;</div>
+                    <div class="journal"><em>Electric Power Systems Research</em>, 136, 57&ndash;68. <a href="https://doi.org/10.1016/j.epsr.2016.02.008" target="_blank" rel="noopener">doi:10.1016/j.epsr.2016.02.008</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    The in-browser solver handles a 3-bus pedagogical example; real OPF solvers (MATPOWER, PowerModels.jl, Gurobi, IPOPT) scale to tens of thousands of buses.
+    Line flow physics is DC-approximation. AC-OPF and convex relaxations are surveyed above but not run in-browser.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else {
+        fades.forEach(function(el){ el.classList.add('visible'); });
+    }
+
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, {
+            delimiters: [
+                {left: '$$', right: '$$', display: true},
+                {left: '$',  right: '$',  display: false}
+            ],
+            throwOnError: false
+        });
+    }
+    if (document.readyState === 'complete') { renderMath(); }
+    else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       DC-OPF SOLVER on a 3-bus triangle
+       ================================================================
+       Network:
+             Bus 1 (Gen-1)
+            /      \
+        Line 1-2   Line 1-3
+          /           \
+        Bus 2 (Gen-2)-Line 2-3-Bus 3 (Load)
+
+       All three lines have equal reactance X. By symmetry the PTDFs for
+       an injection at bus 1 withdrawn at the reference (bus 3) are:
+         - Line 1-3 carries 2/3 directly
+         - Line 1-2 carries 1/3 (around via bus 2)
+         - Line 2-3 carries 1/3
+       For an injection at bus 2 withdrawn at bus 3:
+         - Line 2-3 carries 2/3
+         - Line 1-2 carries -1/3 (reverses)
+         - Line 1-3 carries 1/3
+
+       With load D at bus 3 and generation p1, p2 at buses 1, 2:
+       p1 + p2 = D (balance)
+       Flows:
+         f13 = (2/3) p1 + (1/3) p2
+         f23 = (1/3) p1 + (2/3) p2
+         f12 = (1/3) p1 - (1/3) p2
+       Line limits: |f_l| <= F_l^max for each line.
+    */
+
+    function solveDCOPF(params) {
+        var D = params.load;
+        var p1Max = params.gen1Cap;
+        var p2Max = 600;                  /* Gen-2 capacity fixed large */
+        var c1 = params.gen1Cost;
+        var c2 = params.gen2Cost;
+        var f13Max = params.line13Limit;
+        var f12Max = 280;                 /* fixed */
+        var f23Max = 280;                 /* fixed */
+
+        /* Without line limits: put as much as possible on cheaper generator.
+           Then check line constraints; if violated, bind them iteratively. */
+
+        /* Step 1: Unconstrained dispatch (equal to ED) */
+        var p1 = 0, p2 = 0;
+        if (c1 <= c2) {
+            p1 = Math.min(D, p1Max);
+            p2 = D - p1;
+        } else {
+            p2 = Math.min(D, p2Max);
+            p1 = D - p2;
+        }
+
+        /* Step 2: Compute flows */
+        function flows(p1, p2) {
+            return {
+                f12: (p1 - p2) / 3,
+                f13: (2 * p1 + p2) / 3,
+                f23: (p1 + 2 * p2) / 3
+            };
+        }
+
+        var f = flows(p1, p2);
+        var lambda1 = c1, lambda2 = c2, lambda3 = Math.max(c1, c2);
+        var congested = false;
+        var congestedLine = '';
+        var mu13 = 0, mu12 = 0, mu23 = 0;
+
+        /* Step 3: Check line limits. If line 1-3 is the most-likely binding
+           constraint (cheaper gen at bus 1 wants to ship directly to bus 3),
+           we bind it and resolve analytically. */
+        if (f.f13 > f13Max + 1e-6) {
+            /* Bind f13 = f13Max: (2 p1 + p2) / 3 = f13Max, plus p1 + p2 = D */
+            /* Solve: 2 p1 + p2 = 3 f13Max, p1 + p2 = D */
+            p1 = 3 * f13Max - D;
+            p2 = D - p1;
+            p1 = Math.max(0, Math.min(p1Max, p1));
+            p2 = Math.max(0, Math.min(p2Max, p2));
+
+            /* Recompute with corrected p1, p2 */
+            f = flows(p1, p2);
+            congested = true;
+            congestedLine = 'Line 1-3';
+
+            /* LMPs: bus 1 = c1, bus 2 = c2, bus 3 is weighted */
+            /* KKT for binding f13: c1 - lambda1 = mu13 * dH13/dp1 = mu13 * 2/3
+                                    c2 - lambda2 = mu13 * 1/3
+               With lambda1 = lambda at slack bus 3 minus PTDF shift... we simplify:
+               Use the LMP duality: LMP_i = lambda3 - sum_l mu_l * H_{l,i}
+               Here ref = bus 3 so LMP_3 = lambda3 (KKT of balance).
+               With Gen-2 marginal: c2 = LMP_2 = lambda3 - mu13 * (1/3) - 0
+               With Gen-1 at max or marginal: c1 = LMP_1 = lambda3 - mu13 * (2/3)
+               Subtracting: c2 - c1 = mu13 * (1/3)
+                         => mu13 = 3 * (c2 - c1)  (if c2 > c1)
+            */
+            mu13 = Math.max(0, 3 * (c2 - c1));
+            lambda3 = c1 + mu13 * (2 / 3);  /* = c2 + mu13/3, same thing when binding */
+            lambda1 = c1;
+            lambda2 = c2;
+        } else if (Math.abs(f.f12) > f12Max + 1e-6 || Math.abs(f.f23) > f23Max + 1e-6) {
+            /* Other lines can bind but less common in this parameterization */
+            congested = true;
+            congestedLine = Math.abs(f.f12) > f12Max ? 'Line 1-2' : 'Line 2-3';
+            /* Simplified: without re-deriving, bind the violating line and tighten iteratively */
+            for (var it = 0; it < 20; it++) {
+                f = flows(p1, p2);
+                if (f.f12 > f12Max) {
+                    /* reduce p1, increase p2 proportionally */
+                    var adjust = 0.5 * (f.f12 - f12Max) * 3;
+                    p1 = Math.max(0, p1 - adjust);
+                    p2 = Math.min(p2Max, p2 + adjust);
+                } else if (f.f12 < -f12Max) {
+                    var adjust2 = 0.5 * (-f.f12 - f12Max) * 3;
+                    p2 = Math.max(0, p2 - adjust2);
+                    p1 = Math.min(p1Max, p1 + adjust2);
+                } else if (f.f23 > f23Max) {
+                    var adjust3 = 0.5 * (f.f23 - f23Max) * 3;
+                    p2 = Math.max(0, p2 - adjust3);
+                    p1 = Math.min(p1Max, p1 + adjust3);
+                } else {
+                    break;
+                }
+            }
+            /* Ensure balance */
+            var totalNow = p1 + p2;
+            if (Math.abs(totalNow - D) > 1e-3) {
+                /* Rebalance on higher-capacity gen */
+                if (p1 < p1Max) p1 = Math.min(p1Max, D - p2);
+                else p2 = Math.min(p2Max, D - p1);
+            }
+            f = flows(p1, p2);
+            lambda1 = c1;
+            lambda2 = c2;
+            lambda3 = Math.max(c1, c2) + 5; /* congestion rent */
+        }
+
+        /* If still infeasible (demand exceeds total feasible capacity) */
+        if (p1 > p1Max) { p1 = p1Max; p2 = Math.min(p2Max, D - p1); }
+        if (p2 > p2Max) { p2 = p2Max; p1 = Math.min(p1Max, D - p2); }
+        if (p1 + p2 < D - 1e-3) {
+            /* genuinely infeasible — load shedding case not handled here */
+            return { feasible: false };
+        }
+        f = flows(p1, p2);
+        var cost = c1 * p1 + c2 * p2;
+
+        return {
+            feasible: true,
+            p: [p1, p2],
+            flows: [f.f12, f.f13, f.f23],
+            limits: [f12Max, f13Max, f23Max],
+            lmp: [lambda1, lambda2, lambda3],
+            cost: cost,
+            congested: congested,
+            congestedLine: congestedLine
+        };
+    }
+
+    /* ================================================================
+       NETWORK DIAGRAM
+       ================================================================ */
+    function drawNetwork(result, params) {
+        var cvs = document.getElementById('opfNetworkCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        /* Bus positions: equilateral triangle */
+        var cx = W / 2, cy = H / 2 + 20;
+        var R = Math.min(W, H) * 0.3;
+        var bus = [
+            { x: cx - R * Math.cos(Math.PI / 6), y: cy - R * Math.sin(Math.PI / 6), lbl: 'Bus 1' },  /* top-left */
+            { x: cx + R * Math.cos(Math.PI / 6), y: cy - R * Math.sin(Math.PI / 6), lbl: 'Bus 2' },  /* top-right */
+            { x: cx,                              y: cy + R,                         lbl: 'Bus 3' }   /* bottom */
+        ];
+
+        /* Draw lines first (so nodes cover them) */
+        var lines = [
+            { a: 0, b: 1, f: result.flows[0], max: result.limits[0], name: 'Line 1-2' },
+            { a: 0, b: 2, f: result.flows[1], max: result.limits[1], name: 'Line 1-3' },
+            { a: 1, b: 2, f: result.flows[2], max: result.limits[2], name: 'Line 2-3' }
+        ];
+
+        lines.forEach(function(l){
+            var utilization = Math.abs(l.f) / l.max;
+            var color = '#64ffda'; /* green */
+            if (utilization > 0.98) color = '#ff6b6b';       /* red: binding */
+            else if (utilization > 0.7) color = '#fbbf24';  /* amber: high */
+            else if (utilization > 0.4) color = '#7aa2f7';  /* blue: moderate */
+
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3 + utilization * 4;
+            ctx.globalAlpha = 0.9;
+            ctx.beginPath();
+            ctx.moveTo(bus[l.a].x, bus[l.a].y);
+            ctx.lineTo(bus[l.b].x, bus[l.b].y);
+            ctx.stroke();
+            ctx.globalAlpha = 1;
+
+            /* Flow arrow in the middle */
+            var mx = (bus[l.a].x + bus[l.b].x) / 2;
+            var my = (bus[l.a].y + bus[l.b].y) / 2;
+            var dx = bus[l.b].x - bus[l.a].x;
+            var dy = bus[l.b].y - bus[l.a].y;
+            var len = Math.sqrt(dx*dx + dy*dy);
+            var ux = dx / len, uy = dy / len;
+            var sign = l.f >= 0 ? 1 : -1;
+            var arrowX = mx + 8 * ux * sign;
+            var arrowY = my + 8 * uy * sign;
+            /* Arrowhead */
+            ctx.fillStyle = color;
+            ctx.beginPath();
+            ctx.moveTo(arrowX, arrowY);
+            ctx.lineTo(arrowX - 10 * (ux * sign + uy * 0.5), arrowY - 10 * (uy * sign - ux * 0.5));
+            ctx.lineTo(arrowX - 10 * (ux * sign - uy * 0.5), arrowY - 10 * (uy * sign + ux * 0.5));
+            ctx.closePath();
+            ctx.fill();
+
+            /* Flow label */
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = 'bold 12px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            var labelOffsetY = (l.a === 0 && l.b === 2) ? 0 : -14;
+            var labelOffsetX = (l.a === 0 && l.b === 2) ? -30 : 0;
+            if (l.a === 1 && l.b === 2) { labelOffsetX = 30; }
+            ctx.fillText(l.f.toFixed(0) + ' / ' + l.max + ' MW', mx + labelOffsetX, my + labelOffsetY);
+            ctx.fillStyle = color;
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.fillText(l.name + '  (' + (utilization * 100).toFixed(0) + '%)', mx + labelOffsetX, my + labelOffsetY + 14);
+        });
+
+        /* Draw buses (circles) */
+        bus.forEach(function(b, i){
+            ctx.fillStyle = '#112240';
+            ctx.strokeStyle = '#C5A059';
+            ctx.lineWidth = 2.5;
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 36, 0, 2 * Math.PI);
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = 'bold 13px "Cormorant Garamond", serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(b.lbl, b.x, b.y - 4);
+
+            /* LMP label */
+            ctx.fillStyle = '#C5A059';
+            ctx.font = '11px "JetBrains Mono", monospace';
+            ctx.fillText('$' + result.lmp[i].toFixed(1), b.x, b.y + 10);
+        });
+
+        /* Generator / load annotations */
+        /* Gen 1 on Bus 1 */
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '12px "Inter", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText('\u25BD  Gen-1: ' + result.p[0].toFixed(0) + ' MW', bus[0].x - 44, bus[0].y + 2);
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillText('$' + params.gen1Cost + '/MWh', bus[0].x - 44, bus[0].y + 16);
+
+        /* Gen 2 on Bus 2 */
+        ctx.fillStyle = '#fbbf24';
+        ctx.font = '12px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('\u25BD  Gen-2: ' + result.p[1].toFixed(0) + ' MW', bus[1].x + 44, bus[1].y + 2);
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.fillText('$' + params.gen2Cost + '/MWh', bus[1].x + 44, bus[1].y + 16);
+
+        /* Load on Bus 3 */
+        ctx.fillStyle = '#c084fc';
+        ctx.font = '12px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('\u25B3  Load: ' + params.load + ' MW', bus[2].x, bus[2].y + 60);
+
+        /* Title / legend */
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        var legendY = 20;
+        ctx.fillText('Line utilization:', 20, legendY);
+        var legendItems = [
+            { color: '#64ffda', lbl: '<40% light' },
+            { color: '#7aa2f7', lbl: '40-70% moderate' },
+            { color: '#fbbf24', lbl: '70-98% high' },
+            { color: '#ff6b6b', lbl: 'binding' }
+        ];
+        var lx = 130;
+        legendItems.forEach(function(item){
+            ctx.fillStyle = item.color;
+            ctx.fillRect(lx, legendY - 8, 12, 4);
+            ctx.fillStyle = '#a8b2d1';
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.fillText(item.lbl, lx + 16, legendY);
+            lx += 120;
+        });
+    }
+
+    function appendCard(parent, label, value, cls) {
+        var card = document.createElement('div');
+        card.className = 'res-card';
+        var lbl = document.createElement('div');
+        lbl.className = 'res-card-lbl';
+        lbl.textContent = label;
+        var val = document.createElement('div');
+        val.className = 'res-card-val' + (cls ? ' ' + cls : '');
+        val.textContent = value;
+        card.appendChild(lbl);
+        card.appendChild(val);
+        parent.appendChild(card);
+    }
+
+    function appendHeaderRow(thead, headers) {
+        var tr = document.createElement('tr');
+        headers.forEach(function(h){ var th = document.createElement('th'); th.textContent = h; tr.appendChild(th); });
+        thead.appendChild(tr);
+    }
+    function appendDataRow(tbody, cells) {
+        var tr = document.createElement('tr');
+        cells.forEach(function(c){ var td = document.createElement('td'); td.textContent = c; tr.appendChild(td); });
+        tbody.appendChild(tr);
+    }
+
+    function renderResults(result, params) {
+        var summary = document.getElementById('opfResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+
+        appendCard(summary, 'Total cost / h', '$' + result.cost.toFixed(0));
+        appendCard(summary, 'LMP Bus 1', '$' + result.lmp[0].toFixed(2) + '/MWh');
+        appendCard(summary, 'LMP Bus 2', '$' + result.lmp[1].toFixed(2) + '/MWh');
+        appendCard(summary, 'LMP Bus 3', '$' + result.lmp[2].toFixed(2) + '/MWh', result.congested ? 'congested' : null);
+        appendCard(summary, 'Status', result.congested ? 'Congestion on ' + result.congestedLine : 'Uncongested');
+
+        var detail = document.getElementById('opfResultsDetail');
+        while (detail.firstChild) detail.removeChild(detail.firstChild);
+        var table = document.createElement('table');
+        table.className = 'results-table';
+        var thead = document.createElement('thead');
+        appendHeaderRow(thead, ['Line', 'Flow (MW)', 'Limit (MW)', 'Utilization', 'Status']);
+        table.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        var names = ['Line 1-2', 'Line 1-3', 'Line 2-3'];
+        for (var i = 0; i < 3; i++) {
+            var util = Math.abs(result.flows[i]) / result.limits[i];
+            var status;
+            if (util > 0.98) status = 'Binding';
+            else if (util > 0.7) status = 'High';
+            else if (util > 0.4) status = 'Moderate';
+            else status = 'Light';
+            appendDataRow(tbody, [
+                names[i],
+                result.flows[i].toFixed(1),
+                String(result.limits[i]),
+                (util * 100).toFixed(1) + '%',
+                status
+            ]);
+        }
+        table.appendChild(tbody);
+        detail.appendChild(table);
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('opfLoad', 'opfLoadVal', '');
+    bindSlider('opfGen1Cap', 'opfGen1CapVal', '');
+    bindSlider('opfGen1Cost', 'opfGen1CostVal', '');
+    bindSlider('opfGen2Cost', 'opfGen2CostVal', '');
+    bindSlider('opfLineLimit', 'opfLineLimitVal', '');
+
+    function runSolver() {
+        var params = {
+            load: parseInt(document.getElementById('opfLoad').value, 10),
+            gen1Cap: parseInt(document.getElementById('opfGen1Cap').value, 10),
+            gen1Cost: parseInt(document.getElementById('opfGen1Cost').value, 10),
+            gen2Cost: parseInt(document.getElementById('opfGen2Cost').value, 10),
+            line13Limit: parseInt(document.getElementById('opfLineLimit').value, 10)
+        };
+
+        var t0 = performance.now();
+        var result = solveDCOPF(params);
+        var t1 = performance.now();
+
+        if (!result.feasible) {
+            document.getElementById('opfStatus').textContent = 'Infeasible: demand exceeds available capacity or line limits.';
+            return;
+        }
+
+        drawNetwork(result, params);
+        renderResults(result, params);
+        document.getElementById('opfStatus').textContent = 'Solved in ' + (t1 - t0).toFixed(2) + ' ms';
+    }
+
+    document.getElementById('opfSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>

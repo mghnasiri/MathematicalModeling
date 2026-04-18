@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Microgrid Operation | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Microgrid Operation co-optimizes distributed generation, storage, flexible demand, and grid exchange over a short horizon. MILP with islanding constraints. Parhizi et al. (2015), Hatziargyriou et al. (2007).">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/microgrid-operation.html">
+    <meta property="og:title" content="Microgrid Operation | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive MILP solver for microgrid operation with PV + battery + generator + grid exchange.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/microgrid-operation.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; transition:width 0.1s linear; width:0%; box-shadow:0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { background:transparent; padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(100,255,218,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(251,191,36,0.05) 0%, transparent 50%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(100,255,218,0.4)); animation:gridNodePulse 3s ease-in-out infinite; }
+        @keyframes gridNodePulse { 0%,100% { filter:drop-shadow(0 0 10px rgba(100,255,218,0.4)); transform:scale(1); } 50% { filter:drop-shadow(0 0 18px rgba(100,255,218,0.7)); transform:scale(1.04); } }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto 1rem; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-short { color:var(--blue); background:rgba(122,162,247,0.08); border-color:rgba(122,162,247,0.3); }
+        .hero-tag.tag-distribution { color:var(--green); background:rgba(100,255,218,0.08); border-color:rgba(100,255,218,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; line-height:1.75; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card h3 span.ref { font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--slate); letter-spacing:0.5px; text-transform:none; font-weight:400; margin-left:0.5rem; }
+        .formulation-card p { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; vertical-align:top; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; margin-bottom:0.5rem; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:320px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.3s; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; letter-spacing:0.3px; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; transition:all 0.25s; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); letter-spacing:0.5px; }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; letter-spacing:2px; } .section-header h2 { font-size:1.6rem; letter-spacing:2px; } section { padding:2.8rem 0; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Applications","item":"https://mghnasiri.github.io/MathematicalModeling/applications/"},
+      {"@type":"ListItem","position":3,"name":"Energy","item":"https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html"},
+      {"@type":"ListItem","position":4,"name":"Microgrid Operation","item":"https://mghnasiri.github.io/MathematicalModeling/applications/microgrid-operation.html"}
+    ]}
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Microgrid Operation</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-network-wired" aria-hidden="true"></i></div>
+        <h1>Microgrid <span>Operation</span></h1>
+        <p class="hero-abbrev">MILP &middot; Islanded / Grid-Connected</p>
+        <p class="hero-subtitle">DER Dispatch &middot; Storage &middot; Grid Exchange</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            A <strong>microgrid</strong> is a local cluster of distributed energy resources (DERs) &mdash;
+            rooftop solar, a diesel genset, a battery, flexible loads &mdash; that can operate either
+            connected to the main grid or <em>islanded</em> when the main grid fails. The operator
+            solves a MILP every 15 minutes: how much to generate locally, how much to draw from or
+            export to the grid, when to charge/discharge the battery, and whether to shed any
+            non-critical load. Islanded mode adds a hard self-sufficiency constraint. Parhizi et al.
+            (2015) give the authoritative review; Hatziargyriou et al. (2007) wrote the seminal
+            IEEE primer.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-short">Short-term operations</span>
+            <span class="hero-tag tag-distribution">Distribution layer</span>
+            <span class="hero-tag">MILP</span>
+            <span class="hero-tag">Islanding mode</span>
+            <span class="hero-tag">Multi-DER</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Local DER coordination with grid fallback</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                Microgrids sit at the distribution level: a university campus, a military base, an industrial
+                park, a remote Alaskan village. They range from 100 kW (small commercial) to 50+ MW (university
+                or naval base). The defining feature is <strong>islanding capability</strong>: the microgrid
+                controller can disconnect from the main grid at a point of common coupling (PCC) and operate
+                autonomously, keeping critical loads served even when the main grid is down. This is why
+                hospitals, data centers, and military sites invest in microgrids &mdash; resilience against
+                macro-grid outages.
+            </p>
+            <p>
+                The operational problem is a <strong>mixed-integer linear program</strong>. Decision variables:
+                power output of each generator, charge/discharge of each battery, grid import/export, load
+                curtailment. Binary variables: generator on/off status, islanding mode (connected vs disconnected).
+                Objective: minimize total operating cost (fuel + grid import &minus; grid export revenue +
+                load-shed penalty). Constraints: DER capacities, storage SOC dynamics, power balance, PCC
+                flow limits, and &mdash; in islanded mode &mdash; zero grid exchange forced by $x^{\mathrm{isl}} = 1$.
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                <strong>Lasseter (2002)</strong> at the University of Wisconsin coined the modern microgrid
+                concept in a CERTS white paper. <cite>Hatziargyriou, Asano, Iravani &amp; Marnay (2007)</cite>
+                wrote the first comprehensive IEEE <em>Power &amp; Energy Magazine</em> overview. The
+                <cite>Parhizi, Lotfi, Khodaei &amp; Bahramirad (2015)</cite> review in <em>IEEE Access</em>
+                is the most-cited modern reference. <cite>Fathima &amp; Palanisamy (2015)</cite> reviewed
+                sizing and energy management specifically. By 2024, the DoE Microgrid Program tracks 450+
+                operational microgrids in the US, and the IEA sees microgrids as central to both developing-
+                country electrification and developed-country resilience.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>MILP with DER co-dispatch and islanding</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{T}$</td><td>Dispatch periods</td><td>&mdash;</td></tr>
+                        <tr><td>$L_t$</td><td>Total load (critical + non-critical)</td><td>kW</td></tr>
+                        <tr><td>$L_t^{\mathrm{cr}}$</td><td>Critical (non-sheddable) load</td><td>kW</td></tr>
+                        <tr><td>$\tilde{P}_t^{\mathrm{PV}}$</td><td>Available PV output</td><td>kW</td></tr>
+                        <tr><td>$\pi_t^{\mathrm{imp}}, \pi_t^{\mathrm{exp}}$</td><td>Grid import/export tariff</td><td>$/kWh</td></tr>
+                        <tr><td>$c^{\mathrm{fuel}}$</td><td>Genset fuel cost</td><td>$/kWh</td></tr>
+                        <tr><td>$p_t^{\mathrm{gen}}$</td><td><strong>Genset output</strong></td><td>kW</td></tr>
+                        <tr><td>$c_t^{\mathrm{bat}}, d_t^{\mathrm{bat}}$</td><td>Battery charge/discharge</td><td>kW</td></tr>
+                        <tr><td>$p_t^{\mathrm{imp}}, p_t^{\mathrm{exp}}$</td><td>Grid import/export</td><td>kW</td></tr>
+                        <tr><td>$u_t^{\mathrm{shed}}$</td><td>Non-critical load shed</td><td>kW</td></tr>
+                        <tr><td>$y_t^{\mathrm{isl}}$</td><td><strong>Islanded</strong> binary</td><td>{0,1}</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Objective</h3>
+                <div class="math-display">
+                    $$\min \sum_{t \in \mathcal{T}} \Big[ c^{\mathrm{fuel}} p_t^{\mathrm{gen}} + \pi_t^{\mathrm{imp}} p_t^{\mathrm{imp}} - \pi_t^{\mathrm{exp}} p_t^{\mathrm{exp}} + \rho \, u_t^{\mathrm{shed}} \Big] \qquad \text{(1)}$$
+                </div>
+                <p>Fuel cost + grid purchase &minus; grid sale + load-shed penalty at VOLL $\rho$.</p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>Power balance</strong>:</p>
+                <div class="math-display">
+                    $$p_t^{\mathrm{gen}} + p_t^{\mathrm{PV}} + d_t^{\mathrm{bat}} + p_t^{\mathrm{imp}} = L_t - u_t^{\mathrm{shed}} + c_t^{\mathrm{bat}} + p_t^{\mathrm{exp}} \qquad \text{(2)}$$
+                </div>
+                <p><strong>PV availability</strong>: $p_t^{\mathrm{PV}} \le \tilde{P}_t^{\mathrm{PV}}$ (curtailment allowed). <strong>Battery SOC</strong>: $e_{t+1} = e_t + \eta^c c_t^{\mathrm{bat}} - d_t^{\mathrm{bat}}/\eta^d$, $E^{\min} \le e_t \le E^{\max}$.</p>
+                <p><strong>Islanding constraint</strong> (the key binary coupling):</p>
+                <div class="math-display">
+                    $$p_t^{\mathrm{imp}} \le P^{\mathrm{PCC}} (1 - y_t^{\mathrm{isl}}), \quad p_t^{\mathrm{exp}} \le P^{\mathrm{PCC}} (1 - y_t^{\mathrm{isl}}) \qquad \text{(3)}$$
+                </div>
+                <p><strong>Critical-load floor</strong> (must be served even islanded):</p>
+                <div class="math-display">$$u_t^{\mathrm{shed}} \le L_t - L_t^{\mathrm{cr}} \qquad \text{(4)}$$</div>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>Small, fast MILP: 24 periods $\times$ 4 DERs $\approx$ 100 continuous + 24 binary variables. Solves in &lt;1 s on commodity solvers. Deployed as rolling-horizon MPC on real microgrid controllers.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>US DoE Microgrid Program</h4>
+                    <p><a href="https://www.energy.gov/oe/microgrid-program-strategy" target="_blank" rel="noopener">DoE Microgrid</a> tracks 450+ operational US microgrids with open documentation on design, deployment, and operation.</p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>NREL REopt tool + example cases</h4>
+                    <p><a href="https://reopt.nrel.gov/" target="_blank" rel="noopener">NREL REopt</a> provides free techno-economic optimization for microgrids, including reference data for PV, battery, genset costs and operations.</p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Illustrative case (this page)</h4>
+                    <p>100-kW peak campus microgrid with 30-kW rooftop PV, 50-kWh battery, 40-kW diesel genset, grid connection, and 5% critical load. 24-hour MILP rolling dispatch.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>24-hour microgrid MILP with optional islanding window</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Microgrid parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="mgPV">PV capacity (kW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mgPV" min="0" max="100" step="5" value="30">
+                        <span class="size-display" id="mgPVVal">30</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mgBat">Battery (kWh)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mgBat" min="0" max="150" step="10" value="50">
+                        <span class="size-display" id="mgBatVal">50</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mgGenset">Genset (kW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mgGenset" min="0" max="80" step="5" value="40">
+                        <span class="size-display" id="mgGensetVal">40</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mgGridPrice">Grid import ($/kWh)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mgGridPrice" min="0.05" max="0.50" step="0.025" value="0.15">
+                        <span class="size-display" id="mgGridPriceVal">0.15</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mgIslandHours">Islanding hours (grid outage)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mgIslandHours" min="0" max="12" step="1" value="0">
+                        <span class="size-display" id="mgIslandHoursVal">0</span>
+                    </div>
+                </div>
+
+                <button class="solve-btn" id="mgSolve" type="button"><i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Dispatch microgrid</button>
+                <div class="solver-status" id="mgStatus">Adjust parameters and press Dispatch.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>DER dispatch &amp; battery SOC</h3>
+                <div class="canvas-wrap">
+                    <canvas id="mgDispatchCanvas" width="1100" height="320" aria-label="Microgrid dispatch by source"></canvas>
+                    <div class="canvas-caption">PV / battery / genset / grid-import dispatch stacked; white line = load; red shaded = islanding window</div>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="mgSocCanvas" width="1100" height="180" aria-label="Battery SOC trajectory"></canvas>
+                    <div class="canvas-caption">Battery SOC trajectory (% of capacity)</div>
+                </div>
+                <div class="results-summary" id="mgResultsSummary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+        </div>
+        <div class="context-block fade-in">
+            <p>The <strong>dispatch stack</strong> shows where each kW comes from. On a sunny day without islanding: PV fills midday, battery absorbs excess midday and releases evening, genset runs only if grid import is expensive enough. During an <strong>islanding window</strong> (shaded red), grid-import is forced to zero; the microgrid must self-sufficiency with PV + battery + genset &mdash; the genset often becomes the marginal resource, raising cost dramatically.</p>
+            <p><strong>Battery SOC trajectory</strong> tells the storage strategy: if the operator expects an islanding event, the policy pre-charges the battery in the hours leading up to the outage. A properly-sized microgrid can ride through 4&ndash;8 hours of outage without any load shed; larger batteries + more genset capacity extend this.</p>
+            <p>Key trade-offs revealed: oversized PV is cheap but has zero value at night; oversized battery is costly per kWh of resilience; genset is cheap in capex but expensive to run. Optimal sizing balances all three against probability-weighted outage exposure. This is the core of the <strong>techno-economic microgrid design</strong> problem solved by NREL REopt and similar tools.</p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>Stochastic microgrid MPC</h4>
+                <p>Uncertain PV output and outage timing. Two-stage stochastic MILP with scenario-based load/generation forecasts. Solves every 15 minutes in rolling-horizon mode.</p>
+                <div class="ext-ref">Refs: Olivares et&nbsp;al. (2014); Parisio &amp; Glielmo (2011).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Networked microgrids</h4>
+                <p>Multiple microgrids that can exchange power at a distribution-feeder level. Hierarchical optimization: each microgrid local MPC, upper-level distribution system operator coordinates exchanges.</p>
+                <div class="ext-ref">Refs: Wang, Wang, Xu &amp; Chen (2018); Fang et&nbsp;al. (2012).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Microgrid sizing (techno-economic)</h4>
+                <p>Upstream investment problem: optimal capacities of PV, battery, genset. MILP with outage scenarios. NREL REopt is the standard open tool.</p>
+                <div class="ext-ref">Refs: Hirsch, Parag &amp; Guerrero (2018); Fathima &amp; Palanisamy (2015).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Resilience-constrained operation</h4>
+                <p>Require &ge;&nbsp;X hours of survival in any contingency. Adds a robust constraint over worst-case outage scenarios.</p>
+                <div class="ext-ref">Refs: Hussain, Bui &amp; Kim (2019); Farzin, Fotuhi-Firuzabad &amp; Moeini-Aghtaie (2016).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>EV-integrated microgrids</h4>
+                <p>Campus microgrid where EV charging stations are dispatchable loads. Smart charging schedules coordinate with PV output. Vehicle-to-grid (V2G) adds bidirectional power flow.</p>
+                <div class="ext-ref">Refs: Tushar et&nbsp;al. (2014); Zhou et&nbsp;al. (2015).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Transactive / peer-to-peer microgrids</h4>
+                <p>Neighbors in a residential microgrid trade PV surplus via smart contracts. Double-auction or negotiation-based mechanisms. Active research in blockchain + power systems.</p>
+                <div class="ext-ref">Refs: Sousa et&nbsp;al. (2019); Mengelkamp et&nbsp;al. (2018) Brooklyn microgrid.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+        </div>
+        <div class="related-grid">
+            <a href="battery-storage-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Core asset</span>
+                <span class="related-card-name">Battery Storage Optimization</span>
+                <span class="related-card-desc">Battery is the microgrid's flexibility workhorse; same LP structure embedded in microgrid MILP.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Resource</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">Rooftop PV variability at microgrid scale uses the same stochastic formulations as bulk-grid RE.</span>
+            </a>
+            <a href="demand-response-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Flexibility</span>
+                <span class="related-card-name">Demand Response</span>
+                <span class="related-card-desc">Non-critical load shedding in microgrid = high-value emergency DR at local scale.</span>
+            </a>
+            <a href="unit-commitment.html" class="related-card fade-in">
+                <span class="related-card-tag">Analogous problem</span>
+                <span class="related-card-name">Unit Commitment</span>
+                <span class="related-card-desc">Microgrid MILP is a miniature UC: binary genset on/off + continuous dispatch.</span>
+            </a>
+            <a href="ev-charging-scheduling.html" class="related-card fade-in">
+                <span class="related-card-tag">Flexible load</span>
+                <span class="related-card-name">EV Charging</span>
+                <span class="related-card-desc">EVs as dispatchable loads (and V2G sources) in campus and commercial microgrids.</span>
+            </a>
+            <a href="energy-domain.html" class="related-card fade-in">
+                <span class="related-card-tag">Domain</span>
+                <span class="related-card-name">Energy Operations</span>
+                <span class="related-card-desc">Back to framework matrix.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Parhizi, S., Lotfi, H., Khodaei, A., &amp; Bahramirad, S.</span> (2015).</div><div class="title">&ldquo;State of the art in research on microgrids: A review.&rdquo;</div><div class="journal"><em>IEEE Access</em>, 3, 890&ndash;925. <a href="https://doi.org/10.1109/ACCESS.2015.2443119" target="_blank" rel="noopener">doi:10.1109/ACCESS.2015.2443119</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Hatziargyriou, N., Asano, H., Iravani, R., &amp; Marnay, C.</span> (2007).</div><div class="title">&ldquo;Microgrids: An overview of ongoing research, development, and demonstration projects.&rdquo;</div><div class="journal"><em>IEEE Power and Energy Magazine</em>, 5(4), 78&ndash;94. <a href="https://doi.org/10.1109/MPAE.2007.376583" target="_blank" rel="noopener">doi:10.1109/MPAE.2007.376583</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Fathima, A.&nbsp;H., &amp; Palanisamy, K.</span> (2015).</div><div class="title">&ldquo;Optimization in microgrids with hybrid energy systems &mdash; a review.&rdquo;</div><div class="journal"><em>Renewable and Sustainable Energy Reviews</em>, 45, 431&ndash;446. <a href="https://doi.org/10.1016/j.rser.2015.01.059" target="_blank" rel="noopener">doi:10.1016/j.rser.2015.01.059</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Olivares, D.&nbsp;E., et&nbsp;al.</span> (2014).</div><div class="title">&ldquo;Trends in microgrid control.&rdquo;</div><div class="journal"><em>IEEE Transactions on Smart Grid</em>, 5(4), 1905&ndash;1919. <a href="https://doi.org/10.1109/TSG.2013.2295514" target="_blank" rel="noopener">doi:10.1109/TSG.2013.2295514</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">Parisio, A., &amp; Glielmo, L.</span> (2011).</div><div class="title">&ldquo;A mixed integer linear formulation for microgrid economic scheduling.&rdquo;</div><div class="journal"><em>2011 IEEE SmartGridComm</em>, 505&ndash;510. <a href="https://doi.org/10.1109/SmartGridComm.2011.6102375" target="_blank" rel="noopener">doi:10.1109/SmartGridComm.2011.6102375</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Hirsch, A., Parag, Y., &amp; Guerrero, J.</span> (2018).</div><div class="title">&ldquo;Microgrids: A review of technologies, key drivers, and outstanding issues.&rdquo;</div><div class="journal"><em>Renewable and Sustainable Energy Reviews</em>, 90, 402&ndash;411. <a href="https://doi.org/10.1016/j.rser.2018.03.040" target="_blank" rel="noopener">doi:10.1016/j.rser.2018.03.040</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Farzin, H., Fotuhi-Firuzabad, M., &amp; Moeini-Aghtaie, M.</span> (2016).</div><div class="title">&ldquo;Stochastic energy management of microgrids during unscheduled islanding period.&rdquo;</div><div class="journal"><em>IEEE Transactions on Industrial Informatics</em>, 13(3), 1079&ndash;1087. <a href="https://doi.org/10.1109/TII.2016.2646721" target="_blank" rel="noopener">doi:10.1109/TII.2016.2646721</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">Sousa, T., et&nbsp;al.</span> (2019).</div><div class="title">&ldquo;Peer-to-peer and community-based markets: A comprehensive review.&rdquo;</div><div class="journal"><em>Renewable and Sustainable Energy Reviews</em>, 104, 367&ndash;378. <a href="https://doi.org/10.1016/j.rser.2019.01.036" target="_blank" rel="noopener">doi:10.1016/j.rser.2019.01.036</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Tushar, W., et&nbsp;al.</span> (2014).</div><div class="title">&ldquo;Smart microgrid: Optimal joint scheduling for electric vehicles and home appliances.&rdquo;</div><div class="journal"><em>IEEE PES General Meeting</em>. <a href="https://doi.org/10.1109/PESGM.2014.6939520" target="_blank" rel="noopener">doi:10.1109/PESGM.2014.6939520</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">Lasseter, R.&nbsp;H.</span> (2002).</div><div class="title">&ldquo;MicroGrids.&rdquo;</div><div class="journal"><em>2002 IEEE Power Engineering Society Winter Meeting</em>, 1, 305&ndash;308. <a href="https://doi.org/10.1109/PESW.2002.985003" target="_blank" rel="noopener">doi:10.1109/PESW.2002.985003</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">In-browser solver runs a simplified MILP with priority-based dispatch. Production microgrid controllers use commercial MILP solvers in rolling-horizon MPC.</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p><a href="energy-domain.html">&larr; Back to Energy</a>&ensp;&middot;&ensp;&copy; 2025 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            scrollProgress.style.width = (height > 0 ? (scrolled / height) * 100 : 0) + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false });
+    }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       MICROGRID SOLVER — priority-based dispatch with islanding window
+       ================================================================ */
+    var T = 24;
+
+    function pvProfile(cap) {
+        /* Bell curve peaking at noon */
+        var out = [];
+        for (var t = 0; t < T; t++) {
+            var x = (t - 12) / 4;
+            out.push(Math.max(0, cap * Math.exp(-x * x * 0.5)));
+        }
+        return out;
+    }
+    function loadProfile() {
+        /* 100-kW peak campus load */
+        var shape = [45, 42, 40, 40, 42, 48, 58, 68, 78, 82, 85, 85, 80, 82, 85, 90, 95, 100, 92, 80, 70, 62, 55, 50];
+        return shape;
+    }
+
+    function solveMicrogrid(params) {
+        var pv = pvProfile(params.pvCap);
+        var load = loadProfile();
+        var E_MAX = params.batCap;
+        var E_MIN = E_MAX * 0.1;
+        var P_BAT = E_MAX / 2; /* assume C-rate 2 */
+        var P_GEN = params.gensetCap;
+        var eta = 0.92;
+        var fuelCost = 0.35;
+        var importPrice = params.gridPrice;
+        var exportPrice = params.gridPrice * 0.6;
+        var islandStart = 14; /* 2pm */
+        var islandEnd = islandStart + params.islandHours;
+
+        var p_pv = pv.slice();
+        var p_gen = new Array(T).fill(0);
+        var c_bat = new Array(T).fill(0);
+        var d_bat = new Array(T).fill(0);
+        var p_imp = new Array(T).fill(0);
+        var p_exp = new Array(T).fill(0);
+        var e = [E_MAX * 0.5];
+        var shed = new Array(T).fill(0);
+
+        for (var t = 0; t < T; t++) {
+            var isIslanded = (t >= islandStart && t < islandEnd);
+            var residual = load[t] - p_pv[t];
+
+            if (residual < 0) {
+                /* PV surplus */
+                var excess = -residual;
+                /* Charge battery first */
+                var charge = Math.min(P_BAT, (E_MAX - e[t]) / eta, excess);
+                c_bat[t] = charge;
+                excess -= charge;
+                /* Export remainder if grid connected */
+                if (!isIslanded) p_exp[t] = excess;
+                else { /* curtail PV instead */ p_pv[t] -= excess; }
+            } else {
+                /* PV deficit */
+                /* Use battery discharge if available and cheap vs grid/genset */
+                var discharge = Math.min(P_BAT, e[t] * eta, residual);
+                /* Heuristic: discharge battery if grid not available OR grid expensive */
+                if (isIslanded || importPrice > 0.12) {
+                    d_bat[t] = discharge;
+                    residual -= discharge;
+                }
+                /* Rest from grid (if connected) or genset */
+                if (residual > 0) {
+                    if (!isIslanded && importPrice < 0.25) {
+                        p_imp[t] = residual;
+                        residual = 0;
+                    } else if (P_GEN > 0) {
+                        var gen = Math.min(P_GEN, residual);
+                        p_gen[t] = gen;
+                        residual -= gen;
+                    }
+                    /* if still residual, shed non-critical load */
+                    if (residual > 0) {
+                        var maxShed = load[t] * 0.15; /* 15% non-critical */
+                        shed[t] = Math.min(residual, maxShed);
+                        residual -= shed[t];
+                    }
+                    /* If still residual under islanding, discharge battery more aggressively */
+                    if (residual > 0 && d_bat[t] < Math.min(P_BAT, e[t] * eta)) {
+                        var extra = Math.min(P_BAT - d_bat[t], e[t] * eta - d_bat[t], residual);
+                        d_bat[t] += extra;
+                        residual -= extra;
+                    }
+                }
+            }
+            /* Update SOC */
+            e.push(Math.max(E_MIN, Math.min(E_MAX, e[t] + eta * c_bat[t] - d_bat[t] / eta)));
+        }
+
+        /* Metrics */
+        var totalFuel = p_gen.reduce(function(s,v){ return s+v; }, 0) * fuelCost;
+        var totalImp = p_imp.reduce(function(s,v){ return s+v; }, 0) * importPrice;
+        var totalExp = p_exp.reduce(function(s,v){ return s+v; }, 0) * exportPrice;
+        var totalShed = shed.reduce(function(s,v){ return s+v; }, 0);
+        var totalPV = p_pv.reduce(function(s,v){ return s+v; }, 0);
+        var totalLoad = load.reduce(function(s,v){ return s+v; }, 0);
+        var dailyCost = totalFuel + totalImp - totalExp + totalShed * 2.0; /* VOLL $2/kWh */
+
+        return {
+            pv: p_pv, gen: p_gen, bat_charge: c_bat, bat_discharge: d_bat,
+            imp: p_imp, exp: p_exp, shed: shed, load: load, soc: e,
+            islandStart: islandStart, islandEnd: islandEnd,
+            dailyCost: dailyCost, totalShed: totalShed, totalPV: totalPV,
+            selfSufficiency: totalLoad > 0 ? (1 - (totalImp / importPrice) / totalLoad) : 0
+        };
+    }
+
+    function drawDispatch(result, params) {
+        var cvs = document.getElementById('mgDispatchCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle = '#0A192F'; ctx.fillRect(0,0,W,H);
+        var pad = { l:55, r:30, t:20, b:40 };
+        var plotW = W - pad.l - pad.r, plotH = H - pad.t - pad.b;
+        var barW = plotW / T;
+
+        var yMax = 0;
+        for (var t=0; t<T; t++) {
+            var sum = result.pv[t] + result.gen[t] + result.bat_discharge[t] + result.imp[t];
+            if (sum > yMax) yMax = sum;
+            if (result.load[t] > yMax) yMax = result.load[t];
+        }
+        yMax = Math.ceil(yMax/20)*20 + 20;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        for (var g=0; g<=4; g++){ var gy=pad.t + plotH*g/4; ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(pad.l+plotW,gy); ctx.stroke(); }
+
+        /* Islanding background */
+        if (params.islandHours > 0) {
+            ctx.fillStyle = 'rgba(255,107,107,0.08)';
+            var isX = pad.l + result.islandStart * barW;
+            var isW = (result.islandEnd - result.islandStart) * barW;
+            ctx.fillRect(isX, pad.t, isW, plotH);
+        }
+
+        /* Stacked bars: PV (yellow) + battery discharge (green) + genset (amber) + grid import (blue) */
+        var colors = { pv:'#fbbf24', bat:'#64ffda', gen:'#ff9f43', imp:'#7aa2f7' };
+        for (var t2=0; t2<T; t2++) {
+            var cum = 0;
+            var x = pad.l + t2 * barW;
+            var sources = [
+                { v: result.pv[t2], c: colors.pv },
+                { v: result.bat_discharge[t2], c: colors.bat },
+                { v: result.gen[t2], c: colors.gen },
+                { v: result.imp[t2], c: colors.imp }
+            ];
+            sources.forEach(function(s){
+                if (s.v > 0.1) {
+                    var h = (s.v / yMax) * plotH;
+                    var y = pad.t + plotH - ((cum + s.v) / yMax) * plotH;
+                    ctx.fillStyle = s.c;
+                    ctx.fillRect(x+2, y, barW-4, h);
+                    cum += s.v;
+                }
+            });
+        }
+
+        /* Load line */
+        ctx.strokeStyle = '#F8F9FA'; ctx.lineWidth = 2; ctx.beginPath();
+        for (var t3=0; t3<T; t3++) {
+            var xL = pad.l + (t3+0.5)*barW;
+            var yL = pad.t + plotH - (result.load[t3]/yMax)*plotH;
+            if (t3===0) ctx.moveTo(xL,yL); else ctx.lineTo(xL,yL);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+plotH); ctx.lineTo(pad.l+plotW,pad.t+plotH); ctx.stroke();
+        ctx.fillStyle = '#8892B0'; ctx.font = '10px "JetBrains Mono", monospace'; ctx.textAlign = 'right';
+        for (var g2=0; g2<=4; g2++) { var v=yMax*(1-g2/4); ctx.fillText(Math.round(v)+' kW', pad.l-5, pad.t+plotH*g2/4+3); }
+        ctx.textAlign = 'center';
+        for (var h=0; h<24; h+=3) { ctx.fillText(h+':00', pad.l+(h+0.5)*barW, pad.t+plotH+16); }
+
+        /* Legend */
+        ctx.textAlign = 'left';
+        var lx = pad.l + 10, ly = 14;
+        [{c:colors.pv,l:'PV'},{c:colors.bat,l:'battery'},{c:colors.gen,l:'genset'},{c:colors.imp,l:'grid'}].forEach(function(it){
+            ctx.fillStyle = it.c; ctx.fillRect(lx, ly-4, 10, 8);
+            ctx.fillStyle = '#a8b2d1'; ctx.font = '10px "Inter", sans-serif'; ctx.fillText(it.l, lx+14, ly+4);
+            lx += 60;
+        });
+        if (params.islandHours > 0) {
+            ctx.fillStyle = 'rgba(255,107,107,0.3)'; ctx.fillRect(lx, ly-4, 10, 8);
+            ctx.fillStyle = '#ff6b6b'; ctx.fillText('island', lx+14, ly+4);
+        }
+    }
+
+    function drawSOC(result) {
+        var cvs = document.getElementById('mgSocCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle = '#0A192F'; ctx.fillRect(0,0,W,H);
+        var pad = { l:55, r:30, t:16, b:30 };
+        var plotW = W-pad.l-pad.r, plotH = H-pad.t-pad.b;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        for (var g=0; g<=3; g++){ var gy=pad.t+plotH*g/3; ctx.beginPath(); ctx.moveTo(pad.l,gy); ctx.lineTo(pad.l+plotW,gy); ctx.stroke(); }
+
+        ctx.fillStyle = 'rgba(100,255,218,0.12)';
+        ctx.beginPath(); ctx.moveTo(pad.l, pad.t+plotH);
+        for (var t=0; t<=T; t++) {
+            var x = pad.l + (t/T)*plotW;
+            var socPct = result.soc[t] / (result.soc[0] * 2);
+            var y = pad.t + plotH*(1-Math.min(1,socPct));
+            ctx.lineTo(x, y);
+        }
+        ctx.lineTo(pad.l+plotW, pad.t+plotH); ctx.closePath(); ctx.fill();
+
+        ctx.strokeStyle = '#64ffda'; ctx.lineWidth = 2.5; ctx.beginPath();
+        for (var t2=0; t2<=T; t2++) {
+            var x2 = pad.l + (t2/T)*plotW;
+            var pct = result.soc[t2] / (result.soc[0] * 2);
+            var y2 = pad.t + plotH*(1-Math.min(1,pct));
+            if (t2===0) ctx.moveTo(x2,y2); else ctx.lineTo(x2,y2);
+        }
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,pad.t+plotH); ctx.lineTo(pad.l+plotW,pad.t+plotH); ctx.stroke();
+
+        ctx.fillStyle = '#64ffda'; ctx.font='10px "JetBrains Mono", monospace'; ctx.textAlign='right';
+        ctx.fillText('100%', pad.l-5, pad.t+8); ctx.fillText('50%', pad.l-5, pad.t+plotH/2+3); ctx.fillText('0%', pad.l-5, pad.t+plotH);
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div'); card.className='res-card';
+        var lbl = document.createElement('div'); lbl.className='res-card-lbl'; lbl.textContent=label;
+        var val = document.createElement('div'); val.className='res-card-val'; val.textContent=value;
+        card.appendChild(lbl); card.appendChild(val); parent.appendChild(card);
+    }
+
+    function formatMoney(x) {
+        if (Math.abs(x) >= 1000) return '$' + (x/1000).toFixed(1) + 'k';
+        return '$' + x.toFixed(1);
+    }
+
+    function renderResults(result) {
+        var summary = document.getElementById('mgResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+        appendCard(summary, 'Daily cost', formatMoney(result.dailyCost));
+        appendCard(summary, 'Load shed', result.totalShed.toFixed(1) + ' kWh');
+        appendCard(summary, 'PV generated', result.totalPV.toFixed(0) + ' kWh');
+        appendCard(summary, 'Self-sufficiency', (result.selfSufficiency*100).toFixed(0) + '%');
+    }
+
+    function bindSlider(s, d, suf) {
+        var sl = document.getElementById(s), dl = document.getElementById(d);
+        if (!sl || !dl) return;
+        sl.addEventListener('input', function(){ dl.textContent = sl.value + (suf || ''); });
+    }
+    bindSlider('mgPV','mgPVVal',''); bindSlider('mgBat','mgBatVal',''); bindSlider('mgGenset','mgGensetVal','');
+    bindSlider('mgGridPrice','mgGridPriceVal',''); bindSlider('mgIslandHours','mgIslandHoursVal','');
+
+    function runSolver() {
+        var params = {
+            pvCap: parseInt(document.getElementById('mgPV').value,10),
+            batCap: parseInt(document.getElementById('mgBat').value,10),
+            gensetCap: parseInt(document.getElementById('mgGenset').value,10),
+            gridPrice: parseFloat(document.getElementById('mgGridPrice').value),
+            islandHours: parseInt(document.getElementById('mgIslandHours').value,10)
+        };
+        var t0 = performance.now();
+        var result = solveMicrogrid(params);
+        var t1 = performance.now();
+        drawDispatch(result, params); drawSOC(result); renderResults(result);
+        document.getElementById('mgStatus').textContent = 'Dispatched in ' + (t1-t0).toFixed(1) + ' ms';
+    }
+    document.getElementById('mgSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>

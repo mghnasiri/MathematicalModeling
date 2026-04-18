@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Electricity Market Clearing | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Electricity Market Clearing is the day-ahead auction that matches supplier bids to consumer load at minimum total bid cost, subject to network and operational constraints. LMP emerges as the dual of the nodal balance. Kirschen-Strbac (2018), Stoft (2002), Hogan nodal pricing.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/electricity-market-clearing.html">
+    <meta property="og:title" content="Electricity Market Clearing | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive LP solver for day-ahead market clearing with merit-order and LMP visualization.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/electricity-market-clearing.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; transition:width 0.1s linear; width:0%; box-shadow:0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { background:transparent; padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(197,160,89,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(100,255,218,0.04) 0%, transparent 50%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(197,160,89,0.5)); animation:marketPulse 3s ease-in-out infinite; }
+        @keyframes marketPulse { 0%,100% { filter:drop-shadow(0 0 10px rgba(197,160,89,0.5)); transform:scale(1); } 50% { filter:drop-shadow(0 0 18px rgba(197,160,89,0.8)); transform:scale(1.04); } }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto 1rem; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-short { color:var(--blue); background:rgba(122,162,247,0.08); border-color:rgba(122,162,247,0.3); }
+        .hero-tag.tag-markets { color:var(--gold); background:rgba(197,160,89,0.08); border-color:rgba(197,160,89,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; line-height:1.75; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card h3 span.ref { font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--slate); letter-spacing:0.5px; text-transform:none; font-weight:400; margin-left:0.5rem; }
+        .formulation-card p { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; vertical-align:top; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; margin-bottom:0.5rem; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:320px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.3s; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; letter-spacing:0.3px; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; transition:all 0.25s; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); letter-spacing:0.5px; }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; letter-spacing:2px; } .section-header h2 { font-size:1.6rem; letter-spacing:2px; } section { padding:2.8rem 0; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Applications","item":"https://mghnasiri.github.io/MathematicalModeling/applications/"},
+      {"@type":"ListItem","position":3,"name":"Energy","item":"https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html"},
+      {"@type":"ListItem","position":4,"name":"Electricity Market Clearing","item":"https://mghnasiri.github.io/MathematicalModeling/applications/electricity-market-clearing.html"}
+    ]}
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Electricity Market Clearing</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-gavel" aria-hidden="true"></i></div>
+        <h1>Electricity <span>Market Clearing</span></h1>
+        <p class="hero-abbrev">LP / MILP &middot; LMP</p>
+        <p class="hero-subtitle">Day-Ahead Auction &middot; Merit Order &middot; Locational Prices</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Every day at 10 a.m., a regional transmission organization runs the world's largest and
+            strangest auction. Hundreds of thousands of electricity bids from generators &mdash; plus
+            price-responsive demand bids, block bids, and complex start-up/no-load bids &mdash; are
+            submitted for the 24 hours of the next day. The ISO solves a <strong>mixed-integer linear
+            program</strong> that maximizes social welfare (or equivalently, minimizes total declared
+            bid cost) subject to the network and the operational constraints of power systems. The
+            <strong>locational marginal price (LMP)</strong> at each node emerges as the dual of the
+            nodal-balance constraint, and becomes the single number that drives every investment
+            decision in the generation fleet.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-short">Short-term operations</span>
+            <span class="hero-tag tag-markets">Markets layer</span>
+            <span class="hero-tag">LP / MILP</span>
+            <span class="hero-tag">Uniform-price auction</span>
+            <span class="hero-tag">LMP duality</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Auction mechanics and the economics of merit-order clearing</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                An electricity market is the only wholesale market in the world where the commodity cannot
+                be stored (meaningfully, at grid scale) and must be delivered through a physical network
+                subject to the laws of electromagnetism. Every MW generated at one location flows across
+                the network to every other node, respecting Kirchhoff's laws. A <strong>market-clearing
+                engine</strong> must match supply to demand while simultaneously respecting the physics.
+                This is why electricity markets look so different from other commodity markets: the
+                clearing <em>is</em> the optimization problem of <a href="optimal-power-flow.html" style="color:var(--gold);">OPF</a>
+                or <a href="unit-commitment.html" style="color:var(--gold);">UC</a> with bid prices replacing
+                cost curves.
+            </p>
+            <p>
+                Most ISOs use <strong>uniform-price auctions</strong>: all accepted sellers at a node
+                receive the same LMP, and all buyers pay that LMP, regardless of their bid. This is
+                the efficient mechanism: bidders have incentive to bid their true marginal cost because
+                the clearing price is set by the <em>marginal</em> accepted bid (the most expensive
+                unit still dispatched), not by their own bid. Pay-as-bid auctions exist historically
+                (UK pre-2001 NETA, some capacity markets) but are dominated by uniform-price in modern
+                electricity markets.
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                Electricity market design as an academic OR problem emerged in the 1980s with
+                <cite>Schweppe, Caramanis, Tabors &amp; Bohn (1988)</cite>'s <em>Spot Pricing of
+                Electricity</em>, which formalized LMP theory and nodal pricing. <cite>Hogan (1992)</cite>
+                proposed the LMP framework that became the US standard. Chile deregulated in 1982,
+                Norway in 1991, England in 1990 (pool), PJM rolled out LMP-based markets in 1998.
+                Today almost all advanced economies have LMP-based wholesale electricity markets.
+                <cite>Stoft (2002)</cite> <em>Power System Economics</em> and <cite>Kirschen &amp;
+                Strbac (2018)</cite> <em>Fundamentals of Power System Economics</em> are the textbook
+                references.
+            </div>
+
+            <p>
+                Modern market clearing is increasingly <strong>SCUC</strong> (Security-Constrained UC)
+                for the day-ahead plus <strong>SCED</strong> (Security-Constrained ED) for real-time.
+                The SCUC is run once the day before for 24 hours; SCED runs every 5 minutes for the
+                next 10&ndash;15 minute interval. Ancillary services (regulation, spinning reserve,
+                non-spinning reserve) are co-optimized with energy. MISO, PJM, CAISO, ERCOT, NYISO,
+                ISO-NE all use variations of this architecture.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Uniform-price auction as LP / MILP</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{G}$</td><td>Generators submitting bids</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{D}$</td><td>Demand bidders</td><td>&mdash;</td></tr>
+                        <tr><td>$b_g$</td><td>Generator $g$'s bid price</td><td>$/MWh</td></tr>
+                        <tr><td>$v_d$</td><td>Demand $d$'s bid price (value)</td><td>$/MWh</td></tr>
+                        <tr><td>$P_g^{\max}$</td><td>Generator $g$'s offered quantity</td><td>MW</td></tr>
+                        <tr><td>$D_d^{\max}$</td><td>Demand $d$'s quantity bid</td><td>MW</td></tr>
+                        <tr><td>$p_g$</td><td><strong>Awarded generation</strong></td><td>MW</td></tr>
+                        <tr><td>$q_d$</td><td><strong>Awarded demand</strong></td><td>MW</td></tr>
+                        <tr><td>$\lambda$</td><td><strong>LMP</strong> (dual of balance)</td><td>$/MWh</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Social welfare maximization</h3>
+                <p>
+                    The market operator maximizes the sum of consumer willingness-to-pay minus supplier
+                    bid cost:
+                </p>
+                <div class="math-display">
+                    $$\max_{p, q} \; \sum_{d \in \mathcal{D}} v_d \, q_d - \sum_{g \in \mathcal{G}} b_g \, p_g \qquad \text{(1)}$$
+                </div>
+                <p>
+                    Equivalent to <strong>minimizing total bid cost</strong> (when demand is inelastic):
+                </p>
+                <div class="math-display">
+                    $$\min \; \sum_{g \in \mathcal{G}} b_g \, p_g \qquad \text{s.t.} \; \sum_g p_g = D \qquad \text{(1')}$$
+                </div>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>Nodal balance</strong> (source of LMP dual):</p>
+                <div class="math-display">
+                    $$\sum_{g \in i} p_g - \sum_{d \in i} q_d + \sum_\ell f_\ell^{\mathrm{in}} - \sum_\ell f_\ell^{\mathrm{out}} = 0 \qquad \forall i \qquad \text{(2)}$$
+                </div>
+                <p>LMP at bus $i$ = dual multiplier of (2). <strong>Quantity bounds</strong>:</p>
+                <div class="math-display">
+                    $$0 \le p_g \le P_g^{\max}, \quad 0 \le q_d \le D_d^{\max} \qquad \text{(3)}$$
+                </div>
+                <p><strong>Transmission constraints (DC-OPF)</strong>:</p>
+                <div class="math-display">
+                    $$f_\ell = b_\ell (\theta_i - \theta_j), \quad -F_\ell^{\max} \le f_\ell \le F_\ell^{\max} \qquad \text{(4)}$$
+                </div>
+                <p>
+                    Additional constraints for UC-style markets: minimum up/down times, start-up costs,
+                    reserve adequacy, reserve-energy co-optimization.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>LMP decomposition</h3>
+                <p>
+                    When transmission binds, the LMP at different nodes diverges. The LMP at bus $i$ decomposes:
+                </p>
+                <div class="math-display">
+                    $$\mathrm{LMP}_i = \lambda^{\mathrm{sys}} + \lambda^{\mathrm{cong}}_i + \lambda^{\mathrm{loss}}_i$$
+                </div>
+                <p>
+                    where $\lambda^{\mathrm{sys}}$ is the system marginal price (same everywhere if
+                    unconstrained), $\lambda^{\mathrm{cong}}_i$ is the congestion component, and
+                    $\lambda^{\mathrm{loss}}_i$ is the marginal loss component. This decomposition is
+                    <strong>reported to every market participant</strong> by the ISO.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Make-whole payments</h3>
+                <p>
+                    Uniform-price auctions can leave generators &ldquo;not made whole&rdquo; on commitment
+                    costs (start-up, no-load). ISOs resolve this with <strong>uplift payments</strong>
+                    (PJM&rsquo;s make-whole, MISO&rsquo;s revenue sufficiency guarantee) that top up any
+                    committed generator whose LMP revenues don't cover its own bid costs + commitment
+                    obligations. Uplift violates pure uniform-pricing theory but is economically necessary
+                    given the MIP structure.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>
+                    Pure energy market clearing (no network) is a polynomial-time LP. With DC-OPF, it's
+                    a larger LP; with UC (commitment binaries) it's a MILP. Real ISO clearings handle
+                    <strong>tens of thousands of binaries</strong> and <strong>millions of continuous
+                    variables</strong>, solved daily in 20 minutes to 1 hour on commercial MILP solvers
+                    (PJM uses IBM CPLEX; MISO uses Gurobi / FICO Xpress).
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>PJM, MISO, CAISO, ERCOT published data</h4>
+                    <p>
+                        All US RTOs publish historical LMPs at all nodes, clearing results, and market
+                        monitoring reports. <a href="https://dataminer2.pjm.com/" target="_blank" rel="noopener">PJM Data Miner</a>,
+                        <a href="https://www.caiso.com/TodaysOutlook" target="_blank" rel="noopener">CAISO OASIS</a>,
+                        and their counterparts offer hourly/5-minute LMP, congestion, and ancillary
+                        prices going back decades.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Nord Pool, EPEX Spot (Europe)</h4>
+                    <p>
+                        European day-ahead markets. Unlike US LMP-based markets, most European markets
+                        use zonal pricing (one price per country or bidding zone), with flow-based
+                        coupling across zones.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Illustrative auction (this page)</h4>
+                    <p>
+                        The interactive solver handles a 6-generator day-ahead auction with
+                        user-configurable demand. Visualizes the merit-order curve, LMP formation, and
+                        how a change in load moves through the bid stack. Optional transmission
+                        constraint causes LMP divergence across two zones.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Day-ahead auction with merit order and LMP visualization</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Auction parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="mcDemand">Aggregate demand (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mcDemand" min="300" max="1800" step="50" value="900">
+                        <span class="size-display" id="mcDemandVal">900</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mcCongestion">Congestion level</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mcCongestion" min="0" max="100" step="10" value="0">
+                        <span class="size-display" id="mcCongestionVal">0%</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mcCarbon">Carbon adder ($/tCO2)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mcCarbon" min="0" max="150" step="5" value="30">
+                        <span class="size-display" id="mcCarbonVal">30</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="mcREShare">Wind+solar bid share (%)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="mcREShare" min="0" max="50" step="5" value="20">
+                        <span class="size-display" id="mcREShareVal">20%</span>
+                    </div>
+                </div>
+
+                <button class="solve-btn" id="mcSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Clear market
+                </button>
+                <div class="solver-status" id="mcStatus">Adjust parameters and press Clear.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>Merit order &amp; LMP formation</h3>
+                <div class="canvas-wrap">
+                    <canvas id="mcMeritCanvas" width="1100" height="360" aria-label="Merit-order auction curve"></canvas>
+                    <div class="canvas-caption">Bid stack (ascending): each bar is one generator at bid price. LMP intersects at demand.</div>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="mcLmpCanvas" width="1100" height="200" aria-label="LMP by zone"></canvas>
+                    <div class="canvas-caption">LMP by zone when congestion binds (gold = system marginal; blue/red = zonal deviation)</div>
+                </div>
+                <div class="results-summary" id="mcResultsSummary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                The <strong>merit-order staircase</strong> is the most-watched object in the entire
+                wholesale electricity industry. Each step is one bid block: low-cost renewables and
+                nuclear at the left floor, rising through combined-cycle gas, peaking gas, and oil at
+                the right wall. The <strong>intersection with demand</strong> sets the LMP; the
+                generator at that step is the <em>marginal generator</em>. Its bid becomes the price
+                for everyone.
+            </p>
+            <p>
+                A <strong>carbon adder</strong> shifts the stack: higher-emissions units lift more
+                than lower-emission ones. At enough carbon price ($100+/tCO2 in 2024 projections),
+                coal fully falls out and gas becomes marginal; at even higher levels, gas fills only
+                peaks and renewables+storage fill the base. This is the central OR story of the energy
+                transition visualized in real time.
+            </p>
+            <p>
+                <strong>Congestion</strong> is the other major driver of outcome. When the transmission
+                link between Zone A (cheap) and Zone B (expensive) saturates, the two zones become
+                different markets: Zone A sees a low LMP (the marginal generator there is cheap), Zone
+                B sees a high LMP (a more expensive local generator must run). The <strong>LMP spread</strong>
+                is the ISO's direct economic signal to transmission investors &mdash; exactly the input
+                that feeds <a href="transmission-expansion-planning.html" style="color:var(--gold);">TEP</a>.
+            </p>
+            <p>
+                The <strong>producer surplus</strong> (area below LMP but above bid curve, left of
+                cleared quantity) is the aggregate profit to inframarginal generators: coal at $25 bid
+                but LMP $80 earns $55/MWh inframarginal rent. This is the economic signal that drives
+                <a href="generation-expansion-planning.html" style="color:var(--gold);">GEP</a> decisions.
+                Market clearing is not just an operational tool &mdash; it generates all the price
+                information that the energy sector runs on.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>Day-ahead SCUC with uplift</h4>
+                <p>
+                    The real US-ISO day-ahead auction is a large MILP co-optimizing energy, reserves,
+                    and commitment binaries, with N-1 security constraints. Solved nightly; all major
+                    ISOs use commercial MILP solvers.
+                </p>
+                <div class="ext-ref">Refs: Ott (2003) PJM market design; Hogan &amp; Ring (2003) on uplift.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Real-time SCED</h4>
+                <p>
+                    Every 5-15 minutes: re-optimize dispatch given the fixed day-ahead commitment
+                    plus updated load, renewable, and outage information. QP with DC-OPF; 5,000+
+                    generators and 10,000+ lines in real ISOs.
+                </p>
+                <div class="ext-ref">Refs: Wood &amp; Wollenberg (2013), ch 4; ISO technical manuals.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Capacity markets</h4>
+                <p>
+                    Separate auctions for <em>capacity</em> (MW available to be dispatched, paid
+                    regardless of energy) that pair with energy markets. PJM RPM, MISO resource adequacy.
+                    Capacity auctions use VCG-like mechanisms with reliability constraints.
+                </p>
+                <div class="ext-ref">Refs: Cramton &amp; Stoft (2005); Hogan on missing money.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Zonal markets (Europe)</h4>
+                <p>
+                    Most European markets use zonal pricing with flow-based coupling. Each bidding
+                    zone has a single price; cross-zone flows are capacity-limited. Nord Pool's
+                    multi-zone market solves a large LP integrated across Scandinavia.
+                </p>
+                <div class="ext-ref">Refs: Nord Pool technical documentation; EU Clean Energy Package.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Strategic bidding &amp; market power</h4>
+                <p>
+                    Game-theoretic extension where generators bid strategically (above marginal cost).
+                    Supply-function equilibrium models and agent-based market simulation are active
+                    research areas. Regulatory bodies (FERC, DG Energy) monitor for market power.
+                </p>
+                <div class="ext-ref">Refs: Klemperer &amp; Meyer (1989); Green &amp; Newbery (1992); Borenstein.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Net-zero market design</h4>
+                <p>
+                    As marginal cost approaches zero (renewables set LMP), traditional energy-only
+                    markets collapse financially. Proposals: capacity markets, scarcity pricing, 100%
+                    RE auctions, operating reserve demand curves. Very active research + policy area
+                    (2020+).
+                </p>
+                <div class="ext-ref">Refs: Levin &amp; Botterud (2015); Hogan; Cramton; Keppler 2017.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+        </div>
+        <div class="related-grid">
+            <a href="unit-commitment.html" class="related-card fade-in">
+                <span class="related-card-tag">Underlying problem</span>
+                <span class="related-card-name">Unit Commitment</span>
+                <span class="related-card-desc">Market clearing = UC with bids replacing costs. SCUC is what ISOs actually solve daily.</span>
+            </a>
+            <a href="economic-dispatch.html" class="related-card fade-in">
+                <span class="related-card-tag">Real-time market</span>
+                <span class="related-card-name">Economic Dispatch</span>
+                <span class="related-card-desc">ED with bids = real-time SCED. LMP = system marginal price = dual of balance constraint.</span>
+            </a>
+            <a href="optimal-power-flow.html" class="related-card fade-in">
+                <span class="related-card-tag">Network layer</span>
+                <span class="related-card-name">Optimal Power Flow</span>
+                <span class="related-card-desc">OPF with bids = locational pricing. Congestion makes LMPs diverge across nodes.</span>
+            </a>
+            <a href="energy-portfolio-robust.html" class="related-card fade-in">
+                <span class="related-card-tag">Participant view</span>
+                <span class="related-card-name">Energy Portfolio (Robust)</span>
+                <span class="related-card-desc">Market participants build robust portfolios to hedge against uncertain clearing prices.</span>
+            </a>
+            <a href="demand-response-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Market participant</span>
+                <span class="related-card-name">Demand Response</span>
+                <span class="related-card-desc">DR bids into day-ahead markets as price-responsive demand. FERC Order 745 requires equal treatment.</span>
+            </a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Market participant</span>
+                <span class="related-card-name">Battery Storage Optimization</span>
+                <span class="related-card-desc">Batteries bid into arbitrage (energy) and ancillary services markets. Strategic bidding optimizes placement.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Schweppe, F.&nbsp;C., Caramanis, M.&nbsp;C., Tabors, R.&nbsp;D., &amp; Bohn, R.&nbsp;E.</span> (1988).</div><div class="title"><em>Spot Pricing of Electricity.</em></div><div class="journal">Kluwer Academic Publishers. <a href="https://doi.org/10.1007/978-1-4613-1683-1" target="_blank" rel="noopener">doi:10.1007/978-1-4613-1683-1</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Hogan, W.&nbsp;W.</span> (1992).</div><div class="title">&ldquo;Contract networks for electric power transmission.&rdquo;</div><div class="journal"><em>Journal of Regulatory Economics</em>, 4(3), 211&ndash;242. <a href="https://doi.org/10.1007/BF00133622" target="_blank" rel="noopener">doi:10.1007/BF00133622</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Stoft, S.</span> (2002).</div><div class="title"><em>Power System Economics: Designing Markets for Electricity.</em></div><div class="journal">IEEE Press / Wiley. <a href="https://doi.org/10.1109/9780470545584" target="_blank" rel="noopener">doi:10.1109/9780470545584</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Kirschen, D.&nbsp;S., &amp; Strbac, G.</span> (2018).</div><div class="title"><em>Fundamentals of Power System Economics</em> (2nd ed.).</div><div class="journal">Wiley. <a href="https://doi.org/10.1002/9781119213246" target="_blank" rel="noopener">doi:10.1002/9781119213246</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">Ott, A.&nbsp;L.</span> (2003).</div><div class="title">&ldquo;Experience with PJM market operation, system design, and implementation.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 18(2), 528&ndash;534. <a href="https://doi.org/10.1109/TPWRS.2003.810698" target="_blank" rel="noopener">doi:10.1109/TPWRS.2003.810698</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Cramton, P., &amp; Stoft, S.</span> (2005).</div><div class="title">&ldquo;A capacity market that makes sense.&rdquo;</div><div class="journal"><em>The Electricity Journal</em>, 18(7), 43&ndash;54. <a href="https://doi.org/10.1016/j.tej.2005.07.003" target="_blank" rel="noopener">doi:10.1016/j.tej.2005.07.003</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Klemperer, P.&nbsp;D., &amp; Meyer, M.&nbsp;A.</span> (1989).</div><div class="title">&ldquo;Supply function equilibria in oligopoly under uncertainty.&rdquo;</div><div class="journal"><em>Econometrica</em>, 57(6), 1243&ndash;1277. <a href="https://doi.org/10.2307/1913707" target="_blank" rel="noopener">doi:10.2307/1913707</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">Green, R.&nbsp;J., &amp; Newbery, D.&nbsp;M.</span> (1992).</div><div class="title">&ldquo;Competition in the British electricity spot market.&rdquo;</div><div class="journal"><em>Journal of Political Economy</em>, 100(5), 929&ndash;953. <a href="https://doi.org/10.1086/261846" target="_blank" rel="noopener">doi:10.1086/261846</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Levin, T., &amp; Botterud, A.</span> (2015).</div><div class="title">&ldquo;Electricity market design for generator revenue sufficiency with increased variable generation.&rdquo;</div><div class="journal"><em>Energy Policy</em>, 87, 392&ndash;406. <a href="https://doi.org/10.1016/j.enpol.2015.09.012" target="_blank" rel="noopener">doi:10.1016/j.enpol.2015.09.012</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">Morales, J.&nbsp;M., Conejo, A.&nbsp;J., Madsen, H., Pinson, P., &amp; Zugno, M.</span> (2014).</div><div class="title"><em>Integrating Renewables in Electricity Markets: Operational Problems.</em></div><div class="journal">Springer. <a href="https://doi.org/10.1007/978-1-4614-9411-9" target="_blank" rel="noopener">doi:10.1007/978-1-4614-9411-9</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    In-browser solver runs a simplified 2-zone 6-generator auction with merit-order clearing. Production ISO markets use commercial MILP solvers on tens of thousands of binaries.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false });
+    }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       MARKET CLEARING SOLVER — 6-gen uniform-price auction
+       ================================================================ */
+
+    /* 6 generators in merit order with CO2 emission rates (tCO2/MWh) */
+    var generators = [
+        { id: 'Wind',    cap: 300, bid: 0,   emissions: 0.00, color: '#7aa2f7', zone: 'A' },
+        { id: 'Solar',   cap: 200, bid: 0,   emissions: 0.00, color: '#fbbf24', zone: 'A' },
+        { id: 'Nuclear', cap: 250, bid: 10,  emissions: 0.00, color: '#c084fc', zone: 'A' },
+        { id: 'Coal',    cap: 400, bid: 25,  emissions: 0.95, color: '#ff6b6b', zone: 'B' },
+        { id: 'Gas-CC',  cap: 350, bid: 40,  emissions: 0.40, color: '#feca57', zone: 'B' },
+        { id: 'Gas-CT',  cap: 250, bid: 80,  emissions: 0.55, color: '#64ffda', zone: 'A' },
+        { id: 'Oil-Peak', cap: 100, bid: 150, emissions: 0.75, color: '#fb7185', zone: 'B' }
+    ];
+
+    function solveMarket(params) {
+        /* Apply carbon adder */
+        var effectiveGens = generators.map(function(g){
+            return Object.assign({}, g, { effBid: g.bid + params.carbonPrice * g.emissions });
+        });
+        /* Apply RE share scaling */
+        effectiveGens.forEach(function(g){
+            if (g.id === 'Wind' || g.id === 'Solar') {
+                g.cap = g.cap * (params.reShare * 2); /* scale up with more RE */
+            }
+        });
+        /* Sort by effective bid ascending */
+        effectiveGens.sort(function(a,b){ return a.effBid - b.effBid; });
+
+        /* Clearing: fill demand in merit order */
+        var D = params.demand;
+        var remaining = D;
+        var cleared = 0;
+        var marginalGen = null;
+        effectiveGens.forEach(function(g){
+            if (remaining > 1e-6) {
+                var take = Math.min(remaining, g.cap);
+                g.awarded = take;
+                cleared += take;
+                remaining -= take;
+                if (take > 0) marginalGen = g;
+            } else {
+                g.awarded = 0;
+            }
+        });
+
+        var systemLMP = marginalGen ? marginalGen.effBid : 0;
+        var unserved = Math.max(0, D - cleared);
+
+        /* Zone LMPs under congestion */
+        /* Zone A: cheap renewables + nuclear; Zone B: coal + gas */
+        /* If congestion limits Zone A export, Zone B must clear with a more expensive unit */
+        var zoneAGens = effectiveGens.filter(function(g){ return g.zone === 'A'; });
+        var zoneBGens = effectiveGens.filter(function(g){ return g.zone === 'B'; });
+        var zoneAAwarded = 0, zoneBAwarded = 0;
+        effectiveGens.forEach(function(g){
+            if (g.zone === 'A') zoneAAwarded += g.awarded;
+            else zoneBAwarded += g.awarded;
+        });
+
+        /* Congestion: restrict flow from A to B */
+        var zoneADemand = D * 0.35;  /* ~35% of load in Zone A */
+        var zoneBDemand = D - zoneADemand;
+        var maxFlow = (zoneAGens.reduce(function(s,g){ return s + g.cap; }, 0) - zoneADemand) * (1 - params.congestion);
+        if (maxFlow < 0) maxFlow = 0;
+
+        /* If congestion binds, zone B needs more expensive local generation */
+        var zoneALMP = systemLMP, zoneBLMP = systemLMP;
+        var congestionBinds = false;
+        if (params.congestion > 0.1) {
+            /* Find marginal Zone A gen (cheap, probably wind/solar/nuclear) */
+            var lastZoneAMarg = zoneAGens.filter(function(g){ return g.awarded > 0; }).pop();
+            if (lastZoneAMarg) zoneALMP = lastZoneAMarg.effBid;
+            /* Zone B needs expensive local unit */
+            var lastZoneBMarg = zoneBGens.filter(function(g){ return g.awarded > 0; }).pop();
+            if (lastZoneBMarg) zoneBLMP = lastZoneBMarg.effBid;
+            if (zoneBLMP > zoneALMP) congestionBinds = true;
+        }
+
+        /* Compute total cost and consumer surplus */
+        var totalBidCost = 0;
+        var totalEmissions = 0;
+        effectiveGens.forEach(function(g){
+            totalBidCost += g.awarded * g.effBid;
+            totalEmissions += g.awarded * g.emissions;
+        });
+
+        var payment = systemLMP * cleared;
+        var producerSurplus = payment - totalBidCost;
+
+        return {
+            gens: effectiveGens,
+            systemLMP: systemLMP,
+            zoneALMP: zoneALMP,
+            zoneBLMP: zoneBLMP,
+            cleared: cleared,
+            unserved: unserved,
+            marginalGen: marginalGen ? marginalGen.id : 'none',
+            totalBidCost: totalBidCost,
+            producerSurplus: producerSurplus,
+            payment: payment,
+            emissions: totalEmissions,
+            congestionBinds: congestionBinds
+        };
+    }
+
+    /* ============== CANVAS: MERIT ORDER ============== */
+    function drawMerit(result, D) {
+        var cvs = document.getElementById('mcMeritCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 60, r: 40, t: 20, b: 45 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        var totalCap = 0;
+        result.gens.forEach(function(g){ totalCap += g.cap; });
+        var yMax = Math.max.apply(null, result.gens.map(function(g){ return g.effBid; })) * 1.2;
+        yMax = Math.ceil(yMax / 20) * 20 + 20;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        for (var g = 0; g <= 5; g++) {
+            var gy = pad.t + (plotH / 5) * g;
+            ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + plotW, gy); ctx.stroke();
+        }
+
+        /* Draw bid stack */
+        var cumX = 0;
+        result.gens.forEach(function(gen){
+            var x = pad.l + (cumX / totalCap) * plotW;
+            var w = (gen.cap / totalCap) * plotW;
+            var y = pad.t + plotH - (gen.effBid / yMax) * plotH;
+            var h = (gen.effBid / yMax) * plotH;
+            ctx.fillStyle = gen.color;
+            ctx.globalAlpha = gen.awarded > 0 ? 1 : 0.35;
+            ctx.fillRect(x + 1, y, w - 2, h);
+            ctx.globalAlpha = 1;
+            /* Border for awarded portion */
+            if (gen.awarded > 0) {
+                var wAwarded = (gen.awarded / totalCap) * plotW;
+                ctx.strokeStyle = '#F8F9FA';
+                ctx.lineWidth = 1;
+                ctx.strokeRect(x + 1, y, wAwarded - 2, h);
+            }
+            /* Label */
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            if (w > 55) {
+                ctx.fillText(gen.id, x + w / 2, y - 5);
+                ctx.fillStyle = gen.color;
+                ctx.font = '9px "JetBrains Mono", monospace';
+                ctx.fillText('$' + gen.effBid.toFixed(0), x + w / 2, y + 12);
+            }
+            cumX += gen.cap;
+        });
+
+        /* LMP horizontal line */
+        var yLMP = pad.t + plotH - (result.systemLMP / yMax) * plotH;
+        ctx.strokeStyle = '#C5A059';
+        ctx.lineWidth = 2.5;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, yLMP); ctx.lineTo(pad.l + plotW, yLMP);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#C5A059';
+        ctx.font = 'bold 12px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        ctx.fillText('LMP = $' + result.systemLMP.toFixed(2), pad.l + plotW - 8, yLMP - 5);
+
+        /* Demand vertical line */
+        var xD = pad.l + (D / totalCap) * plotW;
+        ctx.strokeStyle = '#F8F9FA';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xD, pad.t); ctx.lineTo(xD, pad.t + plotH);
+        ctx.stroke();
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'left';
+        ctx.fillText('D = ' + D + ' MW', xD + 5, pad.t + 14);
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH); ctx.stroke();
+
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        for (var gy2 = 0; gy2 <= 5; gy2++) {
+            var v = yMax * (1 - gy2 / 5);
+            var yLab = pad.t + (plotH / 5) * gy2;
+            ctx.fillText('$' + v.toFixed(0), pad.l - 5, yLab + 3);
+        }
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.fillText('Cumulative capacity (MW)', pad.l + plotW / 2, pad.t + plotH + 34);
+    }
+
+    /* ============== CANVAS: LMP BY ZONE ============== */
+    function drawLMP(result) {
+        var cvs = document.getElementById('mcLmpCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 50, r: 40, t: 20, b: 35 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        var zones = [
+            { name: 'System', lmp: result.systemLMP, color: '#C5A059' },
+            { name: 'Zone A', lmp: result.zoneALMP, color: '#7aa2f7' },
+            { name: 'Zone B', lmp: result.zoneBLMP, color: '#ff6b6b' }
+        ];
+        var yMax = Math.max.apply(null, zones.map(function(z){ return z.lmp; })) * 1.25;
+        yMax = Math.max(yMax, 60);
+
+        var barW = plotW / zones.length / 1.5;
+        var gapW = plotW / zones.length - barW;
+        zones.forEach(function(z, i){
+            var x = pad.l + i * (barW + gapW) + gapW / 2;
+            var h = (z.lmp / yMax) * plotH;
+            var y = pad.t + plotH - h;
+            ctx.fillStyle = z.color;
+            ctx.fillRect(x, y, barW, h);
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = 'bold 14px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('$' + z.lmp.toFixed(2), x + barW / 2, y - 8);
+            ctx.fillStyle = z.color;
+            ctx.font = '11px "Inter", sans-serif';
+            ctx.fillText(z.name, x + barW / 2, pad.t + plotH + 16);
+        });
+
+        /* Baseline (no congestion) line */
+        var yBase = pad.t + plotH - (result.systemLMP / yMax) * plotH;
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.setLineDash([3, 3]);
+        ctx.beginPath();
+        ctx.moveTo(pad.l, yBase); ctx.lineTo(pad.l + plotW, yBase);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH); ctx.stroke();
+
+        if (result.congestionBinds) {
+            ctx.fillStyle = '#ff6b6b';
+            ctx.font = 'bold 11px "Inter", sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('CONGESTION BINDS', pad.l + plotW / 2, 14);
+        }
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div'); card.className = 'res-card';
+        var lbl = document.createElement('div'); lbl.className = 'res-card-lbl'; lbl.textContent = label;
+        var val = document.createElement('div'); val.className = 'res-card-val'; val.textContent = value;
+        card.appendChild(lbl); card.appendChild(val);
+        parent.appendChild(card);
+    }
+
+    function formatMoney(x) {
+        if (!isFinite(x)) return '\u221e';
+        if (Math.abs(x) >= 1e6) return '$' + (x / 1e6).toFixed(2) + 'M';
+        if (Math.abs(x) >= 1e3) return '$' + (x / 1e3).toFixed(1) + 'k';
+        return '$' + Math.round(x);
+    }
+
+    function renderResults(result) {
+        var summary = document.getElementById('mcResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+        appendCard(summary, 'System LMP', '$' + result.systemLMP.toFixed(2) + '/MWh');
+        appendCard(summary, 'Marginal unit', result.marginalGen);
+        appendCard(summary, 'Total payment', formatMoney(result.payment));
+        appendCard(summary, 'Producer surplus', formatMoney(result.producerSurplus));
+        appendCard(summary, 'Total emissions', result.emissions.toFixed(0) + ' tCO2');
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('mcDemand', 'mcDemandVal', '');
+    bindSlider('mcCongestion', 'mcCongestionVal', '%');
+    bindSlider('mcCarbon', 'mcCarbonVal', '');
+    bindSlider('mcREShare', 'mcREShareVal', '%');
+
+    function runSolver() {
+        var params = {
+            demand: parseInt(document.getElementById('mcDemand').value, 10),
+            congestion: parseInt(document.getElementById('mcCongestion').value, 10) / 100,
+            carbonPrice: parseInt(document.getElementById('mcCarbon').value, 10),
+            reShare: parseInt(document.getElementById('mcREShare').value, 10) / 100
+        };
+
+        var t0 = performance.now();
+        var result = solveMarket(params);
+        var t1 = performance.now();
+
+        drawMerit(result, params.demand);
+        drawLMP(result);
+        renderResults(result);
+
+        document.getElementById('mcStatus').textContent = 'Cleared in ' + (t1 - t0).toFixed(1) + ' ms';
+    }
+
+    document.getElementById('mcSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>
