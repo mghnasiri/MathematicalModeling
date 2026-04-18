@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Shelf-Space Allocation | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Allocate facings per SKU on a fixed shelf to maximise expected category margin with space-elastic demand. Corstjens-Doyle (1981) nonlinear formulation, Hübner-Kuhn (2012) review, greedy and NLP solvers, interactive planogram.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/shelf-space-allocation.html">
+    <meta property="og:title" content="Shelf-Space Allocation">
+    <meta property="og:description" content="Space-elastic facings-per-SKU optimisation with greedy and NLP comparisons.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Shelf-Space Allocation">
+    <meta name="twitter:description" content="Space-elastic facings-per-SKU optimisation.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/shelf-space-allocation.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(100,255,218,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 6px; overflow: hidden; }
+        .mapping-table th { padding: 0.9rem 1.1rem; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.2); }
+        .mapping-table td { padding: 0.75rem 1.1rem; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .mapping-table td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; }
+        .mapping-table tr:last-child td { border-bottom: none; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; }
+        .result-table th, .result-table td { padding: 0.45rem 0.6rem; text-align: center; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .result-table th { background: rgba(197,160,89,0.06); color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem; }
+        .result-table td { color: var(--slate-light); }
+        .result-table td:first-child, .result-table th:first-child { text-align: left; color: var(--ivory); }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Retail & E-Commerce", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/retail-domain.html" },
+        { "@type": "ListItem", "position": 3, "name": "Shelf-Space Allocation", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/shelf-space-allocation.html" }
+      ] }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Shelf-Space Allocation</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-boxes-stacked" aria-hidden="true"></i></div>
+        <h1>Shelf-Space <span>Allocation</span></h1>
+        <p class="hero-subtitle">Space-elastic demand &middot; Nonlinear programming</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Allocate facings \(x_i\) per SKU on a fixed shelf of capacity \(S\) to maximise
+            expected category margin when demand responds to facings via a space-elastic law
+            \(d_i(x_i) = \alpha_i \, x_i^{\,\beta_i}\). The canonical formulation is
+            <strong>Corstjens &amp; Doyle (1981)</strong>; the comprehensive review is
+            <strong>H&uuml;bner &amp; Kuhn (2012)</strong>. Greedy marginal-profit allocation
+            gives a near-optimal integer solution; continuous relaxation admits closed-form via
+            KKT when the elasticity is equal across SKUs.
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>Shelf as a binding constraint &middot; visibility drives impulse demand</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">50&ndash;70%</div><div class="impact-label">Fraction of grocery purchase decisions made at the shelf. Facings drive both discovery and conversion.</div><div class="impact-src">Source: POPAI / Shopper Engagement Study (updated annually).</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">5&ndash;15%</div><div class="impact-label">Category-margin lift documented from OR-driven shelf-space allocation vs. rule-of-thumb &ldquo;equal facings&rdquo; or &ldquo;facings proportional to share&rdquo;.</div><div class="impact-src">Source: H&uuml;bner &amp; Kuhn (2012) review, <em>Omega</em> 40(2).</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">~\(\beta \in [0.1, 0.5]\)</div><div class="impact-label">Typical range for SKU-level space elasticity \(\beta\) estimated from store-level tests &mdash; diminishing returns set in quickly.</div><div class="impact-src">Curhan (1972); Drèze, Hoch &amp; Purk (1994).</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">#facings &middot; #SKUs</div><div class="impact-label">Size of the integer decision space. For a 60-SKU aisle with up to 6 facings per SKU, brute force is \(6^{60}\) &mdash; unreachable without structure.</div><div class="impact-src">H&uuml;bner &amp; Kuhn (2012).</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Category planning &middot; planogram reset &middot; grocery-centric but general</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            Shelf-space allocation sits downstream of <em>assortment planning</em> (which SKUs are in the mix) and upstream of <em>replenishment</em> (how often each SKU is restocked). It is a category-manager decision typically revisited on a planogram-reset cadence (quarterly in grocery, semi-annually in general merchandise). The decision is most binding in <strong>grocery</strong> (physically constrained shelves, thousands of SKUs) and <strong>general merchandise</strong> (end-cap and eye-level premium locations); in pure e-commerce the analogous decision is page-rank allocation, structurally similar but with different &ldquo;space&rdquo; semantics.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Assortment</strong><span class="chain-sub">which SKUs</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Shelf plan</strong><span class="chain-sub">facings \(x_i\)</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Replenish</strong><span class="chain-sub">(s,S) per SKU</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Execute</strong><span class="chain-sub">planogram reset</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>Corstjens-Doyle space-elastic NLP</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">OR family</div><div class="problem-meta-value">Nonlinear Programming</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Complexity</div><div class="problem-meta-value">Concave NLP (continuous); NP-hard (integer)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Solver realism</div><div class="problem-meta-value"><span class="problem-realism">&starf;&starf; Greedy marginal + KKT continuous</span></div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Corstjens &amp; Doyle (1981)</div></div>
+            </div>
+
+            <h3>Sets and parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(i \in \mathcal{I}\)</td><td>SKU in the category</td><td>finite</td></tr>
+                    <tr><td>\(S\)</td><td>Total shelf facings available</td><td>facings</td></tr>
+                    <tr><td>\(\ell_i\)</td><td>Minimum facings for SKU \(i\) (visibility floor)</td><td>facings</td></tr>
+                    <tr><td>\(u_i\)</td><td>Maximum facings for SKU \(i\) (practical / assortment cap)</td><td>facings</td></tr>
+                    <tr><td>\(m_i\)</td><td>Per-unit gross margin of SKU \(i\)</td><td>$ / unit</td></tr>
+                    <tr><td>\(\alpha_i, \beta_i\)</td><td>Space-elastic demand scale and elasticity for SKU \(i\)</td><td>\(\alpha &gt; 0,\ 0 &lt; \beta &lt; 1\)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variable</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(x_i\)</td><td>Facings assigned to SKU \(i\)</td><td>\(\mathbb{Z}_{\geq 0}\) (integer) or \(\mathbb{R}_{\geq 0}\) (relaxation)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Objective</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Maximise total category margin. With space-elastic demand \(d_i(x_i) = \alpha_i \, x_i^{\,\beta_i}\), per-SKU margin is \(m_i \, \alpha_i \, x_i^{\,\beta_i}\); sum over SKUs:</p>
+            <div class="formula-block">
+                $$\max_{x} \; \sum_{i \in \mathcal{I}} m_i \, \alpha_i \, x_i^{\,\beta_i}$$
+            </div>
+
+            <h3>Constraints</h3>
+            <div class="formula-block">
+                $$\sum_{i \in \mathcal{I}} x_i \;\leq\; S \qquad \text{(total shelf capacity)}$$
+                $$\ell_i \;\leq\; x_i \;\leq\; u_i \qquad \forall\, i \in \mathcal{I} \qquad \text{(per-SKU bounds)}$$
+            </div>
+
+            <h3>Continuous relaxation and KKT</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Ignoring integrality and the \(\ell_i, u_i\) bounds, Lagrangian \(\mathcal{L} = \sum_i m_i \alpha_i x_i^{\beta_i} - \lambda (\sum_i x_i - S)\). KKT gives \(m_i \alpha_i \beta_i x_i^{\beta_i - 1} = \lambda\), so at optimum every SKU has the same marginal margin \(\lambda\) per unit facing:</p>
+            <div class="formula-block">
+                $$x_i^{\ast} \;=\; \left(\frac{m_i \, \alpha_i \, \beta_i}{\lambda}\right)^{\!1/(1-\beta_i)}$$
+            </div>
+            <p class="formula-caption">\(\lambda\) is found by solving \(\sum_i x_i^{\ast}(\lambda) = S\) (scalar root-find). When \(\beta_i = \beta\) is common across SKUs, \(x_i^{\ast} \propto (m_i \alpha_i)^{1/(1-\beta)}\) &mdash; facings scale as a <em>power</em> of margin-weighted demand scale, not linearly.</p>
+
+            <h3>Greedy marginal-profit integer allocation</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Start from \(x_i = \ell_i\) for all SKUs. Compute the marginal gain from adding one more facing to SKU \(i\): \(\Delta_i(x_i) = m_i \alpha_i \big[(x_i+1)^{\beta_i} - x_i^{\beta_i}\big]\). At each step, add a facing to the SKU with the largest \(\Delta_i\) (subject to \(x_i &lt; u_i\)) until the shelf is full. Complexity \(\mathcal{O}(S \log |\mathcal{I}|)\) with a priority queue. Because \(d_i\) is concave in \(x_i\), greedy is optimal for the integer problem (exchange argument).</p>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>6-SKU category with space-elastic demand; greedy facings allocation</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">Shelf allocation solver</div><div class="solver-subtitle">Space-elastic demand &middot; greedy integer allocation</div></div>
+                <div class="problem-realism">&starf;&starf;&starf; Exact (greedy optimal on concave)</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="S">Total facings \(S\)</label><input type="number" id="S" value="24" min="6" max="120" step="1"><div class="control-help">Shelf capacity in facings</div></div>
+                    <div class="control-group"><label for="betaShared">Elasticity \(\beta\) (shared)</label><input type="number" id="betaShared" value="0.35" min="0.05" max="0.95" step="0.05"><div class="control-help">Diminishing-returns exponent</div></div>
+                    <div class="control-group"><label for="floorMin">Min facings \(\ell_i\)</label><input type="number" id="floorMin" value="1" min="0" max="10" step="1"><div class="control-help">Visibility floor</div></div>
+                    <div class="control-group"><label for="capMax">Max facings \(u_i\)</label><input type="number" id="capMax" value="12" min="1" max="30" step="1"><div class="control-help">Practical cap</div></div>
+                </div>
+
+                <p style="font-size:0.78rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;margin:1rem 0 0.4rem;">Per-SKU parameters (edit to experiment)</p>
+                <div class="solver-controls">
+                    <div class="control-group"><label>SKU A &middot; margin \(m\)</label><input type="number" id="m0" value="2.50" min="0.1" max="50" step="0.1"></div>
+                    <div class="control-group"><label>SKU A &middot; scale \(\alpha\)</label><input type="number" id="a0" value="40" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label>SKU B &middot; margin \(m\)</label><input type="number" id="m1" value="3.20" min="0.1" max="50" step="0.1"></div>
+                    <div class="control-group"><label>SKU B &middot; scale \(\alpha\)</label><input type="number" id="a1" value="32" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label>SKU C &middot; margin \(m\)</label><input type="number" id="m2" value="1.80" min="0.1" max="50" step="0.1"></div>
+                    <div class="control-group"><label>SKU C &middot; scale \(\alpha\)</label><input type="number" id="a2" value="55" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label>SKU D &middot; margin \(m\)</label><input type="number" id="m3" value="4.10" min="0.1" max="50" step="0.1"></div>
+                    <div class="control-group"><label>SKU D &middot; scale \(\alpha\)</label><input type="number" id="a3" value="22" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label>SKU E &middot; margin \(m\)</label><input type="number" id="m4" value="1.20" min="0.1" max="50" step="0.1"></div>
+                    <div class="control-group"><label>SKU E &middot; scale \(\alpha\)</label><input type="number" id="a4" value="70" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label>SKU F &middot; margin \(m\)</label><input type="number" id="m5" value="2.80" min="0.1" max="50" step="0.1"></div>
+                    <div class="control-group"><label>SKU F &middot; scale \(\alpha\)</label><input type="number" id="a5" value="28" min="1" max="500" step="1"></div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiMargin">&mdash;</div><div class="result-kpi-label">Total margin ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiUsed">&mdash;</div><div class="result-kpi-label">Facings used / \(S\)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiSKUs">&mdash;</div><div class="result-kpi-label">SKUs with \(x_i &gt; \ell_i\)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLambda">&mdash;</div><div class="result-kpi-label">Shadow price \(\lambda\) ($/facing)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiEqualBaseline">&mdash;</div><div class="result-kpi-label">Lift vs equal-facings ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiEqualPct">&mdash;</div><div class="result-kpi-label">Lift %</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="340" aria-label="Shelf plan with facings per SKU"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059;"></span>Facings \(x_i\)</span>
+                        <span><span class="legend-swatch" style="background:#64ffda;"></span>Per-SKU margin contribution</span>
+                    </div>
+                    <div style="overflow-x:auto;margin-top:1.2rem;"><table class="result-table" id="resultTable"></table></div>
+                </div>
+
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        The solver runs a greedy priority-queue allocation. Initialise \(x_i = \ell_i\); the residual capacity is \(S - \sum_i \ell_i\). At each step, compute \(\Delta_i = m_i \alpha_i \bigl[(x_i+1)^{\beta} - x_i^{\beta}\bigr]\) for every eligible SKU (where \(x_i &lt; u_i\)) and add one facing to the SKU with the largest \(\Delta_i\). Repeat until capacity is exhausted. Because each \(d_i\) is concave, this greedy procedure is optimal for the integer problem. The shadow price \(\lambda\) is estimated as the last accepted \(\Delta_i\). Equal-facings baseline sets \(x_i = \lfloor S / |\mathcal{I}| \rfloor\) uniformly and reports the margin gap &mdash; typically 8-15% for the default parameter ranges.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2><p>What a category manager actually does with the output</p></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Hero SKUs get disproportionate space.</strong> Because the objective scales as \(x^{\beta}\) with \(\beta &lt; 1\), allocation is <em>sub-linear</em> in \(m \cdot \alpha\) but still concentrates. SKUs with the highest \(m_i \cdot \alpha_i\) product win the most facings.</li>
+                    <li><strong>Long-tail gets the floor \(\ell_i\).</strong> Low-margin or low-demand SKUs keep their visibility floor but rarely rise above it unless \(\beta\) is high (more space-elastic demand).</li>
+                    <li><strong>Shadow price \(\lambda\) is actionable.</strong> It is the marginal margin you give up per facing lost &mdash; useful for negotiating shelf space with new SKU requests (&ldquo;is your marginal margin above \(\lambda\)?&rdquo;).</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions the model answers</h4>
+                <ul>
+                    <li>What if I remove an end-cap (lower \(S\))? &mdash; rerun; typically hero SKUs lose one facing each before tail SKUs are touched.</li>
+                    <li>What if I double the margin on SKU D? &mdash; the solver re-sorts by \(\Delta_i\) and D gains facings at the expense of whoever had the lowest-margin marginal unit.</li>
+                    <li>What if elasticity is higher (0.6 instead of 0.35)? &mdash; tail SKUs get more facings because marginal returns decay slowly.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2><p>Where the classical problem gets retail-realistic</p></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Cross-product substitution</h5><p>When SKU \(i\) stocks out, some demand shifts to substitute \(j\). Demand function becomes \(d_i(x, \text{stock}_{-i})\). The problem couples SKUs and becomes non-concave in general.</p></div>
+            <div class="extension-card fade-in"><h5>Multi-location / eye-level premium</h5><p>Shelf is stratified: bottom, middle, eye-level. Eye-level has a multiplier on demand; decision becomes facings at each level. Becomes a generalised assignment problem.</p></div>
+            <div class="extension-card fade-in"><h5>Category-level planogram</h5><p>Full planogram includes SKU placement (positions), adjacencies, and aisle configuration. MILP with spatial constraints; hybrid with column generation in practice.</p></div>
+            <div class="extension-card fade-in"><h5>Joint assortment + facings</h5><p>Decide which SKUs to carry AND how many facings each gets, under shelf and budget constraints. Extension of <a href="assortment-optimization.html">assortment planning</a>.</p></div>
+            <div class="extension-card fade-in"><h5>Shelf life / perishability</h5><p>For perishables, facings affect not only demand but also freshness turnover. Joint facings + order-quantity with shrinkage links to <a href="grocery-ordering.html">grocery ordering</a>.</p></div>
+            <div class="extension-card fade-in"><h5>Promotion-aware facings</h5><p>During promotions, effective \(\beta\) and \(\alpha\) change. Dynamic facings schedule across a promotion calendar.</p><a href="promotional-planning.html">Promotional planning &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Retail visibility vs. e-com ranking</h5><p>Page-rank allocation in e-commerce is the structural analogue: position has diminishing-returns &ldquo;space&rdquo;. Same math; different units.</p></div>
+            <div class="extension-card fade-in"><h5>Data-driven \(\alpha, \beta\) estimation</h5><p>Estimate parameters from store-level A/B tests or cross-store facings variation. Drèze-Hoch-Purk 1994 is a classical empirical reference.</p></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2><p>Classical and modern shelf-space literature</p></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Corstjens, M. &amp; Doyle, P. (1981).</div><div class="reference-title">A model for optimizing retail space allocations.</div><div class="reference-journal">Management Science 27(7): 822&ndash;833. <a href="https://doi.org/10.1287/mnsc.27.7.822" rel="noopener">doi:10.1287/mnsc.27.7.822</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Corstjens, M. &amp; Doyle, P. (1983).</div><div class="reference-title">A dynamic model for strategically allocating retail space.</div><div class="reference-journal">Journal of the Operational Research Society 34(10): 943&ndash;951.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Curhan, R. C. (1972).</div><div class="reference-title">The relationship between shelf space and unit sales in supermarkets.</div><div class="reference-journal">Journal of Marketing Research 9(4): 406&ndash;412.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Drèze, X., Hoch, S. J. &amp; Purk, M. E. (1994).</div><div class="reference-title">Shelf management and space elasticity.</div><div class="reference-journal">Journal of Retailing 70(4): 301&ndash;326. (The classical empirical estimation of \(\beta\).)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Urban, T. L. (1998).</div><div class="reference-title">An inventory-theoretic approach to product assortment and shelf-space allocation.</div><div class="reference-journal">Journal of Retailing 74(1): 15&ndash;35.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Yang, M. H. (2001).</div><div class="reference-title">An efficient algorithm to allocate shelf space.</div><div class="reference-journal">European Journal of Operational Research 131(1): 107&ndash;118. <a href="https://doi.org/10.1016/S0377-2217(99)00448-8" rel="noopener">doi:10.1016/S0377-2217(99)00448-8</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">H&uuml;bner, A. H. &amp; Kuhn, H. (2012).</div><div class="reference-title">Retail category management: State-of-the-art review of quantitative research and software applications in assortment and shelf space management.</div><div class="reference-journal">Omega 40(2): 199&ndash;209. <a href="https://doi.org/10.1016/j.omega.2011.05.008" rel="noopener">doi:10.1016/j.omega.2011.05.008</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Bianchi-Aguiar, T., Silva, E., Guimar&atilde;es, L., Carravilla, M. A. &amp; Oliveira, J. F. (2018).</div><div class="reference-title">Using analytics to enhance a food retailer&rsquo;s shelf-space management.</div><div class="reference-journal">Interfaces 48(1): 66&ndash;78. <a href="https://doi.org/10.1287/inte.2017.0916" rel="noopener">doi:10.1287/inte.2017.0916</a></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">Shelf-space allocation sits in the <em>Product &times; Tactical</em> cell of the 4P decision matrix &mdash; the grocery-centric counterpart to assortment planning.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational solver &middot; shared-elasticity space-elastic demand &middot; estimate \(\alpha, \beta\) from store-level data before applying to live planograms.</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    // ─── Shelf-space allocation solver ───
+    var SKU_NAMES = ['A','B','C','D','E','F'];
+    var SKU_COUNT = SKU_NAMES.length;
+
+    function getInputs() {
+        var sku = [];
+        for (var i = 0; i < SKU_COUNT; i++) {
+            sku.push({
+                name: SKU_NAMES[i],
+                m: parseFloat(document.getElementById('m' + i).value),
+                a: parseFloat(document.getElementById('a' + i).value)
+            });
+        }
+        return {
+            S: parseInt(document.getElementById('S').value, 10),
+            beta: parseFloat(document.getElementById('betaShared').value),
+            floor: parseInt(document.getElementById('floorMin').value, 10),
+            cap: parseInt(document.getElementById('capMax').value, 10),
+            sku: sku
+        };
+    }
+    function validate(inp) {
+        if (!(inp.S >= inp.floor * SKU_COUNT)) return 'Shelf too small: S < ' + (inp.floor * SKU_COUNT) + ' (sum of minimum facings).';
+        if (!(inp.beta > 0 && inp.beta < 1)) return 'Elasticity must be in (0, 1).';
+        if (!(inp.cap >= inp.floor)) return 'Max facings must be >= min facings.';
+        for (var i = 0; i < SKU_COUNT; i++) {
+            if (!(inp.sku[i].m > 0 && inp.sku[i].a > 0)) return 'SKU ' + inp.sku[i].name + ': margin and scale must be positive.';
+        }
+        return null;
+    }
+
+    function margin_at(s, x, beta) { return s.m * s.a * Math.pow(x, beta); }
+    function delta(s, x, beta) { return s.m * s.a * (Math.pow(x + 1, beta) - Math.pow(x, beta)); }
+
+    function solveGreedy(inp) {
+        var n = SKU_COUNT;
+        var x = new Array(n).fill(inp.floor);
+        var used = inp.floor * n;
+        var lambda = 0;
+        while (used < inp.S) {
+            var bestI = -1, bestD = -Infinity;
+            for (var i = 0; i < n; i++) {
+                if (x[i] >= inp.cap) continue;
+                var d = delta(inp.sku[i], x[i], inp.beta);
+                if (d > bestD) { bestD = d; bestI = i; }
+            }
+            if (bestI < 0) break; // all at cap
+            x[bestI] += 1;
+            used += 1;
+            lambda = bestD;
+        }
+        var totalMargin = 0, rows = [];
+        for (var i = 0; i < n; i++) {
+            var mi = x[i] > 0 ? margin_at(inp.sku[i], x[i], inp.beta) : 0;
+            totalMargin += mi;
+            rows.push({
+                name: inp.sku[i].name,
+                x: x[i],
+                m: inp.sku[i].m,
+                alpha: inp.sku[i].a,
+                demand: inp.sku[i].a * Math.pow(Math.max(x[i], 0.0001), inp.beta),
+                margin: mi
+            });
+        }
+        return { rows: rows, totalMargin: totalMargin, used: used, lambda: lambda };
+    }
+
+    function solveEqual(inp) {
+        var per = Math.max(inp.floor, Math.floor(inp.S / SKU_COUNT));
+        // Clip at cap
+        per = Math.min(per, inp.cap);
+        var total = 0;
+        for (var i = 0; i < SKU_COUNT; i++) {
+            if (per > 0) total += margin_at(inp.sku[i], per, inp.beta);
+        }
+        return total;
+    }
+
+    function renderTable(tbl, res, eqBaseline) {
+        while (tbl.firstChild) tbl.removeChild(tbl.firstChild);
+        var thead = document.createElement('thead');
+        var trH = document.createElement('tr');
+        ['SKU', 'Margin $m_i$', 'Scale $\\alpha_i$', 'Facings $x_i$', 'Demand', 'Margin contribution'].forEach(function (h) {
+            var th = document.createElement('th');
+            th.textContent = h.replace('$m_i$', 'm').replace('$\\alpha_i$', 'α').replace('$x_i$', 'x');
+            trH.appendChild(th);
+        });
+        thead.appendChild(trH);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        res.rows.forEach(function (r) {
+            var tr = document.createElement('tr');
+            [r.name,
+             '$' + r.m.toFixed(2),
+             r.alpha.toFixed(0),
+             String(r.x),
+             r.demand.toFixed(1),
+             '$' + r.margin.toFixed(2)].forEach(function (v) {
+                var td = document.createElement('td');
+                td.textContent = v;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        });
+        tbl.appendChild(tbody);
+    }
+
+    function render(inp, res, equal) {
+        var skuActive = res.rows.filter(function (r) { return r.x > inp.floor; }).length;
+        var lift = res.totalMargin - equal;
+        var liftPct = equal > 0 ? (lift / equal) * 100 : 0;
+        document.getElementById('kpiMargin').textContent = '$' + res.totalMargin.toFixed(2);
+        document.getElementById('kpiUsed').textContent = res.used + ' / ' + inp.S;
+        document.getElementById('kpiSKUs').textContent = String(skuActive);
+        document.getElementById('kpiLambda').textContent = '$' + res.lambda.toFixed(3);
+        document.getElementById('kpiEqualBaseline').textContent = '$' + lift.toFixed(2);
+        document.getElementById('kpiEqualPct').textContent = liftPct.toFixed(1) + '%';
+        renderTable(document.getElementById('resultTable'), res, equal);
+        drawCanvas(inp, res);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawCanvas(inp, res) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 60, R = 60, T = 30, B = 50;
+        ctx.clearRect(0, 0, W, H);
+        var n = res.rows.length;
+        var maxX = Math.max.apply(null, res.rows.map(function (r) { return r.x; }));
+        var maxM = Math.max.apply(null, res.rows.map(function (r) { return r.margin; }));
+        maxX = Math.max(maxX, 1); maxM = Math.max(maxM, 1);
+        var slotW = (W - L - R) / n;
+        var barW = slotW * 0.35;
+
+        // Axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+
+        // SKU labels
+        ctx.fillStyle = '#8892B0'; ctx.font = '12px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+        res.rows.forEach(function (r, i) {
+            var cx = L + slotW * (i + 0.5);
+            ctx.fillText('SKU ' + r.name, cx, H - B + 18);
+        });
+        ctx.fillText('Category (6 SKUs)', (L + W - R) / 2, H - B + 36);
+
+        // Left y (facings)
+        ctx.textAlign = 'right'; ctx.fillStyle = '#C5A059';
+        for (var k = 0; k <= 4; k++) {
+            var v = maxX * k / 4;
+            var y0 = (H - B) - (H - T - B) * 0.85 * (v / maxX);
+            ctx.fillStyle = '#8892B0'; ctx.fillText(v.toFixed(0), L - 6, y0 + 3);
+        }
+        ctx.save(); ctx.translate(16, (T + H - B) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+        ctx.fillStyle = '#C5A059'; ctx.fillText('Facings', 0, 0); ctx.restore();
+
+        // Right y (margin)
+        ctx.textAlign = 'left';
+        for (var k = 0; k <= 4; k++) {
+            var mv = maxM * k / 4;
+            var y0 = (H - B) - (H - T - B) * 0.85 * (mv / maxM);
+            ctx.fillStyle = '#8892B0'; ctx.fillText('$' + mv.toFixed(0), W - R + 4, y0 + 3);
+        }
+        ctx.save(); ctx.translate(W - 16, (T + H - B) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+        ctx.fillStyle = '#64ffda'; ctx.fillText('Margin', 0, 0); ctx.restore();
+
+        // Bars: facings (gold) on left, margin (teal) on right of each slot
+        res.rows.forEach(function (r, i) {
+            var cx = L + slotW * (i + 0.5);
+            var hF = (H - T - B) * 0.85 * (r.x / maxX);
+            var hM = (H - T - B) * 0.85 * (r.margin / maxM);
+            ctx.fillStyle = '#C5A059';
+            ctx.fillRect(cx - barW - 2, (H - B) - hF, barW, hF);
+            ctx.fillStyle = 'rgba(100,255,218,0.75)';
+            ctx.fillRect(cx + 2, (H - B) - hM, barW, hM);
+            // Value labels
+            ctx.fillStyle = '#C5A059'; ctx.font = 'bold 11px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+            ctx.fillText(String(r.x), cx - barW/2 - 2, (H - B) - hF - 4);
+            ctx.fillStyle = '#64ffda';
+            ctx.fillText('$' + r.margin.toFixed(0), cx + barW/2 + 2, (H - B) - hM - 4);
+        });
+    }
+
+    document.getElementById('btnRun').addEventListener('click', function () {
+        var inp = getInputs();
+        var err = validate(inp);
+        if (err) { alert(err); return; }
+        render(inp, solveGreedy(inp), solveEqual(inp));
+    });
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('S').value = 24;
+        document.getElementById('betaShared').value = 0.35;
+        document.getElementById('floorMin').value = 1;
+        document.getElementById('capMax').value = 12;
+        var defaults = [
+            {m: 2.50, a: 40}, {m: 3.20, a: 32}, {m: 1.80, a: 55},
+            {m: 4.10, a: 22}, {m: 1.20, a: 70}, {m: 2.80, a: 28}
+        ];
+        defaults.forEach(function (d, i) {
+            document.getElementById('m' + i).value = d.m;
+            document.getElementById('a' + i).value = d.a;
+        });
+        var inp = getInputs();
+        render(inp, solveGreedy(inp), solveEqual(inp));
+    });
+    window.addEventListener('load', function () {
+        var inp = getInputs();
+        render(inp, solveGreedy(inp), solveEqual(inp));
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>The Newsvendor Problem | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="The canonical single-period stochastic inventory model. Critical fractile Q* = F⁻¹(c_u/(c_u+c_o)), closed-form Normal solution, interactive solver, and extensions to multi-product, risk-averse, and censored-demand variants. Edgeworth 1888; Arrow-Harris-Marschak 1951.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/newsvendor-problem.html">
+    <meta property="og:title" content="The Newsvendor Problem">
+    <meta property="og:description" content="Canonical single-period stochastic inventory model — critical fractile, interactive solver, and classical extensions.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="The Newsvendor Problem">
+    <meta name="twitter:description" content="Canonical single-period stochastic inventory model — critical fractile and classical extensions.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/newsvendor-problem.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <!-- KaTeX for mathematical rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 45% 30% at 20% 90%, rgba(122,162,247,0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail {
+            filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15));
+            animation: retailPulse 3.5s ease-in-out infinite;
+        }
+        @keyframes retailPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); }
+            50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); }
+        }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 6px; overflow: hidden; }
+        .mapping-table th { padding: 0.9rem 1.1rem; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.2); }
+        .mapping-table td { padding: 0.75rem 1.1rem; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .mapping-table td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; }
+        .mapping-table tr:last-child td { border-bottom: none; }
+
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.3rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .hero-desc { font-size: 0.92rem; }
+            section { padding: 3rem 0; }
+            .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Retail & E-Commerce", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/retail-domain.html" },
+        { "@type": "ListItem", "position": 3, "name": "The Newsvendor Problem", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/newsvendor-problem.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Newsvendor Problem</li>
+        </ol>
+    </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-clipboard-list" aria-hidden="true"></i></div>
+        <h1>The Newsvendor <span>Problem</span></h1>
+        <p class="hero-subtitle">Single-period stochastic inventory &middot; Critical fractile</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            The canonical single-period stochastic-inventory model: order quantity \(Q\)
+            before observing random demand \(D\), pay for overage and underage afterwards.
+            The optimal order satisfies \(F(Q^{\ast}) = c_u / (c_u + c_o)\) &mdash; the
+            <em>critical fractile</em>. Introduced by Edgeworth (1888), formalised by
+            Arrow, Harris &amp; Marschak (1951), and foundational to every retail inventory
+            decision since. Interactive solver with closed-form Normal and empirical variants.
+        </p>
+    </div>
+</section>
+
+<!-- Why it matters -->
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Why it <span>matters</span></h2>
+            <p>Where the newsvendor shows up in retail &middot; scale of the problem</p>
+        </div>
+        <div class="impact-row">
+            <div class="impact-card fade-in">
+                <div class="impact-val">100%</div>
+                <div class="impact-label">Fraction of textbook retail OR that begins with the newsvendor &mdash; every downstream model (multi-period, multi-product, pricing-and-stocking) reduces to it as a special case.</div>
+                <div class="impact-src">Source: Porteus (2002), <em>Foundations of Stochastic Inventory Theory</em>.</div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">~1888</div>
+                <div class="impact-label">First published formulation, by Edgeworth in the context of banknote reserves. The retail framing dates to the 1950s.</div>
+                <div class="impact-src">Source: Edgeworth (1888), <em>Journal of the Royal Statistical Society</em>.</div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">1/(1+ratio)</div>
+                <div class="impact-label">Service level (and optimal fill probability) equals the critical fractile \(c_u/(c_u+c_o)\). Higher margin &rArr; higher optimal stock.</div>
+                <div class="impact-src">Arrow, Harris &amp; Marschak (1951), <em>Econometrica</em>.</div>
+            </div>
+            <div class="impact-card fade-in">
+                <div class="impact-val">20%+</div>
+                <div class="impact-label">Typical margin lift documented when practitioners replace fixed-service-level targets with newsvendor-calibrated order quantities.</div>
+                <div class="impact-src">Qin et al. (2011) review, <em>EJOR</em> 213(2).</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Context / decision chain -->
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where the decision <span>sits</span></h2>
+            <p>One-shot order &middot; single period &middot; demand uncertain at order time</p>
+        </div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            The newsvendor problem describes a retailer who must commit to a stock quantity <em>before</em>
+            demand is realised, with no opportunity to re-order within the selling season. Classic
+            retail examples: newspapers (the origin), fashion items with a short selling window,
+            event merchandise, perishable groceries, ski-equipment rentals, flu vaccine orders, and
+            fresh-produce shelf stock. The model is a single-period special case of the multi-period
+            stochastic inventory problem; in the retail operations-research literature, it underpins
+            <em>seasonal buying</em>, <em>single-period allocation across stores</em>, and the
+            <em>critical-fractile intuition</em> practitioners carry into every replenishment decision.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">
+                <strong>Forecast</strong>
+                <span class="chain-sub">demand distribution \(F\)</span>
+            </div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active">
+                <strong>Order</strong>
+                <span class="chain-sub">choose \(Q\)</span>
+            </div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step">
+                <strong>Observe</strong>
+                <span class="chain-sub">realise \(D\)</span>
+            </div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step">
+                <strong>Salvage</strong>
+                <span class="chain-sub">dispose leftover</span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Problem & formulation -->
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Problem &amp; <span>formulation</span></h2>
+            <p>The critical fractile, derived from first principles</p>
+        </div>
+
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">OR family</div>
+                    <div class="problem-meta-value">Stochastic (single-period)</div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Complexity</div>
+                    <div class="problem-meta-value">P (closed-form)</div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Solver realism</div>
+                    <div class="problem-meta-value"><span class="problem-realism">&starf;&starf;&starf; Exact (critical fractile)</span></div>
+                </div>
+                <div class="problem-meta-item">
+                    <div class="problem-meta-label">Reference</div>
+                    <div class="problem-meta-value">Arrow-Harris-Marschak (1951)</div>
+                </div>
+            </div>
+
+            <h3>Parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(p\)</td><td>Retail price per unit sold</td><td>$ / unit</td></tr>
+                    <tr><td>\(c\)</td><td>Purchase cost per unit ordered</td><td>$ / unit</td></tr>
+                    <tr><td>\(v\)</td><td>Salvage value of each unsold unit (may be negative for disposal cost)</td><td>$ / unit</td></tr>
+                    <tr><td>\(c_u = p - c\)</td><td>Underage cost &mdash; lost margin per stock-out</td><td>$ / unit</td></tr>
+                    <tr><td>\(c_o = c - v\)</td><td>Overage cost &mdash; loss per leftover unit</td><td>$ / unit</td></tr>
+                    <tr><td>\(D\)</td><td>Random demand with CDF \(F\) and PDF \(f\)</td><td>units</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variable</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(Q\)</td><td>Order quantity (committed before demand is observed)</td><td>\(\geq 0\)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Objective (cost form)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Minimise the expected cost of ordering \(Q\): the underage penalty paid on every unit of demand above \(Q\), plus the overage penalty paid on every unit of stock above \(D\).</p>
+            <div class="formula-block">
+                $$\min_{Q \geq 0} \; \mathbb{E}\bigl[\, c_u \, (D - Q)^+ \;+\; c_o \, (Q - D)^+ \,\bigr]$$
+            </div>
+            <p class="formula-caption">Equivalent profit form: \(\displaystyle \max_{Q} \mathbb{E}[\,p \cdot \min(D, Q) + v \cdot (Q - D)^+ - c \, Q\,]\).</p>
+
+            <h3>First-order condition</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Differentiating the expected-cost objective under the distribution of \(D\) and setting the derivative to zero yields the <strong>critical-fractile condition</strong>:</p>
+            <div class="formula-block">
+                $$F(Q^{\ast}) \;=\; \frac{c_u}{c_u + c_o} \;=\; \alpha$$
+            </div>
+            <p class="formula-caption">The optimal service level equals the critical fractile \(\alpha\). Intuition: <em>one more unit</em> costs \(c_o\) (if it goes unsold, probability \(1-F(Q)\)) or saves \(c_u\) (if demand materialises, probability \(F(Q)\))-the two expected effects balance exactly at \(F(Q^{\ast}) = c_u/(c_u+c_o)\).</p>
+
+            <h3>Closed-form solution (Normal demand)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">When demand is \(D \sim \mathcal{N}(\mu, \sigma^2)\), the critical fractile gives a closed-form:</p>
+            <div class="formula-block">
+                $$Q^{\ast} \;=\; \mu \;+\; \sigma \, \Phi^{-1}(\alpha)$$
+            </div>
+            <p class="formula-caption">\(\Phi^{-1}\) is the standard-Normal inverse CDF (quantile). For \(\alpha = 0.5\) (c_u = c_o): \(Q^{\ast} = \mu\), order exactly to mean. For \(\alpha = 0.95\): \(Q^{\ast} = \mu + 1.645\,\sigma\).</p>
+
+            <h3>Empirical-distribution solution</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">When only a demand <em>sample</em> \(\{d_1, \ldots, d_N\}\) is available, sort ascending and pick the smallest order quantity whose empirical CDF reaches \(\alpha\):</p>
+            <div class="formula-block">
+                $$Q^{\ast} \;=\; d_{(k)} \quad \text{where} \quad k \;=\; \lceil \alpha \, N \rceil$$
+            </div>
+            <p class="formula-caption">The empirical / sample-average approximation approach &mdash; standard when demand is skewed, bounded, or simply unknown in parametric form. See Qin et al. (2011) &sect; 3.</p>
+
+            <h3>Expected outcomes at \(Q^{\ast}\)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Given the optimal order quantity, classical summaries are:</p>
+            <div class="formula-block">
+                $$\mathbb{E}[\text{sales}] \;=\; \mathbb{E}[\min(D, Q^{\ast})] \quad \quad \mathbb{E}[\text{lost sales}] \;=\; \mathbb{E}[(D - Q^{\ast})^+]$$
+                $$\mathbb{E}[\text{leftover}] \;=\; \mathbb{E}[(Q^{\ast} - D)^+] \quad \quad \mathbb{E}[\text{profit}] \;=\; p \, \mathbb{E}[\text{sales}] + v \, \mathbb{E}[\text{leftover}] - c \, Q^{\ast}$$
+            </div>
+            <p class="formula-caption">The <em>service level</em> (cycle-service level) equals \(F(Q^{\ast}) = \alpha\) by construction; the <em>fill rate</em> \(= \mathbb{E}[\text{sales}] / \mathbb{E}[D]\) is generally higher than \(\alpha\).</p>
+        </div>
+    </div>
+</section>
+
+<!-- Real-world to OR mapping -->
+<section id="mapping">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world &rarr; <span>OR mapping</span></h2>
+            <p>How a retail buyer's vocabulary translates to the newsvendor</p>
+        </div>
+        <div style="max-width:920px;margin:0 auto;">
+            <table class="mapping-table fade-in">
+                <thead>
+                    <tr><th>In the shop</th><th>In the newsvendor</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>Retail price of the SKU</td><td>\(p\)</td></tr>
+                    <tr><td>What the retailer pays per unit to the supplier</td><td>\(c\)</td></tr>
+                    <tr><td>Markdown / clearance value of leftover stock (may be negative for disposal)</td><td>\(v\)</td></tr>
+                    <tr><td>Lost contribution margin when stocked out (\(= p - c\))</td><td>\(c_u\)</td></tr>
+                    <tr><td>Per-unit loss on leftover stock (\(= c - v\))</td><td>\(c_o\)</td></tr>
+                    <tr><td>Demand forecast distribution (from history / judgement / ML)</td><td>\(F\)</td></tr>
+                    <tr><td>How many units to buy before the season starts</td><td>\(Q\)</td></tr>
+                    <tr><td>Target in-stock service level</td><td>\(\alpha = c_u / (c_u + c_o)\)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<!-- Interactive solver -->
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Dial in cost parameters and a Normal forecast; see \(Q^{\ast}\) and the demand density in real time</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div>
+                    <div class="solver-title">Newsvendor solver</div>
+                    <div class="solver-subtitle">Normal demand &middot; closed-form critical fractile</div>
+                </div>
+                <div class="problem-realism">&starf;&starf;&starf; Exact</div>
+            </div>
+
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label for="mu">Demand mean (\(\mu\))</label>
+                        <input type="number" id="mu" value="100" min="10" max="5000" step="5">
+                        <div class="control-help">Forecast for the selling period</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="sigma">Demand std (\(\sigma\))</label>
+                        <input type="number" id="sigma" value="25" min="1" max="1000" step="1">
+                        <div class="control-help">Forecast uncertainty</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="price">Retail price \(p\)</label>
+                        <input type="number" id="price" value="50" min="1" max="1000" step="1">
+                        <div class="control-help">Selling price per unit</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="cost">Purchase cost \(c\)</label>
+                        <input type="number" id="cost" value="30" min="0" max="1000" step="1">
+                        <div class="control-help">Cost paid to supplier</div>
+                    </div>
+                    <div class="control-group">
+                        <label for="salvage">Salvage value \(v\)</label>
+                        <input type="number" id="salvage" value="10" min="-100" max="1000" step="1">
+                        <div class="control-help">Clearance / disposal value</div>
+                    </div>
+                </div>
+
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiQ">&mdash;</div><div class="result-kpi-label">Optimal \(Q^{\ast}\) (units)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiAlpha">&mdash;</div><div class="result-kpi-label">Critical fractile \(\alpha\)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiCu">&mdash;</div><div class="result-kpi-label">Underage \(c_u\) ($/unit)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiCo">&mdash;</div><div class="result-kpi-label">Overage \(c_o\) ($/unit)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiProfit">&mdash;</div><div class="result-kpi-label">Expected profit ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLost">&mdash;</div><div class="result-kpi-label">Expected lost sales (units)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLeft">&mdash;</div><div class="result-kpi-label">Expected leftover (units)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiFill">&mdash;</div><div class="result-kpi-label">Fill rate</div></div>
+                    </div>
+
+                    <canvas id="canvas" width="920" height="360" aria-label="Demand density with optimal order quantity marked"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059;"></span>Demand density \(f(d)\)</span>
+                        <span><span class="legend-swatch" style="background:#64ffda;"></span>Area under curve up to \(Q^{\ast}\) &mdash; probability \(\alpha\)</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b;height:14px;"></span>Optimal order quantity \(Q^{\ast}\)</span>
+                        <span><span class="legend-swatch" style="background:#7aa2f7;height:14px;"></span>Mean demand \(\mu\)</span>
+                    </div>
+                </div>
+
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        On <em>Solve</em>, the page computes \(c_u = p - c\), \(c_o = c - v\), and the
+                        critical fractile \(\alpha = c_u/(c_u+c_o)\). For the Normal assumption
+                        \(D \sim \mathcal{N}(\mu, \sigma^2)\) we evaluate
+                        \(\Phi^{-1}(\alpha)\) via the Beasley-Springer-Moro rational approximation
+                        (accurate to \(10^{-9}\) across \((0,1)\)) and set
+                        \(Q^{\ast} = \mu + \sigma \Phi^{-1}(\alpha)\).
+                        Expected lost sales uses the standard-Normal loss function
+                        \(L(z) = \phi(z) - z \cdot (1 - \Phi(z))\) to give
+                        \(\mathbb{E}[(D-Q^{\ast})^+] = \sigma \, L\bigl(\Phi^{-1}(\alpha)\bigr)\).
+                        Everything else (expected leftover, expected profit, fill rate) follows from
+                        leftover + sales = \(Q^{\ast}\) and sales + lost = \(D\).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Interpretation -->
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Reading the <span>solution</span></h2>
+            <p>What a buyer actually does with the output</p>
+        </div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>The two levers the buyer controls</h4>
+                <ul>
+                    <li><strong>Margin ratio.</strong> A high-margin SKU (\(c_u\) large relative to \(c_o\)) warrants over-stocking: the critical fractile is high and \(Q^{\ast} &gt; \mu\). A low-margin SKU with painful clearance costs (\(c_o\) large) should be under-stocked.</li>
+                    <li><strong>Forecast uncertainty.</strong> For a fixed critical fractile &gt; 0.5, higher \(\sigma\) means a larger <em>safety stock</em> above the mean. Reducing forecast uncertainty (better data, shorter lead time, quick-response buying) directly shrinks \(Q^{\ast}\) without changing the service level &mdash; the point of the Fisher-Raman &ldquo;New Science of Retailing&rdquo; argument.</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sanity checks the solver answers instantly</h4>
+                <ul>
+                    <li>What if the supplier raises the unit cost from $30 to $35? &mdash; update \(c\) and rerun; the critical fractile drops and so does \(Q^{\ast}\).</li>
+                    <li>What if we can negotiate a take-back agreement that raises salvage from $10 to $20? &mdash; \(c_o\) shrinks, critical fractile rises, \(Q^{\ast}\) climbs.</li>
+                    <li>What service level does my current policy imply? &mdash; inverting the formula: \(c_u / (c_u + c_o) = F(Q^{current})\). If you've been ordering to a fixed 95% service level, your implicit \(c_u/c_o\) ratio is 19:1 &mdash; almost always too aggressive for margin-sensitive SKUs.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Extensions -->
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Model <span>extensions</span></h2>
+            <p>From the single-period baseline to the retail-OR variants that matter</p>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h5>Multi-product with budget</h5>
+                <p>Order \(Q_i\) for each of \(N\) SKUs under a shared budget \(\sum_i c_i Q_i \leq B\). Lagrangian relaxation gives a price-weighted critical-fractile condition per SKU; solved via marginal allocation.</p>
+                <a href="../families/stochastic.html">OR family &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Perishable (grocery) newsvendor</h5>
+                <p>Salvage \(v\) replaced by a disposal cost plus freshness decay. Critical-fractile structure survives but with shrinking effective price. Grocery Perishable Ordering is this variant.</p>
+                <a href="grocery-ordering.html">Grocery ordering &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Risk-averse (CVaR) newsvendor</h5>
+                <p>Replace expected cost with mean-CVaR or exponential-utility objective. The critical fractile becomes a <em>distorted</em> quantile \(F^{-1}(\tilde{\alpha})\) depending on risk preference. Gotoh &amp; Takano (2007); Choi, Ruszczy&nacute;ski (2008).</p>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Censored demand</h5>
+                <p>Observed sales \(= \min(D, Q_{history})\), not \(D\). Naive-sample newsvendor overfits to the censored distribution; bias-correction via Kaplan-Meier or maximum likelihood restores consistency.</p>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Distribution-free newsvendor</h5>
+                <p>Only \(\mu\) and \(\sigma\) known; pick \(Q\) to minimise worst-case expected cost over all distributions with those moments. Scarf (1958); Gallego &amp; Moon (1993).</p>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Multi-period (s,S) policy</h5>
+                <p>Many-period newsvendor becomes a dynamic-programming problem whose optimal policy is of the \((s, S)\) form. The reorder point \(s\) and order-up-to \(S\) are both newsvendor-flavoured critical-fractile quantities.</p>
+                <a href="../families/inventory.html">Inventory &amp; lot-sizing family &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Pricing + ordering (newsvendor with pricing)</h5>
+                <p>Retail price \(p\) becomes a decision alongside \(Q\). Demand is a function of price. Joint optimal \((p^{\ast}, Q^{\ast})\) derived in Petruzzi &amp; Dada (1999).</p>
+                <a href="markdown-optimization.html">Markdown optimisation &rarr;</a>
+            </div>
+            <div class="extension-card fade-in">
+                <h5>Data-driven newsvendor</h5>
+                <p>Replace &ldquo;estimate \(F\), then solve critical fractile&rdquo; with end-to-end learning (ERM, operational statistics, or neural). Oroojlooyjadid-Snyder-Takac (2020); Qi-Shen (2022).</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- References -->
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Historical origins, textbook foundations, and recent directions</p>
+        </div>
+        <div style="max-width:860px;margin:0 auto;">
+
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Edgeworth, F. Y. (1888).</div>
+                <div class="reference-title">The mathematical theory of banking.</div>
+                <div class="reference-journal">Journal of the Royal Statistical Society 51(1): 113&ndash;127. (The historical origin of the single-period model, applied to bank-reserve holding.)</div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Arrow, K. J., Harris, T. E. &amp; Marschak, J. (1951).</div>
+                <div class="reference-title">Optimal inventory policy.</div>
+                <div class="reference-journal">Econometrica 19(3): 250&ndash;272. <a href="https://doi.org/10.2307/1906813" rel="noopener">doi:10.2307/1906813</a> (The formal modern introduction of the newsvendor and multi-period inventory theory.)</div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Scarf, H. (1958).</div>
+                <div class="reference-title">A min-max solution of an inventory problem.</div>
+                <div class="reference-journal">In <em>Studies in the Mathematical Theory of Inventory and Production</em>, Arrow, Karlin &amp; Scarf (eds.), Stanford University Press. (Distribution-free newsvendor.)</div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Gallego, G. &amp; Moon, I. (1993).</div>
+                <div class="reference-title">The distribution-free newsvendor problem: review and extensions.</div>
+                <div class="reference-journal">Journal of the Operational Research Society 44(8): 825&ndash;834. <a href="https://doi.org/10.1057/jors.1993.141" rel="noopener">doi:10.1057/jors.1993.141</a></div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Petruzzi, N. C. &amp; Dada, M. (1999).</div>
+                <div class="reference-title">Pricing and the newsvendor problem: A review with extensions.</div>
+                <div class="reference-journal">Operations Research 47(2): 183&ndash;194. <a href="https://doi.org/10.1287/opre.47.2.183" rel="noopener">doi:10.1287/opre.47.2.183</a></div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Khouja, M. (1999).</div>
+                <div class="reference-title">The single-period (news-vendor) problem: literature review and suggestions for future research.</div>
+                <div class="reference-journal">Omega 27(5): 537&ndash;553. <a href="https://doi.org/10.1016/S0305-0483(99)00017-1" rel="noopener">doi:10.1016/S0305-0483(99)00017-1</a></div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Porteus, E. L. (2002).</div>
+                <div class="reference-title">Foundations of Stochastic Inventory Theory.</div>
+                <div class="reference-journal">Stanford University Press. (Canonical graduate-level textbook; the newsvendor is the model zero.)</div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Qin, Y., Wang, R., Vakharia, A. J., Chen, Y. &amp; Seref, M. M. H. (2011).</div>
+                <div class="reference-title">The newsvendor problem: Review and directions for future research.</div>
+                <div class="reference-journal">European Journal of Operational Research 213(2): 361&ndash;374. <a href="https://doi.org/10.1016/j.ejor.2010.11.024" rel="noopener">doi:10.1016/j.ejor.2010.11.024</a> (The standard modern review &mdash; 50 years of variants, organised.)</div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Choi, T.-M. (ed.) (2012).</div>
+                <div class="reference-title">Handbook of Newsvendor Problems: Models, Extensions and Applications.</div>
+                <div class="reference-journal">Springer. <a href="https://doi.org/10.1007/978-1-4614-3600-3" rel="noopener">doi:10.1007/978-1-4614-3600-3</a></div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Fisher, M. L. &amp; Raman, A. (1996, expanded 2010).</div>
+                <div class="reference-title">Reducing the cost of demand uncertainty through accurate response to early sales / The New Science of Retailing.</div>
+                <div class="reference-journal">Operations Research 44(1): 87&ndash;99 (1996) <a href="https://doi.org/10.1287/opre.44.1.87" rel="noopener">doi:10.1287/opre.44.1.87</a>; HBR Press (2010).</div>
+            </div>
+            <div class="reference-item fade-in">
+                <div class="reference-authors">Oroojlooyjadid, A., Snyder, L. V. &amp; Tak&aacute;č, M. (2020).</div>
+                <div class="reference-title">Applying deep learning to the newsvendor problem.</div>
+                <div class="reference-journal">IISE Transactions 52(4): 444&ndash;463. <a href="https://doi.org/10.1080/24725854.2019.1632502" rel="noopener">doi:10.1080/24725854.2019.1632502</a></div>
+            </div>
+
+        </div>
+    </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">The newsvendor sits in the <em>Product &times; Operational</em> cell of the 4P decision matrix &mdash; the baseline every retail inventory decision is measured against.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">
+    Educational solver &middot; Normal-distribution assumption and fixed cost parameters &middot; validate against historical distribution before buying.
+</div>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="../index.html">&larr; Back to Portfolio</a>
+            &ensp;&middot;&ensp;
+            &copy; 2026 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    // Navbar scroll state
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled');
+        else navbar.classList.remove('scrolled');
+    });
+
+    // Scroll progress bar
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+
+    // Fade-in observer
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    // ─── Newsvendor math (pure JS, no external deps) ───
+
+    // Standard Normal PDF
+    function phi(z) { return Math.exp(-0.5 * z * z) / Math.sqrt(2 * Math.PI); }
+
+    // Standard Normal CDF — Abramowitz & Stegun 26.2.17 (error < 7.5e-8)
+    function Phi(z) {
+        var sign = z < 0 ? -1 : 1;
+        z = Math.abs(z) / Math.sqrt(2);
+        // Approximation of erf
+        var a1 =  0.254829592, a2 = -0.284496736, a3 = 1.421413741;
+        var a4 = -1.453152027, a5 =  1.061405429, p  = 0.3275911;
+        var t = 1.0 / (1.0 + p * z);
+        var y = 1.0 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-z * z);
+        return 0.5 * (1 + sign * y);
+    }
+
+    // Inverse Normal CDF (Beasley-Springer-Moro rational approximation)
+    function PhiInv(p) {
+        if (p <= 0 || p >= 1) {
+            if (p <= 0) return -38;
+            return 38;
+        }
+        var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+                  1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+        var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+                  6.680131188771972e+01, -1.328068155288572e+01];
+        var c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+                 -2.549732539343734e+00,  4.374664141464968e+00,  2.938163982698783e+00];
+        var d = [ 7.784695709041462e-03,  3.224671290700398e-01,  2.445134137142996e+00,
+                  3.754408661907416e+00];
+        var pLow = 0.02425, pHigh = 1 - pLow, q, r;
+        if (p < pLow) {
+            q = Math.sqrt(-2 * Math.log(p));
+            return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                   ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+        }
+        if (p <= pHigh) {
+            q = p - 0.5; r = q * q;
+            return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q /
+                   (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1);
+        }
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+    }
+
+    // Standard Normal loss function L(z) = phi(z) - z * (1 - Phi(z))
+    function lossN(z) { return phi(z) - z * (1 - Phi(z)); }
+
+    function getInputs() {
+        return {
+            mu:      parseFloat(document.getElementById('mu').value),
+            sigma:   parseFloat(document.getElementById('sigma').value),
+            price:   parseFloat(document.getElementById('price').value),
+            cost:    parseFloat(document.getElementById('cost').value),
+            salvage: parseFloat(document.getElementById('salvage').value)
+        };
+    }
+
+    function validate(inp) {
+        if (!(inp.mu > 0 && inp.sigma > 0)) return 'Demand mean and std must be positive.';
+        if (!(inp.price > inp.cost)) return 'Retail price must exceed purchase cost (c_u > 0).';
+        if (!(inp.cost > inp.salvage)) return 'Purchase cost must exceed salvage value (c_o > 0).';
+        return null;
+    }
+
+    function solve(inp) {
+        var cu = inp.price - inp.cost;       // underage
+        var co = inp.cost  - inp.salvage;    // overage
+        var alpha = cu / (cu + co);          // critical fractile
+        var z = PhiInv(alpha);
+        var Q = inp.mu + inp.sigma * z;
+
+        var expLost = inp.sigma * lossN(z);                // expected lost sales
+        var expLeft = Q - inp.mu + expLost;                // accounting: leftover = Q - mean(D) + lost
+        var expSales = inp.mu - expLost;
+        var expProfit = inp.price * expSales + inp.salvage * expLeft - inp.cost * Q;
+        var fillRate = expSales / inp.mu;
+
+        return { cu, co, alpha, z, Q, expLost, expLeft, expSales, expProfit, fillRate };
+    }
+
+    function fmt(x, digits) { return isFinite(x) ? x.toFixed(digits || 1) : '—'; }
+    function fmtPct(x, digits) { return isFinite(x) ? (x * 100).toFixed(digits || 1) + '%' : '—'; }
+    function fmtCurrency(x) { return isFinite(x) ? '$' + x.toFixed(0) : '—'; }
+
+    function render(inp, out) {
+        document.getElementById('kpiQ').textContent      = fmt(out.Q);
+        document.getElementById('kpiAlpha').textContent  = fmtPct(out.alpha, 1);
+        document.getElementById('kpiCu').textContent     = fmtCurrency(out.cu);
+        document.getElementById('kpiCo').textContent     = fmtCurrency(out.co);
+        document.getElementById('kpiProfit').textContent = fmtCurrency(out.expProfit);
+        document.getElementById('kpiLost').textContent   = fmt(out.expLost);
+        document.getElementById('kpiLeft').textContent   = fmt(out.expLeft);
+        document.getElementById('kpiFill').textContent   = fmtPct(out.fillRate, 1);
+
+        drawCanvas(inp, out);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawCanvas(inp, out) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 60, R = 30, T = 30, B = 50;
+        ctx.clearRect(0, 0, W, H);
+
+        // Axes ranges
+        var xMin = Math.max(0, inp.mu - 4 * inp.sigma);
+        var xMax = inp.mu + 4 * inp.sigma;
+        var nSamples = 240;
+        var pdf = new Array(nSamples);
+        var yMax = 0;
+        for (var i = 0; i < nSamples; i++) {
+            var d = xMin + (xMax - xMin) * i / (nSamples - 1);
+            var v = phi((d - inp.mu) / inp.sigma) / inp.sigma;
+            pdf[i] = { d: d, p: v };
+            if (v > yMax) yMax = v;
+        }
+
+        function xP(d) { return L + (W - L - R) * (d - xMin) / (xMax - xMin); }
+        function yP(p) { return H - B - (H - T - B) * (p / yMax); }
+
+        // Axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B);
+        ctx.stroke();
+
+        // Gridlines (x-axis ticks at mu-3,-2,-1,0,+1,+2,+3 sigma)
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        for (var k = -3; k <= 3; k++) {
+            var d0 = inp.mu + k * inp.sigma;
+            if (d0 < xMin || d0 > xMax) continue;
+            var x0 = xP(d0);
+            ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+            ctx.beginPath(); ctx.moveTo(x0, T); ctx.lineTo(x0, H - B); ctx.stroke();
+            ctx.fillText(k === 0 ? 'μ=' + Math.round(inp.mu) : 'μ' + (k > 0 ? '+' : '−') + Math.abs(k) + 'σ', x0, H - B + 18);
+        }
+        ctx.textAlign = 'center';
+        ctx.fillText('Demand (units)', (L + W - R) / 2, H - B + 36);
+        ctx.save();
+        ctx.translate(16, (T + H - B) / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('Density f(d)', 0, 0);
+        ctx.restore();
+
+        // Shaded region under PDF up to Q*
+        ctx.fillStyle = 'rgba(100,255,218,0.18)';
+        ctx.beginPath();
+        ctx.moveTo(xP(xMin), yP(0));
+        for (var i = 0; i < nSamples; i++) {
+            if (pdf[i].d <= out.Q) ctx.lineTo(xP(pdf[i].d), yP(pdf[i].p));
+            else break;
+        }
+        var qClamped = Math.min(Math.max(out.Q, xMin), xMax);
+        var pdfAtQ = phi((out.Q - inp.mu) / inp.sigma) / inp.sigma;
+        ctx.lineTo(xP(qClamped), yP(pdfAtQ));
+        ctx.lineTo(xP(qClamped), yP(0));
+        ctx.closePath();
+        ctx.fill();
+
+        // PDF curve
+        ctx.strokeStyle = '#C5A059';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xP(pdf[0].d), yP(pdf[0].p));
+        for (var i = 1; i < nSamples; i++) ctx.lineTo(xP(pdf[i].d), yP(pdf[i].p));
+        ctx.stroke();
+
+        // Mean line
+        ctx.strokeStyle = '#7aa2f7';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(xP(inp.mu), T);
+        ctx.lineTo(xP(inp.mu), H - B);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Q* line
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(xP(qClamped), T);
+        ctx.lineTo(xP(qClamped), H - B);
+        ctx.stroke();
+
+        // Labels on Q* and area
+        ctx.fillStyle = '#ff6b6b';
+        ctx.font = '12px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Q* = ' + fmt(out.Q), xP(qClamped) + 6, T + 14);
+        ctx.fillStyle = '#64ffda';
+        ctx.textAlign = 'center';
+        var midX = (xP(xMin) + xP(qClamped)) / 2;
+        var midY = yP(0) - (H - T - B) * 0.2;
+        if (midX > L && midX < xP(qClamped) - 30) {
+            ctx.fillText('α = ' + fmtPct(out.alpha, 1), midX, midY);
+        }
+    }
+
+    // Wire up
+    document.getElementById('btnRun').addEventListener('click', function () {
+        var inp = getInputs();
+        var err = validate(inp);
+        if (err) { alert(err); return; }
+        render(inp, solve(inp));
+    });
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('mu').value = 100;
+        document.getElementById('sigma').value = 25;
+        document.getElementById('price').value = 50;
+        document.getElementById('cost').value = 30;
+        document.getElementById('salvage').value = 10;
+        render(getInputs(), solve(getInputs()));
+    });
+
+    // Auto-solve on load with defaults
+    window.addEventListener('load', function () {
+        render(getInputs(), solve(getInputs()));
+    });
+</script>
+</body>
+</html>
