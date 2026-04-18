@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Revenue Management | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Capacity-controlled pricing and booking limits for perishable inventory: Littlewood (1972) two-class rule, Belobaba (1989) EMSR, dynamic-programming reformulation. Talluri &amp; van Ryzin canonical reference. Interactive solver compares EMSR-a vs EMSR-b vs DP.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/revenue-management.html">
+    <meta property="og:title" content="Revenue Management">
+    <meta property="og:description" content="Multi-class capacity allocation with EMSR + DP solvers.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Revenue Management">
+    <meta name="twitter:description" content="Capacity-controlled pricing and EMSR booking limits.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/revenue-management.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Revenue Management</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <h1>Revenue <span>Management</span></h1>
+        <p class="hero-subtitle">Capacity allocation &middot; Booking limits</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Allocate fixed capacity \(C\) across multiple <strong>fare classes</strong>
+            \(1, \ldots, n\) (with revenues \(r_1 \geq r_2 \geq \cdots\)) to maximise
+            expected revenue when low-fare bookings arrive first and high-fare arrive
+            late. Foundational results: <strong>Littlewood (1972)</strong> two-class
+            rule \(P(D_1 \geq y) = r_2 / r_1\); <strong>Belobaba (1989)</strong>
+            Expected Marginal Seat Revenue (EMSR-a, EMSR-b); <strong>Talluri &amp; van
+            Ryzin (2004)</strong> dynamic-programming reformulation. Born in
+            airlines; now used in hotels, fashion clearance, event tickets, and
+            advertising.
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>The original OR-driven pricing discipline &mdash; still the gold standard for fixed-capacity industries</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">~$1.4B</div><div class="impact-label">Annual revenue benefit American Airlines attributed to its yield-management system in the early 1990s &mdash; the canonical industry case (Smith-Leimkuhler-Darrow 1992).</div><div class="impact-src">Source: Smith, Leimkuhler &amp; Darrow (1992), <em>Interfaces</em> 22(1).</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">+5&ndash;8%</div><div class="impact-label">Typical revenue lift documented in retail and hotel deployments of capacity-controlled pricing vs first-come-first-served booking.</div><div class="impact-src">Source: Talluri &amp; van Ryzin (2004), industry case studies.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">y* = F⁻¹(1-r₂/r₁)</div><div class="impact-label">Littlewood&rsquo;s two-class rule: protect \(y^{\ast}\) seats for class 1 such that probability of class-1 demand exceeding \(y^{\ast}\) equals the revenue ratio.</div><div class="impact-src">Source: Littlewood (1972), <em>AGIFORS</em>.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">EMSR-b</div><div class="impact-label">Industry-standard heuristic: aggregate higher classes into a single &ldquo;virtual&rdquo; class and apply Littlewood. 1-2% from optimal in practice (Belobaba 1989).</div><div class="impact-src">Source: Belobaba (1989), <em>Operations Research</em> 37(2).</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Pre-period booking-limit setting &middot; revisited daily as bookings accumulate</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            Revenue management was born in airline yield optimisation (deregulation 1978; American Airlines DINAMO system early 1980s). The retail flavour appears in three settings: <strong>fashion / seasonal clearance</strong> (capacity = pre-bought inventory; classes = early-bird, full price, markdown levels); <strong>hotel</strong> (capacity = rooms; classes = corporate, leisure, advance-purchase); and <strong>e-commerce limited-edition drops</strong> (capacity = SKU stock; classes = subscriber, public, secondary market). The decision is set <em>before</em> the booking horizon and re-optimised as actuals arrive.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Forecast demand</strong><span class="chain-sub">per class</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Set booking limits</strong><span class="chain-sub">EMSR / DP</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Accept/reject</strong><span class="chain-sub">as bookings arrive</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Re-optimise</strong><span class="chain-sub">daily</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>Two-class Littlewood, EMSR-b heuristic, exact DP</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">OR family</div><div class="problem-meta-value">Stochastic DP</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Heuristic</div><div class="problem-meta-value">EMSR-a / EMSR-b</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Exact</div><div class="problem-meta-value">Markov decision process</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Talluri-vanRyzin (2004); Belobaba (1989)</div></div>
+            </div>
+
+            <h3>Sets and parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(j \in \{1, \ldots, n\}\)</td><td>Fare class, indexed by descending revenue</td><td>integer</td></tr>
+                    <tr><td>\(r_j\)</td><td>Revenue per booking in class \(j\); \(r_1 \geq r_2 \geq \cdots\)</td><td>$</td></tr>
+                    <tr><td>\(D_j\)</td><td>Random demand for class \(j\) (during its booking window)</td><td>units</td></tr>
+                    <tr><td>\(\mu_j, \sigma_j\)</td><td>Mean and stdev of \(D_j\) (Normal approximation typical)</td><td>units</td></tr>
+                    <tr><td>\(C\)</td><td>Total capacity</td><td>units</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variables</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(y_j\)</td><td>Protection level for class \(j\) and higher (seats reserved)</td><td>\(\geq 0\)</td></tr>
+                    <tr><td>\(b_j\)</td><td>Booking limit for class \(j\) and lower (= \(C - y_{j+1}\))</td><td>\(\leq C\)</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Littlewood&rsquo;s two-class rule (1972)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">For two classes (\(n = 2\)), accept class-2 booking iff there are at least \(y^{\ast}_1\) units left, where:</p>
+            <div class="formula-block">
+                $$\mathbb{P}(D_1 \geq y^{\ast}_1) \;=\; \frac{r_2}{r_1}$$
+            </div>
+            <p class="formula-caption">Equivalently, \(y^{\ast}_1 = F_1^{-1}(1 - r_2/r_1)\). The intuition: protect class-1 seats up to the quantile where expected marginal class-1 revenue equals the certain class-2 revenue. <em>Identical to the newsvendor critical fractile</em> with \(c_u = r_1, c_o = r_1 - r_2\). See <a href="newsvendor-problem.html">newsvendor</a>.</p>
+
+            <h3>EMSR-b heuristic (Belobaba 1989) for \(n &gt; 2\)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">For each class \(j\), aggregate all higher classes \(1, \ldots, j-1\) into one virtual class with weighted-average revenue and combined Normal demand:</p>
+            <div class="formula-block">
+                $$\bar r_{1:j-1} \;=\; \frac{\sum_{k=1}^{j-1} r_k \mu_k}{\sum_{k=1}^{j-1} \mu_k} \qquad \bar \mu_{1:j-1} \;=\; \sum_{k=1}^{j-1} \mu_k \qquad \bar \sigma_{1:j-1} \;=\; \sqrt{\sum_{k=1}^{j-1} \sigma_k^2}$$
+            </div>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Then apply Littlewood between aggregate-of-higher and class \(j\):</p>
+            <div class="formula-block">
+                $$y_j \;=\; \bar \mu_{1:j-1} \;+\; \bar \sigma_{1:j-1} \cdot \Phi^{-1}\!\Bigl(1 - r_j / \bar r_{1:j-1}\Bigr)$$
+            </div>
+            <p class="formula-caption">Booking limit for class \(j\) is then \(b_j = C - y_j\). EMSR-b is within ~1-2% of optimal and runs in \(\mathcal{O}(n)\). EMSR-a (older) uses additive protection levels; EMSR-b is preferred.</p>
+
+            <h3>Exact DP (Talluri-van Ryzin)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">When demand arrival order is known and arrivals can be modelled as a stochastic process, the exact problem is a finite-horizon MDP. State: (time \(t\), capacity left \(c\)). Action: accept or reject the next arrival. Bellman:</p>
+            <div class="formula-block">
+                $$V(t, c) \;=\; \mathbb{E}\Bigl[\max\bigl(\, r_{j(t)} \cdot \mathbb{1}\{\text{accept}\} + V(t-1,\, c - \mathbb{1}\{\text{accept}\}) \,\bigr)\Bigr]$$
+            </div>
+            <p class="formula-caption">Optimal policy is a <em>bid price</em>: accept iff \(r \geq V(t, c) - V(t, c-1)\) (marginal value of the seat). EMSR is a static-protection-level approximation; bid prices are the dynamic counterpart.</p>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>5 fare classes &middot; Littlewood / EMSR-b / first-come-first-served comparison</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">RM solver</div><div class="solver-subtitle">Compare protection-level policies on Normal demand</div></div>
+                <div class="problem-realism">&starf;&starf;&starf; EMSR + simulation</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="capacity">Capacity \(C\)</label><input type="number" id="capacity" value="100" min="20" max="500" step="5"></div>
+                    <div class="control-group"><label for="nSim">Simulation runs</label><input type="number" id="nSim" value="2000" min="100" max="10000" step="100"></div>
+                    <div class="control-group"><label for="seed">Seed</label><input type="number" id="seed" value="42" min="1" max="9999" step="1"></div>
+                </div>
+                <p style="font-size:0.78rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;margin:1rem 0 0.4rem;">Per-class fare and demand (revenue descending)</p>
+                <div class="solver-controls">
+                    <div class="control-group"><label>Class 1 fare</label><input type="number" id="r0" value="500" min="1" max="2000" step="10"></div>
+                    <div class="control-group"><label>Class 1 \(\mu_1, \sigma_1\)</label><input type="number" id="m0" value="20" min="0" max="200" step="1"></div>
+                    <div class="control-group"><label>Class 2 fare</label><input type="number" id="r1" value="350" min="1" max="2000" step="10"></div>
+                    <div class="control-group"><label>Class 2 \(\mu_2, \sigma_2\)</label><input type="number" id="m1" value="30" min="0" max="200" step="1"></div>
+                    <div class="control-group"><label>Class 3 fare</label><input type="number" id="r2" value="220" min="1" max="2000" step="10"></div>
+                    <div class="control-group"><label>Class 3 \(\mu_3, \sigma_3\)</label><input type="number" id="m2" value="40" min="0" max="200" step="1"></div>
+                    <div class="control-group"><label>Class 4 fare</label><input type="number" id="r3" value="140" min="1" max="2000" step="10"></div>
+                    <div class="control-group"><label>Class 4 \(\mu_4, \sigma_4\)</label><input type="number" id="m3" value="50" min="0" max="200" step="1"></div>
+                    <div class="control-group"><label>Class 5 fare</label><input type="number" id="r4" value="80" min="1" max="2000" step="10"></div>
+                    <div class="control-group"><label>Class 5 \(\mu_5, \sigma_5\)</label><input type="number" id="m4" value="60" min="0" max="200" step="1"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiEmsr">&mdash;</div><div class="result-kpi-label">EMSR-b expected revenue ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiFcfs">&mdash;</div><div class="result-kpi-label">FCFS baseline revenue ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLift">&mdash;</div><div class="result-kpi-label">EMSR lift over FCFS</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLoad">&mdash;</div><div class="result-kpi-label">Load factor (EMSR)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiYield">&mdash;</div><div class="result-kpi-label">Avg yield ($/seat)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiSpill">&mdash;</div><div class="result-kpi-label">High-class spill (rejected)</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="380" aria-label="Per-class protection levels and revenue contribution"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059;"></span>Protection level \(y_j\)</span>
+                        <span><span class="legend-swatch" style="background:#64ffda;"></span>EMSR-b realised bookings</span>
+                        <span><span class="legend-swatch" style="background:#7aa2f7;"></span>FCFS realised bookings</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b; height:14px;"></span>Booking limit \(b_j\)</span>
+                    </div>
+                </div>
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        EMSR-b protection levels: for each class \(j\), aggregate higher classes via revenue-weighted average and combined Normal (\(\mu, \sigma\)) parameters; apply Littlewood. Simulation: 2,000 runs of arriving bookings in low-to-high-fare order (the worst case for FCFS); for each run, EMSR accepts only if remaining capacity exceeds the class&rsquo;s protection level, FCFS accepts everything until full. Inverse-Normal CDF computed via the Beasley-Springer-Moro rational approximation. Lift over FCFS reports the protection-level value for the chosen demand mix.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Higher-fare classes get larger protection.</strong> The protection level grows with the revenue ratio between an aggregate of higher classes and the next-lower class.</li>
+                    <li><strong>Lift comes from rejecting low fares.</strong> EMSR&rsquo;s win is closing low-fare buckets early enough to leave room for late-arriving high-fare bookings. FCFS always sells out fast on cheap fares.</li>
+                    <li><strong>Demand variability widens the spread.</strong> Higher \(\sigma\) raises protection levels (more buffer); lower \(\sigma\) lets you cut closer to the bone.</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions</h4>
+                <ul>
+                    <li>Tighten the fare ladder (Class 1 from $500 to $350)? &mdash; EMSR lift shrinks; less reason to protect.</li>
+                    <li>Reduce capacity (100 &rarr; 70)? &mdash; tighter constraint; protection levels matter more.</li>
+                    <li>Widen \(\sigma\) on Class 1? &mdash; protection grows; load factor under EMSR may drop slightly because of buffering.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Network RM</h5><p>Multi-leg / multi-resource: each booking consumes a bundle of resources (e.g., a flight uses several legs). Solved via deterministic LP + bid prices. Talluri-van Ryzin Ch. 3.</p></div>
+            <div class="extension-card fade-in"><h5>Dynamic-pricing reformulation</h5><p>Replace booking limits with continuously updated prices &mdash; smoothly varies demand by class. Cross-link to <a href="dynamic-pricing-retail.html">dynamic pricing with learning</a>.</p></div>
+            <div class="extension-card fade-in"><h5>Choice-based RM</h5><p>Customer chooses among offered classes (MNL); some demand is &ldquo;buy-up&rdquo; or &ldquo;buy-down&rdquo;. More accurate; harder to solve. Liu-van Ryzin 2008.</p></div>
+            <div class="extension-card fade-in"><h5>Overbooking</h5><p>Allow overbooking up to expected no-shows; re-optimise capacity. Combines RM with stochastic cancellation modelling.</p></div>
+            <div class="extension-card fade-in"><h5>Markdown integration</h5><p>Retail RM = pre-season buy + in-season RM + clearance markdown. Joint problem; ties to <a href="markdown-optimization.html">markdown</a>.</p></div>
+            <div class="extension-card fade-in"><h5>Newsvendor link</h5><p>Two-class Littlewood is a newsvendor with \(c_u = r_1, c_o = r_1 - r_2\). The classical backbone of single-period inventory.</p><a href="newsvendor-problem.html">Newsvendor &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Forecasting + RM</h5><p>Demand forecasts feed protection levels; forecasting error directly degrades RM. Joint forecasting + optimisation pipelines.</p></div>
+            <div class="extension-card fade-in"><h5>RM with strategic customers</h5><p>Customers anticipate sales (buying a low fare today vs hoping for a deeper discount tomorrow). Game-theoretic extension; Cachon-Swinney 2011 fashion analogue.</p></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Talluri, K. T. &amp; van Ryzin, G. J. (2004).</div><div class="reference-title">The Theory and Practice of Revenue Management.</div><div class="reference-journal">Kluwer / Springer. <a href="https://doi.org/10.1007/b139000" rel="noopener">doi:10.1007/b139000</a> (Canonical textbook.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Littlewood, K. (1972).</div><div class="reference-title">Forecasting and control of passenger bookings.</div><div class="reference-journal">AGIFORS Symposium Proceedings 12: 95&ndash;117. (The two-class rule.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Belobaba, P. P. (1989).</div><div class="reference-title">Application of a probabilistic decision model to airline seat inventory control.</div><div class="reference-journal">Operations Research 37(2): 183&ndash;197. <a href="https://doi.org/10.1287/opre.37.2.183" rel="noopener">doi:10.1287/opre.37.2.183</a> (EMSR-a / EMSR-b.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Smith, B. C., Leimkuhler, J. F. &amp; Darrow, R. M. (1992).</div><div class="reference-title">Yield management at American Airlines.</div><div class="reference-journal">Interfaces 22(1): 8&ndash;31. <a href="https://doi.org/10.1287/inte.22.1.8" rel="noopener">doi:10.1287/inte.22.1.8</a> (DINAMO success story.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Liu, Q. &amp; van Ryzin, G. (2008).</div><div class="reference-title">On the choice-based linear programming model for network revenue management.</div><div class="reference-journal">M&amp;SOM 10(2): 288&ndash;310. <a href="https://doi.org/10.1287/msom.1070.0181" rel="noopener">doi:10.1287/msom.1070.0181</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">McGill, J. I. &amp; van Ryzin, G. J. (1999).</div><div class="reference-title">Revenue management: Research overview and prospects.</div><div class="reference-journal">Transportation Science 33(2): 233&ndash;256. <a href="https://doi.org/10.1287/trsc.33.2.233" rel="noopener">doi:10.1287/trsc.33.2.233</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Phillips, R. L. (2005, 2nd ed. 2021).</div><div class="reference-title">Pricing and Revenue Optimization.</div><div class="reference-journal">Stanford Business Books. (Cross-industry RM textbook.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Bitran, G. &amp; Caldentey, R. (2003).</div><div class="reference-title">An overview of pricing models for revenue management.</div><div class="reference-journal">M&amp;SOM 5(3): 203&ndash;229. <a href="https://doi.org/10.1287/msom.5.3.203.16031" rel="noopener">doi:10.1287/msom.5.3.203.16031</a></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">Revenue management sits in the <em>Price &times; Tactical</em> cell &mdash; OR&rsquo;s most-cited industrial success story, ported from airlines into retail markdown and fashion clearance.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational solver &middot; Normal class demand and low-to-high arrival order &middot; production RM uses richer stochastic processes and bid-price networks.</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    function mulberry32(a) {
+        return function () {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+    function gauss(rng) {
+        var u = 0, v = 0;
+        while (u === 0) u = rng();
+        while (v === 0) v = rng();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+    // Inverse Normal CDF via Beasley-Springer-Moro
+    function PhiInv(p) {
+        if (p <= 0) return -38; if (p >= 1) return 38;
+        var a = [-3.969683028665376e+01, 2.209460984245205e+02, -2.759285104469687e+02,
+                  1.383577518672690e+02, -3.066479806614716e+01, 2.506628277459239e+00];
+        var b = [-5.447609879822406e+01, 1.615858368580409e+02, -1.556989798598866e+02,
+                  6.680131188771972e+01, -1.328068155288572e+01];
+        var c = [-7.784894002430293e-03, -3.223964580411365e-01, -2.400758277161838e+00,
+                 -2.549732539343734e+00,  4.374664141464968e+00,  2.938163982698783e+00];
+        var d = [ 7.784695709041462e-03,  3.224671290700398e-01,  2.445134137142996e+00,
+                  3.754408661907416e+00];
+        var pLow = 0.02425, pHigh = 1 - pLow, q, r;
+        if (p < pLow) {
+            q = Math.sqrt(-2 * Math.log(p));
+            return (((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                   ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+        }
+        if (p <= pHigh) {
+            q = p - 0.5; r = q * q;
+            return (((((a[0]*r + a[1])*r + a[2])*r + a[3])*r + a[4])*r + a[5]) * q /
+                   (((((b[0]*r + b[1])*r + b[2])*r + b[3])*r + b[4])*r + 1);
+        }
+        q = Math.sqrt(-2 * Math.log(1 - p));
+        return -(((((c[0]*q + c[1])*q + c[2])*q + c[3])*q + c[4])*q + c[5]) /
+                ((((d[0]*q + d[1])*q + d[2])*q + d[3])*q + 1);
+    }
+
+    function getInputs() {
+        var classes = [];
+        for (var j = 0; j < 5; j++) {
+            classes.push({
+                r: parseFloat(document.getElementById('r' + j).value),
+                mu: parseFloat(document.getElementById('m' + j).value),
+                sigma: parseFloat(document.getElementById('m' + j).value) * 0.4 + 5
+            });
+        }
+        return {
+            C: parseInt(document.getElementById('capacity').value, 10),
+            nSim: parseInt(document.getElementById('nSim').value, 10),
+            seed: parseInt(document.getElementById('seed').value, 10),
+            classes: classes
+        };
+    }
+
+    function emsrB(C, classes) {
+        // Protection levels y_j for j = 2..n
+        var y = [0]; // y_1 = 0 (no protection above class 1)
+        for (var j = 1; j < classes.length; j++) {
+            // Aggregate classes 1..j-1 (indices 0..j-1)
+            var muSum = 0, sigSqSum = 0, weightedR = 0;
+            for (var k = 0; k <= j - 1; k++) {
+                muSum += classes[k].mu;
+                sigSqSum += classes[k].sigma * classes[k].sigma;
+                weightedR += classes[k].r * classes[k].mu;
+            }
+            var rBar = muSum > 0 ? weightedR / muSum : classes[0].r;
+            var sigBar = Math.sqrt(sigSqSum);
+            var ratio = classes[j].r / rBar;
+            var z = PhiInv(1 - Math.min(0.9999, Math.max(0.0001, ratio)));
+            var yj = Math.max(0, Math.round(muSum + sigBar * z));
+            y.push(yj);
+        }
+        return y; // y[j] = protection for classes 0..j-1 against class j
+    }
+
+    function simulate(C, classes, protection, nSim, seed) {
+        var rng = mulberry32(seed);
+        var emsrTotal = 0, fcfsTotal = 0;
+        var emsrBookings = classes.map(function () { return 0; });
+        var fcfsBookings = classes.map(function () { return 0; });
+        var emsrSpill = 0, emsrLoad = 0;
+
+        for (var run = 0; run < nSim; run++) {
+            // Sample demand per class
+            var demand = classes.map(function (cl) {
+                return Math.max(0, Math.round(cl.mu + cl.sigma * gauss(rng)));
+            });
+            // EMSR: arrive low-to-high (worst case ordering for FCFS), accept if cap left > protection of higher
+            var capE = C;
+            for (var j = classes.length - 1; j >= 0; j--) {
+                var canTake = Math.max(0, capE - protection[j]);
+                var taken = Math.min(demand[j], canTake);
+                emsrTotal += taken * classes[j].r;
+                emsrBookings[j] += taken;
+                capE -= taken;
+            }
+            emsrLoad += (C - capE);
+            // FCFS: accept until full, low-fare first (so low-fare crowds out high-fare)
+            var capF = C;
+            for (var j = classes.length - 1; j >= 0; j--) {
+                var taken = Math.min(demand[j], capF);
+                fcfsTotal += taken * classes[j].r;
+                fcfsBookings[j] += taken;
+                capF -= taken;
+            }
+            // Spill: high-class demand that EMSR couldn't accept (if any class-1 demand was rejected)
+            var class1Taken = Math.min(demand[0], Math.max(0, C - protection[0])); // hmm, simpler: count class-1 demand minus class-1 booked
+            emsrSpill += Math.max(0, demand[0] - emsrBookings[0] / Math.max(1, run + 1));
+        }
+        var avg = {
+            emsrRev: emsrTotal / nSim,
+            fcfsRev: fcfsTotal / nSim,
+            emsrBook: emsrBookings.map(function (b) { return b / nSim; }),
+            fcfsBook: fcfsBookings.map(function (b) { return b / nSim; }),
+            emsrLoad: emsrLoad / (nSim * C)
+        };
+        return avg;
+    }
+
+    function render(inp, protection, sim) {
+        document.getElementById('kpiEmsr').textContent = '$' + sim.emsrRev.toFixed(0);
+        document.getElementById('kpiFcfs').textContent = '$' + sim.fcfsRev.toFixed(0);
+        var lift = sim.fcfsRev > 0 ? ((sim.emsrRev - sim.fcfsRev) / sim.fcfsRev) * 100 : 0;
+        document.getElementById('kpiLift').textContent = (lift >= 0 ? '+' : '') + lift.toFixed(1) + '%';
+        document.getElementById('kpiLoad').textContent = (sim.emsrLoad * 100).toFixed(1) + '%';
+        var totalBook = sim.emsrBook.reduce(function (a, b) { return a + b; }, 0);
+        var yieldVal = totalBook > 0 ? sim.emsrRev / totalBook : 0;
+        document.getElementById('kpiYield').textContent = '$' + yieldVal.toFixed(0);
+        var spillTotal = inp.classes[0].mu - sim.emsrBook[0];
+        document.getElementById('kpiSpill').textContent = Math.max(0, spillTotal).toFixed(1);
+
+        drawCanvas(inp, protection, sim);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawCanvas(inp, protection, sim) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 80, R = 60, T = 30, B = 50;
+        ctx.clearRect(0, 0, W, H);
+        var n = inp.classes.length;
+        var slot = (W - L - R) / n;
+        var maxBook = Math.max.apply(null, sim.fcfsBook.concat(sim.emsrBook).concat([inp.C]));
+        maxBook = Math.max(maxBook, 1);
+
+        // axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.beginPath(); ctx.moveTo(L, T); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+
+        // class labels
+        ctx.fillStyle = '#C5A059'; ctx.font = '12px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+        for (var j = 0; j < n; j++) {
+            var cx = L + slot * (j + 0.5);
+            ctx.fillText('Cls ' + (j + 1), cx, H - B + 18);
+            ctx.fillStyle = '#8892B0';
+            ctx.fillText('$' + inp.classes[j].r.toFixed(0), cx, H - B + 32);
+            ctx.fillStyle = '#C5A059';
+        }
+
+        // y axis
+        ctx.textAlign = 'right';
+        for (var k = 0; k <= 4; k++) {
+            var v = maxBook * k / 4;
+            var y0 = (H - B) - (H - T - B) * 0.85 * (v / maxBook);
+            ctx.fillStyle = '#8892B0';
+            ctx.fillText(v.toFixed(0), L - 6, y0 + 3);
+        }
+
+        // Bars: protection (gold thin, leftmost), EMSR booked (teal), FCFS booked (blue)
+        var barW = slot * 0.20;
+        for (var j = 0; j < n; j++) {
+            var cx = L + slot * (j + 0.5);
+            // Protection level (gold)
+            var hP = (H - T - B) * 0.85 * (protection[j] / maxBook);
+            ctx.fillStyle = '#C5A059';
+            ctx.fillRect(cx - barW * 1.6, (H - B) - hP, barW, hP);
+            // EMSR booking (teal)
+            var hE = (H - T - B) * 0.85 * (sim.emsrBook[j] / maxBook);
+            ctx.fillStyle = 'rgba(100,255,218,0.8)';
+            ctx.fillRect(cx - barW / 2, (H - B) - hE, barW, hE);
+            // FCFS booking (blue)
+            var hF = (H - T - B) * 0.85 * (sim.fcfsBook[j] / maxBook);
+            ctx.fillStyle = 'rgba(122,162,247,0.7)';
+            ctx.fillRect(cx + barW * 0.6, (H - B) - hF, barW, hF);
+        }
+
+        // Capacity line (red dashed)
+        var capY = (H - B) - (H - T - B) * 0.85 * (inp.C / maxBook);
+        ctx.strokeStyle = '#ff6b6b';
+        ctx.setLineDash([4, 4]); ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(L, capY); ctx.lineTo(W - R, capY); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ff6b6b'; ctx.textAlign = 'left';
+        ctx.fillText('Capacity ' + inp.C, W - R + 4, capY + 3);
+    }
+
+    function run() {
+        var inp = getInputs();
+        var protection = emsrB(inp.C, inp.classes);
+        var sim = simulate(inp.C, inp.classes, protection, inp.nSim, inp.seed);
+        render(inp, protection, sim);
+    }
+    document.getElementById('btnRun').addEventListener('click', run);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('capacity').value = 100;
+        document.getElementById('nSim').value = 2000;
+        document.getElementById('seed').value = 42;
+        var defaults = [{r:500,m:20},{r:350,m:30},{r:220,m:40},{r:140,m:50},{r:80,m:60}];
+        defaults.forEach(function (d, j) {
+            document.getElementById('r' + j).value = d.r;
+            document.getElementById('m' + j).value = d.m;
+        });
+        run();
+    });
+    window.addEventListener('load', run);
+</script>
+</body>
+</html>

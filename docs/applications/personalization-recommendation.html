@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Personalisation &amp; Recommendation | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Per-user assortment optimisation under the MNL choice model: recommend top-K items per customer to maximise expected revenue, with diversity and fairness constraints. Contextual bandits for online learning. Koren-Bell-Volinsky 2009; Ricci et al. handbook.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/personalization-recommendation.html">
+    <meta property="og:title" content="Personalisation &amp; Recommendation">
+    <meta property="og:description" content="Per-user MNL assortment with contextual-bandit learning.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Personalisation &amp; Recommendation">
+    <meta name="twitter:description" content="Per-user MNL assortment + contextual bandits.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/personalization-recommendation.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(100,255,218,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Retail & E-Commerce", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/retail-domain.html" },
+        { "@type": "ListItem", "position": 3, "name": "Personalisation & Recommendation", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/personalization-recommendation.html" }
+      ] }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Personalisation &amp; Recommendation</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-user-tag" aria-hidden="true"></i></div>
+        <h1>Personalisation &amp; <span>Recommendation</span></h1>
+        <p class="hero-subtitle">Per-user MNL &middot; Contextual bandits</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Choose <em>what to show which customer</em> to maximise expected revenue (or CLV) &mdash;
+            a per-user <a href="assortment-optimization.html">assortment problem</a> layered on top of
+            a <strong>predicted utility model</strong>. When utilities are known, the revenue-ordered
+            MNL property (Talluri &amp; van Ryzin 2004) still applies per user. When they must be
+            learned online, the problem becomes a <strong>contextual bandit</strong> (Li, Chu,
+            Langford &amp; Schapire 2010). Industry scale: Netflix, Amazon, YouTube run this loop
+            millions of times per minute. Handbook reference: Ricci, Rokach &amp; Shapira (eds.)
+            <em>Recommender Systems Handbook</em>.
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>The digital-retail revenue lever with the highest leverage</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">~35%</div><div class="impact-label">Share of Amazon&rsquo;s sales attributed to personalised recommendations &mdash; the single most-cited scale reference in recommender literature.</div><div class="impact-src">Source: McKinsey retail analytics (2013 estimate, later confirmed in industry filings).</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">~75%</div><div class="impact-label">Share of Netflix viewing hours driven by recommendations &mdash; the canonical success case for CF-style personalisation.</div><div class="impact-src">Source: Gomez-Uribe &amp; Hunt (2016), <em>ACM TMIS</em>.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">+5&ndash;15%</div><div class="impact-label">Typical e-commerce revenue lift documented when replacing popularity-sort with MNL-aware personalised ranking on the homepage.</div><div class="impact-src">Source: Industry papers; Gallino &amp; Moreno analyses.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">\(\tilde O(\sqrt{KT})\)</div><div class="impact-label">Regret of contextual-bandit algorithms like LinUCB after \(T\) rounds with \(K\) arms &mdash; the theoretical ceiling on how fast online learning converges.</div><div class="impact-src">Source: Li, Chu, Langford &amp; Schapire (2010), <em>WWW</em>.</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Each page-view, each email, each push-notification &mdash; a recommendation decision</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            Recommendation is a decision made at <em>every session</em>: homepage, search, category, product-detail, cart-add, checkout, post-purchase email, push notification. The retailer picks \(K\) items to show, the customer clicks (or doesn&rsquo;t) and optionally buys, and the system <em>learns</em>. Two decision models matter: when utilities are known (offline batch-scored from last night&rsquo;s model), use MNL assortment per user; when utilities must be learned as users arrive (new customer, cold-start item, or A/B-test phase), use a contextual bandit.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Context</strong><span class="chain-sub">user + session</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Rank / select \(K\)</strong><span class="chain-sub">recommendation</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Click / buy / skip</strong><span class="chain-sub">customer response</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Update model</strong><span class="chain-sub">nightly or online</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>Per-user MNL + contextual-bandit learning</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">Decision model</div><div class="problem-meta-value">Per-user subset selection</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Demand model</div><div class="problem-meta-value">Contextual MNL / LinUCB</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Complexity</div><div class="problem-meta-value">O(N log N) per user (offline)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Talluri-vanRyzin; Li et al. 2010</div></div>
+            </div>
+
+            <h3>Sets and parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(u \in \mathcal{U}\)</td><td>User (current visitor)</td><td>finite</td></tr>
+                    <tr><td>\(i \in \mathcal{N}\)</td><td>Candidate item in the catalog</td><td>finite</td></tr>
+                    <tr><td>\(x_u\)</td><td>User context vector (features, history, device)</td><td>\(\mathbb{R}^d\)</td></tr>
+                    <tr><td>\(z_i\)</td><td>Item feature vector</td><td>\(\mathbb{R}^d\)</td></tr>
+                    <tr><td>\(\theta\)</td><td>Learned parameter vector</td><td>\(\mathbb{R}^d\)</td></tr>
+                    <tr><td>\(\hat u_{ui}\)</td><td>Predicted utility (log-odds of click / purchase)</td><td>real</td></tr>
+                    <tr><td>\(r_i\)</td><td>Revenue on purchase of item \(i\)</td><td>$</td></tr>
+                    <tr><td>\(K\)</td><td>Slate size / recommendation capacity</td><td>integer</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Contextual utility model</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Utility is learned from interaction data. Simplest form is bilinear:</p>
+            <div class="formula-block">
+                $$\hat u_{ui} \;=\; \theta^{\top} \phi(x_u, z_i) \;=\; \theta^{\top} (x_u \otimes z_i)$$
+            </div>
+            <p class="formula-caption">\(\phi\) is a joint user-item feature map (often an outer product). In practice, matrix factorisation \(\hat u_{ui} = p_u^{\top} q_i\) is the canonical form (Koren, Bell &amp; Volinsky 2009). Modern practice uses deep networks on top.</p>
+
+            <h3>Per-user MNL offline optimisation</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Given the utility vector \(\hat u_{u \cdot}\), the retailer picks a size-\(K\) assortment \(S_u\) per user. Under MNL, click/purchase probability is:</p>
+            <div class="formula-block">
+                $$P_i(S_u) \;=\; \frac{e^{\hat u_{ui}}}{1 + \sum_{j \in S_u} e^{\hat u_{uj}}}$$
+            </div>
+            <p class="formula-caption">Expected revenue per session: \(R(S_u) = \sum_{i \in S_u} r_i \cdot P_i(S_u)\). Talluri-vanRyzin revenue-ordered: sort items by \(r_i\), pick a prefix. Diversity / fairness add extra constraints.</p>
+
+            <h3>Online learning: LinUCB</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">When \(\theta\) is unknown, balance exploration and exploitation. The <strong>LinUCB</strong> rule (Li et al. 2010) picks at each round the arm with the highest upper confidence bound:</p>
+            <div class="formula-block">
+                $$i_t \;=\; \arg\max_i \;\Bigl[\, \hat{\theta}_t^{\top} \phi_{u_t, i} \;+\; \alpha \sqrt{\phi_{u_t, i}^{\top} A_t^{-1} \phi_{u_t, i}} \,\Bigr]$$
+            </div>
+            <p class="formula-caption">\(A_t = \lambda I + \sum_{s \leq t} \phi_s \phi_s^{\top}\) is the Gram matrix; \(\alpha\) tunes exploration. Regret is \(\tilde O(d \sqrt{T})\) &mdash; sub-linear, meaning per-round regret vanishes. Ties this back to <a href="dynamic-pricing-retail.html">dynamic pricing with learning</a>.</p>
+
+            <h3>Diversity / fairness constraints</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Pure revenue maximisation over-concentrates: same top items to every user. Real systems add:</p>
+            <div class="formula-block">
+                $$\sum_{i \in S_u} \mathbb{1}\{i \in \text{category } c\} \;\leq\; C_c \qquad \forall c \qquad \text{(category cap)}$$
+                $$\sum_{u, i \in S_u} \mathbb{1}\{\text{producer}(i) = p\} \;\geq\; \underline F_p \qquad \forall p \qquad \text{(producer fairness)}$$
+            </div>
+            <p class="formula-caption">Submodular-coverage objectives (maximum marginal relevance) are a standard way to induce diversity without hard constraints &mdash; Carbonell &amp; Goldstein 1998.</p>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>6 users &times; 10 items &middot; per-user MNL assortment, offline</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">Personalised assortment solver</div><div class="solver-subtitle">Revenue-ordered per user &middot; compare with non-personalised baseline</div></div>
+                <div class="problem-realism">&starf;&starf;&starf; Exact (MNL revenue-ordered)</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="nUsers">Users</label><input type="number" id="nUsers" value="6" min="2" max="15" step="1"></div>
+                    <div class="control-group"><label for="nItems">Items</label><input type="number" id="nItems" value="10" min="5" max="20" step="1"></div>
+                    <div class="control-group"><label for="K">Slate size \(K\)</label><input type="number" id="K" value="3" min="1" max="8" step="1"></div>
+                    <div class="control-group"><label for="uStrength">User preference strength</label><input type="number" id="uStrength" value="1.5" min="0.1" max="5" step="0.1"><div class="control-help">Variation in user utilities</div></div>
+                    <div class="control-group"><label for="priceSpread">Price spread</label><input type="number" id="priceSpread" value="2.0" min="0.1" max="5" step="0.1"><div class="control-help">Item-price variation</div></div>
+                    <div class="control-group"><label for="seed">Seed</label><input type="number" id="seed" value="42" min="1" max="9999" step="1"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiPers">&mdash;</div><div class="result-kpi-label">Revenue (personalised, $/user)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiGlobal">&mdash;</div><div class="result-kpi-label">Revenue (non-personalised, $/user)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiLift">&mdash;</div><div class="result-kpi-label">Personalisation lift</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiUnique">&mdash;</div><div class="result-kpi-label">Unique items across users</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiAvgP">&mdash;</div><div class="result-kpi-label">Avg price in personalised slates</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiPclick">&mdash;</div><div class="result-kpi-label">Avg P(click something)</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="420" aria-label="User-item heatmap with personalised slates highlighted"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059; height:12px; width:12px;"></span>Recommended to user (high utility, chosen for slate)</span>
+                        <span><span class="legend-swatch" style="background:rgba(197,160,89,0.15); height:12px; width:12px;"></span>Not recommended (low utility or prefix skipped)</span>
+                        <span><span class="legend-swatch" style="background:#64ffda; height:12px; width:12px;"></span>High predicted utility</span>
+                    </div>
+                </div>
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        The scenario generator creates a low-rank utility matrix: each user has a latent-factor vector \(p_u \in \mathbb{R}^2\), each item has \(q_i \in \mathbb{R}^2\) and a price \(r_i\), and predicted utility is \(\hat u_{ui} = p_u^{\top} q_i\) (plus noise, scaled by &ldquo;preference strength&rdquo;). Per user, the solver sorts items by price, evaluates the MNL revenue of each prefix of length 1..K, and keeps the best (revenue-ordered optimum). Non-personalised baseline: sort by <em>average</em> utility across users, pick top-K, use that same slate for every user. Personalisation lift % is the spread between these two.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Personalisation lift scales with preference heterogeneity.</strong> When all users have similar tastes, personalisation doesn&rsquo;t help much (everyone wants the top items). Crank up &ldquo;preference strength&rdquo; and the lift widens.</li>
+                    <li><strong>High-price anchoring still holds per user.</strong> The revenue-ordered property is per-user: even with personalisation, the optimal slate for each user is a <em>prefix of items sorted by price</em>, filtered by what utility each user has for them.</li>
+                    <li><strong>Coverage widens with personalisation.</strong> The unique-items-count KPI rises when users get their own slates &mdash; a good proxy for fairness to long-tail items and to producers.</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions</h4>
+                <ul>
+                    <li>What if I increase slate size \(K\)? &mdash; per-user revenue rises but marginally; adding a 5th item gains less than the 4th (cannibalisation under MNL).</li>
+                    <li>What if prices narrow (price spread &rarr; 0.2)? &mdash; personalisation lift shrinks: ranking by utility converges to ranking by popularity.</li>
+                    <li>What if I apply a cold-start user (random \(p_u\))? &mdash; the model wastes slate slots; bandit exploration beats the offline policy for such users.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Matrix factorisation</h5><p>Classic collaborative filtering: learn \(p_u, q_i\) from past interactions to build the utility matrix. Koren-Bell-Volinsky 2009 Netflix-prize winner.</p></div>
+            <div class="extension-card fade-in"><h5>Deep-learning recommenders</h5><p>Two-tower neural nets (Covington-Adams-Sargin 2016 YouTube), transformers (BERT4Rec), and multimodal embeddings. Production standard at hyperscalers.</p></div>
+            <div class="extension-card fade-in"><h5>Contextual bandits (LinUCB / Thompson)</h5><p>Online learning when utilities are unknown: explore slates to reduce uncertainty; LinUCB (Li et al. 2010), Thompson sampling (Agrawal-Goyal 2013).</p></div>
+            <div class="extension-card fade-in"><h5>Diversity via MMR / DPP</h5><p>Induce slate diversity via Maximum Marginal Relevance (Carbonell-Goldstein 1998) or Determinantal Point Processes (Kulesza-Taskar 2012).</p></div>
+            <div class="extension-card fade-in"><h5>CLV-aware recommendation</h5><p>Objective is long-term CLV, not single-session revenue. Reinforcement-learning framing; recent research frontier.</p><a href="customer-lifetime-value.html">CLV &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Assortment-under-MNL (aggregate)</h5><p>Offline non-personalised assortment optimisation is the special case when all users share one utility vector.</p><a href="assortment-optimization.html">Assortment planning &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Cross-channel personalisation</h5><p>Consistent recommendations across web / app / email / push / store &mdash; joint optimisation with fatigue penalty.</p></div>
+            <div class="extension-card fade-in"><h5>Fairness + producer exposure</h5><p>Long-tail items and new producers need exposure; add lower-bound constraints or post-hoc re-ranking. Biega-Gummadi-Weikum 2018.</p></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Ricci, F., Rokach, L. &amp; Shapira, B. (eds.) (2011, 3rd ed. 2022).</div><div class="reference-title">Recommender Systems Handbook.</div><div class="reference-journal">Springer. <a href="https://doi.org/10.1007/978-1-0716-2197-4" rel="noopener">doi:10.1007/978-1-0716-2197-4</a> (The field&rsquo;s standard handbook.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Koren, Y., Bell, R. &amp; Volinsky, C. (2009).</div><div class="reference-title">Matrix factorization techniques for recommender systems.</div><div class="reference-journal">IEEE Computer 42(8): 30&ndash;37. <a href="https://doi.org/10.1109/MC.2009.263" rel="noopener">doi:10.1109/MC.2009.263</a> (Netflix-prize canonical paper.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Li, L., Chu, W., Langford, J. &amp; Schapire, R. E. (2010).</div><div class="reference-title">A contextual-bandit approach to personalized news article recommendation.</div><div class="reference-journal">WWW 2010. <a href="https://doi.org/10.1145/1772690.1772758" rel="noopener">doi:10.1145/1772690.1772758</a> (LinUCB.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Talluri, K. T. &amp; van Ryzin, G. J. (2004).</div><div class="reference-title">Revenue management under a general discrete choice model.</div><div class="reference-journal">Management Science 50(1): 15&ndash;33. <a href="https://doi.org/10.1287/mnsc.1030.0147" rel="noopener">doi:10.1287/mnsc.1030.0147</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Agrawal, S. &amp; Goyal, N. (2013).</div><div class="reference-title">Thompson sampling for contextual bandits with linear payoffs.</div><div class="reference-journal">ICML 2013.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Carbonell, J. &amp; Goldstein, J. (1998).</div><div class="reference-title">The use of MMR, diversity-based reranking for reordering documents and producing summaries.</div><div class="reference-journal">SIGIR 1998.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Kulesza, A. &amp; Taskar, B. (2012).</div><div class="reference-title">Determinantal point processes for machine learning.</div><div class="reference-journal">Foundations and Trends in Machine Learning 5(2-3). <a href="https://doi.org/10.1561/2200000044" rel="noopener">doi:10.1561/2200000044</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Gomez-Uribe, C. A. &amp; Hunt, N. (2016).</div><div class="reference-title">The Netflix recommender system: Algorithms, business value, and innovation.</div><div class="reference-journal">ACM Transactions on Management Information Systems 6(4): 1&ndash;19. <a href="https://doi.org/10.1145/2843948" rel="noopener">doi:10.1145/2843948</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Covington, P., Adams, J. &amp; Sargin, E. (2016).</div><div class="reference-title">Deep neural networks for YouTube recommendations.</div><div class="reference-journal">RecSys 2016. <a href="https://doi.org/10.1145/2959100.2959190" rel="noopener">doi:10.1145/2959100.2959190</a></div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">Personalisation sits in the <em>Promotion &times; Operational</em> cell &mdash; millions of micro-decisions per minute, powering the 4th P with algorithms.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational solver &middot; low-rank synthetic utilities, offline MNL &middot; production systems layer learning (bandits, transformers, fairness) on top.</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    // ─── Personalisation solver ───
+    function mulberry32(a) {
+        return function () {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+    function generateCatalog(nUsers, nItems, uStrength, priceSpread, seed) {
+        var rng = mulberry32(seed);
+        // Users: 2-dim latent factors
+        var users = [];
+        for (var u = 0; u < nUsers; u++) {
+            users.push({
+                id: u,
+                p: [(rng() - 0.5) * uStrength, (rng() - 0.5) * uStrength]
+            });
+        }
+        // Items: 2-dim latent factors + price
+        var items = [];
+        for (var i = 0; i < nItems; i++) {
+            items.push({
+                id: i,
+                q: [(rng() - 0.5) * uStrength, (rng() - 0.5) * uStrength],
+                price: 20 * Math.exp((rng() - 0.5) * priceSpread)
+            });
+        }
+        // Utility matrix U[u][i] = p_u . q_i
+        var U = users.map(function (u) {
+            return items.map(function (it) { return u.p[0] * it.q[0] + u.p[1] * it.q[1]; });
+        });
+        return { users: users, items: items, U: U };
+    }
+
+    // MNL expected revenue of assortment S for user u
+    function mnlRevenue(utilities, prices, S) {
+        var num = 0, den = 1.0; // no-purchase utility = 0 -> exp(0) = 1
+        S.forEach(function (i) {
+            var e = Math.exp(utilities[i]);
+            num += prices[i] * e;
+            den += e;
+        });
+        return num / den;
+    }
+    function mnlClickProb(utilities, S) {
+        var den = 1.0;
+        S.forEach(function (i) { den += Math.exp(utilities[i]); });
+        return 1.0 - 1.0 / den; // P(click any) = 1 - P(no-purchase)
+    }
+
+    // Revenue-ordered solver: sort items by price, pick prefix up to K, keep best
+    function solveUser(utilities, prices, K) {
+        var order = prices.map(function (p, i) { return { i: i, p: p }; }).sort(function (a, b) { return b.p - a.p; });
+        var bestS = [], bestR = 0;
+        for (var k = 1; k <= K; k++) {
+            var S = order.slice(0, k).map(function (o) { return o.i; });
+            var R = mnlRevenue(utilities, prices, S);
+            if (R > bestR) { bestR = R; bestS = S; }
+        }
+        return { S: bestS, R: bestR };
+    }
+
+    // Non-personalised: average utility across users, pick one slate for everyone
+    function solveGlobal(U, prices, K) {
+        var n = prices.length, nU = U.length;
+        var avgU = new Array(n).fill(0);
+        for (var u = 0; u < nU; u++) for (var i = 0; i < n; i++) avgU[i] += U[u][i] / nU;
+        var order = prices.map(function (p, i) { return { i: i, p: p }; }).sort(function (a, b) { return b.p - a.p; });
+        var bestS = [], bestR = 0;
+        for (var k = 1; k <= K; k++) {
+            var S = order.slice(0, k).map(function (o) { return o.i; });
+            var R = mnlRevenue(avgU, prices, S); // average-user MNL
+            if (R > bestR) { bestR = R; bestS = S; }
+        }
+        return bestS;
+    }
+
+    function render(catalog, K) {
+        var prices = catalog.items.map(function (it) { return it.price; });
+        var personalised = catalog.users.map(function (u, uIdx) {
+            return solveUser(catalog.U[uIdx], prices, K);
+        });
+        var globalSlate = solveGlobal(catalog.U, prices, K);
+
+        // Actual per-user revenue under personalised vs global
+        var revPers = 0, revGlobal = 0, clickPersSum = 0, avgPSum = 0, priceCount = 0;
+        var uniqueSet = new Set();
+        catalog.users.forEach(function (u, uIdx) {
+            var U_u = catalog.U[uIdx];
+            revPers += mnlRevenue(U_u, prices, personalised[uIdx].S);
+            revGlobal += mnlRevenue(U_u, prices, globalSlate);
+            clickPersSum += mnlClickProb(U_u, personalised[uIdx].S);
+            personalised[uIdx].S.forEach(function (i) {
+                uniqueSet.add(i);
+                avgPSum += prices[i];
+                priceCount += 1;
+            });
+        });
+        var nU = catalog.users.length;
+        var revPersAvg = revPers / nU;
+        var revGlobalAvg = revGlobal / nU;
+        var lift = revGlobalAvg > 0 ? ((revPersAvg - revGlobalAvg) / revGlobalAvg) * 100 : 0;
+        var avgP = priceCount > 0 ? avgPSum / priceCount : 0;
+        var clickAvg = clickPersSum / nU;
+
+        document.getElementById('kpiPers').textContent = '$' + revPersAvg.toFixed(2);
+        document.getElementById('kpiGlobal').textContent = '$' + revGlobalAvg.toFixed(2);
+        document.getElementById('kpiLift').textContent = (lift >= 0 ? '+' : '') + lift.toFixed(1) + '%';
+        document.getElementById('kpiUnique').textContent = uniqueSet.size + ' / ' + catalog.items.length;
+        document.getElementById('kpiAvgP').textContent = '$' + avgP.toFixed(2);
+        document.getElementById('kpiPclick').textContent = (clickAvg * 100).toFixed(1) + '%';
+
+        drawHeatmap(catalog, personalised, globalSlate);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawHeatmap(catalog, personalised, globalSlate) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 80, R = 30, T = 50, B = 30;
+        ctx.clearRect(0, 0, W, H);
+        var nU = catalog.users.length, nI = catalog.items.length;
+        var cellW = (W - L - R) / nI;
+        var cellH = (H - T - B) / nU;
+        // Normalize utilities for colouring
+        var maxU = -Infinity, minU = Infinity;
+        catalog.U.forEach(function (row) {
+            row.forEach(function (v) { if (v > maxU) maxU = v; if (v < minU) minU = v; });
+        });
+        var range = Math.max(0.001, maxU - minU);
+
+        // Column headers: items with prices
+        ctx.fillStyle = '#C5A059'; ctx.font = '10px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+        for (var i = 0; i < nI; i++) {
+            var cx = L + cellW * (i + 0.5);
+            ctx.fillText('i' + (i + 1), cx, T - 20);
+            ctx.fillStyle = '#8892B0';
+            ctx.fillText('$' + catalog.items[i].price.toFixed(0), cx, T - 6);
+            ctx.fillStyle = '#C5A059';
+        }
+
+        // Row headers: users
+        ctx.textAlign = 'right';
+        for (var u = 0; u < nU; u++) {
+            ctx.fillStyle = '#C5A059';
+            ctx.fillText('u' + (u + 1), L - 8, T + cellH * (u + 0.5) + 4);
+        }
+
+        // Cells
+        for (var u = 0; u < nU; u++) {
+            for (var i = 0; i < nI; i++) {
+                var util = catalog.U[u][i];
+                var norm = (util - minU) / range;
+                var gray = Math.floor(30 + norm * 60);
+                var tealIntensity = Math.max(0, Math.min(1, norm));
+                ctx.fillStyle = 'rgba(100,255,218,' + (0.08 + tealIntensity * 0.35) + ')';
+                ctx.fillRect(L + cellW * i + 2, T + cellH * u + 2, cellW - 4, cellH - 4);
+                // Utility value overlay
+                ctx.fillStyle = '#F8F9FA';
+                ctx.font = '10px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(util.toFixed(1), L + cellW * (i + 0.5), T + cellH * u + cellH / 2 + 3);
+            }
+        }
+
+        // Highlight personalised picks with gold border
+        for (var u = 0; u < nU; u++) {
+            personalised[u].S.forEach(function (i) {
+                ctx.strokeStyle = '#C5A059';
+                ctx.lineWidth = 3;
+                ctx.strokeRect(L + cellW * i + 2, T + cellH * u + 2, cellW - 4, cellH - 4);
+            });
+        }
+    }
+
+    function run() {
+        var nUsers = parseInt(document.getElementById('nUsers').value, 10);
+        var nItems = parseInt(document.getElementById('nItems').value, 10);
+        var K = parseInt(document.getElementById('K').value, 10);
+        var uStrength = parseFloat(document.getElementById('uStrength').value);
+        var priceSpread = parseFloat(document.getElementById('priceSpread').value);
+        var seed = parseInt(document.getElementById('seed').value, 10);
+        if (K > nItems) K = nItems;
+        var catalog = generateCatalog(nUsers, nItems, uStrength, priceSpread, seed);
+        render(catalog, K);
+    }
+    document.getElementById('btnRun').addEventListener('click', run);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('nUsers').value = 6;
+        document.getElementById('nItems').value = 10;
+        document.getElementById('K').value = 3;
+        document.getElementById('uStrength').value = 1.5;
+        document.getElementById('priceSpread').value = 2.0;
+        document.getElementById('seed').value = 42;
+        run();
+    });
+    window.addEventListener('load', run);
+</script>
+</body>
+</html>

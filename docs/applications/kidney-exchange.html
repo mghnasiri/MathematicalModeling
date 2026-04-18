@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Kidney Exchange | Public Services | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Kidney exchange as a cycle-selection integer program — the foundational market-design application of Roth, Sönmez, and Ünver (2004). Interactive solver explores 2-way matches, 3-way cycles, and chains with nondirected donors.">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/kidney-exchange.html">
+    <meta property="og:title" content="Kidney Exchange | Public Services">
+    <meta property="og:description" content="Cycle-selection ILP for paired kidney donation — Roth, Sönmez &amp; Ünver (2004).">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Kidney Exchange | Public Services">
+    <meta name="twitter:description" content="Cycle-selection ILP for paired kidney donation.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/kidney-exchange.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+            --purple: #bb9af7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 0.8rem 0;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.3);
+        }
+        .navbar-brand {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.4rem;
+            font-weight: 600;
+            color: var(--gold) !important;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+        .nav-link {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85rem;
+            color: var(--slate-light) !important;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            padding: 0.5rem 1rem !important;
+        }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon {
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
+        }
+
+        .scroll-progress {
+            position: fixed;
+            top: 0; left: 0;
+            height: 3px;
+            background: linear-gradient(90deg, var(--gold), var(--gold-light));
+            z-index: 9999;
+            width: 0%;
+            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
+        }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol {
+            background: transparent;
+            padding: 0; margin: 0; list-style: none;
+            display: flex; gap: 0.5rem;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before {
+            content: '/'; margin-right: 0.5rem;
+            color: var(--slate); opacity: 0.5;
+        }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero {
+            padding: 5rem 2rem 3rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-image:
+                radial-gradient(ellipse 55% 35% at 50% 100%, rgba(255,107,107,0.06) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 30% at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 60%);
+            pointer-events: none;
+        }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon {
+            font-size: 3rem;
+            color: var(--gold);
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 0 10px rgba(197,160,89,0.35));
+            animation: pulseKidney 3s ease-in-out infinite;
+        }
+        @keyframes pulseKidney {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 18px rgba(255,107,107,0.4)); }
+        }
+        .hero h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.8rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            margin-bottom: 0.8rem;
+            color: var(--ivory);
+        }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle {
+            font-size: 0.95rem;
+            color: var(--slate);
+            letter-spacing: 2.5px;
+            text-transform: uppercase;
+            margin-bottom: 1.2rem;
+        }
+        .gold-line {
+            width: 60px; height: 1px;
+            background: linear-gradient(90deg, transparent, var(--gold), transparent);
+            margin: 1.2rem auto;
+        }
+        .hero-desc {
+            max-width: 780px;
+            margin: 0 auto 1.5rem;
+            color: var(--slate-light);
+            font-size: 0.98rem;
+            line-height: 1.85;
+        }
+
+        .edu-notice {
+            max-width: 820px;
+            margin: 1.2rem auto 0;
+            padding: 0.9rem 1.2rem;
+            background: rgba(122,162,247,0.06);
+            border: 1px solid rgba(122,162,247,0.25);
+            border-left: 3px solid var(--blue);
+            border-radius: 4px;
+            color: var(--slate-light);
+            font-size: 0.82rem;
+            line-height: 1.7;
+            text-align: left;
+        }
+        .edu-notice strong { color: var(--ivory); }
+
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2rem;
+            font-weight: 300;
+            letter-spacing: 3px;
+            color: var(--ivory);
+            margin-bottom: 0.5rem;
+        }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p {
+            color: var(--slate);
+            font-size: 0.84rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+
+        .content-block {
+            max-width: 820px;
+            margin: 0 auto;
+            color: var(--slate-light);
+            font-size: 0.95rem;
+            line-height: 1.85;
+        }
+        .content-block p { margin-bottom: 1rem; }
+        .content-block strong { color: var(--ivory); }
+        .content-block em { color: var(--slate-light); }
+        .content-block cite { color: var(--gold); font-style: normal; }
+
+        .stakeholder-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.8rem;
+            margin: 1.4rem 0;
+        }
+        .stakeholder-item {
+            background: rgba(10,25,47,0.4);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 4px;
+            padding: 0.8rem 0.9rem;
+        }
+        .stakeholder-who {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--gold);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            margin-bottom: 0.25rem;
+        }
+        .stakeholder-what { color: var(--slate-light); font-size: 0.82rem; line-height: 1.6; }
+
+        .formulation {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 4px;
+            padding: 1.3rem 1.5rem;
+            margin: 1.3rem auto;
+            max-width: 820px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.86rem;
+            line-height: 1.9;
+            color: var(--ivory);
+            overflow-x: auto;
+        }
+        .form-label {
+            display: block;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.7rem;
+            color: var(--gold);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 0.8rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid rgba(197,160,89,0.15);
+        }
+        .keyword { color: var(--gold); font-weight: 500; }
+        .variable { color: var(--ivory); }
+        .comment { color: var(--slate); font-style: italic; }
+
+        .notation-table {
+            width: 100%;
+            max-width: 820px;
+            margin: 1rem auto;
+            border-collapse: collapse;
+            font-size: 0.86rem;
+        }
+        .notation-table th, .notation-table td {
+            padding: 0.6rem 0.8rem;
+            border-bottom: 1px solid rgba(197,160,89,0.12);
+            text-align: left;
+        }
+        .notation-table th {
+            font-family: 'Inter', sans-serif;
+            color: var(--gold);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            font-size: 0.72rem;
+            border-bottom: 1px solid rgba(197,160,89,0.3);
+        }
+        .notation-table td:first-child {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold-light);
+            width: 16%;
+            white-space: nowrap;
+        }
+        .notation-table td { color: var(--slate-light); }
+
+        .solver-panel {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197,160,89,0.2);
+            border-radius: 6px;
+            padding: 1.5rem 1.6rem;
+            margin: 1.5rem auto;
+            max-width: 880px;
+        }
+        .solver-panel-header h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--gold);
+            margin-bottom: 1rem;
+            padding-bottom: 0.6rem;
+            border-bottom: 1px solid rgba(197,160,89,0.18);
+        }
+        .solver-section-label {
+            font-family: 'Inter', sans-serif;
+            font-size: 0.72rem;
+            color: var(--slate);
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .algo-chip {
+            padding: 0.45rem 0.85rem;
+            background: rgba(10,25,47,0.6);
+            border: 1px solid rgba(197,160,89,0.25);
+            border-radius: 4px;
+            color: var(--slate-light);
+            font-size: 0.78rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        .algo-chip:hover { color: var(--ivory); border-color: var(--gold-light); }
+        .algo-chip.selected {
+            color: var(--gold);
+            background: rgba(197,160,89,0.12);
+            border-color: var(--gold);
+        }
+        .solver-slider { flex: 1; max-width: 260px; accent-color: var(--gold); }
+        .size-display {
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--gold);
+            font-size: 0.88rem;
+            min-width: 30px;
+            text-align: right;
+        }
+        .solver-btn {
+            margin-top: 0.8rem;
+            padding: 0.6rem 1.4rem;
+            background: var(--gold);
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            color: var(--midnight);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .solver-btn:hover { background: transparent; color: var(--gold); }
+        .solver-btn.primary { background: var(--gold); color: var(--midnight); }
+        .solver-canvas-wrap {
+            position: relative;
+            background: rgba(10,25,47,0.6);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 4px;
+            padding: 0.5rem;
+            margin-top: 1rem;
+        }
+        .solver-canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+        .solver-status {
+            margin-top: 0.8rem;
+            font-size: 0.82rem;
+            color: var(--slate);
+            font-style: italic;
+            line-height: 1.7;
+        }
+        .solver-status strong { color: var(--ivory); font-style: normal; }
+        .results-table { width: 100%; margin-top: 1rem; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table th, .results-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .results-table th { color: var(--gold); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 500; }
+        .results-table td { color: var(--slate-light); }
+        .results-table td.highlight { color: var(--gold-light); font-family: 'JetBrains Mono', monospace; }
+
+        .interpret-box {
+            background: rgba(100,255,218,0.05);
+            border: 1px solid rgba(100,255,218,0.2);
+            border-left: 3px solid var(--green);
+            border-radius: 4px;
+            padding: 1.3rem 1.5rem;
+            margin: 1.5rem auto;
+            max-width: 880px;
+        }
+        .interpret-box-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.15rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--green);
+            margin-bottom: 0.6rem;
+        }
+        .interpret-box p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; }
+        .interpret-box p + p { margin-top: 0.6rem; }
+        .interpret-box strong { color: var(--ivory); }
+
+        .limits-section {
+            background: rgba(255,107,107,0.04);
+            border-top: 1px solid rgba(255,107,107,0.2);
+            border-bottom: 1px solid rgba(255,107,107,0.2);
+        }
+        .limits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 1rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .limit-card {
+            background: rgba(10,25,47,0.5);
+            border: 1px solid rgba(255,107,107,0.2);
+            border-radius: 4px;
+            padding: 1.2rem 1.1rem;
+        }
+        .limit-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.05rem;
+            letter-spacing: 1.3px;
+            color: var(--red);
+            margin-bottom: 0.5rem;
+        }
+        .limit-card p { color: var(--slate-light); font-size: 0.84rem; line-height: 1.7; }
+        .limit-card p + p { margin-top: 0.45rem; }
+        .limit-card .refs {
+            margin-top: 0.7rem;
+            padding-top: 0.6rem;
+            border-top: 1px dashed rgba(255,107,107,0.15);
+            font-size: 0.74rem;
+            color: var(--slate);
+        }
+        .limit-card .refs em { color: var(--slate-light); font-style: normal; }
+
+        .ext-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 0.8rem;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+        .ext-card {
+            background: rgba(10,25,47,0.5);
+            border: 1px solid rgba(197,160,89,0.15);
+            border-radius: 4px;
+            padding: 1rem 1.1rem;
+        }
+        .ext-card h4 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--gold);
+            margin-bottom: 0.4rem;
+        }
+        .ext-card p { color: var(--slate-light); font-size: 0.82rem; line-height: 1.65; }
+
+        .reference-item {
+            padding: 0.9rem 0;
+            border-top: 1px solid rgba(197,160,89,0.1);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .reference-item:first-child { border-top: none; }
+        .reference-num {
+            display: inline-block;
+            margin-right: 0.4rem;
+            color: var(--gold);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+        }
+        .reference-authors { color: var(--ivory); font-size: 0.9rem; font-weight: 500; }
+        .reference-title { color: var(--slate-light); font-size: 0.86rem; font-style: italic; margin: 0.1rem 0; }
+        .reference-journal { color: var(--slate); font-size: 0.8rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        .related-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 0.9rem;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+        .related-card {
+            background: var(--midnight-light);
+            border: 1px solid rgba(197,160,89,0.14);
+            border-radius: 4px;
+            padding: 1rem 1.1rem;
+            text-decoration: none;
+            transition: all 0.25s;
+            display: block;
+        }
+        .related-card:hover {
+            border-color: var(--gold);
+            transform: translateY(-2px);
+            color: inherit;
+        }
+        .related-card-head {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1rem;
+            letter-spacing: 1px;
+            color: var(--ivory);
+            margin-bottom: 0.3rem;
+        }
+        .related-card-tag {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.7rem;
+            padding: 1px 6px;
+            border-radius: 3px;
+            color: var(--gold);
+            background: rgba(197,160,89,0.1);
+            border: 1px solid rgba(197,160,89,0.25);
+            display: inline-block;
+            margin-bottom: 0.3rem;
+        }
+        .related-card-desc { color: var(--slate-light); font-size: 0.78rem; line-height: 1.6; }
+
+        .cta-section {
+            background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%);
+            text-align: center;
+            padding: 4rem 2rem;
+        }
+        .cta-section h2 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.9rem;
+            font-weight: 300;
+            letter-spacing: 2.5px;
+            color: var(--ivory);
+            line-height: 1.4;
+        }
+        .btn-cta {
+            display: inline-block;
+            margin-top: 1.4rem;
+            padding: 0.85rem 2rem;
+            color: var(--midnight);
+            background: var(--gold);
+            border: 1px solid var(--gold);
+            border-radius: 4px;
+            font-size: 0.82rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.3s;
+        }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        footer {
+            text-align: center;
+            padding: 2.5rem 0;
+            border-top: 1px solid rgba(197,160,89,0.1);
+            color: var(--slate);
+            font-size: 0.82rem;
+        }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer {
+            text-align: center;
+            padding: 1rem;
+            font-size: 0.76rem;
+            color: var(--slate);
+            font-style: italic;
+            background: var(--midnight-light);
+            border-top: 1px solid rgba(197,160,89,0.08);
+        }
+
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        .back-link {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            background: var(--midnight-light);
+            border: 1px solid var(--gold);
+            padding: 0.6rem 1rem;
+            border-radius: 4px;
+            color: var(--gold);
+            font-size: 0.78rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            text-decoration: none;
+            transition: all 0.3s;
+            z-index: 999;
+        }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.82rem; letter-spacing: 1.3px; }
+            .hero-desc { font-size: 0.9rem; }
+            section { padding: 2.5rem 0; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            .back-link { bottom: 1rem; right: 1rem; font-size: 0.72rem; padding: 0.45rem 0.75rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Public Services",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/public-services-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Kidney Exchange",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/kidney-exchange.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="public-services-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="public-services-domain.html">Public Services</a></li>
+            <li class="active">Kidney Exchange</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-hand-holding-medical" aria-hidden="true"></i></div>
+        <h1>Kidney <span>Exchange</span></h1>
+        <p class="hero-subtitle">Cycle-selection ILP &middot; Roth &middot; Sönmez &middot; Ünver (2004)</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            A patient needs a kidney; a family member is willing to donate but is blood-type or tissue-type incompatible.
+            Across a pool of such incompatible pairs, swaps become possible: pair <em>A</em>'s donor gives to pair <em>B</em>'s
+            patient, and pair <em>B</em>'s donor gives to pair <em>A</em>'s patient. The operational problem &mdash; <em>which
+            subset of cycles do we perform?</em> &mdash; is a pure integer program, and its solution has enabled thousands of
+            transplants that bilateral matching alone could not. This is the foundational win of applied market design.
+        </p>
+        <div class="edu-notice">
+            <strong>Educational resource.</strong> This page describes a mathematical model used in kidney-paired-donation
+            programmes. It is a teaching tool, not medical, legal, or operational guidance. Real-world programmes operate
+            under UNOS, NKR, APD, or national-level protocols with human-in-the-loop review by transplant coordinators,
+            surgeons, immunologists, and ethics boards. The Limitations &amp; Critique section below is not optional reading.
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Problem <span>context</span></h2>
+            <p>A market designed to save lives</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Kidney disease progresses toward end-stage renal failure, at which point a patient requires dialysis or
+                transplantation to survive. A transplanted kidney nearly always outperforms dialysis in both life-expectancy
+                and quality-of-life terms, but the supply of deceased-donor kidneys is chronically insufficient, and living
+                donation is blocked when the willing donor and their patient are <strong>incompatible</strong> on blood type
+                (ABO) or human leukocyte antigen (HLA) cross-match.
+            </p>
+            <p>
+                In 1986, Felix Rapaport proposed pairing two incompatible donor-patient dyads so each donor gives to the
+                other dyad's patient &mdash; a two-way kidney exchange. The idea remained largely theoretical until the
+                early 2000s, when <cite>Roth, Sönmez &amp; Ünver (2004)</cite> formalised the problem as a market-design
+                question and showed that <strong>kidney exchange is a cycle-selection problem on a directed compatibility
+                graph</strong>. Their 2005 follow-up extended the machinery to longer cycles and to chains initiated by
+                <em>nondirected</em> (altruistic) donors, unlocking substantially more transplants per pool.
+            </p>
+            <p>
+                Deployed kidney-paired-donation (KPD) programmes now include the New England Program for Kidney Exchange
+                (NEPKE, 2003), the Alliance for Paired Donation (APD), the National Kidney Registry (NKR, 2007), and the
+                UNOS KPD Pilot (2010). The underlying operations-research machinery &mdash; cycle enumeration, ILP
+                selection, chain-extension heuristics &mdash; is essentially what this page explores. The work earned
+                <cite>Alvin Roth</cite> a share of the 2012 Nobel Prize in Economic Sciences, alongside <cite>Lloyd
+                Shapley</cite>, "for the theory of stable allocations and the practice of market design."
+            </p>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:1.5px;color:var(--gold);margin-top:1.4rem;margin-bottom:0.6rem;text-transform:uppercase;">Multi-stakeholder framing</h4>
+            <div class="stakeholder-grid">
+                <div class="stakeholder-item">
+                    <div class="stakeholder-who">Patient</div>
+                    <div class="stakeholder-what">Needs a compatible kidney; survival and life-years at stake.</div>
+                </div>
+                <div class="stakeholder-item">
+                    <div class="stakeholder-who">Donor</div>
+                    <div class="stakeholder-what">Willing to donate to <em>their</em> patient; consents to donate into a matched cycle instead.</div>
+                </div>
+                <div class="stakeholder-item">
+                    <div class="stakeholder-who">Transplant centre</div>
+                    <div class="stakeholder-what">Performs the surgeries; coordinates logistics of simultaneous operations across cities.</div>
+                </div>
+                <div class="stakeholder-item">
+                    <div class="stakeholder-who">KPD registry (UNOS, NKR, APD)</div>
+                    <div class="stakeholder-what">Holds the pool, runs the matching algorithm, brokers across centres.</div>
+                </div>
+                <div class="stakeholder-item">
+                    <div class="stakeholder-who">Nondirected donor</div>
+                    <div class="stakeholder-what">Altruistic donor not attached to any patient; initiates a <em>chain</em> rather than closing a cycle.</div>
+                </div>
+                <div class="stakeholder-item">
+                    <div class="stakeholder-who">Ethics board</div>
+                    <div class="stakeholder-what">Weighs allocation tradeoffs (life-years vs. transplant count, priority for hard-to-match patients, geographic equity).</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Cycle-selection integer program on a compatibility graph</p>
+        </div>
+
+        <div class="content-block fade-in">
+            <p>
+                Let <em>V</em> be the set of patient-donor pairs in the pool. Build a directed graph <em>G = (V, E)</em>
+                where edge <em>(i, j) &isin; E</em> exists iff donor <em>i</em> is medically compatible with patient <em>j</em>.
+                A feasible <strong>exchange</strong> is a simple cycle in <em>G</em>: each pair in the cycle gives a kidney
+                from its donor to the next pair's patient and receives a kidney from the previous pair's donor. The
+                bounded-cycle ILP of <cite>Roth, Sönmez &amp; Ünver (2005)</cite> selects a collection of vertex-disjoint
+                cycles to maximise matched patients subject to a maximum cycle length <em>L</em>.
+            </p>
+        </div>
+
+        <table class="notation-table fade-in" aria-label="Notation">
+            <tr><th>Symbol</th><th>Definition</th><th>Domain</th></tr>
+            <tr><td>V</td><td>Set of patient-donor pairs in the pool</td><td>|V| = n</td></tr>
+            <tr><td>E</td><td>Directed edges; (i,j) &isin; E iff donor i is compatible with patient j</td><td>E &sube; V &times; V</td></tr>
+            <tr><td>L</td><td>Maximum cycle length (typically 2, 3, or small)</td><td>&#8469;&#8314;</td></tr>
+            <tr><td>C</td><td>Collection of all simple directed cycles of length &le; L in G</td><td>enumerated from G</td></tr>
+            <tr><td>w<sub>c</sub></td><td>Weight of cycle c (e.g., |c|, or sum of priority points)</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>x<sub>c</sub></td><td>Binary: 1 if cycle c is selected, 0 otherwise</td><td>{0, 1}</td></tr>
+            <tr><td>D</td><td>(Optional) Nondirected-donor initiated chains, length &le; K</td><td>enumerated</td></tr>
+        </table>
+
+        <div class="formulation fade-in">
+            <span class="form-label">Cycle-selection ILP (Roth, Sönmez &amp; Ünver, 2005)</span>
+            <span class="keyword">max</span> &Sigma;<sub>c &isin; C</sub> <span class="variable">w<sub>c</sub></span> <span class="variable">x<sub>c</sub></span> &nbsp;<span class="comment">// maximise total priority (or number of transplants)</span><br>
+            <span class="keyword">s.t.</span> &Sigma;<sub>c &isin; C: i &isin; c</sub> <span class="variable">x<sub>c</sub></span> &le; 1 &nbsp; &forall; <span class="variable">i</span> &isin; <span class="variable">V</span> &nbsp;<span class="comment">// each pair in at most one cycle</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x<sub>c</sub></span> &isin; {0, 1} &nbsp; &forall; <span class="variable">c</span> &isin; <span class="variable">C</span><br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Complexity</span>
+            NP-hard in general (reduces from cycle-packing); solvable as ILP via branch-and-price for L &le; 3 and n in the thousands.<br>
+            For L = 2, the problem reduces to maximum weight matching in an undirected graph (Edmonds, 1965) &mdash; polynomial.<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Chains (nondirected donors, optional)</span>
+            Add path-variables d<sub>p</sub> for each feasible chain p starting at a nondirected donor; each vertex in at most one cycle OR one chain.
+        </div>
+
+        <div class="content-block fade-in" style="margin-top:1.5rem;">
+            <p>
+                Two practical observations drive real-world deployment. First, <strong>L cannot be arbitrarily large</strong>
+                because surgeries in a cycle must happen <em>simultaneously</em> (otherwise an early donor could renege after
+                their patient received a kidney). The surgical logistics of three-way simultaneous surgery across three
+                cities is already complex; four-way and beyond are rarely attempted for cycles. Chains relax this constraint
+                because the altruistic donor cannot renege with anything at stake, so chain length can be much larger.
+            </p>
+            <p>
+                Second, <strong>weights <em>w<sub>c</sub></em> carry ethics</strong>. Setting <em>w<sub>c</sub> = |c|</em>
+                maximises transplant count. Setting priority points for hard-to-match patients (high panel-reactive
+                antibodies, O-blood-type recipients, paediatric cases) explicitly favours those patients &mdash; which UNOS
+                policy does. The choice of weights is not a technical detail; it is an ethics decision that OR surfaces
+                rather than hides.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Enumerate cycles, solve the ILP, visualise the matching</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h2><i class="fas fa-sitemap" aria-hidden="true" style="margin-right:0.4rem;"></i>Kidney-Exchange Solver</h2>
+            </div>
+
+            <div class="solver-section-label">Scenario (pool size)</div>
+            <div class="algo-select" id="kexScenarios">
+                <div class="algo-chip selected" data-algo="small">8 pairs</div>
+                <div class="algo-chip" data-algo="medium">12 pairs</div>
+                <div class="algo-chip" data-algo="large">18 pairs</div>
+            </div>
+
+            <div class="solver-section-label">Max cycle length L</div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <input type="range" class="solver-slider" id="kexL" min="2" max="4" value="3">
+                <span class="size-display" id="kexLVal">3</span>
+                <span style="color:var(--slate);font-size:0.76rem;">(typical: L=2 or L=3)</span>
+            </div>
+
+            <div class="solver-section-label">Include nondirected-donor chain?</div>
+            <div class="algo-select" id="kexChains">
+                <div class="algo-chip" data-algo="chain-off">No chain</div>
+                <div class="algo-chip selected" data-algo="chain-on">1 chain, max length 5</div>
+            </div>
+
+            <div class="solver-section-label">Objective</div>
+            <div class="algo-select" id="kexObj">
+                <div class="algo-chip selected" data-algo="count">Maximise transplants (w<sub>c</sub> = |c|)</div>
+                <div class="algo-chip" data-algo="priority">Weighted &mdash; priority to hard-to-match</div>
+            </div>
+
+            <button class="solver-btn primary" id="kexSolve" type="button">
+                <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve
+            </button>
+
+            <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                <canvas id="kexCanvas" width="820" height="440"></canvas>
+            </div>
+
+            <div id="kexResults" style="margin-top:1rem;"></div>
+            <div class="solver-status" id="kexStatus">Choose a scenario, cycle length, and objective, then click Solve. Greedy cycle selection with bounded enumeration (L &le; 4); for teaching purposes only.</div>
+        </div>
+
+        <div class="content-block fade-in" style="margin-top:1.2rem;font-size:0.86rem;">
+            <p>
+                <strong>About the solver.</strong> The dashboard generates a synthetic compatibility graph with realistic
+                blood-type-driven density (ABO self-matches plus random HLA-style cross-matches). The solver enumerates all
+                simple directed cycles up to length <em>L</em> (bounded enumeration, polynomial in small <em>L</em>), then
+                selects a maximum-weight packing using a greedy ILP relaxation + repair heuristic. For production KPD
+                programmes, see <cite>Abraham, Blum &amp; Sandholm (2007)</cite> on column-generation branch-and-price for
+                cycle-selection, which scales to several thousand pairs.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>What stakeholders learn from the matching</p>
+        </div>
+        <div class="interpret-box fade-in">
+            <div class="interpret-box-title"><i class="fas fa-lightbulb" aria-hidden="true" style="margin-right:0.35rem;"></i>Reading the dashboard</div>
+            <p>
+                <strong>Going from L = 2 to L = 3 typically raises the transplant count substantially</strong> &mdash; in
+                randomly-generated pools, the uplift is often 20&ndash;40% depending on blood-type composition. This is the
+                core finding of Roth-Sönmez-Ünver (2005) that drove US KPD programmes to adopt 3-cycles.
+            </p>
+            <p>
+                <strong>Adding a single nondirected-donor-initiated chain lifts the count again</strong>, sometimes by more
+                than the L = 2 &rarr; L = 3 step. Chains reach patient-donor pairs in the &ldquo;dead-end&rdquo; parts of
+                the graph that cycles cannot (Ashlagi et al., 2012).
+            </p>
+            <p>
+                <strong>Priority weights redistribute who gets matched.</strong> Switching from count-maximising to
+                priority-weighted objective typically leaves total transplants similar but moves harder-to-match patients
+                from unmatched to matched. This is a policy knob, not a technical parameter.
+            </p>
+            <p>
+                <strong>What patients and donors care about:</strong> <em>Am I matched?</em> &mdash; yes or no, binary.
+                <strong>What centres care about:</strong> simultaneous-surgery feasibility, cold-ischaemia time, patient
+                flight logistics. <strong>What registries care about:</strong> pool health over time &mdash; the balance of
+                hard-to-match vs. easy-to-match pairs, chain re-initiation, and drop-out rates.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="limits-section">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Limitations &amp; <span>Critique</span></h2>
+            <p>What the model does not see</p>
+        </div>
+        <div class="limits-grid fade-in">
+            <div class="limit-card">
+                <h4>Compatibility is a coarse proxy</h4>
+                <p>
+                    The binary edge (compatible / incompatible) abstracts away the continuous reality of HLA cross-match
+                    strength, donor-specific antibodies, and virtual vs. actual cross-match. Production KPD systems carry
+                    richer edge weights and run final cross-matches before surgery; some matches fail at that stage and
+                    the chain must be repaired.
+                </p>
+                <div class="refs">
+                    <em>Ashlagi &amp; Roth (2021)</em> on robust kidney exchange with edge failures.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Blood-type O disadvantage</h4>
+                <p>
+                    O-blood-type patients can only receive from O donors, but O donors are universal and get matched to
+                    non-O patients quickly &mdash; leaving O patients stuck. Unpriced pools amplify this asymmetry.
+                    Priority-point schemes partially correct it; chains help more. Unmatched O patients remain the
+                    single-largest fairness failure of KPD in practice.
+                </p>
+                <div class="refs">
+                    <em>Ashlagi, Gamarnik, Rees, Roth (2012)</em> on long chains for O-type patients.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Strategic participation &amp; hospital self-interest</h4>
+                <p>
+                    Individual patients are not strategic (consent is binary), but <strong>transplant centres</strong> can
+                    be: a centre may hold back its easier-to-match pairs to do internal matches and submit only its harder
+                    pairs to the national pool, reducing aggregate welfare. Incentive-compatible mechanisms for multi-hospital
+                    KPD are an active research area.
+                </p>
+                <div class="refs">
+                    <em>Ashlagi &amp; Roth (2014)</em>. Free riding and participation in large-scale KPD.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Ethical weights are contested</h4>
+                <p>
+                    Priority points for paediatric cases, high-PRA patients, or long-wait-list patients embed contested
+                    ethical choices. Whose life-year counts more, and at what exchange rate? These questions belong to
+                    bioethics, not to the OR layer &mdash; but the OR model makes them visible, which is the honest thing
+                    to do.
+                </p>
+                <div class="refs">
+                    <em>Segev, Gentry, Warren, Reeb, Montgomery (2005)</em> on equity in kidney paired donation.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Cycle length vs. logistical fragility</h4>
+                <p>
+                    Longer cycles unlock more matches in theory but fail more often in practice: if any single donor in a
+                    4-cycle backs out or if any cross-match fails, the entire cycle collapses. Most programmes cap cycles
+                    at 3 and rely on chains for depth.
+                </p>
+                <div class="refs">
+                    <em>Manlove &amp; O'Malley (2014)</em> on robust kidney exchange under uncertainty.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Global inequity</h4>
+                <p>
+                    Formal KPD programmes exist primarily in high-income jurisdictions (US, UK, Netherlands, South Korea,
+                    Canada). Patients in low- and middle-income countries generally cannot access either deceased-donor or
+                    paired-exchange transplantation at the same rates. The OR literature's best tools have not closed this
+                    gap; any page on kidney exchange that omits this asymmetry is incomplete.
+                </p>
+                <div class="refs">
+                    <em>Danovitch et al. (2013)</em> on global trends in kidney transplantation access.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Directions the literature has explored</p>
+        </div>
+        <div class="ext-grid fade-in">
+            <div class="ext-card">
+                <h4>Chains with nondirected donors</h4>
+                <p>Altruistic donor initiates; chain ends with donation to waiting list. Longer than cycles because no simultaneity required. Ashlagi-Gamarnik-Rees-Roth (2012).</p>
+            </div>
+            <div class="ext-card">
+                <h4>Compatible pairs in the pool</h4>
+                <p>Allow already-compatible pairs to enter KPD voluntarily; they lose little and substantially help hard-to-match pairs. Gentry-Segev-Montgomery (2005).</p>
+            </div>
+            <div class="ext-card">
+                <h4>Dynamic matching over time</h4>
+                <p>Pool arrives online; matching frequency (daily vs. monthly) affects pool composition and wait times. Ünver (2010); Akbarpour-Li-Gharan (2020).</p>
+            </div>
+            <div class="ext-card">
+                <h4>Robust matching under failures</h4>
+                <p>Cross-matches and centre participation can fail post-selection. Robust formulation selects matchings that retain value under edge failures. Manlove-O'Malley (2014).</p>
+            </div>
+            <div class="ext-card">
+                <h4>Multi-hospital mechanism design</h4>
+                <p>Incentive-compatible payment / credit mechanisms across centres so no centre free-rides by withholding easy pairs. Ashlagi-Roth (2014).</p>
+            </div>
+            <div class="ext-card">
+                <h4>Multi-organ exchange</h4>
+                <p>Extensions to liver, lung, and multi-organ exchange face different compatibility structures and surgical constraints. Segev et al. (2020) on multi-organ paired donation.</p>
+            </div>
+            <div class="ext-card">
+                <h4>Global kidney exchange</h4>
+                <p>Cross-border exchanges linking high-income and low-middle-income countries. Rees et al. (2017). Raises ethical questions around equity and consent.</p>
+            </div>
+            <div class="ext-card">
+                <h4>Integer programming solvers</h4>
+                <p>Branch-and-price with column generation scales KPD to thousands of pairs. Abraham-Blum-Sandholm (2007); Constantino-Klimentova-Viana-Rais (2013).</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs where available</p>
+        </div>
+
+        <div class="reference-item fade-in">
+            <span class="reference-num">[1]</span>
+            <span class="reference-authors">Roth, A.&nbsp;E., Sönmez, T., &amp; Ünver, M.&nbsp;U. (2004).</span>
+            <div class="reference-title">&ldquo;Kidney exchange.&rdquo;</div>
+            <div class="reference-journal"><em>Quarterly Journal of Economics</em> 119(2), 457&ndash;488. <a href="https://doi.org/10.1162/0033553041382157" target="_blank" rel="noopener">doi:10.1162/0033553041382157</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[2]</span>
+            <span class="reference-authors">Roth, A.&nbsp;E., Sönmez, T., &amp; Ünver, M.&nbsp;U. (2005).</span>
+            <div class="reference-title">&ldquo;Pairwise kidney exchange.&rdquo;</div>
+            <div class="reference-journal"><em>Journal of Economic Theory</em> 125(2), 151&ndash;188. <a href="https://doi.org/10.1016/j.jet.2005.04.004" target="_blank" rel="noopener">doi:10.1016/j.jet.2005.04.004</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[3]</span>
+            <span class="reference-authors">Roth, A.&nbsp;E., Sönmez, T., &amp; Ünver, M.&nbsp;U. (2007).</span>
+            <div class="reference-title">&ldquo;Efficient kidney exchange: Coincidence of wants in markets with compatibility-based preferences.&rdquo;</div>
+            <div class="reference-journal"><em>American Economic Review</em> 97(3), 828&ndash;851. <a href="https://doi.org/10.1257/aer.97.3.828" target="_blank" rel="noopener">doi:10.1257/aer.97.3.828</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[4]</span>
+            <span class="reference-authors">Rapaport, F.&nbsp;T. (1986).</span>
+            <div class="reference-title">&ldquo;The case for a living emotionally related international kidney donor exchange registry.&rdquo;</div>
+            <div class="reference-journal"><em>Transplantation Proceedings</em> 18(3 Suppl 2), 5&ndash;9.</div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[5]</span>
+            <span class="reference-authors">Ashlagi, I., Gamarnik, D., Rees, M.&nbsp;A., &amp; Roth, A.&nbsp;E. (2012).</span>
+            <div class="reference-title">&ldquo;The need for (long) chains in kidney exchange.&rdquo;</div>
+            <div class="reference-journal">NBER Working Paper 18202. <a href="https://doi.org/10.3386/w18202" target="_blank" rel="noopener">doi:10.3386/w18202</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[6]</span>
+            <span class="reference-authors">Ashlagi, I., &amp; Roth, A.&nbsp;E. (2014).</span>
+            <div class="reference-title">&ldquo;Free riding and participation in large scale, multi-hospital kidney exchange.&rdquo;</div>
+            <div class="reference-journal"><em>Theoretical Economics</em> 9(3), 817&ndash;863. <a href="https://doi.org/10.3982/TE1357" target="_blank" rel="noopener">doi:10.3982/TE1357</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[7]</span>
+            <span class="reference-authors">Abraham, D.&nbsp;J., Blum, A., &amp; Sandholm, T. (2007).</span>
+            <div class="reference-title">&ldquo;Clearing algorithms for barter exchange markets: Enabling nationwide kidney exchanges.&rdquo;</div>
+            <div class="reference-journal"><em>ACM Conference on Electronic Commerce (EC'07)</em>, 295&ndash;304. <a href="https://doi.org/10.1145/1250910.1250954" target="_blank" rel="noopener">doi:10.1145/1250910.1250954</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[8]</span>
+            <span class="reference-authors">Constantino, M., Klimentova, X., Viana, A., &amp; Rais, A. (2013).</span>
+            <div class="reference-title">&ldquo;New insights on integer-programming models for the kidney exchange problem.&rdquo;</div>
+            <div class="reference-journal"><em>European Journal of Operational Research</em> 231(1), 57&ndash;68. <a href="https://doi.org/10.1016/j.ejor.2013.05.025" target="_blank" rel="noopener">doi:10.1016/j.ejor.2013.05.025</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[9]</span>
+            <span class="reference-authors">Segev, D.&nbsp;L., Gentry, S.&nbsp;E., Warren, D.&nbsp;S., Reeb, B., &amp; Montgomery, R.&nbsp;A. (2005).</span>
+            <div class="reference-title">&ldquo;Kidney paired donation and optimizing the use of live donor organs.&rdquo;</div>
+            <div class="reference-journal"><em>JAMA</em> 293(15), 1883&ndash;1890. <a href="https://doi.org/10.1001/jama.293.15.1883" target="_blank" rel="noopener">doi:10.1001/jama.293.15.1883</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[10]</span>
+            <span class="reference-authors">Manlove, D.&nbsp;F., &amp; O'Malley, G. (2014).</span>
+            <div class="reference-title">&ldquo;Paired and altruistic kidney donation in the UK: Algorithms and experimentation.&rdquo;</div>
+            <div class="reference-journal"><em>ACM Journal of Experimental Algorithmics</em> 19(1), 1&ndash;21. <a href="https://doi.org/10.1145/2670129" target="_blank" rel="noopener">doi:10.1145/2670129</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[11]</span>
+            <span class="reference-authors">Rees, M.&nbsp;A., Dunn, T.&nbsp;B., Kuhr, C.&nbsp;S., et al. (2017).</span>
+            <div class="reference-title">&ldquo;Kidney exchange to overcome financial barriers to kidney transplantation.&rdquo;</div>
+            <div class="reference-journal"><em>American Journal of Transplantation</em> 17(3), 782&ndash;790. <a href="https://doi.org/10.1111/ajt.14106" target="_blank" rel="noopener">doi:10.1111/ajt.14106</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[12]</span>
+            <span class="reference-authors">The Royal Swedish Academy of Sciences. (2012).</span>
+            <div class="reference-title">&ldquo;The Prize in Economic Sciences 2012: Stable Matching &mdash; Theory, Evidence, and Practical Design.&rdquo;</div>
+            <div class="reference-journal">Nobel Committee. <a href="https://www.nobelprize.org/prizes/economic-sciences/2012/summary/" target="_blank" rel="noopener">nobelprize.org/economic-sciences/2012</a></div>
+        </div>
+        <div class="reference-item fade-in">
+            <span class="reference-num">[13]</span>
+            <span class="reference-authors">Edmonds, J. (1965).</span>
+            <div class="reference-title">&ldquo;Paths, trees, and flowers.&rdquo;</div>
+            <div class="reference-journal"><em>Canadian Journal of Mathematics</em> 17, 449&ndash;467. <a href="https://doi.org/10.4153/CJM-1965-045-4" target="_blank" rel="noopener">doi:10.4153/CJM-1965-045-4</a></div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+            <p>Other matching-market and scarcity-allocation problems</p>
+        </div>
+        <div class="related-grid fade-in">
+            <a class="related-card" href="school-choice-mechanism.html">
+                <span class="related-card-tag">Matching</span>
+                <div class="related-card-head">School Choice Mechanism</div>
+                <div class="related-card-desc">Two-sided matching with preferences over schools; the DA/TTC sister mechanism to kidney exchange.</div>
+            </a>
+            <a class="related-card" href="refugee-resettlement-matching.html">
+                <span class="related-card-tag">Matching</span>
+                <div class="related-card-head">Refugee Resettlement Matching</div>
+                <div class="related-card-desc">Two-sided matching of refugee families to localities with capacity constraints and integration outcomes.</div>
+            </a>
+            <a class="related-card" href="vaccine-allocation.html">
+                <span class="related-card-tag">Scarcity</span>
+                <div class="related-card-head">Vaccine Allocation</div>
+                <div class="related-card-desc">Multi-objective allocation under supply constraint &mdash; same scarcity-ethics tension as kidney exchange, different decision structure.</div>
+            </a>
+            <a class="related-card" href="public-services-domain.html">
+                <span class="related-card-tag">Back to domain</span>
+                <div class="related-card-head">Public Services Landing</div>
+                <div class="related-card-desc">See all thirteen applications organised by service sector and decision type.</div>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Advising a transplant registry<br>or market-design project?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<div class="disclaimer">
+    Data and numerical examples are illustrative. This page is an educational tool, not medical, legal, or operational advice.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="public-services-domain.html">&larr; Back to Public Services</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<a class="back-link" href="public-services-domain.html"><i class="fas fa-arrow-left" aria-hidden="true" style="margin-right:0.4rem"></i> Public Services</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) { navbar.classList.add('scrolled'); } else { navbar.classList.remove('scrolled'); }
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = (h.scrollTop || b.scrollTop);
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else {
+        fades.forEach(function(el){ el.classList.add('visible'); });
+    }
+
+    function bindExclusiveChips(containerId) {
+        var el = document.getElementById(containerId);
+        if (!el) return;
+        el.querySelectorAll('.algo-chip').forEach(function(chip){
+            chip.addEventListener('click', function(){
+                el.querySelectorAll('.algo-chip').forEach(function(c){ c.classList.remove('selected'); });
+                chip.classList.add('selected');
+            });
+        });
+    }
+    bindExclusiveChips('kexScenarios');
+    bindExclusiveChips('kexChains');
+    bindExclusiveChips('kexObj');
+
+    var kexL = document.getElementById('kexL');
+    var kexLVal = document.getElementById('kexLVal');
+    if (kexL && kexLVal) {
+        kexL.addEventListener('input', function(){ kexLVal.textContent = kexL.value; });
+    }
+
+    function selectedChip(containerId){
+        var c = document.querySelector('#' + containerId + ' .algo-chip.selected');
+        return c ? c.getAttribute('data-algo') : null;
+    }
+
+    function mulberry32(seed) {
+        return function() {
+            seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+            var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    var ABO_FREQ = [0.45, 0.40, 0.11, 0.04];
+    function sampleABO(rand) {
+        var r = rand(), acc = 0;
+        for (var i = 0; i < ABO_FREQ.length; i++) { acc += ABO_FREQ[i]; if (r < acc) return i; }
+        return 0;
+    }
+    var ABO_LABELS = ['O', 'A', 'B', 'AB'];
+
+    function aboCompat(donor, patient) {
+        if (donor === 0) return true;
+        if (donor === 1) return patient === 1 || patient === 3;
+        if (donor === 2) return patient === 2 || patient === 3;
+        return patient === 3;
+    }
+
+    function generatePool(n, seed) {
+        var rand = mulberry32(seed);
+        var pairs = [];
+        for (var i = 0; i < n; i++) {
+            var pBlood = sampleABO(rand);
+            var dBlood;
+            var tries = 0;
+            do { dBlood = sampleABO(rand); tries++; }
+            while (aboCompat(dBlood, pBlood) && tries < 5);
+            pairs.push({
+                id: i,
+                patient: pBlood,
+                donor: dBlood,
+                pra: Math.pow(rand(), 2)
+            });
+        }
+        var edges = [];
+        for (var i = 0; i < n; i++) {
+            for (var j = 0; j < n; j++) {
+                if (i === j) continue;
+                if (!aboCompat(pairs[i].donor, pairs[j].patient)) continue;
+                var key = (i * 73856093) ^ (j * 19349663);
+                var r2 = ((key >>> 0) % 10000) / 10000;
+                if (r2 > pairs[j].pra * 0.7 + 0.05) {
+                    edges.push({ from: i, to: j });
+                }
+            }
+        }
+        return { pairs: pairs, edges: edges };
+    }
+
+    function enumerateCycles(pool, L) {
+        var n = pool.pairs.length;
+        var adj = [];
+        for (var i = 0; i < n; i++) adj.push([]);
+        pool.edges.forEach(function(e){ adj[e.from].push(e.to); });
+
+        var cycles = [];
+        var seen = {};
+
+        function extend(start, path) {
+            if (path.length > L) return;
+            var last = path[path.length - 1];
+            adj[last].forEach(function(next){
+                if (next === start && path.length >= 2) {
+                    var cyc = path.slice();
+                    var minIdx = 0;
+                    for (var k = 1; k < cyc.length; k++) { if (cyc[k] < cyc[minIdx]) minIdx = k; }
+                    var canon = cyc.slice(minIdx).concat(cyc.slice(0, minIdx)).join('-');
+                    if (!seen[canon]) { seen[canon] = 1; cycles.push(cyc); }
+                } else if (path.indexOf(next) === -1 && next !== start && path.length < L) {
+                    path.push(next); extend(start, path); path.pop();
+                }
+            });
+        }
+
+        for (var v = 0; v < n; v++) { extend(v, [v]); }
+        return cycles.filter(function(c){ return c.length >= 2 && c.length <= L; });
+    }
+
+    function enumerateChains(pool, K) {
+        var n = pool.pairs.length;
+        var adj = [];
+        for (var i = 0; i < n; i++) adj.push([]);
+        pool.edges.forEach(function(e){ adj[e.from].push(e.to); });
+        var chains = [];
+        function dfs(path) {
+            if (path.length > K) return;
+            if (path.length >= 1) chains.push(path.slice());
+            var last = path[path.length - 1];
+            adj[last].forEach(function(next){
+                if (path.indexOf(next) === -1) {
+                    path.push(next); dfs(path); path.pop();
+                }
+            });
+        }
+        for (var v = 0; v < n; v++) { dfs([v]); }
+        return chains;
+    }
+
+    function greedySelect(cycles, chains, weightOf, useChain) {
+        var all = [];
+        cycles.forEach(function(c){ all.push({ type: 'cycle', verts: c, weight: weightOf(c) }); });
+        if (useChain) { chains.forEach(function(p){ all.push({ type: 'chain', verts: p, weight: weightOf(p) * 1.02 }); }); }
+        all.sort(function(a, b){ return (b.weight - a.weight) || (b.verts.length - a.verts.length); });
+        var used = {};
+        var chosen = [];
+        var usedChain = false;
+        all.forEach(function(item){
+            if (item.type === 'chain' && usedChain) return;
+            var conflict = item.verts.some(function(v){ return used[v]; });
+            if (conflict) return;
+            item.verts.forEach(function(v){ used[v] = true; });
+            if (item.type === 'chain') usedChain = true;
+            chosen.push(item);
+        });
+        return chosen;
+    }
+
+    function drawArrowhead(ctx, a, b, color) {
+        var dx = b.x - a.x, dy = b.y - a.y;
+        var len = Math.sqrt(dx*dx + dy*dy);
+        if (len < 1) return;
+        var ux = dx/len, uy = dy/len;
+        var tipX = b.x - ux * 14, tipY = b.y - uy * 14;
+        var leftX = tipX - ux * 7 + uy * 4.5;
+        var leftY = tipY - uy * 7 - ux * 4.5;
+        var rightX = tipX - ux * 7 - uy * 4.5;
+        var rightY = tipY - uy * 7 + ux * 4.5;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(tipX, tipY);
+        ctx.lineTo(leftX, leftY);
+        ctx.lineTo(rightX, rightY);
+        ctx.closePath();
+        ctx.fill();
+    }
+
+    function drawPool(pool, chosen) {
+        var canvas = document.getElementById('kexCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F';
+        ctx.fillRect(0, 0, W, H);
+
+        var n = pool.pairs.length;
+        var cx = W / 2, cy = H / 2;
+        var R = Math.min(W, H) * 0.36;
+
+        var positions = [];
+        for (var i = 0; i < n; i++) {
+            var angle = (i / n) * Math.PI * 2 - Math.PI / 2;
+            positions.push({ x: cx + Math.cos(angle) * R, y: cy + Math.sin(angle) * R });
+        }
+
+        ctx.strokeStyle = 'rgba(136,146,176,0.15)';
+        ctx.lineWidth = 0.6;
+        pool.edges.forEach(function(e){
+            var a = positions[e.from], b = positions[e.to];
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        });
+
+        var matched = {};
+        (chosen || []).forEach(function(item){ item.verts.forEach(function(v){ matched[v] = true; }); });
+
+        (chosen || []).forEach(function(item){
+            var col = item.type === 'chain' ? '#ff9e6b' : '#C5A059';
+            ctx.strokeStyle = col;
+            ctx.lineWidth = 2.2;
+            ctx.beginPath();
+            item.verts.forEach(function(v, k){
+                var p = positions[v];
+                if (k === 0) ctx.moveTo(p.x, p.y); else ctx.lineTo(p.x, p.y);
+            });
+            if (item.type === 'cycle') { ctx.lineTo(positions[item.verts[0]].x, positions[item.verts[0]].y); }
+            ctx.stroke();
+            for (var k = 0; k < item.verts.length; k++) {
+                var a = positions[item.verts[k]];
+                var b = positions[item.verts[(k+1) % item.verts.length]];
+                if (item.type === 'chain' && k === item.verts.length - 1) continue;
+                drawArrowhead(ctx, a, b, col);
+            }
+        });
+
+        var aboColors = ['#7aa2f7', '#C5A059', '#64ffda', '#bb9af7'];
+        for (var i2 = 0; i2 < n; i2++) {
+            var p2 = positions[i2];
+            var isMatched = matched[i2];
+            ctx.beginPath();
+            ctx.arc(p2.x - 7, p2.y, 11, Math.PI/2, Math.PI * 1.5);
+            ctx.fillStyle = aboColors[pool.pairs[i2].donor];
+            ctx.globalAlpha = isMatched ? 1 : 0.45;
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(p2.x + 7, p2.y, 11, Math.PI * 1.5, Math.PI/2);
+            ctx.fillStyle = aboColors[pool.pairs[i2].patient];
+            ctx.fill();
+            ctx.globalAlpha = 1;
+            ctx.beginPath(); ctx.arc(p2.x, p2.y, 11, 0, Math.PI * 2);
+            ctx.strokeStyle = isMatched ? '#F8F9FA' : 'rgba(168,178,209,0.5)';
+            ctx.lineWidth = isMatched ? 1.6 : 1;
+            ctx.stroke();
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '9px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText('P' + (i2+1), p2.x, p2.y + 3);
+            ctx.fillStyle = 'rgba(168,178,209,0.75)';
+            ctx.font = '8px JetBrains Mono, monospace';
+            ctx.fillText(ABO_LABELS[pool.pairs[i2].donor] + '\u2192' + ABO_LABELS[pool.pairs[i2].patient], p2.x, p2.y + 24);
+        }
+
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillStyle = '#C5A059';
+        ctx.fillRect(14, 14, 12, 12);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('Matched cycle', 32, 24);
+        ctx.fillStyle = '#ff9e6b';
+        ctx.fillRect(14, 34, 12, 12);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('Matched chain (NDD)', 32, 44);
+        ctx.fillStyle = 'rgba(136,146,176,0.4)';
+        ctx.fillRect(14, 54, 12, 12);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('Compatibility edge', 32, 64);
+
+        ctx.fillStyle = '#8892B0'; ctx.font = '9px Inter, sans-serif';
+        ctx.fillText('ABO:', W - 170, 20);
+        for (var kk = 0; kk < 4; kk++) {
+            ctx.fillStyle = aboColors[kk];
+            ctx.fillRect(W - 140 + kk*32, 14, 14, 14);
+            ctx.fillStyle = '#a8b2d1';
+            ctx.fillText(ABO_LABELS[kk], W - 133 + kk*32, 40);
+        }
+    }
+
+    function renderResults(pool, chosen, objName) {
+        var el = document.getElementById('kexResults');
+        while (el.firstChild) el.removeChild(el.firstChild);
+
+        var numPairs = pool.pairs.length;
+        var matchedCount = 0;
+        var numCycles = 0, numChains = 0;
+        var cycleLens = [];
+        chosen.forEach(function(item){
+            matchedCount += item.verts.length;
+            if (item.type === 'cycle') { numCycles++; cycleLens.push(item.verts.length); }
+            else numChains++;
+        });
+
+        var tbl = document.createElement('table');
+        tbl.className = 'results-table';
+        var thead = document.createElement('thead');
+        var hr = document.createElement('tr');
+        ['Metric', 'Value'].forEach(function(h){
+            var th = document.createElement('th'); th.textContent = h; hr.appendChild(th);
+        });
+        thead.appendChild(hr);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        function row(label, val, cls) {
+            var tr = document.createElement('tr');
+            var td1 = document.createElement('td'); td1.textContent = label; tr.appendChild(td1);
+            var td2 = document.createElement('td'); td2.textContent = val; if (cls) td2.className = cls; tr.appendChild(td2);
+            tbody.appendChild(tr);
+        }
+        row('Pool size', numPairs, 'highlight');
+        row('Patients matched', matchedCount + ' / ' + numPairs, 'highlight');
+        row('Match rate', (matchedCount / numPairs * 100).toFixed(1) + '%', 'highlight');
+        row('Cycles selected', numCycles);
+        row('Chain(s) selected', numChains);
+        row('Avg cycle length', cycleLens.length ? (cycleLens.reduce(function(a,b){return a+b;}, 0) / cycleLens.length).toFixed(2) : '\u2014');
+        row('Objective', objName);
+        tbl.appendChild(tbody);
+        el.appendChild(tbl);
+    }
+
+    function setStatus(element, cyclesCount, chosenCount, matched, total, objLabel) {
+        while (element.firstChild) element.removeChild(element.firstChild);
+        var strongSolved = document.createElement('strong');
+        strongSolved.textContent = 'Solved.';
+        element.appendChild(strongSolved);
+        element.appendChild(document.createTextNode(' ' + cyclesCount + ' candidate cycles enumerated; greedy ILP-relaxation selected ' + chosenCount + ' disjoint cycles/chains matching '));
+        var strongMatched = document.createElement('strong');
+        strongMatched.textContent = matched + ' / ' + total;
+        element.appendChild(strongMatched);
+        element.appendChild(document.createTextNode(' patients. Objective: ' + objLabel + '. Visualisation shows donor (left half) \u2192 patient (right half); arrows indicate directional kidney transfer.'));
+    }
+
+    document.getElementById('kexSolve').addEventListener('click', function(){
+        var scenario = selectedChip('kexScenarios');
+        var useChain = selectedChip('kexChains') === 'chain-on';
+        var obj = selectedChip('kexObj');
+        var L = parseInt(document.getElementById('kexL').value, 10);
+        var n = scenario === 'small' ? 8 : scenario === 'medium' ? 12 : 18;
+        var seed = 42 + n + L + (useChain ? 1 : 0) + (obj === 'priority' ? 100 : 0);
+
+        var status = document.getElementById('kexStatus');
+        status.textContent = 'Generating pool of ' + n + ' pairs, enumerating cycles of length \u2264 ' + L + '...';
+
+        setTimeout(function(){
+            var pool = generatePool(n, seed);
+            var cycles = enumerateCycles(pool, L);
+            var chainK = 5;
+            var chains = useChain ? enumerateChains(pool, chainK) : [];
+            var weightOf;
+            var objLabel;
+            if (obj === 'count') {
+                weightOf = function(verts){ return verts.length; };
+                objLabel = 'maximise transplants';
+            } else {
+                weightOf = function(verts){
+                    var s = 0; verts.forEach(function(v){ s += 1 + pool.pairs[v].pra; }); return s;
+                };
+                objLabel = 'priority-weighted (hard-to-match)';
+            }
+
+            var chosen = greedySelect(cycles, chains, weightOf, useChain);
+            drawPool(pool, chosen);
+            renderResults(pool, chosen, objLabel);
+
+            var totalMatched = chosen.reduce(function(s,it){ return s + it.verts.length; }, 0);
+            setStatus(status, cycles.length, chosen.length, totalMatched, n, objLabel);
+        }, 10);
+    });
+
+    (function initial(){
+        var pool = generatePool(8, 42 + 8 + 3);
+        drawPool(pool, []);
+    })();
+})();
+</script>
+</body>
+</html>

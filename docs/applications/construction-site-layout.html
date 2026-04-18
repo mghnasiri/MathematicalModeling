@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Site Layout Planning (SLP / QAP) | Construction | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Site Layout Planning for construction projects as a Quadratic Assignment Problem. Interactive solver with pairwise-swap local search and simulated annealing. Formulation per Koopmans &amp; Beckmann (1957), adapted to construction by Tommelein &amp; Zouein (1993) and Elbeltagi et al. (2001).">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/construction-site-layout.html">
+    <meta property="og:title" content="Construction Site Layout Planning (SLP / QAP)">
+    <meta property="og:description" content="Quadratic Assignment Problem solver for placing temporary site facilities to minimise cross-site material flow.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Construction Site Layout Planning (SLP)">
+    <meta name="twitter:description" content="QAP-based facility placement with flow-heatmap visualisation.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/construction-site-layout.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}]});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; } a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10,25,47,0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .content-block { max-width: 840px; margin: 0 auto; padding: 0 1rem; }
+        .content-block p { color: var(--slate-light); margin-bottom: 1.2rem; font-size: 0.95rem; }
+        .content-block p strong { color: var(--ivory); }
+        .content-block cite { color: var(--gold); font-style: normal; }
+        .formulation { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.3rem 1.8rem; margin: 1.5rem 0; }
+        .formulation .form-label { display: block; margin-bottom: 0.8rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--gold); font-size: 0.82rem; letter-spacing: 1px; margin-top: 0.5rem; }
+        .theory-link:hover { color: var(--gold-light); }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; margin: 2rem auto; max-width: 1080px; }
+        .solver-panel-header { background: rgba(197,160,89,0.08); border-bottom: 1px solid rgba(197,160,89,0.18); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; }
+        .solver-panel-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--ivory); margin: 0; letter-spacing: 1.5px; }
+        .solver-panel-header h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-section-label { font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { background: var(--midnight); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; padding: 0.7rem 0.9rem; text-align: left; color: var(--slate-light); cursor: pointer; transition: all 0.25s; }
+        .scenario-btn:hover { border-color: var(--gold); color: var(--ivory); }
+        .scenario-btn.active { background: rgba(197,160,89,0.1); border-color: var(--gold); color: var(--ivory); }
+        .scn-name { display: block; font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--gold); margin-bottom: 0.2rem; letter-spacing: 0.5px; }
+        .scn-desc { display: block; font-size: 0.74rem; color: var(--slate); line-height: 1.4; white-space: normal; }
+        .algo-switch { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .algo-chip { cursor: pointer; padding: 0.4rem 0.9rem; border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; font-size: 0.78rem; color: var(--slate-light); background: var(--midnight); transition: all 0.15s; }
+        .algo-chip.active { color: var(--ivory); background: rgba(197,160,89,0.15); border-color: var(--gold); }
+        .algo-chip:hover { color: var(--ivory); }
+        .solver-btn { width: 100%; padding: 0.7rem; border-radius: 4px; background: var(--gold); color: var(--midnight); border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; letter-spacing: 1px; text-transform: uppercase; transition: all 0.25s; margin-bottom: 1rem; }
+        .solver-btn:hover { background: var(--gold-light); }
+        .solver-canvas-wrap { background: var(--midnight); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.6rem; margin-bottom: 1rem; overflow-x: auto; }
+        .solver-canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+        .solver-status { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--slate); padding: 0.5rem 0; }
+        .results-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .result-kpi { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.9rem 1rem; }
+        .result-kpi .kpi-val { display: block; font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--gold); font-weight: 600; }
+        .result-kpi .kpi-label { font-size: 0.7rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.2px; }
+        .fac-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+        .fac-pill { padding: 2px 8px; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; border-radius: 3px; color: var(--midnight); font-weight: 600; letter-spacing: 0.3px; }
+        .algo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; max-width: 1080px; margin: 0 auto; }
+        .algo-card { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.2rem 1.3rem; }
+        .algo-tag { display: inline-block; padding: 2px 8px; background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.3); border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--gold); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 0.6rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--ivory); margin-bottom: 0.4rem; letter-spacing: 1px; }
+        .algo-card .algo-complexity { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--slate); margin-bottom: 0.6rem; }
+        .algo-card p { color: var(--slate-light); font-size: 0.86rem; line-height: 1.7; }
+        .algo-card p strong { color: var(--ivory); }
+        .complexity-box { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.2rem 1.4rem; }
+        .complexity-box h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-size: 1.15rem; margin-bottom: 0.7rem; }
+        .complexity-box h3 i { color: var(--gold); margin-right: 0.4rem; }
+        .complexity-list { list-style: none; padding: 0; margin: 0; }
+        .complexity-list li { padding: 0.4rem 0 0.4rem 1.3rem; position: relative; color: var(--slate-light); font-size: 0.88rem; }
+        .complexity-list li::before { content: '\25B8'; position: absolute; left: 0; color: var(--gold); }
+        .complexity-list li strong { color: var(--ivory); }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.7rem; max-width: 1080px; margin: 1.2rem auto; }
+        .extension-card { padding: 0.8rem 1rem; background: rgba(197,160,89,0.06); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; }
+        .extension-card strong { color: var(--gold); }
+        .extension-card a { display: block; margin-top: 0.3rem; font-size: 0.78rem; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-panel { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 3rem 2rem; border-radius: 8px; max-width: 900px; margin: 0 auto; border: 1px solid rgba(197,160,89,0.15); }
+        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; letter-spacing: 2px; color: var(--ivory); line-height: 1.4; margin-bottom: 1rem; }
+        .cta-panel p { color: var(--slate-light); margin-bottom: 1.2rem; font-size: 0.92rem; }
+        .cta-links { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .cta-link { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.7rem 1.5rem; border: 1px solid var(--gold); border-radius: 4px; color: var(--gold); font-size: 0.82rem; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.25s; }
+        .cta-link:hover { background: var(--gold); color: var(--midnight); }
+        .disclaimer-box { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1rem 1.3rem; font-size: 0.82rem; color: var(--slate); font-style: italic; max-width: 900px; margin: 0 auto; }
+        .disclaimer-title { font-style: normal; color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.4rem; }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .back-link { position: fixed; bottom: 1.5rem; left: 1.5rem; padding: 0.6rem 1rem; background: rgba(10,25,47,0.92); color: var(--gold); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.78rem; letter-spacing: 1.2px; text-transform: uppercase; z-index: 999; }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.3rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .hero-desc { font-size: 0.92rem; }
+            section { padding: 3rem 0; }
+            .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 90px; padding: 0.55rem 0.8rem; font-size: 0.75rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Applications","item":"https://mghnasiri.github.io/MathematicalModeling/applications/"},
+      {"@type":"ListItem","position":3,"name":"Construction","item":"https://mghnasiri.github.io/MathematicalModeling/applications/construction-domain.html"},
+      {"@type":"ListItem","position":4,"name":"Site Layout Planning","item":"https://mghnasiri.github.io/MathematicalModeling/applications/construction-site-layout.html"}
+    ]}
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="construction-domain.html">Construction</a></li>
+            <li class="active">Site Layout Planning</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-layer-group" aria-hidden="true"></i></div>
+        <h1>Site Layout <span>Planning</span></h1>
+        <p class="hero-subtitle">SLP &middot; QAP &middot; Temporary Facility Placement</p>
+        <a href="construction-domain.html?lens=matrix#framework" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;margin-top:0.3rem;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(197,160,89,0.25);border-radius:20px;text-decoration:none;background:rgba(197,160,89,0.05);">
+            <i class="fas fa-sitemap" aria-hidden="true" style="font-size:0.68rem;opacity:0.9;"></i>
+            <span>Construction &middot; Select &amp; Locate &middot; Tactical</span>
+        </a>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            A construction site needs a place for the <strong>site office</strong>, the <strong>rebar yard</strong>, the <strong>formwork stacks</strong>, the <strong>lay-down area</strong>, the <strong>tower-crane pad</strong>, the <strong>concrete batching plant</strong>, the <strong>materials storage</strong>, the <strong>worker welfare facilities</strong>, and the <strong>security gate</strong>. Poor placement wastes 15&ndash;25% of crew-hours and 10&ndash;15% of crane utilisation on avoidable cross-site travel. <cite>Tommelein &amp; Zouein (1993)</cite> formalised site-layout planning (SLP) as a <strong style="color:var(--gold);">Quadratic Assignment Problem (QAP)</strong> &mdash; the classical <cite>Koopmans &amp; Beckmann (1957)</cite> problem of placing \( n \) facilities in \( n \) locations to minimise weighted inter-facility flow. <cite>Sahni &amp; Gonzalez (1976)</cite> proved QAP is strongly NP-hard; even approximating it within any constant factor is NP-hard. Real construction SLP solvers rely on heuristics and metaheuristics, and this page uses both.
+        </p>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where This <span>Decision Fits</span></h2><p>Site mobilisation &mdash; the highlighted step is what this page optimises</p></div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">Site Acquisition<span class="chain-sub">Boundaries fixed</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Zoning &amp; Access<span class="chain-sub">Permits, gates</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">Site Layout<span class="chain-sub">Place facilities</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Crew Mobilisation<span class="chain-sub">Set up yards</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Execute<span class="chain-sub">Flow through layout</span></div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Problem</span></h2><p>Place n facilities in n candidate locations to minimise weighted flow</p></div>
+        <div class="content-block fade-in">
+            <p>Let \( \mathcal{F} = \{1, \ldots, n\} \) be the set of <strong>temporary facilities</strong> (site office, rebar yard, lay-down, crane pad, gate, etc.) and \( \mathcal{L} = \{1, \ldots, n\} \) the set of <strong>candidate locations</strong> on the site grid. Two input matrices:</p>
+            <ul style="color:var(--slate-light);padding-left:1.5rem;margin-bottom:1rem;font-size:0.92rem;">
+                <li><strong style="color:var(--gold);">Flow matrix \( f_{ik} \)</strong> &mdash; the expected material or crew flow (tons/day, trips/day) between facility \( i \) and facility \( k \). Estimated from project schedule and quantity takeoffs.</li>
+                <li><strong style="color:var(--gold);">Distance matrix \( d_{j\ell} \)</strong> &mdash; the travel distance (m) between candidate location \( j \) and location \( \ell \). Usually Manhattan or Euclidean, sometimes network distance if site topology is non-trivial.</li>
+            </ul>
+            <p>Binary decision variable \( x_{ij} = 1 \) if facility \( i \) is placed at location \( j \).</p>
+            <div class="formulation">
+                <span class="form-label">Koopmans-Beckmann QAP for site layout</span>
+                $$ \min \; \sum_{i=1}^{n} \sum_{k=1}^{n} \sum_{j=1}^{n} \sum_{\ell=1}^{n} f_{ik}\, d_{j\ell}\, x_{ij}\, x_{k\ell} $$
+                $$ \text{s.t.} \quad \sum_{j=1}^{n} x_{ij} = 1 \qquad \forall i \qquad \text{(each facility gets one location)} $$
+                $$ \sum_{i=1}^{n} x_{ij} = 1 \qquad \forall j \qquad \text{(each location holds one facility)} $$
+                $$ x_{ij} \in \{0, 1\} $$
+            </div>
+            <p>The objective is quadratic in \( \mathbf{x} \), which is what makes QAP hard even for small \( n \). At \( n = 10 \) the solution space already has \( 10! \approx 3.6 \times 10^6 \) permutations &mdash; still tractable by full enumeration, but by \( n = 15 \) (\( \sim 1.3 \times 10^{12} \)) it is not.</p>
+            <p><cite>Sahni &amp; Gonzalez (1976)</cite>'s strong-NP-hardness result rules out polynomial-time approximation schemes. Practical construction SLP solvers use <strong>pairwise-exchange local search</strong> (Robins &amp; Robinson's 2-opt applied to assignments), <strong>simulated annealing</strong> with swap moves, and <strong>genetic algorithms</strong> with permutation encoding (<cite>Elbeltagi, Hegazy &amp; Eldosouky 2004</cite>). The page's solver runs both.</p>
+            <a href="construction-site-selection.html" class="theory-link"><i class="fas fa-arrow-right" aria-hidden="true"></i> Compare to Site Selection &mdash; picking which site, not how to lay it out</a>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Try It <span>Yourself</span></h2><p>Place temporary facilities on the site grid to minimise cross-flow</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-layer-group" aria-hidden="true"></i> Site Layout Solver</h3>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">9 Facilities &middot; 9 Locations</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Choose a Scenario</div>
+                <div class="scenario-switcher" id="scenarioSwitcher"></div>
+                <div class="solver-status" id="scenarioContext"></div>
+
+                <div class="solver-section-label" style="margin-top:1rem;">Facilities to place</div>
+                <div class="fac-list" id="facList"></div>
+
+                <div class="solver-section-label">Algorithm</div>
+                <div class="algo-switch" id="algoSwitch">
+                    <div class="algo-chip active" data-algo="swap">Pairwise-exchange local search</div>
+                    <div class="algo-chip" data-algo="sa">Simulated annealing</div>
+                    <div class="algo-chip" data-algo="random">Random (baseline)</div>
+                </div>
+
+                <button class="solver-btn" id="solveBtn" type="button"><i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem;"></i>Solve Layout</button>
+
+                <div class="solver-section-label">Site Plan &mdash; facilities + weighted flow</div>
+                <div class="solver-canvas-wrap"><canvas id="siteCanvas" width="960" height="440"></canvas></div>
+                <p style="font-size:0.78rem;color:var(--slate);font-style:italic;margin-top:-0.4rem;">Facility blocks are placed in their chosen locations; line thickness between blocks = flow volume; line colour fades with distance.</p>
+
+                <p class="solver-status" id="solverStatus">Pick a scenario and algorithm, then click Solve.</p>
+
+                <div class="results-row" id="resultsRow" style="display:none;">
+                    <div class="result-kpi"><span class="kpi-val" id="kpiCost">&mdash;</span><span class="kpi-label">Flow-distance cost</span></div>
+                    <div class="result-kpi"><span class="kpi-val" id="kpiInit">&mdash;</span><span class="kpi-label">Initial cost (random)</span></div>
+                    <div class="result-kpi"><span class="kpi-val" id="kpiGain">&mdash;</span><span class="kpi-label">Improvement vs. random</span></div>
+                    <div class="result-kpi"><span class="kpi-val" id="kpiSwaps">&mdash;</span><span class="kpi-label">Swaps evaluated</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Algorithms</span></h2><p>From pairwise swap to simulated annealing on QAP</p></div>
+        <div class="algo-grid">
+            <div class="algo-card fade-in">
+                <div class="algo-tag">Local Search</div>
+                <h3>Pairwise-Exchange (2-opt swap)</h3>
+                <span class="algo-complexity">O(n\u2074) first-improvement / O(n\u00b2) per swap check</span>
+                <p>Start from a random assignment. Try swapping every pair of facilities; if the swap reduces total flow-distance cost, accept it. Repeat until no improving swap exists (local optimum). The objective change on a swap can be computed in \( O(n) \) if you precompute flow-row sums, making the full neighbourhood scan \( O(n^3) \) per iteration. Fast and effective on construction-sized QAPs (\( n \le 20 \)). <strong>The default algorithm on this page.</strong></p>
+            </div>
+            <div class="algo-card fade-in">
+                <div class="algo-tag">Metaheuristic</div>
+                <h3>Simulated Annealing</h3>
+                <span class="algo-complexity">O(iterations &middot; n\u00b2)</span>
+                <p><cite>Burkard &amp; Rendl (1984)</cite> applied SA to QAP with excellent results. Propose a random swap; accept if it improves; otherwise accept with probability \( e^{-\Delta / T} \) where \( T \) decays geometrically. Escapes local optima that pure swap search cannot. Implemented here with \( T_0 = \bar{c}/10 \), cooling \( \alpha = 0.995 \), 5000 iterations.</p>
+            </div>
+            <div class="algo-card fade-in">
+                <div class="algo-tag">GA / Hybrid</div>
+                <h3>Elbeltagi GA for Construction SLP</h3>
+                <span class="algo-complexity">Iterative &middot; permutation encoding</span>
+                <p><cite>Elbeltagi, Hegazy &amp; Eldosouky (2004)</cite>'s GA uses permutation encoding (chromosome = location assignment per facility), order crossover (OX), and swap mutation. Benchmarked against Tommelein-Zouein's ConsSite and Mawdesley et al's MCMF; competitive on all published real-site cases. Typical runtime 30&ndash;90 s for 15-facility instances.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-World <span>Complexity</span></h2><p>Why real sites go beyond textbook QAP</p></div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-hard-hat" aria-hidden="true"></i> Beyond Koopmans-Beckmann</h3>
+                <ul class="complexity-list">
+                    <li><strong>Unequal facility sizes</strong> &mdash; QAP assumes each facility takes one grid cell. In reality the batching plant is 25 x 25 m, the office trailer is 4 x 12 m. <cite>Zouein, Harmanani &amp; Hajar (2002)</cite>'s MCLOP handles unequal areas.</li>
+                    <li><strong>Obstacles &amp; exclusion zones</strong> &mdash; Existing structures, trees, buried utilities carve no-go areas out of the grid. Distance calculations must route around them (A* or Dijkstra instead of Euclidean).</li>
+                    <li><strong>Time-varying layouts</strong> &mdash; Sites reconfigure as the project progresses: excavation yards become foundation zones become structure zones. <cite>Elbeltagi &amp; Hegazy (2001)</cite>'s dynamic SLP re-optimises per phase.</li>
+                    <li><strong>Safety separation rules</strong> &mdash; Fuel storage must be \( \ge 30 \) m from occupied buildings; crane radius must not overfly residential boundary. These are <em>hard constraints</em> on \( x_{ij} \), not flow costs.</li>
+                    <li><strong>Tower-crane reach &amp; geometry</strong> &mdash; All heavy-lift material must be within crane radius from the crane pad. This adds a routing-friendly facility-to-crane distance constraint.</li>
+                    <li><strong>Noise-restricted zones</strong> &mdash; Batching plants and compressors near residential boundaries trigger permit penalties; the layout cost includes a regulatory term.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Related <span>Selection &amp; Location Variants</span></h2><p>SLP is the intra-site twin of site selection and facility location</p></div>
+        <div class="extensions-grid">
+            <div class="extension-card">
+                <strong>Site Selection.</strong> Where to build the project; uses UFLP across candidate sites. SLP picks up after the site is chosen.
+                <a href="construction-site-selection.html">&rarr; Open Site Selection</a>
+            </div>
+            <div class="extension-card">
+                <strong>Earthmoving Optimisation.</strong> If the site is graded, the cut-fill balance shapes the available zones for facility placement. Earthmoving + SLP are often solved iteratively.
+                <a href="construction-earthmoving.html">&rarr; Open Earthmoving</a>
+            </div>
+            <div class="extension-card">
+                <strong>Equipment Routing (CVRP).</strong> Once facilities are placed, equipment routing between them uses graph-theoretic distances that depend on layout.
+                <a href="construction-equipment-routing.html">&rarr; Open Equipment Routing</a>
+            </div>
+            <div class="extension-card">
+                <strong>RCPSP.</strong> Task-level scheduling uses the layout: crane setup times per activity depend on facility placement, linking SLP with RCPSP (integrated models are a research direction).
+                <a href="construction-project-scheduling.html">&rarr; Open Project Scheduling</a>
+            </div>
+            <div class="extension-card">
+                <strong>Linear Scheduling.</strong> For linear-work projects (highway, pipeline) the "site" stretches along the alignment and SLP becomes a series of local placements per section.
+                <a href="construction-linear-scheduling.html">&rarr; Open Linear Scheduling</a>
+            </div>
+            <div class="extension-card">
+                <strong>Dynamic / Multi-Period SLP.</strong> Elbeltagi &amp; Hegazy 2001 and Ning, Lam &amp; Lam 2010 extend SLP with phase-dependent facility sets; active research.
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>References</span></h2><p>Cited above &middot; DOIs &amp; permanent URLs</p></div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Koopmans, T.&nbsp;C., &amp; Beckmann, M. (1957).</div>
+                    <div class="reference-title">&ldquo;Assignment problems and the location of economic activities.&rdquo;</div>
+                    <div class="reference-journal"><em>Econometrica</em>, 25(1), 53&ndash;76. (The original QAP formulation.) <a href="https://doi.org/10.2307/1907742" target="_blank" rel="noopener">doi:10.2307/1907742</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Sahni, S., &amp; Gonzalez, T. (1976).</div>
+                    <div class="reference-title">&ldquo;P-complete approximation problems.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of the ACM</em>, 23(3), 555&ndash;565. (QAP is strongly NP-hard and inapproximable.) <a href="https://doi.org/10.1145/321958.321975" target="_blank" rel="noopener">doi:10.1145/321958.321975</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Tommelein, I.&nbsp;D., &amp; Zouein, P.&nbsp;P. (1993).</div>
+                    <div class="reference-title">&ldquo;Interactive dynamic layout planning.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of Construction Engineering and Management</em>, 119(2), 266&ndash;287. (First formal construction SLP; ConsSite system.) <a href="https://doi.org/10.1061/(ASCE)0733-9364(1993)119:2(266)" target="_blank" rel="noopener">doi:10.1061/(ASCE)0733-9364(1993)119:2(266)</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Burkard, R.&nbsp;E., &amp; Rendl, F. (1984).</div>
+                    <div class="reference-title">&ldquo;A thermodynamically motivated simulation procedure for combinatorial optimization problems.&rdquo;</div>
+                    <div class="reference-journal"><em>European Journal of Operational Research</em>, 17(2), 169&ndash;174. (SA applied to QAP.) <a href="https://doi.org/10.1016/0377-2217(84)90231-5" target="_blank" rel="noopener">doi:10.1016/0377-2217(84)90231-5</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Elbeltagi, E., Hegazy, T., &amp; Eldosouky, A. (2004).</div>
+                    <div class="reference-title">&ldquo;Dynamic layout of construction temporary facilities considering safety.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of Construction Engineering and Management</em>, 130(4), 534&ndash;541. (GA for SLP with safety constraints.) <a href="https://doi.org/10.1061/(ASCE)0733-9364(2004)130:4(534)" target="_blank" rel="noopener">doi:10.1061/(ASCE)0733-9364(2004)130:4(534)</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Mawdesley, M.&nbsp;J., Al-Jibouri, S.&nbsp;H., &amp; Yang, H. (2002).</div>
+                    <div class="reference-title">&ldquo;Genetic algorithms for construction site layout in project planning.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of Construction Engineering and Management</em>, 128(5), 418&ndash;426. <a href="https://doi.org/10.1061/(ASCE)0733-9364(2002)128:5(418)" target="_blank" rel="noopener">doi:10.1061/(ASCE)0733-9364(2002)128:5(418)</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Zouein, P.&nbsp;P., Harmanani, H., &amp; Hajar, A. (2002).</div>
+                    <div class="reference-title">&ldquo;Genetic algorithm for solving site layout problem with unequal-size and constrained facilities.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of Computing in Civil Engineering</em>, 16(2), 143&ndash;151. (MCLOP &mdash; unequal-size SLP.) <a href="https://doi.org/10.1061/(ASCE)0887-3801(2002)16:2(143)" target="_blank" rel="noopener">doi:10.1061/(ASCE)0887-3801(2002)16:2(143)</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Elbeltagi, E., &amp; Hegazy, T. (2001).</div>
+                    <div class="reference-title">&ldquo;A hybrid AI-based system for site layout planning in construction.&rdquo;</div>
+                    <div class="reference-journal"><em>Computer-Aided Civil and Infrastructure Engineering</em>, 16(2), 79&ndash;93. (Dynamic multi-period SLP.) <a href="https://doi.org/10.1111/0885-9507.00214" target="_blank" rel="noopener">doi:10.1111/0885-9507.00214</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Ning, X., Lam, K.&nbsp;C., &amp; Lam, M.&nbsp;C.&nbsp;K. (2010).</div>
+                    <div class="reference-title">&ldquo;Dynamic construction site layout planning using max-min ant system.&rdquo;</div>
+                    <div class="reference-journal"><em>Automation in Construction</em>, 19(1), 55&ndash;65. (Ant colony metaheuristic; dynamic formulation.) <a href="https://doi.org/10.1016/j.autcon.2009.09.002" target="_blank" rel="noopener">doi:10.1016/j.autcon.2009.09.002</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Planning a complex urban build or infrastructure site?</h3>
+            <p>From facility placement to crane-reach coordination and dynamic phase-based layouts, OR turns cross-site travel from a hidden cost into a first-class design variable. Let's discuss how Operations Research can improve your site mobilisation.</p>
+            <div class="cta-links"><a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link"><i class="fab fa-linkedin" aria-hidden="true"></i> Connect on LinkedIn</a></div>
+        </div>
+    </div>
+</section>
+
+<section style="padding:2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
+            Facility names, flow volumes, and grid positions are illustrative values chosen to demonstrate the QAP algorithms. Real site layout planning must account for unequal facility sizes, exclusion zones, tower-crane geometry, safety separation rules, and phase-dependent reconfiguration not shown here.
+        </div>
+    </div>
+</section>
+</main>
+
+<footer><div class="container"><p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p></div></footer>
+<a href="construction-domain.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+'use strict';
+
+/* Scenarios: facilities + flow matrix + grid of candidate locations (x,y in metres) */
+var SCENARIOS = [
+    {
+        name: 'Downtown High-Rise (9 facilities)',
+        desc: '9 facilities on a 3x3 candidate grid. Tight urban site; office and crane pad dominate flow.',
+        facilities: [
+            {name:'Site Office', color:'#C5A059', short:'OFF'},
+            {name:'Crane Pad',   color:'#7aa2f7', short:'CRN'},
+            {name:'Rebar Yard',  color:'#64ffda', short:'REB'},
+            {name:'Lay-down',    color:'#ff6b6b', short:'LDN'},
+            {name:'Formwork',    color:'#bb9af7', short:'FRM'},
+            {name:'Concrete',    color:'#e0af68', short:'CNC'},
+            {name:'Security Gate', color:'#9ece6a', short:'GTE'},
+            {name:'Welfare',     color:'#f7768e', short:'WLF'},
+            {name:'Waste Bins',  color:'#73daca', short:'WST'}
+        ],
+        flow: [
+            [0, 3, 1, 2, 1, 2, 4, 2, 1],
+            [3, 0, 6, 7, 6, 8, 1, 1, 1],
+            [1, 6, 0, 3, 2, 4, 2, 0, 0],
+            [2, 7, 3, 0, 3, 5, 3, 0, 1],
+            [1, 6, 2, 3, 0, 4, 1, 0, 1],
+            [2, 8, 4, 5, 4, 0, 1, 0, 1],
+            [4, 1, 2, 3, 1, 1, 0, 2, 3],
+            [2, 1, 0, 0, 0, 0, 2, 0, 1],
+            [1, 1, 0, 1, 1, 1, 3, 1, 0]
+        ],
+        locations: [
+            {x:90, y:90}, {x:240, y:90}, {x:390, y:90},
+            {x:90, y:210}, {x:240, y:210}, {x:390, y:210},
+            {x:90, y:330}, {x:240, y:330}, {x:390, y:330}
+        ],
+        siteW: 480, siteH: 420
+    },
+    {
+        name: 'Suburban Office Park (8 facilities)',
+        desc: '8 facilities on an 8-location linear/L-shape site. Lots of cross-site rebar flow.',
+        facilities: [
+            {name:'Site Office', color:'#C5A059', short:'OFF'},
+            {name:'Tower Crane', color:'#7aa2f7', short:'CRN'},
+            {name:'Rebar Yard',  color:'#64ffda', short:'REB'},
+            {name:'Lay-down',    color:'#ff6b6b', short:'LDN'},
+            {name:'Formwork',    color:'#bb9af7', short:'FRM'},
+            {name:'Concrete',    color:'#e0af68', short:'CNC'},
+            {name:'Gate',        color:'#9ece6a', short:'GTE'},
+            {name:'Welfare',     color:'#f7768e', short:'WLF'}
+        ],
+        flow: [
+            [0, 2, 1, 1, 1, 1, 4, 3],
+            [2, 0, 7, 8, 6, 9, 1, 1],
+            [1, 7, 0, 4, 3, 5, 2, 0],
+            [1, 8, 4, 0, 3, 4, 2, 0],
+            [1, 6, 3, 3, 0, 4, 1, 0],
+            [1, 9, 5, 4, 4, 0, 1, 0],
+            [4, 1, 2, 2, 1, 1, 0, 2],
+            [3, 1, 0, 0, 0, 0, 2, 0]
+        ],
+        locations: [
+            {x:70, y:100}, {x:220, y:100}, {x:370, y:100}, {x:520, y:100},
+            {x:70, y:280}, {x:220, y:280}, {x:370, y:280}, {x:520, y:280}
+        ],
+        siteW: 600, siteH: 380
+    },
+    {
+        name: 'Hospital Wing Expansion (9 facilities)',
+        desc: '9 facilities with hard separation rules. Noise-sensitive zones near existing hospital.',
+        facilities: [
+            {name:'Site Office',   color:'#C5A059', short:'OFF'},
+            {name:'Crane Pad',     color:'#7aa2f7', short:'CRN'},
+            {name:'Steel Yard',    color:'#64ffda', short:'STL'},
+            {name:'MEP Staging',   color:'#ff6b6b', short:'MEP'},
+            {name:'Partition',     color:'#bb9af7', short:'PRT'},
+            {name:'Concrete',      color:'#e0af68', short:'CNC'},
+            {name:'Main Gate',     color:'#9ece6a', short:'GTE'},
+            {name:'Welfare',       color:'#f7768e', short:'WLF'},
+            {name:'Waste/Recycle', color:'#73daca', short:'WST'}
+        ],
+        flow: [
+            [0, 3, 1, 2, 1, 2, 4, 3, 1],
+            [3, 0, 7, 5, 4, 8, 1, 1, 1],
+            [1, 7, 0, 3, 2, 3, 2, 0, 0],
+            [2, 5, 3, 0, 5, 3, 3, 0, 1],
+            [1, 4, 2, 5, 0, 3, 1, 0, 2],
+            [2, 8, 3, 3, 3, 0, 1, 0, 1],
+            [4, 1, 2, 3, 1, 1, 0, 2, 3],
+            [3, 1, 0, 0, 0, 0, 2, 0, 1],
+            [1, 1, 0, 1, 2, 1, 3, 1, 0]
+        ],
+        locations: [
+            {x:90, y:90}, {x:240, y:90}, {x:390, y:90},
+            {x:90, y:210}, {x:240, y:210}, {x:390, y:210},
+            {x:90, y:330}, {x:240, y:330}, {x:390, y:330}
+        ],
+        siteW: 480, siteH: 420
+    }
+];
+
+var currentScenarioIdx = 0;
+var currentAlgo = 'swap';
+var lastResult = null;
+
+var sw = document.getElementById('scenarioSwitcher');
+var facList = document.getElementById('facList');
+var algoSwitch = document.getElementById('algoSwitch');
+var solveBtn = document.getElementById('solveBtn');
+var solverStatus = document.getElementById('solverStatus');
+var scenarioContext = document.getElementById('scenarioContext');
+var configSummary = document.getElementById('configSummary');
+var siteCanvas = document.getElementById('siteCanvas');
+var siteCtx = siteCanvas.getContext('2d');
+var resultsRow = document.getElementById('resultsRow');
+
+SCENARIOS.forEach(function(sc, i){
+    var b = document.createElement('button');
+    b.className = 'scenario-btn' + (i===0?' active':'');
+    var n = document.createElement('span'); n.className='scn-name'; n.textContent = sc.name;
+    var d = document.createElement('span'); d.className='scn-desc'; d.textContent = sc.desc;
+    b.appendChild(n); b.appendChild(d);
+    b.onclick = function(){ loadScenario(i); };
+    sw.appendChild(b);
+});
+
+algoSwitch.querySelectorAll('.algo-chip').forEach(function(c){
+    c.onclick = function(){
+        algoSwitch.querySelectorAll('.algo-chip').forEach(function(x){ x.classList.remove('active'); });
+        c.classList.add('active');
+        currentAlgo = c.getAttribute('data-algo');
+    };
+});
+solveBtn.onclick = solve;
+
+function loadScenario(idx){
+    currentScenarioIdx = idx;
+    var sc = SCENARIOS[idx];
+    document.querySelectorAll('.scenario-btn').forEach(function(b,i){ b.classList.toggle('active', i===idx); });
+    scenarioContext.textContent = sc.desc;
+    configSummary.textContent = sc.facilities.length + ' Facilities \u00b7 ' + sc.locations.length + ' Locations';
+    /* render facility pill list */
+    facList.textContent = '';
+    sc.facilities.forEach(function(f){
+        var p = document.createElement('span');
+        p.className = 'fac-pill'; p.style.background = f.color;
+        p.textContent = f.short + ' — ' + f.name;
+        facList.appendChild(p);
+    });
+    clearCanvas();
+    resultsRow.style.display = 'none';
+    solverStatus.textContent = 'Scenario loaded. Pick an algorithm and click Solve.';
+}
+
+function clearCanvas(){
+    var cx = siteCtx;
+    cx.fillStyle = '#0A192F'; cx.fillRect(0,0,siteCanvas.width,siteCanvas.height);
+    cx.fillStyle = 'rgba(136,146,176,0.5)'; cx.font = '13px Inter'; cx.textAlign = 'center';
+    cx.fillText('Click Solve to optimise the layout', siteCanvas.width/2, siteCanvas.height/2);
+}
+
+/* Euclidean distances between locations */
+function computeDistances(locs){
+    var n = locs.length;
+    var d = []; for(var i=0;i<n;i++) d.push(new Array(n).fill(0));
+    for(var i=0;i<n;i++) for(var j=0;j<n;j++){
+        var dx = locs[i].x - locs[j].x, dy = locs[i].y - locs[j].y;
+        d[i][j] = Math.sqrt(dx*dx + dy*dy);
+    }
+    return d;
+}
+
+/* QAP cost given assignment pi[i] = location of facility i */
+function qapCost(pi, flow, dist){
+    var n = pi.length, c = 0;
+    for(var i=0;i<n;i++) for(var k=0;k<n;k++){
+        c += flow[i][k] * dist[pi[i]][pi[k]];
+    }
+    return c;
+}
+
+function randomPerm(n){
+    var a = []; for(var i=0;i<n;i++) a.push(i);
+    for(var i=n-1;i>0;i--){ var j=Math.floor(Math.random()*(i+1)); var t=a[i]; a[i]=a[j]; a[j]=t; }
+    return a;
+}
+
+/* Pairwise-exchange local search: first-improvement */
+function localSearch(flow, dist, pi0){
+    var n = pi0.length, pi = pi0.slice(), cur = qapCost(pi, flow, dist);
+    var swaps = 0;
+    while(true){
+        var improved = false;
+        for(var i=0;i<n-1 && !improved;i++){
+            for(var j=i+1;j<n && !improved;j++){
+                var t = pi[i]; pi[i]=pi[j]; pi[j]=t;
+                var nc = qapCost(pi, flow, dist);
+                swaps++;
+                if(nc < cur - 1e-9){ cur = nc; improved = true; }
+                else { t = pi[i]; pi[i]=pi[j]; pi[j]=t; } /* revert */
+            }
+        }
+        if(!improved) break;
+    }
+    return { pi:pi, cost:cur, swaps:swaps };
+}
+
+/* Simulated annealing on QAP with swap moves */
+function simulatedAnnealing(flow, dist, pi0){
+    var n = pi0.length, pi = pi0.slice(), cur = qapCost(pi, flow, dist);
+    var best = pi.slice(), bestC = cur;
+    var iters = 5000, T = Math.max(1, cur/20), alpha = 0.998;
+    var swaps = 0;
+    for(var it=0; it<iters; it++){
+        var i = Math.floor(Math.random()*n), j = Math.floor(Math.random()*n);
+        if(i===j) continue;
+        var t = pi[i]; pi[i]=pi[j]; pi[j]=t;
+        var nc = qapCost(pi, flow, dist);
+        swaps++;
+        var dCost = nc - cur;
+        if(dCost < 0 || Math.random() < Math.exp(-dCost/T)){
+            cur = nc;
+            if(cur < bestC){ bestC = cur; best = pi.slice(); }
+        } else {
+            t = pi[i]; pi[i]=pi[j]; pi[j]=t; /* revert */
+        }
+        T *= alpha;
+    }
+    return { pi:best, cost:bestC, swaps:swaps };
+}
+
+function solve(){
+    var sc = SCENARIOS[currentScenarioIdx];
+    var flow = sc.flow, locs = sc.locations;
+    var dist = computeDistances(locs);
+    var n = sc.facilities.length;
+    var pi0 = randomPerm(n);
+    var initCost = qapCost(pi0, flow, dist);
+    var out;
+    if(currentAlgo === 'swap') out = localSearch(flow, dist, pi0);
+    else if(currentAlgo === 'sa') out = simulatedAnnealing(flow, dist, pi0);
+    else out = { pi: pi0, cost: initCost, swaps: 0 };
+
+    lastResult = { sc:sc, pi:out.pi, cost:out.cost, initCost:initCost, dist:dist, swaps:out.swaps };
+    drawSite();
+
+    var gain = initCost - out.cost;
+    var gainPct = gain / initCost * 100;
+    document.getElementById('kpiCost').textContent = Math.round(out.cost).toLocaleString();
+    document.getElementById('kpiInit').textContent = Math.round(initCost).toLocaleString();
+    document.getElementById('kpiGain').textContent = gain > 0 ? ('\u2212' + gainPct.toFixed(1) + '%') : ('+' + Math.abs(gainPct).toFixed(1) + '%');
+    document.getElementById('kpiSwaps').textContent = out.swaps.toLocaleString();
+    resultsRow.style.display = 'grid';
+    solverStatus.textContent = 'Solved (' + currentAlgo + '). Cost ' + Math.round(out.cost).toLocaleString() + '; improved ' + gainPct.toFixed(1) + '% over random start.';
+}
+
+function drawSite(){
+    var W = siteCanvas.width, H = siteCanvas.height, cx = siteCtx;
+    cx.fillStyle = '#0A192F'; cx.fillRect(0,0,W,H);
+    if(!lastResult) return;
+    var sc = lastResult.sc, pi = lastResult.pi;
+    var n = sc.facilities.length;
+    /* Compute offset so site is centred */
+    var offX = (W - sc.siteW) / 2, offY = 40;
+
+    /* Site boundary */
+    cx.strokeStyle = 'rgba(197,160,89,0.25)'; cx.lineWidth = 1;
+    cx.strokeRect(offX, offY, sc.siteW, sc.siteH);
+
+    /* Grid lines (faint) */
+    cx.strokeStyle = 'rgba(197,160,89,0.05)';
+    for(var x=0;x<=sc.siteW;x+=60){ cx.beginPath(); cx.moveTo(offX+x, offY); cx.lineTo(offX+x, offY+sc.siteH); cx.stroke(); }
+    for(var y=0;y<=sc.siteH;y+=60){ cx.beginPath(); cx.moveTo(offX, offY+y); cx.lineTo(offX+sc.siteW, offY+y); cx.stroke(); }
+
+    /* Find flow max */
+    var maxFlow = 0;
+    for(var i=0;i<n;i++) for(var k=0;k<n;k++) if(sc.flow[i][k] > maxFlow) maxFlow = sc.flow[i][k];
+
+    /* Draw flow lines between placed facilities */
+    for(var i=0;i<n;i++){
+        for(var k=i+1;k<n;k++){
+            var f = sc.flow[i][k] + sc.flow[k][i];
+            if(f <= 0) continue;
+            var loc_i = sc.locations[pi[i]], loc_k = sc.locations[pi[k]];
+            var x1 = offX + loc_i.x, y1 = offY + loc_i.y;
+            var x2 = offX + loc_k.x, y2 = offY + loc_k.y;
+            var intensity = f / (2*maxFlow);
+            cx.strokeStyle = 'rgba(197,160,89,' + (0.1 + 0.7*intensity) + ')';
+            cx.lineWidth = 0.5 + 3*intensity;
+            cx.beginPath(); cx.moveTo(x1, y1); cx.lineTo(x2, y2); cx.stroke();
+        }
+    }
+
+    /* Draw facility blocks */
+    for(var i=0;i<n;i++){
+        var loc = sc.locations[pi[i]], fac = sc.facilities[i];
+        var x = offX + loc.x, y = offY + loc.y;
+        var size = 54;
+        cx.fillStyle = fac.color; cx.globalAlpha = 0.92;
+        cx.fillRect(x - size/2, y - size/2, size, size);
+        cx.globalAlpha = 1;
+        cx.strokeStyle = 'rgba(10,25,47,0.75)'; cx.lineWidth = 1.5;
+        cx.strokeRect(x - size/2, y - size/2, size, size);
+        /* label */
+        cx.fillStyle = 'rgba(10,25,47,0.95)'; cx.font = 'bold 11px JetBrains Mono'; cx.textAlign = 'center';
+        cx.fillText(fac.short, x, y - 2);
+        cx.font = '8px Inter';
+        var nm = fac.name.length > 10 ? fac.name.substring(0,9)+'.' : fac.name;
+        cx.fillText(nm, x, y + 12);
+    }
+
+    /* Title */
+    cx.fillStyle = 'rgba(197,160,89,0.75)'; cx.font = '12px Inter'; cx.textAlign = 'left';
+    cx.fillText('Site Layout — Cost ' + Math.round(lastResult.cost).toLocaleString() + ' (flow·distance units)', offX, 22);
+}
+
+var obs = new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible'); obs.unobserve(e.target);}});},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(function(el){obs.observe(el);});
+
+(function(){
+    var pb=document.getElementById('scrollProgress');
+    function s(){ var h=document.documentElement; var d=h.scrollHeight-h.clientHeight; if(pb) pb.style.width = (d>0?(h.scrollTop/d)*100:0) + '%'; if(window.scrollY>50) document.querySelector('.navbar').classList.add('scrolled'); else document.querySelector('.navbar').classList.remove('scrolled'); }
+    window.addEventListener('scroll', s, {passive:true}); s();
+})();
+
+loadScenario(0);
+})();
+</script>
+</body>
+</html>

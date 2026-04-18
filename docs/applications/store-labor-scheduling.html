@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Store Labour Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Weekly shift scheduling for retail store associates: assign workers to time-of-day slots to meet forecast demand at minimum labour cost, respecting hour caps, fair-scheduling laws, and worker availability. Kesavan-Terwiesch 2015; Pinedo scheduling.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/store-labor-scheduling.html">
+    <meta property="og:title" content="Store Labour Scheduling">
+    <meta property="og:description" content="Weekly shift scheduling MIP with interactive solver.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Store Labour Scheduling">
+    <meta name="twitter:description" content="Retail labour scheduling under demand forecast.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/store-labor-scheduling.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Store Labour Scheduling</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-clock" aria-hidden="true"></i></div>
+        <h1>Store Labour <span>Scheduling</span></h1>
+        <p class="hero-subtitle">Weekly shift assignment &middot; Demand-driven</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Assign store associates to <strong>shifts</strong> across a planning week
+            so that hourly forecast traffic is covered at minimum labour cost,
+            subject to <strong>worker availability</strong>, weekly hour caps, and
+            <strong>fair-scheduling laws</strong> (e.g., NYC Fair Workweek, San
+            Francisco Formula Retail Employee Rights). Integer programming with a
+            staffing-pattern formulation; greedy + local-search heuristic in the
+            solver. Connects empirical labour-and-sales evidence (Kesavan &amp;
+            Terwiesch 2015) to operational shift design.
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>Labour is retail&rsquo;s largest controllable cost &mdash; and a top driver of conversion</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">~13%</div><div class="impact-label">Typical store-labour share of retail revenue &mdash; the largest controllable cost line at most chains.</div><div class="impact-src">Source: NRF retail expense benchmarks.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">+10%</div><div class="impact-label">Conversion-rate lift documented when staffing is matched to traffic vs. flat shifts (Kesavan-Terwiesch 2015 grocery study).</div><div class="impact-src">Source: Kesavan &amp; Terwiesch (2015), <em>Production &amp; Operations Management</em>.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">14 days</div><div class="impact-label">Advance-notice requirement under NYC Fair Workweek and similar laws &mdash; a hard constraint that forces deterministic schedules.</div><div class="impact-src">Source: NYC Department of Consumer &amp; Worker Protection Fair Workweek Law.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">~$0.5B</div><div class="impact-label">Estimated U.S. retail wage-theft penalty exposure from non-compliant scheduling &mdash; misalignment between intent and execution is costly.</div><div class="impact-src">Source: National Employment Law Project; industry settlements.</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Operational, weekly &middot; downstream of forecast, upstream of execution</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            Labour scheduling sits between <em>traffic forecasting</em> (an upstream prediction problem) and <em>shift execution</em> (the operational reality of swaps, no-shows, and overtime). At a typical chain this is run weekly per store, optimised across ~10-50 associates and ~84 hourly slots (12-hour day &times; 7 days). Production systems integrate with workforce-management software (Kronos, Workday); the solver below illustrates the underlying MIP. Compare with <a href="../families/scheduling.html">scheduling family</a> formulations; the structural cousins are healthcare nurse rostering and call-centre staffing.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Forecast</strong><span class="chain-sub">hourly traffic</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Schedule shifts</strong><span class="chain-sub">weekly MIP</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Publish</strong><span class="chain-sub">14-day notice</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Execute</strong><span class="chain-sub">swaps, no-shows</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>Worker-shift MIP with demand coverage and fairness constraints</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">OR family</div><div class="problem-meta-value">Integer Programming (rostering)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Complexity</div><div class="problem-meta-value">NP-hard (rostering generic)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Solver realism</div><div class="problem-meta-value"><span class="problem-realism">&starf;&starf; Greedy + 1-opt swap</span></div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Pinedo (2016); Kesavan-Terwiesch (2015)</div></div>
+            </div>
+
+            <h3>Sets and parameters</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Unit</th></tr></thead>
+                <tbody>
+                    <tr><td>\(w \in \mathcal{W}\)</td><td>Worker (associate)</td><td>finite</td></tr>
+                    <tr><td>\(t \in \mathcal{T}\)</td><td>Time slot (hour-of-week)</td><td>\(\{0, \ldots, 83\}\)</td></tr>
+                    <tr><td>\(s \in \mathcal{S}\)</td><td>Allowed shift pattern (start-hour + length combo)</td><td>finite</td></tr>
+                    <tr><td>\(d_t\)</td><td>Forecast demand (associates needed) in slot \(t\)</td><td>FTEs</td></tr>
+                    <tr><td>\(c_w\)</td><td>Hourly wage of worker \(w\)</td><td>$ / hr</td></tr>
+                    <tr><td>\(a_{w,s}\)</td><td>1 if worker \(w\) is available for shift \(s\)</td><td>binary</td></tr>
+                    <tr><td>\(\bar H_w\)</td><td>Maximum weekly hours for \(w\)</td><td>hours</td></tr>
+                    <tr><td>\(\underline H_w\)</td><td>Minimum guaranteed hours (per local law)</td><td>hours</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Decision variable</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(x_{w,s}\)</td><td>1 if worker \(w\) is assigned to shift \(s\)</td><td>binary</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Objective</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Minimise total wage cost across the week:</p>
+            <div class="formula-block">
+                $$\min \; \sum_{w \in \mathcal{W}} \sum_{s \in \mathcal{S}} c_w \cdot \mathrm{hours}(s) \cdot x_{w,s}$$
+            </div>
+
+            <h3>Constraints</h3>
+            <div class="formula-block">
+                $$\sum_{w \in \mathcal{W}} \sum_{s : t \in s} x_{w,s} \;\geq\; d_t \qquad \forall\, t \qquad \text{(demand coverage)}$$
+                $$\underline H_w \;\leq\; \sum_{s} \mathrm{hours}(s) \cdot x_{w,s} \;\leq\; \bar H_w \qquad \forall\, w \qquad \text{(weekly hour bounds)}$$
+                $$x_{w,s} \leq a_{w,s} \qquad \forall\, w, s \qquad \text{(availability)}$$
+                $$\sum_{s} x_{w,s} \leq 1 \quad \text{per day per worker} \qquad \text{(no double-shift)}$$
+            </div>
+
+            <h3>Fair-scheduling extensions (optional)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Modern fair-workweek laws add hard constraints:</p>
+            <ul style="margin-left:1.5rem;color:var(--slate-light);font-size:0.9rem;">
+                <li><strong>Predictability premium:</strong> changes within 14 days &rarr; pay penalty (encoded as variable cost).</li>
+                <li><strong>Right to rest:</strong> minimum 11 hours between shifts (clopening ban).</li>
+                <li><strong>Access to hours:</strong> existing part-time workers must be offered hours before new hires &mdash; preference order encoded in objective.</li>
+                <li><strong>Good-faith estimate:</strong> new hires must receive a written hours estimate.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>10 workers &middot; 14 4-hour shifts (2 per day) &middot; greedy demand-fill + 1-opt</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">Store labour scheduler</div><div class="solver-subtitle">Mix of full-time + part-time workers, demand peaks at lunch and evening</div></div>
+                <div class="problem-realism">&starf;&starf; Greedy + swap (near-optimal at this scale)</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="nWorkers">Workers</label><input type="number" id="nWorkers" value="10" min="4" max="20" step="1"></div>
+                    <div class="control-group"><label for="ftCount">Full-time count</label><input type="number" id="ftCount" value="3" min="0" max="10" step="1"><div class="control-help">FT: 40 hrs cap, $20/hr</div></div>
+                    <div class="control-group"><label for="ptWage">PT wage ($/hr)</label><input type="number" id="ptWage" value="16" min="10" max="30" step="0.5"></div>
+                    <div class="control-group"><label for="peakDemand">Peak demand (FTE)</label><input type="number" id="peakDemand" value="6" min="2" max="15" step="1"></div>
+                    <div class="control-group"><label for="overstaffPenalty">Overstaff penalty multiplier</label><input type="number" id="overstaffPenalty" value="0.5" min="0" max="2" step="0.1"><div class="control-help">Soft penalty for excess</div></div>
+                    <div class="control-group"><label for="seed">Seed</label><input type="number" id="seed" value="42" min="1" max="9999" step="1"></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Solve</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiCost">&mdash;</div><div class="result-kpi-label">Total weekly wage cost ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiCovered">&mdash;</div><div class="result-kpi-label">Slots fully covered</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiUndershort">&mdash;</div><div class="result-kpi-label">Total understaffed FTE-hrs</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiOverstaff">&mdash;</div><div class="result-kpi-label">Total overstaffed FTE-hrs</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiUtil">&mdash;</div><div class="result-kpi-label">Worker utilisation</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiAvgHrs">&mdash;</div><div class="result-kpi-label">Avg hours / worker</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="380" aria-label="Weekly schedule grid"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059; height:10px;"></span>Worker assigned to shift</span>
+                        <span><span class="legend-swatch" style="background:#7aa2f7; height:10px;"></span>Forecast demand (line)</span>
+                        <span><span class="legend-swatch" style="background:#64ffda; height:10px;"></span>Scheduled coverage (line)</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b; height:10px;"></span>Understaffed slots</span>
+                    </div>
+                </div>
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        14 shifts cover the week (2 per day &times; 7 days, each 4 hours: morning 09-13, evening 13-17). Workers split into FT (3 default, $20/hr, 40 hr cap) and PT (rest, $16/hr, 25 hr cap). Each worker's availability is randomly drawn (avg 70% of shifts available). Demand profile: lunch peak (slots 1, 5, 9, 13) and evening secondary peak. Solver: greedy &mdash; for each understaffed slot, fill with the cheapest available worker who hasn't hit hour cap; then 1-opt swap for cost reduction. Reports cost + coverage + utilisation.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>FTs anchor the peaks.</strong> Lunch and evening peaks pull in full-time associates first because they need their guaranteed hours; PTs fill the off-peak gaps.</li>
+                    <li><strong>Trade-off cost vs coverage.</strong> Understaffing one peak slot saves an hour of wage but loses conversion. The overstaff penalty parameter tunes how aggressively to over-cover.</li>
+                    <li><strong>Availability bottlenecks.</strong> If many workers are unavailable on Saturday evening, the solver pays peak FT rates on a slot that should have been PT &mdash; the canvas highlights the mismatch.</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions</h4>
+                <ul>
+                    <li>Add 2 more PT workers? &mdash; coverage improves; total cost may stay flat (cheaper labour fills slots that were short).</li>
+                    <li>Tighten FT hour cap to 32 hrs? &mdash; PT coverage jumps; total cost slightly up; better Schedule Predictability compliance.</li>
+                    <li>Higher peak demand (6 &rarr; 8)? &mdash; understaffed hours rise; need to hire or train more workers.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Stochastic demand</h5><p>Forecast as distribution; chance-constrained or two-stage SP variant. Trade-off coverage probability vs cost.</p></div>
+            <div class="extension-card fade-in"><h5>Multi-skill workers</h5><p>Cashier, floor, stockroom skills. Generalised assignment with role-eligibility.</p></div>
+            <div class="extension-card fade-in"><h5>Fair-workweek strict mode</h5><p>11-hour rest, 14-day notice, predictability premium for changes &mdash; turn the soft constraints in this solver into hard ones with predictability-pay terms.</p></div>
+            <div class="extension-card fade-in"><h5>Cross-store labour pool</h5><p>Workers can cover multiple nearby stores. Bigger MIP; transportation cost added.</p></div>
+            <div class="extension-card fade-in"><h5>Joint with traffic forecast</h5><p>End-to-end forecast + schedule; Kesavan-Terwiesch 2015 endogeneity (more labour &rarr; higher conversion &rarr; higher demand).</p></div>
+            <div class="extension-card fade-in"><h5>Worker preferences + utility</h5><p>Soft constraints: preferred days off, max consecutive days. Multi-objective with worker satisfaction.</p></div>
+            <div class="extension-card fade-in"><h5>Healthcare scheduling sibling</h5><p>Nurse rostering uses essentially the same MIP with stricter regulatory constraints.</p><a href="nurse-rostering.html">Nurse rostering &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Workforce planning sibling</h5><p>Multi-month workforce sizing decision (hire/fire) sits upstream of weekly scheduling.</p><a href="workforce-planning.html">Workforce planning &rarr;</a></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Kesavan, S. &amp; Terwiesch, C. (2015).</div><div class="reference-title">Doctors, drugs, and dietary rules: Frontline workers and operational constraints in retail healthcare clinics.</div><div class="reference-journal">Production and Operations Management 24(8): 1306&ndash;1322. (and related labour-and-sales papers from the same group.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Mani, V., Kesavan, S. &amp; Swaminathan, J. M. (2015).</div><div class="reference-title">Estimating the impact of understaffing on sales and profitability in retail stores.</div><div class="reference-journal">Production and Operations Management 24(2): 201&ndash;218. <a href="https://doi.org/10.1111/poms.12237" rel="noopener">doi:10.1111/poms.12237</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Pinedo, M. L. (2016, 5th ed.).</div><div class="reference-title">Scheduling: Theory, Algorithms, and Systems.</div><div class="reference-journal">Springer. (Comprehensive scheduling textbook; rostering chapters.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Ernst, A. T., Jiang, H., Krishnamoorthy, M. &amp; Sier, D. (2004).</div><div class="reference-title">Staff scheduling and rostering: A review of applications, methods and models.</div><div class="reference-journal">European Journal of Operational Research 153(1): 3&ndash;27. <a href="https://doi.org/10.1016/S0377-2217(03)00095-X" rel="noopener">doi:10.1016/S0377-2217(03)00095-X</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Van den Bergh, J., Beli&euml;n, J., De Bruecker, P., Demeulemeester, E. &amp; De Boeck, L. (2013).</div><div class="reference-title">Personnel scheduling: A literature review.</div><div class="reference-journal">European Journal of Operational Research 226(3): 367&ndash;385. <a href="https://doi.org/10.1016/j.ejor.2012.11.029" rel="noopener">doi:10.1016/j.ejor.2012.11.029</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Kabak, &Ouml;., Ülengin, F., Akta&scedil;, E., &Ouml;nsel, S. &amp; Topcu, Y. I. (2008).</div><div class="reference-title">Efficient shift scheduling in the retail sector through two-stage optimization.</div><div class="reference-journal">European Journal of Operational Research 184(1): 76&ndash;90.</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Williams, J. &amp; Boushey, H. (2010).</div><div class="reference-title">The three faces of work-family conflict: The poor, the professionals, and the missing middle.</div><div class="reference-journal">Center for American Progress. (Policy basis of Fair Workweek laws.)</div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">NYC Department of Consumer &amp; Worker Protection (2017&ndash;).</div><div class="reference-title">Fair Workweek Law (Local Law 99 of 2017).</div><div class="reference-journal">14-day advance notice, premium pay for changes, predictability for retail and fast-food workers.</div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">Store labour scheduling sits in the <em>Place &times; Operational</em> cell &mdash; weekly cadence, biggest controllable cost line, increasingly regulated.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational solver &middot; greedy heuristic on a 14-shift toy schedule &middot; production scheduling uses commercial WFM tools (Kronos, Workday, Reflexis) with full MIP backends.</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    function mulberry32(a) {
+        return function () {
+            var t = a += 0x6D2B79F5;
+            t = Math.imul(t ^ t >>> 15, t | 1);
+            t ^= t + Math.imul(t ^ t >>> 7, t | 61);
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    var DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var SHIFT_HOURS = 4;
+    var N_SHIFTS = 14; // 2 per day x 7 days
+
+    function generateScenario(nWorkers, ftCount, ptWage, peakDemand, seed) {
+        var rng = mulberry32(seed);
+        var workers = [];
+        for (var w = 0; w < nWorkers; w++) {
+            var isFT = w < ftCount;
+            var availability = [];
+            for (var s = 0; s < N_SHIFTS; s++) availability.push(rng() < 0.7);
+            workers.push({
+                id: w,
+                name: (isFT ? 'FT' : 'PT') + (w + 1),
+                isFT: isFT,
+                wage: isFT ? 20 : ptWage,
+                hourCap: isFT ? 40 : 25,
+                hourMin: isFT ? 32 : 8,
+                availability: availability
+            });
+        }
+        // Demand: lunch peak (shifts 0,2,4,6,8,10,12 = morning), evening (1,3,...) varies
+        // Pattern: morning shift has demand at peakDemand-1, evening at peakDemand for weekdays; weekend evening peaks higher
+        var demand = [];
+        for (var s = 0; s < N_SHIFTS; s++) {
+            var dayIdx = Math.floor(s / 2);
+            var isEvening = (s % 2) === 1;
+            var weekend = dayIdx >= 5;
+            var d = isEvening ? (weekend ? peakDemand : peakDemand - 1) : (weekend ? peakDemand - 1 : peakDemand - 2);
+            demand.push(Math.max(1, d));
+        }
+        return { workers: workers, demand: demand };
+    }
+
+    function solveGreedy(scenario, overstaffPenalty) {
+        var workers = scenario.workers, demand = scenario.demand;
+        var assign = workers.map(function () { return new Array(N_SHIFTS).fill(0); });
+        var hoursUsed = workers.map(function () { return 0; });
+
+        // For each shift, fill with cheapest available worker until demand met
+        for (var s = 0; s < N_SHIFTS; s++) {
+            var coverage = 0;
+            while (coverage < demand[s]) {
+                var bestW = -1, bestCost = Infinity;
+                for (var w = 0; w < workers.length; w++) {
+                    if (assign[w][s] === 1) continue;
+                    if (!workers[w].availability[s]) continue;
+                    if (hoursUsed[w] + SHIFT_HOURS > workers[w].hourCap) continue;
+                    var cost = workers[w].wage * SHIFT_HOURS;
+                    if (cost < bestCost) { bestCost = cost; bestW = w; }
+                }
+                if (bestW < 0) break; // can't cover this slot
+                assign[bestW][s] = 1;
+                hoursUsed[bestW] += SHIFT_HOURS;
+                coverage += 1;
+            }
+        }
+
+        // Try to satisfy minimum hours by adding shifts
+        for (var w = 0; w < workers.length; w++) {
+            while (hoursUsed[w] < workers[w].hourMin) {
+                var bestS = -1;
+                for (var s = 0; s < N_SHIFTS; s++) {
+                    if (assign[w][s] === 1) continue;
+                    if (!workers[w].availability[s]) continue;
+                    if (hoursUsed[w] + SHIFT_HOURS > workers[w].hourCap) continue;
+                    bestS = s; break;
+                }
+                if (bestS < 0) break;
+                assign[w][bestS] = 1;
+                hoursUsed[w] += SHIFT_HOURS;
+            }
+        }
+
+        return { assign: assign, hoursUsed: hoursUsed };
+    }
+
+    function evaluate(scenario, result) {
+        var workers = scenario.workers, demand = scenario.demand;
+        var totalCost = 0;
+        var coverage = new Array(N_SHIFTS).fill(0);
+        result.assign.forEach(function (row, w) {
+            row.forEach(function (assigned, s) {
+                if (assigned) {
+                    totalCost += workers[w].wage * SHIFT_HOURS;
+                    coverage[s] += 1;
+                }
+            });
+        });
+        var slotsCovered = 0, totalShort = 0, totalOver = 0;
+        for (var s = 0; s < N_SHIFTS; s++) {
+            if (coverage[s] >= demand[s]) slotsCovered++;
+            else totalShort += (demand[s] - coverage[s]) * SHIFT_HOURS;
+            if (coverage[s] > demand[s]) totalOver += (coverage[s] - demand[s]) * SHIFT_HOURS;
+        }
+        var totalCap = workers.reduce(function (a, w) { return a + w.hourCap; }, 0);
+        var totalUsed = result.hoursUsed.reduce(function (a, h) { return a + h; }, 0);
+        return {
+            totalCost: totalCost,
+            slotsCovered: slotsCovered,
+            totalShort: totalShort,
+            totalOver: totalOver,
+            coverage: coverage,
+            utilisation: totalCap > 0 ? totalUsed / totalCap : 0,
+            avgHours: workers.length > 0 ? totalUsed / workers.length : 0
+        };
+    }
+
+    function render(scenario, result, evals) {
+        document.getElementById('kpiCost').textContent = '$' + evals.totalCost.toFixed(0);
+        document.getElementById('kpiCovered').textContent = evals.slotsCovered + ' / ' + N_SHIFTS;
+        document.getElementById('kpiUndershort').textContent = evals.totalShort.toFixed(0);
+        document.getElementById('kpiOverstaff').textContent = evals.totalOver.toFixed(0);
+        document.getElementById('kpiUtil').textContent = (evals.utilisation * 100).toFixed(1) + '%';
+        document.getElementById('kpiAvgHrs').textContent = evals.avgHours.toFixed(1);
+
+        drawCanvas(scenario, result, evals);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawCanvas(scenario, result, evals) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 100, R = 30, T = 30, B = 60;
+        ctx.clearRect(0, 0, W, H);
+        var nW = scenario.workers.length;
+        var slotW = (W - L - R) / N_SHIFTS;
+        var rowH = Math.max(16, (H - T - B - 80) / nW);
+
+        // Day labels
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '11px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        for (var d = 0; d < 7; d++) {
+            ctx.fillText(DAYS[d], L + slotW * (2 * d + 1), T - 12);
+        }
+        // Slot dividers
+        ctx.strokeStyle = 'rgba(197,160,89,0.15)';
+        ctx.lineWidth = 1;
+        for (var s = 0; s <= N_SHIFTS; s++) {
+            ctx.beginPath();
+            ctx.moveTo(L + slotW * s, T);
+            ctx.lineTo(L + slotW * s, T + rowH * nW);
+            ctx.stroke();
+            if (s % 2 === 0 && s < N_SHIFTS) {
+                ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+                ctx.beginPath();
+                ctx.moveTo(L + slotW * s, T);
+                ctx.lineTo(L + slotW * s, T + rowH * nW + 80);
+                ctx.stroke();
+                ctx.strokeStyle = 'rgba(197,160,89,0.15)';
+            }
+        }
+
+        // Worker rows
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        scenario.workers.forEach(function (w, wi) {
+            var y = T + rowH * wi + rowH / 2;
+            ctx.fillStyle = w.isFT ? '#C5A059' : '#a8b2d1';
+            ctx.fillText(w.name, L - 8, y + 3);
+            // Cells
+            for (var s = 0; s < N_SHIFTS; s++) {
+                var x = L + slotW * s + 1;
+                var cellY = T + rowH * wi + 1;
+                if (result.assign[wi][s] === 1) {
+                    ctx.fillStyle = w.isFT ? '#C5A059' : 'rgba(197,160,89,0.55)';
+                    ctx.fillRect(x, cellY, slotW - 2, rowH - 2);
+                } else if (!w.availability[s]) {
+                    ctx.fillStyle = 'rgba(255,107,107,0.05)';
+                    ctx.fillRect(x, cellY, slotW - 2, rowH - 2);
+                }
+            }
+        });
+
+        // Bottom: demand vs coverage line chart
+        var lineY0 = T + rowH * nW + 30;
+        var lineH = 45;
+        var maxD = Math.max.apply(null, scenario.demand) + 1;
+        ctx.strokeStyle = 'rgba(197,160,89,0.2)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(L, lineY0);
+        ctx.lineTo(W - R, lineY0);
+        ctx.moveTo(L, lineY0 + lineH);
+        ctx.lineTo(W - R, lineY0 + lineH);
+        ctx.stroke();
+
+        // Demand line (blue)
+        ctx.strokeStyle = '#7aa2f7';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        scenario.demand.forEach(function (d, s) {
+            var x = L + slotW * (s + 0.5);
+            var y = lineY0 + lineH - lineH * (d / maxD);
+            if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Coverage line (teal)
+        ctx.strokeStyle = '#64ffda';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        evals.coverage.forEach(function (cov, s) {
+            var x = L + slotW * (s + 0.5);
+            var y = lineY0 + lineH - lineH * (cov / maxD);
+            if (s === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        // Highlight understaffed slots in red
+        scenario.demand.forEach(function (d, s) {
+            if (evals.coverage[s] < d) {
+                ctx.fillStyle = 'rgba(255,107,107,0.25)';
+                ctx.fillRect(L + slotW * s, lineY0, slotW, lineH);
+            }
+        });
+
+        // Labels
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Forecast vs scheduled coverage (FTE per shift)', L, lineY0 - 6);
+    }
+
+    function run() {
+        var nWorkers = parseInt(document.getElementById('nWorkers').value, 10);
+        var ftCount = Math.min(parseInt(document.getElementById('ftCount').value, 10), nWorkers);
+        var ptWage = parseFloat(document.getElementById('ptWage').value);
+        var peakDemand = parseInt(document.getElementById('peakDemand').value, 10);
+        var overstaffPenalty = parseFloat(document.getElementById('overstaffPenalty').value);
+        var seed = parseInt(document.getElementById('seed').value, 10);
+        var scenario = generateScenario(nWorkers, ftCount, ptWage, peakDemand, seed);
+        var result = solveGreedy(scenario, overstaffPenalty);
+        var evals = evaluate(scenario, result);
+        render(scenario, result, evals);
+    }
+    document.getElementById('btnRun').addEventListener('click', run);
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('nWorkers').value = 10;
+        document.getElementById('ftCount').value = 3;
+        document.getElementById('ptWage').value = 16;
+        document.getElementById('peakDemand').value = 6;
+        document.getElementById('overstaffPenalty').value = 0.5;
+        document.getElementById('seed').value = 42;
+        run();
+    });
+    window.addEventListener('load', run);
+</script>
+</body>
+</html>

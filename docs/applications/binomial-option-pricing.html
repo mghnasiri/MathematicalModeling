@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binomial Option Pricing (CRR) | Mathematical Modeling &amp; OR</title>
+    <meta name="description" content="Cox-Ross-Rubinstein binomial option pricing: discrete-time recombining tree for European and American options. Converges to Black-Scholes. Educational demonstration.">
+    <meta property="og:title" content="Binomial Option Pricing (Cox-Ross-Rubinstein)">
+    <meta property="og:description" content="Recombining binomial tree for European and American options with convergence plot.">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/binomial-option-pricing.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --purple:#bb9af7; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        .navbar { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:1rem 0; z-index:1000; border-bottom:1px solid rgba(197,160,89,0.1); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover,.nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .breadcrumb-nav { padding:0.8rem 0; background:rgba(10,25,47,0.5); border-bottom:1px solid rgba(197,160,89,0.1); margin-top:56px; }
+        .breadcrumb-nav ol { list-style:none; display:flex; gap:0.5rem; font-size:0.8rem; letter-spacing:1px; text-transform:uppercase; padding:0; margin:0; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); text-decoration:none; transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .hero { padding:5rem 2rem 3rem; text-align:center; position:relative; }
+        .hero::before { content:''; position:absolute; inset:0; background-image:linear-gradient(rgba(122,162,247,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(197,160,89,0.025) 1px,transparent 1px),radial-gradient(ellipse at 50% 30%,rgba(197,160,89,0.05) 0%,transparent 60%); background-size:60px 60px,60px 60px,100% 100%; pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:2.6rem; color:var(--gold); margin-bottom:1.2rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(197,160,89,0.35)) drop-shadow(0 0 30px rgba(122,162,247,0.15)); animation:marketFlicker 3s ease-in-out infinite; }
+        @keyframes marketFlicker { 0%,100%{filter:drop-shadow(0 0 10px rgba(197,160,89,0.35)) drop-shadow(0 0 30px rgba(122,162,247,0.15));} 50%{filter:drop-shadow(0 0 16px rgba(197,160,89,0.55)) drop-shadow(0 0 35px rgba(122,162,247,0.2));} }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:3px; margin-bottom:0.8rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-subtitle { font-size:0.95rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1rem; }
+        .badge-chip { display:inline-block; padding:0.25rem 0.8rem; background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.68rem; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; margin:0 0.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:780px; margin:0 auto 1.5rem; color:var(--slate-light); font-size:0.98rem; line-height:1.85; }
+        .disclaimer-callout { max-width:900px; margin:1.5rem auto 0; padding:0.9rem 1.4rem; background:linear-gradient(135deg,rgba(255,107,107,0.06),rgba(197,160,89,0.04)); border:1px solid rgba(255,107,107,0.25); border-left:3px solid var(--red); border-radius:4px; font-size:0.82rem; color:var(--slate-light); line-height:1.65; text-align:left; }
+        .disclaimer-callout strong { color:var(--ivory); font-weight:500; }
+        .disclaimer-callout .disclaimer-title { font-size:0.68rem; color:var(--red); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:0.3rem; display:flex; align-items:center; gap:0.4rem; }
+        .section-header { text-align:center; margin-bottom:2rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.4rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.82rem; letter-spacing:2px; text-transform:uppercase; }
+        .problem-card { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1.8rem; margin-bottom:1.5rem; }
+        .problem-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:500; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .problem-card p { color:var(--slate-light); font-size:0.92rem; line-height:1.8; margin-bottom:0.8rem; }
+        .problem-card strong { color:var(--ivory); font-weight:500; }
+        .problem-meta { display:flex; flex-wrap:wrap; gap:0.8rem; margin-bottom:1rem; padding-bottom:0.8rem; border-bottom:1px solid rgba(197,160,89,0.1); }
+        .problem-meta .meta-item { font-size:0.72rem; color:var(--slate); letter-spacing:1px; text-transform:uppercase; }
+        .problem-meta .meta-item strong { color:var(--gold); font-weight:500; }
+        .formula-block { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:0.8rem 0; font-size:0.92rem; color:var(--ivory); overflow-x:auto; }
+        .formula-block .form-label { font-family:'Inter',sans-serif; font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:500; margin-bottom:0.6rem; display:block; }
+        .formula-block .caption { font-size:0.78rem; color:var(--slate); font-style:italic; margin-top:0.6rem; text-align:center; }
+        .notation-table { width:100%; border-collapse:collapse; margin:0.6rem 0; font-size:0.88rem; }
+        .notation-table th { text-align:left; padding:0.5rem 0.8rem; font-family:'Inter',sans-serif; font-size:0.7rem; color:var(--gold); text-transform:uppercase; letter-spacing:1.5px; border-bottom:1px solid rgba(197,160,89,0.2); }
+        .notation-table td { padding:0.45rem 0.8rem; color:var(--slate-light); border-bottom:1px solid rgba(197,160,89,0.06); }
+        .notation-table td:first-child { font-family:'JetBrains Mono',monospace; color:var(--gold); width:18%; white-space:nowrap; }
+        .solver-panel { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.2); border-radius:4px; margin-bottom:1.5rem; overflow:hidden; }
+        .solver-panel-header { padding:1rem 1.5rem; background:linear-gradient(135deg,rgba(197,160,89,0.08),transparent); border-bottom:1px solid rgba(197,160,89,0.15); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; }
+        .solver-panel-header h3 { font-family:'Cormorant Garamond',serif; font-size:1.3rem; font-weight:500; color:var(--gold); margin:0; letter-spacing:1px; }
+        .solver-panel-header h3 i { margin-right:0.5rem; }
+        .solver-body { padding:1.5rem; }
+        .solver-controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr)); gap:1rem; margin-bottom:1.2rem; }
+        .control-group { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.1); border-radius:4px; padding:0.9rem 1rem; }
+        .control-group label { font-size:0.72rem; color:var(--gold); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.4rem; display:block; font-weight:500; }
+        .control-group input[type="range"] { width:100%; accent-color:var(--gold); cursor:pointer; }
+        .control-group select { width:100%; background:var(--midnight); border:1px solid rgba(197,160,89,0.2); color:var(--ivory); padding:0.35rem 0.6rem; border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .control-group .val-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.85rem; text-align:right; margin-top:0.2rem; }
+        .solver-canvas-wrap { background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; padding:0.5rem; margin-bottom:1rem; }
+        .solver-canvas-wrap canvas { width:100%; display:block; border-radius:2px; }
+        .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0.6rem; margin-bottom:1rem; }
+        .kpi { background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:3px; padding:0.7rem 0.8rem; text-align:center; }
+        .kpi .kpi-label { font-size:0.65rem; color:var(--slate); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:0.3rem; }
+        .kpi .kpi-val { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1.05rem; font-weight:500; }
+        .complexity-box { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin-bottom:1rem; }
+        .complexity-box h3 { font-family:'Cormorant Garamond',serif; font-size:1.2rem; color:var(--gold); margin-bottom:0.6rem; letter-spacing:1.5px; }
+        .complexity-box h3 i { margin-right:0.5rem; }
+        .complexity-list { padding-left:1.1rem; }
+        .complexity-list li { color:var(--slate-light); font-size:0.87rem; line-height:1.8; margin-bottom:0.3rem; }
+        .complexity-list li strong { color:var(--ivory); font-weight:500; }
+        .reference-item { padding:1rem 0; border-bottom:1px solid rgba(197,160,89,0.08); }
+        .reference-item:last-child { border-bottom:none; }
+        .reference-item .ref-authors { color:var(--ivory); font-weight:500; font-size:0.9rem; }
+        .reference-item .ref-title { color:var(--slate-light); font-style:italic; font-size:0.86rem; margin-top:0.15rem; }
+        .reference-item .ref-journal { color:var(--slate); font-size:0.8rem; margin-top:0.15rem; }
+        .reference-item .ref-journal a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(197,160,89,0.4); }
+        .cta-panel { background:linear-gradient(135deg,rgba(197,160,89,0.08),rgba(122,162,247,0.04)); border:1px solid rgba(197,160,89,0.25); border-radius:4px; padding:2.5rem; text-align:center; }
+        .cta-panel h3 { font-family:'Cormorant Garamond',serif; font-size:1.7rem; font-weight:400; letter-spacing:2px; margin-bottom:0.8rem; color:var(--ivory); }
+        .cta-panel p { color:var(--slate-light); font-size:0.9rem; max-width:700px; margin:0 auto 1.5rem; line-height:1.8; }
+        .cta-links { display:flex; justify-content:center; gap:1rem; flex-wrap:wrap; }
+        .cta-link { display:inline-flex; align-items:center; gap:0.4rem; padding:0.6rem 1.4rem; border:1px solid rgba(197,160,89,0.4); border-radius:3px; color:var(--gold); text-decoration:none; font-size:0.76rem; text-transform:uppercase; letter-spacing:1.5px; transition:all 0.3s; }
+        .cta-link:hover { background:var(--gold); color:var(--midnight); }
+        footer { padding:2rem 0; text-align:center; border-top:1px solid rgba(197,160,89,0.1); }
+        footer p { color:var(--slate); font-size:0.78rem; letter-spacing:1px; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        section { padding:2.5rem 0; }
+        section.alt { background:var(--midnight-light); }
+        .fade-in { opacity:0; transform:translateY(18px); transition:opacity 0.5s ease, transform 0.5s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width: 768px) {
+            .hero h1 { font-size:2rem; letter-spacing:2px; }
+            .solver-controls { grid-template-columns:1fr 1fr; }
+        }
+    </style>
+    <script type="application/ld+json">
+    {"@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Finance & Insurance","item":"https://mghnasiri.github.io/MathematicalModeling/applications/finance-domain.html"},
+      {"@type":"ListItem","position":3,"name":"Binomial Option Pricing","item":"https://mghnasiri.github.io/MathematicalModeling/applications/binomial-option-pricing.html"}
+    ]}
+    </script>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link active" href="finance-domain.html">Finance</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="finance-domain.html">Finance &amp; Insurance</a></li>
+            <li style="color:var(--gold);">Binomial Option Pricing</li>
+        </ol>
+    </div>
+</div>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-project-diagram"></i></div>
+        <h1>Binomial <span>Option Pricing</span></h1>
+        <div class="hero-subtitle">Cox-Ross-Rubinstein &middot; Discrete-time lattice &middot; $\mathbb{Q}$-measure</div>
+        <div>
+            <span class="badge-chip">Family 02</span>
+            <span class="badge-chip">Pricing</span>
+            <span class="badge-chip">DP on tree</span>
+            <span class="badge-chip">American OK</span>
+        </div>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Cox, Ross &amp; Rubinstein (1979) discretised the continuous Black-Scholes diffusion into a recombining binomial
+            tree with up-factor $u$, down-factor $d$, and risk-neutral probability $p$. The tree prices European and
+            <em>American</em> options by backwards induction, converges to Black-Scholes as the number of steps grows, and
+            needs no PDE solver. For practitioners, it is the simplest non-trivial pricing engine that handles early
+            exercise &mdash; something Black-Scholes cannot do.
+        </p>
+
+        <div class="disclaimer-callout">
+            <div class="disclaimer-title"><i class="fas fa-exclamation-circle"></i> Educational Purpose</div>
+            This page is an <strong>educational demonstration</strong> of discrete-time option pricing. It is not
+            investment, hedging, or trading advice. The CRR tree inherits Black-Scholes&rsquo; limiting assumptions
+            (constant $\sigma$, constant $r$, no dividends) at the continuous limit; the discrete version additionally
+            introduces discretisation error that decays as $O(1/N)$.
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>model</span></h2>
+            <p>Discrete tree, risk-neutral probabilities, backwards induction</p>
+        </div>
+
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <span class="meta-item">OR family: <strong>Derivative pricing</strong></span>
+                <span class="meta-item">Solver class: <strong>DP on lattice</strong></span>
+                <span class="meta-item">Measure: <strong>Risk-neutral $\mathbb{Q}$</strong></span>
+                <span class="meta-item">Realism: <strong>&starf;&starf;&starf; Exact (under CRR assumptions)</strong></span>
+            </div>
+
+            <h3>Notation</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th></tr></thead>
+                <tbody>
+                    <tr><td>$N$</td><td>Number of time steps</td></tr>
+                    <tr><td>$\Delta t$</td><td>Step size, $\Delta t = T/N$</td></tr>
+                    <tr><td>$u$</td><td>Up-move factor per step</td></tr>
+                    <tr><td>$d$</td><td>Down-move factor per step; $d = 1/u$ in CRR</td></tr>
+                    <tr><td>$p$</td><td>Risk-neutral up-probability</td></tr>
+                    <tr><td>$S_{n,j}$</td><td>Underlying price at node $(n,j)$: $n$ steps, $j$ up-moves</td></tr>
+                    <tr><td>$V_{n,j}$</td><td>Option value at node $(n,j)$</td></tr>
+                </tbody>
+            </table>
+
+            <h3>CRR parameters</h3>
+            <div class="formula-block">
+                <span class="form-label">Tree parameters (Cox, Ross &amp; Rubinstein, 1979)</span>
+                $$ u = e^{\sigma\sqrt{\Delta t}}, \qquad d = e^{-\sigma\sqrt{\Delta t}} = 1/u $$
+                $$ p = \frac{e^{r\Delta t} - d}{u - d} $$
+                <div class="caption">$p$ is the risk-neutral up-probability that makes the discounted underlying a $\mathbb{Q}$-martingale. Requires $d < e^{r\Delta t} < u$ (no-arbitrage).</div>
+            </div>
+
+            <h3>Backwards induction</h3>
+            <p>At maturity ($n = N$), option value equals payoff: $V_{N,j} = g(S_{N,j})$ where $g(S) = (S-K)^+$ for a
+               call, $(K-S)^+$ for a put. Step backward from $n=N-1$ to $n=0$:</p>
+            <div class="formula-block">
+                <span class="form-label">European option (backwards induction)</span>
+                $$ V_{n,j} \;=\; e^{-r\Delta t} \bigl[\, p \, V_{n+1,j+1} + (1-p) \, V_{n+1,j} \,\bigr] $$
+                <div class="caption">Discounted expected value under $\mathbb{Q}$. At node $(0,0)$, $V_{0,0}$ is the option price.</div>
+            </div>
+            <div class="formula-block">
+                <span class="form-label">American option (backwards induction with early-exercise check)</span>
+                $$ V_{n,j} \;=\; \max\Bigl\{\, g(S_{n,j}), \;\; e^{-r\Delta t} \bigl[\, p \, V_{n+1,j+1} + (1-p) \, V_{n+1,j} \,\bigr] \,\Bigr\} $$
+                <div class="caption">At every node, take the greater of exercising now (intrinsic value $g$) or holding (continuation value). This is the key advantage over Black-Scholes.</div>
+            </div>
+
+            <h3>Convergence</h3>
+            <p>As $N \to \infty$, the CRR tree converges to the Black-Scholes price at rate $O(1/N)$ (Leisen &amp; Reimer 1996
+               give $O(1/N^2)$ for improved tree parameters). Practical values: $N = 100$ gives 3-4 decimal places of accuracy;
+               $N = 10^4$ reaches machine precision for European options but takes quadratic memory without sparse tricks.</p>
+        </div>
+    </div>
+</section>
+
+<section class="alt">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>tree</span></h2>
+            <p>Visualise the lattice and price convergence; compare to Black-Scholes</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-code-branch"></i> CRR Binomial Tree</h3>
+                <span style="font-size:0.72rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">&starf;&starf;&starf; Exact under discrete model</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group">
+                        <label>Underlying $S_0$</label>
+                        <input type="range" id="inS" min="10" max="200" step="1" value="100">
+                        <div class="val-display" id="outS">100</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Strike $K$</label>
+                        <input type="range" id="inK" min="10" max="200" step="1" value="100">
+                        <div class="val-display" id="outK">100</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Maturity $T$ (years)</label>
+                        <input type="range" id="inT" min="0.1" max="3" step="0.1" value="1">
+                        <div class="val-display" id="outT">1.00</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Risk-free $r$</label>
+                        <input type="range" id="inR" min="0" max="0.15" step="0.005" value="0.03">
+                        <div class="val-display" id="outR">3.00%</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Volatility $\sigma$</label>
+                        <input type="range" id="inSig" min="0.05" max="0.8" step="0.01" value="0.25">
+                        <div class="val-display" id="outSig">25.00%</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Steps $N$</label>
+                        <input type="range" id="inN" min="3" max="200" step="1" value="6">
+                        <div class="val-display" id="outN">6</div>
+                    </div>
+                    <div class="control-group">
+                        <label>Type</label>
+                        <select id="inType">
+                            <option value="call">Call</option>
+                            <option value="put">Put</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Style</label>
+                        <select id="inStyle">
+                            <option value="european">European</option>
+                            <option value="american">American</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="kpi-grid">
+                    <div class="kpi"><div class="kpi-label">CRR price</div><div class="kpi-val" id="kpiCrr">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">BSM price (European)</div><div class="kpi-val" id="kpiBsm">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">Difference</div><div class="kpi-val" id="kpiDiff">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">$u$ factor</div><div class="kpi-val" id="kpiU">&mdash;</div></div>
+                    <div class="kpi"><div class="kpi-label">$p$ (RN prob.)</div><div class="kpi-val" id="kpiP">&mdash;</div></div>
+                </div>
+
+                <div class="solver-canvas-wrap">
+                    <canvas id="treeCanvas" width="820" height="340" aria-label="Binomial tree of underlying prices"></canvas>
+                </div>
+                <p style="font-size:0.78rem;color:var(--slate);text-align:center;margin-top:0.4rem;">
+                    Each node is labelled with the underlying price $S_{n,j}$. Node colour intensity encodes option
+                    value at that node (gold = high, dim = low).
+                </p>
+
+                <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                    <canvas id="convCanvas" width="820" height="260" aria-label="Convergence of CRR price to Black-Scholes"></canvas>
+                </div>
+                <p style="font-size:0.78rem;color:var(--slate);text-align:center;margin-top:0.4rem;">
+                    Convergence: CRR European price as a function of $N$, with the Black-Scholes price as a horizontal
+                    reference. American prices appear above the BS line (early-exercise premium).
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Assumptions <span>&amp; uses</span></h2>
+            <p>When binomial beats Black-Scholes &mdash; and when it doesn&rsquo;t</p>
+        </div>
+        <div class="complexity-box fade-in">
+            <h3><i class="fas fa-check-square"></i> When to prefer the binomial tree</h3>
+            <ul class="complexity-list">
+                <li><strong>American options.</strong> Early exercise has no Black-Scholes closed form; the tree handles it natively via the $\max$ at each node.</li>
+                <li><strong>Discrete dividends.</strong> Known cash dividends at specific dates are easy to incorporate by shifting the tree after the ex-dividend node.</li>
+                <li><strong>Pedagogy.</strong> No stochastic calculus required &mdash; the risk-neutral argument reduces to a one-period portfolio of stock and bond.</li>
+                <li><strong>Path-independent exotic payoffs</strong> with finite states.</li>
+            </ul>
+        </div>
+        <div class="complexity-box fade-in">
+            <h3><i class="fas fa-times-circle"></i> When to prefer Black-Scholes or Monte Carlo</h3>
+            <ul class="complexity-list">
+                <li><strong>European options.</strong> Closed-form BSM is exact, instant, and doesn&rsquo;t require tree construction.</li>
+                <li><strong>Path-dependent payoffs</strong> (Asian, barrier, lookback) usually break tree recombination; Monte Carlo handles them cleanly.</li>
+                <li><strong>Multi-factor models.</strong> Trees become hyper-dimensional (Boyle 1988); Monte Carlo scales linearly in number of factors.</li>
+                <li><strong>Very short-dated options</strong> need many small steps &mdash; memory grows $O(N^2)$ without explicit recombination.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="alt">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Seminal papers and extensions</p>
+        </div>
+        <div style="max-width:920px;margin:0 auto;" class="fade-in">
+            <div class="reference-item">
+                <div class="ref-authors">Cox, J. C., Ross, S. A. &amp; Rubinstein, M. (1979).</div>
+                <div class="ref-title">Option Pricing: A Simplified Approach.</div>
+                <div class="ref-journal"><em>Journal of Financial Economics</em>, 7(3), 229&ndash;263. <a href="https://doi.org/10.1016/0304-405X(79)90015-1" target="_blank" rel="noopener">doi:10.1016/0304-405X(79)90015-1</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Rendleman, R. J. &amp; Bartter, B. J. (1979).</div>
+                <div class="ref-title">Two-State Option Pricing.</div>
+                <div class="ref-journal"><em>The Journal of Finance</em>, 34(5), 1093&ndash;1110. <a href="https://doi.org/10.1111/j.1540-6261.1979.tb00058.x" target="_blank" rel="noopener">doi:10.1111/j.1540-6261.1979.tb00058.x</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Boyle, P. P. (1988).</div>
+                <div class="ref-title">A Lattice Framework for Option Pricing with Two State Variables.</div>
+                <div class="ref-journal"><em>Journal of Financial and Quantitative Analysis</em>, 23(1), 1&ndash;12. <a href="https://doi.org/10.2307/2331019" target="_blank" rel="noopener">doi:10.2307/2331019</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Leisen, D. P. J. &amp; Reimer, M. (1996).</div>
+                <div class="ref-title">Binomial Models for Option Valuation &mdash; Examining and Improving Convergence.</div>
+                <div class="ref-journal"><em>Applied Mathematical Finance</em>, 3(4), 319&ndash;346. <a href="https://doi.org/10.1080/13504869600000015" target="_blank" rel="noopener">doi:10.1080/13504869600000015</a></div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Black, F. &amp; Scholes, M. (1973).</div>
+                <div class="ref-title">The Pricing of Options and Corporate Liabilities.</div>
+                <div class="ref-journal"><em>Journal of Political Economy</em>, 81(3), 637&ndash;654. <a href="https://doi.org/10.1086/260062" target="_blank" rel="noopener">doi:10.1086/260062</a> (limiting case)</div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Hull, J. C. (2021).</div>
+                <div class="ref-title">Options, Futures, and Other Derivatives, 11th ed., chs.&nbsp;13, 21.</div>
+                <div class="ref-journal">Pearson. ISBN 978-0-13-693997-9.</div>
+            </div>
+            <div class="reference-item">
+                <div class="ref-authors">Shreve, S. E. (2004).</div>
+                <div class="ref-title">Stochastic Calculus for Finance I: The Binomial Asset Pricing Model.</div>
+                <div class="ref-journal">Springer. ISBN 978-0-387-40100-3.</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Related sub-applications</h3>
+            <p>The two continuous-time pricing engines and one stochastic method.</p>
+            <div class="cta-links">
+                <a href="finance-domain.html" class="cta-link"><i class="fas fa-compass"></i> Finance landscape</a>
+                <a href="black-scholes.html" class="cta-link"><i class="fas fa-chart-line"></i> Black-Scholes</a>
+                <a href="monte-carlo-option-pricing.html" class="cta-link"><i class="fas fa-dice"></i> Monte Carlo</a>
+                <a href="real-options-valuation.html" class="cta-link"><i class="fas fa-industry"></i> Real options</a>
+            </div>
+        </div>
+
+        <div class="disclaimer-callout fade-in" style="margin-top:1.5rem;">
+            <div class="disclaimer-title"><i class="fas fa-exclamation-circle"></i> Reminder &mdash; educational purpose only</div>
+            The CRR tree is exact only under its assumptions. Real markets exhibit stochastic volatility, jumps, and
+            transaction costs &mdash; all violated here. Not investment advice; historical model performance never
+            implies future results.
+        </div>
+    </div>
+</section>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="../index.html">&larr; Home</a> &ensp;&middot;&ensp; &copy; 2025 Mohammad Ghafourian Nasiri &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" defer
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<script>
+(function(){
+    "use strict";
+
+    /* Standard normal CDF (A&S 7.1.26) */
+    function normCdf(x) {
+        var a1=0.254829592,a2=-0.284496736,a3=1.421413741,a4=-1.453152027,a5=1.061405429,p=0.3275911;
+        var sign=(x<0)?-1:1, ax=Math.abs(x)/Math.sqrt(2);
+        var t=1.0/(1.0+p*ax);
+        var y=1.0-(((((a5*t+a4)*t)+a3)*t+a2)*t+a1)*t*Math.exp(-ax*ax);
+        return 0.5*(1.0+sign*y);
+    }
+    function bsPrice(S, K, T, r, sig, type) {
+        if (T<=0) return (type==='call') ? Math.max(S-K,0) : Math.max(K-S,0);
+        var d1=(Math.log(S/K)+(r+0.5*sig*sig)*T)/(sig*Math.sqrt(T));
+        var d2=d1-sig*Math.sqrt(T);
+        return (type==='call')
+            ? S*normCdf(d1) - K*Math.exp(-r*T)*normCdf(d2)
+            : K*Math.exp(-r*T)*normCdf(-d2) - S*normCdf(-d1);
+    }
+
+    /* CRR binomial pricer; returns { price, values: 2D array of option values by (step, upCount) } */
+    function crrPrice(S0, K, T, r, sig, N, type, style) {
+        var dt = T / N;
+        var u = Math.exp(sig * Math.sqrt(dt));
+        var d = 1 / u;
+        var p = (Math.exp(r * dt) - d) / (u - d);
+        if (p <= 0 || p >= 1) { return { price: NaN, values: [], u: u, p: p }; }
+
+        // Terminal payoff at step N
+        var V = new Array(N + 1);
+        for (var j = 0; j <= N; j++) {
+            var S_Nj = S0 * Math.pow(u, j) * Math.pow(d, N - j);
+            V[j] = (type === 'call') ? Math.max(S_Nj - K, 0) : Math.max(K - S_Nj, 0);
+        }
+
+        // Backwards induction; keep small-N value grid for visualization
+        var grid = null;
+        var saveGrid = (N <= 20);
+        if (saveGrid) grid = [V.slice()];
+
+        var disc = Math.exp(-r * dt);
+        for (var n = N - 1; n >= 0; n--) {
+            var Vn = new Array(n + 1);
+            for (var j2 = 0; j2 <= n; j2++) {
+                var cont = disc * (p * V[j2 + 1] + (1 - p) * V[j2]);
+                if (style === 'american') {
+                    var S_nj = S0 * Math.pow(u, j2) * Math.pow(d, n - j2);
+                    var intr = (type === 'call') ? Math.max(S_nj - K, 0) : Math.max(K - S_nj, 0);
+                    Vn[j2] = Math.max(cont, intr);
+                } else {
+                    Vn[j2] = cont;
+                }
+            }
+            V = Vn;
+            if (saveGrid) grid.unshift(V.slice());
+        }
+        return { price: V[0], values: grid, u: u, p: p };
+    }
+
+    function fmt(x, dp) { return (typeof x === 'number' && isFinite(x)) ? x.toFixed(dp) : '\u2014'; }
+
+    function drawTree(canvas, S0, K, T, r, sig, N, type, style, grid, u, d) {
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        var padL = 40, padR = 40, padT = 20, padB = 40;
+        var plotW = W - padL - padR;
+        var plotH = H - padT - padB;
+
+        if (N > 20 || !grid) {
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '12px Inter, sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('Tree too large to render ( N = ' + N + ' > 20 ). Increase N does not change display.', W/2, H/2 - 6);
+            ctx.fillText('The convergence plot below captures price behaviour at large N.', W/2, H/2 + 12);
+            return;
+        }
+
+        // find min/max S for color range, and min/max V
+        var minV = Infinity, maxV = -Infinity;
+        for (var step = 0; step <= N; step++) {
+            for (var j = 0; j <= step; j++) {
+                var v = grid[step][j];
+                if (v < minV) minV = v;
+                if (v > maxV) maxV = v;
+            }
+        }
+        if (maxV - minV < 1e-6) maxV = minV + 1;
+
+        function xAt(step) { return padL + (step / N) * plotW; }
+        function yAt(step, j) {
+            // place node j at vertical center offset -- center tree vertically
+            if (step === 0) return padT + plotH / 2;
+            var spread = plotH * 0.9;
+            return padT + plotH/2 + (j - step/2) * (spread / (N + 0.5));
+        }
+
+        // edges
+        ctx.strokeStyle = 'rgba(197,160,89,0.18)';
+        ctx.lineWidth = 1;
+        for (var s = 0; s < N; s++) {
+            for (var jj = 0; jj <= s; jj++) {
+                var x1 = xAt(s), y1 = yAt(s, jj);
+                var x2 = xAt(s+1);
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, yAt(s+1, jj));
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, yAt(s+1, jj+1));
+                ctx.stroke();
+            }
+        }
+
+        // nodes
+        for (var ns = 0; ns <= N; ns++) {
+            for (var nj = 0; nj <= ns; nj++) {
+                var x = xAt(ns), y = yAt(ns, nj);
+                var S_nj = S0 * Math.pow(u, nj) * Math.pow(d, ns - nj);
+                var vv = grid[ns][nj];
+                var frac = (vv - minV) / (maxV - minV);
+                // color from dim (slate) to gold
+                var alpha = 0.3 + frac * 0.7;
+                ctx.fillStyle = 'rgba(197,160,89,' + alpha + ')';
+                ctx.beginPath();
+                ctx.arc(x, y, 10, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.strokeStyle = 'rgba(197,160,89,0.55)';
+                ctx.lineWidth = 0.8;
+                ctx.stroke();
+
+                ctx.fillStyle = '#F8F9FA';
+                ctx.font = '9px JetBrains Mono, monospace';
+                ctx.textAlign = 'center';
+                ctx.fillText(S_nj.toFixed(1), x, y + 3);
+                if (ns <= Math.min(N, 8)) {
+                    ctx.fillStyle = '#a8b2d1';
+                    ctx.font = '8px JetBrains Mono, monospace';
+                    ctx.fillText('V=' + vv.toFixed(2), x, y + 20);
+                }
+            }
+        }
+
+        // axis label
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('time step (0 → ' + N + ')', W/2, H - 12);
+    }
+
+    function drawConvergence(canvas, S, K, T, r, sig, type, style, maxN) {
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#112240';
+        ctx.fillRect(0, 0, W, H);
+
+        var padL = 55, padR = 30, padT = 30, padB = 40;
+        var plotW = W - padL - padR, plotH = H - padT - padB;
+
+        // Compute prices at N = 3..maxN_eff
+        var maxNeff = Math.min(maxN, 160);
+        var Nvals = [];
+        for (var nn = 3; nn <= maxNeff; nn += Math.max(1, Math.floor(maxNeff / 80))) Nvals.push(nn);
+        var prices = Nvals.map(function(nn) {
+            return crrPrice(S, K, T, r, sig, nn, type, style).price;
+        });
+        var bs = bsPrice(S, K, T, r, sig, type);
+
+        var pMin = Infinity, pMax = -Infinity;
+        prices.concat([bs]).forEach(function(p){ if(p<pMin)pMin=p; if(p>pMax)pMax=p; });
+        var spread = Math.max(0.5, pMax - pMin);
+        pMin -= spread * 0.1; pMax += spread * 0.1;
+
+        function sx(n) { return padL + ((n - Nvals[0]) / (Nvals[Nvals.length-1] - Nvals[0])) * plotW; }
+        function sy(p) { return H - padB - ((p - pMin) / (pMax - pMin)) * plotH; }
+
+        // grid
+        ctx.strokeStyle = 'rgba(197,160,89,0.05)';
+        ctx.lineWidth = 0.5;
+        for (var g = 0; g <= 6; g++) {
+            var gy = padT + plotH * g / 6;
+            ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W - padR, gy); ctx.stroke();
+        }
+
+        // axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H - padB); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(padL, H - padB); ctx.lineTo(W - padR, H - padB); ctx.stroke();
+
+        // BS reference line
+        var bsY = sy(bs);
+        ctx.strokeStyle = 'rgba(100,255,218,0.5)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(padL, bsY); ctx.lineTo(W - padR, bsY);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#64ffda';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('BSM European = ' + bs.toFixed(3), padL + 8, bsY - 6);
+
+        // CRR price line
+        ctx.strokeStyle = '#C5A059';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var k = 0; k < prices.length; k++) {
+            var px = sx(Nvals[k]), py = sy(prices[k]);
+            if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+        }
+        ctx.stroke();
+
+        // dots on line
+        ctx.fillStyle = '#C5A059';
+        for (var k2 = 0; k2 < prices.length; k2 += 5) {
+            ctx.beginPath();
+            ctx.arc(sx(Nvals[k2]), sy(prices[k2]), 2.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // axis labels
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Number of steps N', W/2, H - 12);
+        ctx.save();
+        ctx.translate(14, H/2);
+        ctx.rotate(-Math.PI/2);
+        ctx.fillText('Option price', 0, 0);
+        ctx.restore();
+
+        // ticks
+        ctx.font = '9px JetBrains Mono, monospace';
+        ctx.textAlign = 'center';
+        for (var tx = 0; tx <= 4; tx++) {
+            var vx = Nvals[0] + (Nvals[Nvals.length-1] - Nvals[0]) * tx / 4;
+            ctx.fillText(Math.round(vx), sx(vx), H - padB + 14);
+        }
+        ctx.textAlign = 'right';
+        for (var ty = 0; ty <= 4; ty++) {
+            var vy = pMin + (pMax - pMin) * ty / 4;
+            ctx.fillText(vy.toFixed(2), padL - 6, sy(vy) + 3);
+        }
+
+        // legend
+        ctx.font = '10px Inter, sans-serif';
+        ctx.textAlign = 'left';
+        var lx = W - padR - 160, ly = padT + 14;
+        ctx.strokeStyle = '#C5A059'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx + 24, ly); ctx.stroke();
+        ctx.fillStyle = '#a8b2d1';
+        ctx.fillText('CRR ' + style, lx + 30, ly + 3);
+
+        ctx.strokeStyle = 'rgba(100,255,218,0.6)'; ctx.lineWidth = 1.5;
+        ctx.setLineDash([4,4]);
+        ctx.beginPath(); ctx.moveTo(lx, ly + 16); ctx.lineTo(lx + 24, ly + 16); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillText('BSM European', lx + 30, ly + 19);
+    }
+
+    function recompute() {
+        var S = parseFloat(document.getElementById('inS').value);
+        var K = parseFloat(document.getElementById('inK').value);
+        var T = parseFloat(document.getElementById('inT').value);
+        var r = parseFloat(document.getElementById('inR').value);
+        var sig = parseFloat(document.getElementById('inSig').value);
+        var N = parseInt(document.getElementById('inN').value, 10);
+        var type = document.getElementById('inType').value;
+        var style = document.getElementById('inStyle').value;
+
+        var result = crrPrice(S, K, T, r, sig, N, type, style);
+        var bs = bsPrice(S, K, T, r, sig, type);
+
+        document.getElementById('kpiCrr').textContent = fmt(result.price, 3);
+        document.getElementById('kpiBsm').textContent = fmt(bs, 3);
+        document.getElementById('kpiDiff').textContent = fmt(result.price - bs, 3);
+        document.getElementById('kpiU').textContent = fmt(result.u, 4);
+        document.getElementById('kpiP').textContent = fmt(result.p, 4);
+
+        // Visualise tree only if N <= 12
+        var displayN = Math.min(N, 12);
+        var small = crrPrice(S, K, T, r, sig, displayN, type, style);
+        drawTree(document.getElementById('treeCanvas'), S, K, T, r, sig, displayN, type, style, small.values, small.u, 1/small.u);
+
+        drawConvergence(document.getElementById('convCanvas'), S, K, T, r, sig, type, style, N);
+    }
+
+    function bindRange(id, out, formatter) {
+        var el = document.getElementById(id);
+        var o = document.getElementById(out);
+        function update() { o.textContent = formatter(parseFloat(el.value)); recompute(); }
+        el.addEventListener('input', update);
+        update();
+    }
+
+    bindRange('inS', 'outS', function(v){ return v.toFixed(0); });
+    bindRange('inK', 'outK', function(v){ return v.toFixed(0); });
+    bindRange('inT', 'outT', function(v){ return v.toFixed(2); });
+    bindRange('inR', 'outR', function(v){ return (v*100).toFixed(2) + '%'; });
+    bindRange('inSig', 'outSig', function(v){ return (v*100).toFixed(2) + '%'; });
+    bindRange('inN', 'outN', function(v){ return v.toFixed(0); });
+    document.getElementById('inType').addEventListener('change', recompute);
+    document.getElementById('inStyle').addEventListener('change', recompute);
+    recompute();
+
+    /* Fade-in */
+    var els = document.querySelectorAll('.fade-in');
+    var obs = new IntersectionObserver(function(entries){
+        entries.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('visible'); });
+    }, { threshold: 0.08 });
+    els.forEach(function(el){ obs.observe(el); });
+})();
+</script>
+</body>
+</html>

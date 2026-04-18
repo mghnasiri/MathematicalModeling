@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Single-Machine Scheduling | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive single-machine scheduling demo under multiple objectives: SPT for total completion time, WSPT (Smith 1956) for weighted, EDD (Jackson 1955) for maximum lateness, Moore (1968) for late-job count, ATC heuristic and bitmask DP for weighted tardiness.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/single-machine-scheduling.html">
+    <meta property="og:title" content="Single-Machine Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Canonical single-machine scheduling: SPT, WSPT, EDD, Moore's algorithm, ATC and bitmask DP across six objectives (1|&beta;|&gamma;).">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Single-Machine Scheduling | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Canonical single-machine scheduling under six objectives with SPT, WSPT, EDD, Moore, ATC, and bitmask DP.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/single-machine-scheduling.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--midnight);
+            color: var(--ivory);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        .navbar {
+            background: rgba(10, 25, 47, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 1rem 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
+        }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+
+        .breadcrumb-nav { padding: 1rem 0; background: var(--midnight-light); border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(197,160,89,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(197,160,89,0.04) 1px, transparent 1px), radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.05) 0%, transparent 65%); background-size: 40px 40px, 40px 40px, 100% 100%; pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero-icon--manufacturing { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)) drop-shadow(0 2px 16px rgba(197,160,89,0.2)); animation: gearRotateGlow 5s ease-in-out infinite; }
+        @keyframes gearRotateGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)); } 50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.65)) drop-shadow(0 0 35px rgba(197,160,89,0.2)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 760px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        .graham-block { display: inline-block; margin: 1rem auto; padding: 0.6rem 1.2rem; border: 1px solid rgba(197,160,89,0.35); border-left-width: 3px; border-radius: 4px; background: rgba(197,160,89,0.04); }
+        .graham-block .graham-label { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .graham-block .graham-notation { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--ivory); letter-spacing: 0.5px; }
+        .graham-block .graham-notation em { color: var(--green); font-style: normal; }
+
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; margin-right: 0.5rem; }
+        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; text-decoration: none; transition: border-color 0.3s, color 0.3s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        .gen-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1.5rem 0; }
+        .gen-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .gen-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .gen-table tbody tr:hover td { color: var(--ivory); }
+
+        .complexity-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1.5rem 0; }
+        .complexity-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.25); text-align: left; }
+        .complexity-table tbody td { padding: 0.55rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.82rem; line-height: 1.5; }
+        .complexity-table tbody td.graham { font-family: 'JetBrains Mono', monospace; color: var(--ivory); }
+        .complexity-table tbody td.comp-p { color: var(--green); }
+        .complexity-table tbody td.comp-np { color: var(--red); }
+
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
+        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
+        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; font-style: italic; }
+
+        .objective-switcher { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-bottom: 1rem; }
+        .obj-chip { padding: 5px 12px; border: 1px solid rgba(100,255,218,0.25); border-radius: 3px; background: transparent; color: var(--slate-light); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'JetBrains Mono', monospace; }
+        .obj-chip:hover { border-color: var(--green); color: var(--ivory); }
+        .obj-chip.active { background: rgba(100,255,218,0.12); border-color: var(--green); color: var(--green); }
+
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); flex-wrap: wrap; gap: 0.5rem; }
+        .solver-panel-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h3 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.6rem; font-weight: 500; margin-top: 1rem; }
+        .solver-section-label:first-child { margin-top: 0; }
+
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-type { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .solve-btn { width: 100%; padding: 0.7rem; font-size: 1rem; margin-bottom: 1.2rem; border: 1px solid var(--gold); border-radius: 4px; background: rgba(197,160,89,0.15); color: var(--gold); cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.3s; }
+        .solve-btn:hover { background: var(--gold); color: var(--midnight); }
+
+        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .opt-val { color: var(--gold); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .results-table .obj-col { text-align: right; }
+
+        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .schedule-output { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--slate-light); margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; line-height: 1.8; max-height: 220px; overflow-y: auto; white-space: pre-wrap; }
+
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.6rem; color: var(--ivory); }
+        .algo-card .algo-complexity { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); margin-bottom: 1rem; display: inline-block; margin-left: 0.5rem; }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+        .algo-card .algo-tag.exact { border-color: rgba(100,255,218,0.3); color: var(--green); }
+        .algo-card .algo-tag.heuristic { border-color: rgba(197,160,89,0.35); color: var(--gold); }
+        .algo-card .algo-graham { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--gold); background: rgba(197,160,89,0.05); border-left: 2px solid var(--gold); padding: 0.4rem 0.6rem; margin: 0.5rem 0; display: inline-block; }
+
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+        .reference-list a { color: var(--gold); text-decoration: underline dotted; }
+
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: underline; }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+        .related-card { background: var(--midnight); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.9rem 1rem; text-decoration: none; transition: all 0.3s; display: block; }
+        .related-card:hover { border-color: var(--gold); background: rgba(197,160,89,0.05); }
+        .related-card-title { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.2rem; }
+        .related-card-tag { color: var(--slate); font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
+
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Manufacturing",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/manufacturing-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Single-Machine Scheduling",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/single-machine-scheduling.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="manufacturing-domain.html">Manufacturing</a></li>
+            <li class="active" style="color: var(--gold);">Single-Machine Scheduling</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--manufacturing"><i class="fas fa-stream" aria-hidden="true"></i></div>
+        <h1>Single-Machine <span>Scheduling</span></h1>
+        <p class="hero-subtitle">SFC &middot; Operational &middot; Foundation of scheduling theory</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <span class="graham-block">
+            <span class="graham-label">Graham three-field classification</span>
+            <span class="graham-notation">1 &vert; <em>&beta;</em> &vert; <em>&gamma;</em></span>
+        </span>
+        <p class="hero-desc">
+            The single-machine scheduling problem is the foundation of the entire scheduling literature. A single
+            processor, <em>n</em> jobs, each with a processing time <em>p<sub>j</sub></em>, weight <em>w<sub>j</sub></em>
+            and due date <em>d<sub>j</sub></em>. Choose the sequence that minimises a chosen objective &mdash; total
+            completion time, weighted completion time, maximum lateness, tardy-job count, or weighted tardiness.
+            Objectives that look similar can be strikingly different computationally: &Sigma;w<sub>j</sub>C<sub>j</sub>
+            is solved in <strong>O(n log n)</strong> by Smith&rsquo;s rule, but &Sigma;w<sub>j</sub>T<sub>j</sub> is
+            strongly NP-hard.
+        </p>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>APICS planning hierarchy &mdash; the highlighted level is what this page optimises</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">S&amp;OP<span class="chain-sub">Years</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">MPS<span class="chain-sub">Months</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">MRP<span class="chain-sub">Weeks</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">CRP<span class="chain-sub">Days&ndash;Weeks</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">SFC<span class="chain-sub">Hours&ndash;Days</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Eight jobs, one machine, six objectives</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                A single bottleneck resource must process <strong>n&nbsp;=&nbsp;8</strong> jobs. Each job
+                <em>j</em>&nbsp;has a processing time <em>p<sub>j</sub></em>, a weight <em>w<sub>j</sub></em>, and a
+                due date <em>d<sub>j</sub></em>. No preemption: once started, a job runs to completion. All jobs are
+                available at time&nbsp;0 (no release dates). The sequence we pick determines every job&rsquo;s
+                completion time <em>C<sub>j</sub></em> and therefore every objective.
+            </p>
+            <p>
+                Historically, single-machine theory was the first and most fundamental area of scheduling research.
+                Every optimal dispatching rule here becomes a subroutine for multi-machine algorithms: SPT and EDD
+                are embedded in Giffler-Thompson job-shop active schedules; WSPT appears inside Shifting-Bottleneck;
+                ATC drives parallel-machine tardiness heuristics.
+            </p>
+
+            <table class="gen-table" id="jobs-table">
+                <thead><tr><th scope="col">Job</th><th scope="col">p<sub>j</sub></th><th scope="col">w<sub>j</sub></th><th scope="col">d<sub>j</sub></th></tr></thead>
+                <tbody id="jobsTableBody"></tbody>
+            </table>
+
+            <div class="formulation">
+                <span class="form-label">Canonical objectives (1 &vert; &vert; &gamma;)</span>
+                <span class="variable">C<sub>j</sub> = &Sigma;<sub>k:&pi;(k)&le;j</sub> p<sub>&pi;(k)</sub></span> &nbsp; <span class="comment">// completion time given sequence &pi;</span><br>
+                <span class="keyword">min</span> &Sigma; <span class="variable">C<sub>j</sub></span> &nbsp; <span class="comment">// total completion &mdash; SPT optimal, O(n log n)</span><br>
+                <span class="keyword">min</span> &Sigma; <span class="variable">w<sub>j</sub>C<sub>j</sub></span> &nbsp; <span class="comment">// weighted &mdash; WSPT (Smith 1956), O(n log n)</span><br>
+                <span class="keyword">min</span> <span class="variable">L<sub>max</sub></span> = max(C<sub>j</sub>&minus;d<sub>j</sub>) &nbsp; <span class="comment">// maximum lateness &mdash; EDD (Jackson 1955), O(n log n)</span><br>
+                <span class="keyword">min</span> &Sigma; <span class="variable">U<sub>j</sub></span>, U<sub>j</sub>=[C<sub>j</sub>&gt;d<sub>j</sub>] &nbsp; <span class="comment">// tardy-job count &mdash; Moore (1968), O(n log n)</span><br>
+                <span class="keyword">min</span> &Sigma; <span class="variable">T<sub>j</sub></span>, T<sub>j</sub>=max(0,C<sub>j</sub>&minus;d<sub>j</sub>) &nbsp; <span class="comment">// total tardiness &mdash; NP-hard (Du &amp; Leung 1990)</span><br>
+                <span class="keyword">min</span> &Sigma; <span class="variable">w<sub>j</sub>T<sub>j</sub></span> &nbsp; <span class="comment">// weighted tardiness &mdash; strongly NP-hard</span>
+            </div>
+
+            <p>
+                There are <strong>n! = 40,320</strong> possible sequences for eight jobs &mdash; small enough to
+                brute-force for verification, but the point here is the algorithmic landscape. For five of the six
+                objectives there is a provably optimal rule that runs in O(n&nbsp;log&nbsp;n); only
+                &Sigma;T<sub>j</sub> and &Sigma;w<sub>j</sub>T<sub>j</sub> require dynamic programming or branch-and-bound.
+            </p>
+
+            <a href="manufacturing-domain.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Manufacturing framework
+            </a>
+            <a href="permutation-flow-shop.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Multi-machine extension (PFSP)
+            </a>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Six algorithms, six objectives &mdash; see which rule is optimal for which goal</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-stream" aria-hidden="true"></i> Single-Machine Scheduler</h3>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">8 jobs &middot; 1 machine &middot; 6 objectives</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-switcher">
+                    <button class="scenario-btn active" data-scenario="0" type="button"><span class="scn-name">Tight Deadlines</span><span class="scn-desc">Due dates cluster early; tardiness dominates</span></button>
+                    <button class="scenario-btn" data-scenario="1" type="button"><span class="scn-name">Weighted Priorities</span><span class="scn-desc">Weights vary 10&times;; Smith&rsquo;s rule pays off</span></button>
+                    <button class="scenario-btn" data-scenario="2" type="button"><span class="scn-name">Balanced Mix</span><span class="scn-desc">Uniform p<sub>j</sub>, w<sub>j</sub>, d<sub>j</sub></span></button>
+                </div>
+                <div class="scenario-context" id="scenarioContext">Tight deadlines: all eight jobs are due within a short window. Moore&rsquo;s algorithm should minimise the number of tardy jobs; the tardiness objectives are non-trivial.</div>
+
+                <div class="solver-section-label">Primary objective (highlights the best row)</div>
+                <div class="objective-switcher" id="objectiveSwitcher">
+                    <button class="obj-chip active" data-obj="sumC" type="button">&Sigma; C<sub>j</sub></button>
+                    <button class="obj-chip" data-obj="sumWC" type="button">&Sigma; w<sub>j</sub>C<sub>j</sub></button>
+                    <button class="obj-chip" data-obj="Lmax" type="button">L<sub>max</sub></button>
+                    <button class="obj-chip" data-obj="sumU" type="button">&Sigma; U<sub>j</sub></button>
+                    <button class="obj-chip" data-obj="sumT" type="button">&Sigma; T<sub>j</sub></button>
+                    <button class="obj-chip" data-obj="sumWT" type="button">&Sigma; w<sub>j</sub>T<sub>j</sub></button>
+                </div>
+
+                <div class="solver-section-label">Algorithm (select to inspect its schedule below)</div>
+                <div class="algo-select">
+                    <button class="algo-chip active" data-algo="spt" type="button">SPT <span class="chip-type">Exact &Sigma;C<sub>j</sub></span></button>
+                    <button class="algo-chip" data-algo="wspt" type="button">WSPT <span class="chip-type">Smith 1956</span></button>
+                    <button class="algo-chip" data-algo="edd" type="button">EDD <span class="chip-type">Jackson 1955</span></button>
+                    <button class="algo-chip" data-algo="moore" type="button">Moore <span class="chip-type">1968</span></button>
+                    <button class="algo-chip" data-algo="atc" type="button">ATC <span class="chip-type">Heuristic</span></button>
+                    <button class="algo-chip" data-algo="dp" type="button">DP <span class="chip-type">Exact &Sigma;T<sub>j</sub></span></button>
+                </div>
+
+                <button class="solve-btn" id="solveAllBtn" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
+                </button>
+
+                <div class="solver-section-label">Schedule (Gantt)</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="ganttCanvas" width="960" height="260"></canvas>
+                </div>
+                <p class="solver-status" id="solverStatus">Click &ldquo;Solve &amp; Compare&rdquo; to run all six algorithms on the current scenario.</p>
+
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Comparison across all objectives</div>
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Algorithm</th>
+                                    <th scope="col" class="obj-col">&Sigma;C<sub>j</sub></th>
+                                    <th scope="col" class="obj-col">&Sigma;w<sub>j</sub>C<sub>j</sub></th>
+                                    <th scope="col" class="obj-col">L<sub>max</sub></th>
+                                    <th scope="col" class="obj-col">&Sigma;U<sub>j</sub></th>
+                                    <th scope="col" class="obj-col">&Sigma;T<sub>j</sub></th>
+                                    <th scope="col" class="obj-col">&Sigma;w<sub>j</sub>T<sub>j</sub></th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="7" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Click Solve to run</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Schedule Detail (selected algorithm)</div>
+                        <div class="schedule-output" id="scheduleOutput">Select an algorithm above and click Solve to see the sequence and completion times.</div>
+                    </div>
+                </div>
+
+                <div class="disclaimer-box" style="margin-top:1rem">
+                    <div class="disclaimer-title"><i class="fas fa-lightbulb" aria-hidden="true"></i> Reading the table</div>
+                    Gold cells are the <strong>provably optimal</strong> value for that column objective (the rule that matches is marked as exact in its algorithm card below). Green cells mark the minimum found by any algorithm on the objective you selected above. SPT is optimal for &Sigma;C<sub>j</sub>; WSPT for &Sigma;w<sub>j</sub>C<sub>j</sub>; EDD for L<sub>max</sub>; Moore for &Sigma;U<sub>j</sub>; bitmask DP is exact for &Sigma;T<sub>j</sub>; ATC is an effective heuristic for &Sigma;w<sub>j</sub>T<sub>j</sub>.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Algorithms</span></h2>
+            <p>Six rules, each optimal for a specific &gamma;</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-sort-amount-up" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>SPT &mdash; Shortest Processing Time</h3>
+                    <span class="algo-tag exact">Exact for &Sigma;C<sub>j</sub></span>
+                    <span class="algo-complexity">O(n log n)</span>
+                    <span class="algo-graham">1 &vert;&vert; &Sigma;C<sub>j</sub></span>
+                    <p>Sort jobs by non-decreasing processing time. The smallest <em>p<sub>j</sub></em> goes first. A pairwise-swap argument proves optimality: in any schedule, if the job at position <em>k</em> has a larger <em>p</em> than the one at position <em>k+1</em>, swapping them strictly reduces &Sigma;C<sub>j</sub>.</p>
+                    <p>Conway, Maxwell &amp; Miller (1967). Also optimal for average flow time, which differs from &Sigma;C<sub>j</sub> only by a constant factor of&nbsp;1/<em>n</em>.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-weight-hanging" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>WSPT &mdash; Smith&rsquo;s Weighted Shortest Processing Time Rule</h3>
+                    <span class="algo-tag exact">Exact for &Sigma;w<sub>j</sub>C<sub>j</sub></span>
+                    <span class="algo-complexity">O(n log n)</span>
+                    <span class="algo-graham">1 &vert;&vert; &Sigma;w<sub>j</sub>C<sub>j</sub></span>
+                    <p>Sort jobs by non-decreasing ratio <em>p<sub>j</sub>&nbsp;/&nbsp;w<sub>j</sub></em>. Smith (1956) proved optimality by the same adjacent-swap argument generalised to weighted completion times. Equivalent to prioritising high-weight short jobs &mdash; the intuition behind WSJF in modern dispatching.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-hourglass-half" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>EDD &mdash; Earliest Due Date</h3>
+                    <span class="algo-tag exact">Exact for L<sub>max</sub></span>
+                    <span class="algo-complexity">O(n log n)</span>
+                    <span class="algo-graham">1 &vert;&vert; L<sub>max</sub></span>
+                    <p>Sort jobs by non-decreasing due date. Jackson (1955). Minimises maximum lateness <em>L<sub>max</sub>&nbsp;=&nbsp;max(C<sub>j</sub>&minus;d<sub>j</sub>)</em> and also maximum tardiness <em>T<sub>max</sub></em>. A staple heuristic for deadline-sensitive applications where the worst late job matters more than the average.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-filter" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Moore&rsquo;s Algorithm</h3>
+                    <span class="algo-tag exact">Exact for &Sigma;U<sub>j</sub></span>
+                    <span class="algo-complexity">O(n log n)</span>
+                    <span class="algo-graham">1 &vert;&vert; &Sigma;U<sub>j</sub></span>
+                    <p>Minimises the <em>number</em> of tardy jobs. Schedule jobs in EDD order; whenever a newly added job becomes tardy, discard the longest-processing job seen so far. The discarded jobs form the tardy set; the kept jobs are on-time.</p>
+                    <p>Moore (1968), refined by Hodgson. Remarkable result: a polynomial-time algorithm for &Sigma;U<sub>j</sub> despite the weighted variant &Sigma;w<sub>j</sub>U<sub>j</sub> being NP-hard.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-random" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>ATC &mdash; Apparent Tardiness Cost</h3>
+                    <span class="algo-tag heuristic">Heuristic for &Sigma;w<sub>j</sub>T<sub>j</sub></span>
+                    <span class="algo-complexity">O(n&sup2;)</span>
+                    <span class="algo-graham">1 &vert;&vert; &Sigma;w<sub>j</sub>T<sub>j</sub></span>
+                    <p>Composite dispatching rule. At each step, schedule the job with the largest priority index
+                    <em>&pi;<sub>j</sub>(t) = (w<sub>j</sub>/p<sub>j</sub>) &middot; exp(&minus;max(0,&nbsp;d<sub>j</sub>&minus;t&minus;p<sub>j</sub>)/(k&middot;p&#773;))</em>,
+                    where <em>t</em> is the current time, <em>p&#773;</em> is the average processing time, and <em>k</em> is a look-ahead parameter (typically 1&ndash;5).</p>
+                    <p>Vepsalainen &amp; Morton (1987). ATC blends WSPT (urgency via <em>w/p</em>) with EDD (lateness via the exponential slack term). Typically achieves within 5&ndash;10% of the optimum on &Sigma;w<sub>j</sub>T<sub>j</sub> benchmarks &mdash; the warm-start of choice for B&amp;B implementations.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-cube" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>DP &mdash; Bitmask Dynamic Programming</h3>
+                    <span class="algo-tag exact">Exact for &Sigma;T<sub>j</sub></span>
+                    <span class="algo-complexity">O(2<sup>n</sup> &middot; n)</span>
+                    <span class="algo-graham">1 &vert;&vert; &Sigma;T<sub>j</sub></span>
+                    <p>Enumerate subsets <em>S&nbsp;&sube;&nbsp;N</em>. State <em>f(S)</em> is the minimum total tardiness to complete all jobs in <em>S</em>. Since all jobs are available at time 0, the completion time of any last-scheduled job <em>j&nbsp;&isin;&nbsp;S</em> is simply &Sigma;<sub>k&isin;S</sub> <em>p<sub>k</sub></em>, regardless of order. Recurrence:</p>
+                    <div class="formulation" style="margin:0.6rem 0;">
+                        <span class="variable">f(S) = min<sub>j&isin;S</sub></span> { <span class="variable">f(S&minus;{j}) + max(0, t(S) &minus; d<sub>j</sub>)</span> } &nbsp; <span class="comment">// t(S) = &Sigma;<sub>k&isin;S</sub> p<sub>k</sub></span>
+                    </div>
+                    <p>Base case <em>f(&empty;)&nbsp;=&nbsp;0</em>; answer is <em>f(N)</em>. Du &amp; Leung (1990) proved that 1&nbsp;&vert;&vert;&nbsp;&Sigma;T<sub>j</sub> is NP-hard in the ordinary sense &mdash; pseudo-polynomial DP exists in processing-time magnitude, but exponential in <em>n</em>. Practical limit ~20&ndash;24 jobs. For weighted tardiness, B&amp;B with ATC warm-start is preferred.</p>
+                </div>
+
+                <div class="disclaimer-box fade-in">
+                    <div class="disclaimer-title"><i class="fas fa-brain" aria-hidden="true"></i> The complexity landscape</div>
+                    <table class="complexity-table" style="margin-top:0.6rem;">
+                        <thead>
+                            <tr><th scope="col">Problem</th><th scope="col">Complexity</th><th scope="col">Optimal rule / method</th><th scope="col">Reference</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr><td class="graham">1 &vert;&vert; C<sub>max</sub></td><td class="comp-p">Trivial</td><td>Any order (C<sub>max</sub> = &Sigma;p<sub>j</sub>)</td><td>&mdash;</td></tr>
+                            <tr><td class="graham">1 &vert;&vert; &Sigma;C<sub>j</sub></td><td class="comp-p">O(n log n)</td><td>SPT</td><td>Conway et&nbsp;al.&nbsp;(1967)</td></tr>
+                            <tr><td class="graham">1 &vert;&vert; &Sigma;w<sub>j</sub>C<sub>j</sub></td><td class="comp-p">O(n log n)</td><td>WSPT (Smith&rsquo;s rule)</td><td>Smith (1956)</td></tr>
+                            <tr><td class="graham">1 &vert;&vert; L<sub>max</sub></td><td class="comp-p">O(n log n)</td><td>EDD</td><td>Jackson (1955)</td></tr>
+                            <tr><td class="graham">1 &vert;&vert; &Sigma;U<sub>j</sub></td><td class="comp-p">O(n log n)</td><td>Moore&rsquo;s algorithm</td><td>Moore (1968)</td></tr>
+                            <tr><td class="graham">1 &vert;&vert; &Sigma;T<sub>j</sub></td><td class="comp-np">NP-hard</td><td>Bitmask DP O(2<sup>n</sup>&middot;n)</td><td>Du &amp; Leung (1990)</td></tr>
+                            <tr><td class="graham">1 &vert;&vert; &Sigma;w<sub>j</sub>T<sub>j</sub></td><td class="comp-np">Strongly NP-hard</td><td>B&amp;B, ATC warm-start</td><td>Potts &amp; Van Wassenhove (1985)</td></tr>
+                            <tr><td class="graham">1 &vert; r<sub>j</sub> &vert; L<sub>max</sub></td><td class="comp-np">NP-hard</td><td>B&amp;B; SRPT preemptive</td><td>Lenstra et&nbsp;al.&nbsp;(1977); Schrage (1968)</td></tr>
+                            <tr><td class="graham">1 &vert; s<sub>jk</sub> &vert; C<sub>max</sub></td><td class="comp-np">NP-hard</td><td>Reduces to TSP</td><td>&mdash;</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>Problems</span></h2>
+            <p>Single-machine rules appear as subroutines across the scheduling tree</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="related-grid">
+                <a href="permutation-flow-shop.html" class="related-card">
+                    <div class="related-card-title">Permutation Flow Shop</div>
+                    <div class="related-card-tag">F<sub>m</sub> &vert; prmu &vert; C<sub>max</sub></div>
+                </a>
+                <a href="job-shop-scheduling.html" class="related-card">
+                    <div class="related-card-title">Job Shop</div>
+                    <div class="related-card-tag">J<sub>m</sub> &vert;&vert; C<sub>max</sub></div>
+                </a>
+                <a href="manufacturing-balancing.html" class="related-card">
+                    <div class="related-card-title">Parallel Machine</div>
+                    <div class="related-card-tag">P<sub>m</sub> &vert;&vert; C<sub>max</sub></div>
+                </a>
+                <a href="print-shop.html" class="related-card">
+                    <div class="related-card-title">Print Shop (SDST)</div>
+                    <div class="related-card-tag">F<sub>m</sub> &vert; prmu,S<sub>sd</sub> &vert; C<sub>max</sub></div>
+                </a>
+                <a href="steel-production.html" class="related-card">
+                    <div class="related-card-title">Steel Production (no-wait)</div>
+                    <div class="related-card-tag">F<sub>m</sub> &vert; prmu,nwt &vert; C<sub>max</sub></div>
+                </a>
+                <a href="construction-project-scheduling.html" class="related-card">
+                    <div class="related-card-title">RCPSP (cross-domain)</div>
+                    <div class="related-card-tag">Construction &middot; resource-constrained</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2><span>References</span></h2>
+            <p>Foundational papers on single-machine scheduling</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li><span class="ref-author">Smith, W.&nbsp;E.</span> (1956). <span class="ref-title">Various optimizers for single-stage production.</span> <span class="ref-journal">Naval Research Logistics Quarterly, 3(1&ndash;2), 59&ndash;66.</span> &mdash; Smith&rsquo;s rule (WSPT).</li>
+                <li><span class="ref-author">Jackson, J.&nbsp;R.</span> (1955). <span class="ref-title">Scheduling a production line to minimize maximum tardiness.</span> <span class="ref-journal">UCLA Management Science Research Project, Research Report 43.</span> &mdash; EDD for L<sub>max</sub>.</li>
+                <li><span class="ref-author">Moore, J.&nbsp;M.</span> (1968). <span class="ref-title">An <em>n</em> job, one machine sequencing algorithm for minimizing the number of late jobs.</span> <span class="ref-journal">Management Science, 15(1), 102&ndash;109.</span> <a href="https://doi.org/10.1287/mnsc.15.1.102" target="_blank" rel="noopener">doi:10.1287/mnsc.15.1.102</a></li>
+                <li><span class="ref-author">Conway, R.&nbsp;W., Maxwell, W.&nbsp;L., &amp; Miller, L.&nbsp;W.</span> (1967). <span class="ref-title">Theory of Scheduling.</span> <span class="ref-journal">Addison-Wesley.</span> &mdash; classical foundation; SPT optimality proof.</li>
+                <li><span class="ref-author">Lawler, E.&nbsp;L.</span> (1977). <span class="ref-title">A pseudopolynomial algorithm for sequencing jobs to minimize total tardiness.</span> <span class="ref-journal">Annals of Discrete Mathematics, 1, 331&ndash;342.</span></li>
+                <li><span class="ref-author">Potts, C.&nbsp;N., &amp; Van&nbsp;Wassenhove, L.&nbsp;N.</span> (1985). <span class="ref-title">A branch and bound algorithm for the total weighted tardiness problem.</span> <span class="ref-journal">Operations Research, 33(2), 363&ndash;377.</span> <a href="https://doi.org/10.1287/opre.33.2.363" target="_blank" rel="noopener">doi:10.1287/opre.33.2.363</a></li>
+                <li><span class="ref-author">Du, J., &amp; Leung, J.&nbsp;Y.-T.</span> (1990). <span class="ref-title">Minimizing total tardiness on one machine is NP-hard.</span> <span class="ref-journal">Mathematics of Operations Research, 15(3), 483&ndash;495.</span> <a href="https://doi.org/10.1287/moor.15.3.483" target="_blank" rel="noopener">doi:10.1287/moor.15.3.483</a></li>
+                <li><span class="ref-author">Lenstra, J.&nbsp;K., Rinnooy&nbsp;Kan, A.&nbsp;H.&nbsp;G., &amp; Brucker, P.</span> (1977). <span class="ref-title">Complexity of machine scheduling problems.</span> <span class="ref-journal">Annals of Discrete Mathematics, 1, 343&ndash;362.</span></li>
+                <li><span class="ref-author">Vepsalainen, A.&nbsp;P.&nbsp;J., &amp; Morton, T.&nbsp;E.</span> (1987). <span class="ref-title">Priority rules for job shops with weighted tardiness costs.</span> <span class="ref-journal">Management Science, 33(8), 1035&ndash;1047.</span> <a href="https://doi.org/10.1287/mnsc.33.8.1035" target="_blank" rel="noopener">doi:10.1287/mnsc.33.8.1035</a> &mdash; ATC rule.</li>
+                <li><span class="ref-author">Graham, R.&nbsp;L., Lawler, E.&nbsp;L., Lenstra, J.&nbsp;K., &amp; Rinnooy&nbsp;Kan, A.&nbsp;H.&nbsp;G.</span> (1979). <span class="ref-title">Optimization and approximation in deterministic sequencing and scheduling: a survey.</span> <span class="ref-journal">Annals of Discrete Mathematics, 5, 287&ndash;326.</span> <a href="https://doi.org/10.1016/S0167-5060(08)70356-X" target="_blank" rel="noopener">doi:10.1016/S0167-5060(08)70356-X</a> &mdash; three-field notation.</li>
+                <li><span class="ref-author">Pinedo, M.&nbsp;L.</span> (2022). <span class="ref-title">Scheduling: Theory, Algorithms, and Systems</span> (6th ed.). <span class="ref-journal">Springer.</span> <a href="https://doi.org/10.1007/978-3-031-05921-6" target="_blank" rel="noopener">doi:10.1007/978-3-031-05921-6</a> &mdash; canonical reference; single-machine chapter covers all objectives above.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Need to optimise<br>sequencing on a bottleneck machine?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
+            Processing times, weights, and due dates are illustrative educational instances, not production data. The browser-based solver uses exact polynomial rules where applicable and a bitmask DP that is practical up to roughly <em>n&nbsp;=&nbsp;20</em>; beyond that, industrial deployments use commercial solvers (Gurobi, CPLEX, OR-Tools CP-SAT) with branch-and-bound and ATC warm-start.
+        </div>
+    </div>
+</section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="manufacturing-domain.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Manufacturing</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function () {
+    'use strict';
+
+    // ── Helper: safe DOM builder ──
+    function el(tag, attrs, text) {
+        var n = document.createElement(tag);
+        if (attrs) for (var k in attrs) {
+            if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+            if (k === 'class') n.className = attrs[k];
+            else if (k === 'style') n.setAttribute('style', attrs[k]);
+            else n.setAttribute(k, attrs[k]);
+        }
+        if (text !== undefined && text !== null) n.textContent = text;
+        return n;
+    }
+    function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+    function setEmptyRow(tbody, msg, colSpan) {
+        clear(tbody);
+        var tr = document.createElement('tr');
+        var td = el('td', { colspan: String(colSpan), style: 'text-align:center; color:var(--slate); font-family:Inter,sans-serif;' }, msg);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+    }
+
+    // ── Scenarios: 3 × 8 jobs each ──
+    var SCENARIOS = [
+        {
+            name: 'Tight Deadlines',
+            context: 'Tight deadlines: all eight jobs are due within a short window. Moore\u2019s algorithm should minimise the number of tardy jobs; the tardiness objectives are non-trivial.',
+            jobs: [
+                { p: 5, w: 2, d: 10 }, { p: 3, w: 4, d: 12 }, { p: 7, w: 1, d: 15 },
+                { p: 2, w: 5, d: 8 },  { p: 6, w: 3, d: 14 }, { p: 4, w: 2, d: 11 },
+                { p: 3, w: 4, d: 9 },  { p: 5, w: 1, d: 16 }
+            ]
+        },
+        {
+            name: 'Weighted Priorities',
+            context: 'Weighted priorities: weights span 10\u00d7 (w ranges 1\u201310). Smith\u2019s rule (WSPT) delivers large gains over SPT on \u03a3wC; WSPT ordering may invert SPT ordering entirely.',
+            jobs: [
+                { p: 4, w: 10, d: 20 }, { p: 8, w: 1, d: 25 }, { p: 3, w: 7, d: 18 },
+                { p: 6, w: 3, d: 22 },  { p: 5, w: 9, d: 17 }, { p: 7, w: 2, d: 28 },
+                { p: 2, w: 8, d: 15 },  { p: 4, w: 1, d: 30 }
+            ]
+        },
+        {
+            name: 'Balanced Mix',
+            context: 'Balanced mix: processing times, weights, and due dates are all in narrow ranges. Objectives differentiate algorithms less sharply; differences come from ordering effects on tardiness.',
+            jobs: [
+                { p: 4, w: 3, d: 12 }, { p: 5, w: 2, d: 18 }, { p: 3, w: 4, d: 10 },
+                { p: 6, w: 3, d: 22 }, { p: 4, w: 2, d: 16 }, { p: 5, w: 4, d: 20 },
+                { p: 3, w: 3, d: 14 }, { p: 4, w: 2, d: 24 }
+            ]
+        }
+    ];
+
+    var state = {
+        scenarioIdx: 0,
+        selectedObj: 'sumC',
+        selectedAlgo: 'spt',
+        results: null
+    };
+
+    function getJobs() {
+        return SCENARIOS[state.scenarioIdx].jobs.map(function(j, i){ return { id: i+1, p: j.p, w: j.w, d: j.d }; });
+    }
+
+    // ── Objective evaluator given a job sequence ──
+    function evaluate(sequence, jobs) {
+        var t = 0;
+        var completions = [];
+        var sumC = 0, sumWC = 0, Lmax = -Infinity, sumU = 0, sumT = 0, sumWT = 0;
+        for (var k = 0; k < sequence.length; k++) {
+            var j = jobs[sequence[k]];
+            t += j.p;
+            completions.push(t);
+            sumC += t;
+            sumWC += j.w * t;
+            var L = t - j.d;
+            if (L > Lmax) Lmax = L;
+            if (t > j.d) { sumU += 1; sumT += (t - j.d); sumWT += j.w * (t - j.d); }
+        }
+        return { sumC: sumC, sumWC: sumWC, Lmax: Lmax, sumU: sumU, sumT: sumT, sumWT: sumWT, completions: completions };
+    }
+
+    // ── Algorithms ──
+    function algoSPT(jobs) {
+        var idx = jobs.map(function(_, i){ return i; });
+        idx.sort(function(a, b){ return jobs[a].p - jobs[b].p; });
+        return idx;
+    }
+    function algoWSPT(jobs) {
+        var idx = jobs.map(function(_, i){ return i; });
+        idx.sort(function(a, b){ return jobs[a].p/jobs[a].w - jobs[b].p/jobs[b].w; });
+        return idx;
+    }
+    function algoEDD(jobs) {
+        var idx = jobs.map(function(_, i){ return i; });
+        idx.sort(function(a, b){ return jobs[a].d - jobs[b].d; });
+        return idx;
+    }
+    function algoMoore(jobs) {
+        var edd = jobs.map(function(_, i){ return i; });
+        edd.sort(function(a, b){ return jobs[a].d - jobs[b].d; });
+        var scheduled = [];
+        var t = 0;
+        for (var k = 0; k < edd.length; k++) {
+            var j = edd[k];
+            scheduled.push(j);
+            t += jobs[j].p;
+            if (t > jobs[j].d) {
+                var worst = scheduled[0];
+                for (var s = 1; s < scheduled.length; s++) if (jobs[scheduled[s]].p > jobs[worst].p) worst = scheduled[s];
+                t -= jobs[worst].p;
+                scheduled = scheduled.filter(function(x){ return x !== worst; });
+            }
+        }
+        var tardy = [];
+        for (var k2 = 0; k2 < edd.length; k2++) if (scheduled.indexOf(edd[k2]) < 0) tardy.push(edd[k2]);
+        return scheduled.concat(tardy);
+    }
+    function algoATC(jobs, kLook) {
+        kLook = kLook || 2;
+        var pBar = jobs.reduce(function(s, j){ return s + j.p; }, 0) / jobs.length;
+        var remaining = jobs.map(function(_, i){ return i; });
+        var sequence = [];
+        var t = 0;
+        while (remaining.length > 0) {
+            var bestIdx = 0;
+            var bestPri = -Infinity;
+            for (var r = 0; r < remaining.length; r++) {
+                var j = jobs[remaining[r]];
+                var slack = Math.max(0, j.d - t - j.p);
+                var pri = (j.w / j.p) * Math.exp(-slack / (kLook * pBar));
+                if (pri > bestPri) { bestPri = pri; bestIdx = r; }
+            }
+            var pick = remaining.splice(bestIdx, 1)[0];
+            sequence.push(pick);
+            t += jobs[pick].p;
+        }
+        return sequence;
+    }
+    function algoDP(jobs) {
+        var n = jobs.length;
+        var totalStates = 1 << n;
+        var INF = Infinity;
+        var dp = new Array(totalStates).fill(INF);
+        var parent = new Array(totalStates).fill(-1);
+        dp[0] = 0;
+        for (var S = 1; S < totalStates; S++) {
+            var sumP = 0;
+            for (var j = 0; j < n; j++) if (S & (1 << j)) sumP += jobs[j].p;
+            for (var j2 = 0; j2 < n; j2++) {
+                if (!(S & (1 << j2))) continue;
+                var prev = S ^ (1 << j2);
+                var tardJ = Math.max(0, sumP - jobs[j2].d);
+                var cand = dp[prev] + tardJ;
+                if (cand < dp[S]) { dp[S] = cand; parent[S] = j2; }
+            }
+        }
+        var seqRev = [];
+        var S2 = totalStates - 1;
+        while (S2 > 0) { var j3 = parent[S2]; seqRev.push(j3); S2 ^= (1 << j3); }
+        return seqRev.reverse();
+    }
+
+    var ALGOS = [
+        { key: 'spt',   name: 'SPT',   fn: algoSPT },
+        { key: 'wspt',  name: 'WSPT',  fn: algoWSPT },
+        { key: 'edd',   name: 'EDD',   fn: algoEDD },
+        { key: 'moore', name: 'Moore', fn: algoMoore },
+        { key: 'atc',   name: 'ATC',   fn: function(jobs){ return algoATC(jobs, 2); } },
+        { key: 'dp',    name: 'DP',    fn: algoDP }
+    ];
+
+    // ── Jobs table (safe DOM) ──
+    function renderJobsTable() {
+        var tbody = document.getElementById('jobsTableBody');
+        clear(tbody);
+        var jobs = getJobs();
+        for (var i = 0; i < jobs.length; i++) {
+            var tr = document.createElement('tr');
+            tr.appendChild(el('td', { style: 'color:var(--ivory)' }, 'J' + jobs[i].id));
+            tr.appendChild(el('td', null, jobs[i].p));
+            tr.appendChild(el('td', null, jobs[i].w));
+            tr.appendChild(el('td', null, jobs[i].d));
+            tbody.appendChild(tr);
+        }
+    }
+
+    function solveAll() {
+        var jobs = getJobs();
+        var results = [];
+        for (var i = 0; i < ALGOS.length; i++) {
+            var seq = ALGOS[i].fn(jobs);
+            var ev = evaluate(seq, jobs);
+            results.push({ algo: ALGOS[i].name, key: ALGOS[i].key, sequence: seq, eval: ev });
+        }
+        state.results = { jobs: jobs, rows: results };
+        renderResults();
+        renderGantt();
+        renderScheduleOutput();
+        document.getElementById('solverStatus').textContent = 'Solved. Gold cells = provably optimal value for the column objective; green cells = best found for the selected primary objective.';
+    }
+
+    function renderResults() {
+        var r = state.results;
+        if (!r) return;
+        var tbody = document.getElementById('resultsBody');
+        clear(tbody);
+        var objs = ['sumC', 'sumWC', 'Lmax', 'sumU', 'sumT', 'sumWT'];
+        var best = {};
+        objs.forEach(function(o){
+            best[o] = Math.min.apply(null, r.rows.map(function(row){ return row.eval[o]; }));
+        });
+        var optimalBy = { sumC: 'spt', sumWC: 'wspt', Lmax: 'edd', sumU: 'moore', sumT: 'dp' };
+        for (var i = 0; i < r.rows.length; i++) {
+            var row = r.rows[i];
+            var tr = document.createElement('tr');
+            tr.appendChild(el('td', { class: 'algo-label' }, row.algo));
+            for (var k = 0; k < objs.length; k++) {
+                var o = objs[k];
+                var v = row.eval[o];
+                var isOpt = (optimalBy[o] === row.key);
+                var isHighlight = (o === state.selectedObj && v === best[o]);
+                var cls = 'obj-col' + (isOpt ? ' opt-val' : (isHighlight ? ' best-val' : ''));
+                tr.appendChild(el('td', { class: cls }, (Math.round(v * 100) / 100)));
+            }
+            tbody.appendChild(tr);
+        }
+    }
+
+    function renderGantt() {
+        var canvas = document.getElementById('ganttCanvas');
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        var cssW = 960, cssH = 260;
+        canvas.style.width = cssW + 'px';
+        canvas.style.height = cssH + 'px';
+        canvas.width = cssW * dpr;
+        canvas.height = cssH * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cssW, cssH);
+        if (!state.results) return;
+        var jobs = state.results.jobs;
+        var row = null;
+        for (var i = 0; i < state.results.rows.length; i++) if (state.results.rows[i].key === state.selectedAlgo) { row = state.results.rows[i]; break; }
+        if (!row) row = state.results.rows[0];
+        var sequence = row.sequence;
+        var totalP = jobs.reduce(function(s, j){ return s + j.p; }, 0);
+        var padLeft = 60, padRight = 20, padTop = 60, padBot = 40;
+        var plotW = cssW - padLeft - padRight;
+        var plotH = cssH - padTop - padBot;
+        var xScale = plotW / totalP;
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '600 12px Inter, sans-serif';
+        ctx.fillText(row.algo + ' schedule \u2014 makespan=' + totalP + ', \u03a3Cj=' + row.eval.sumC + ', Lmax=' + row.eval.Lmax + ', \u03a3Tj=' + row.eval.sumT, padLeft, 24);
+        ctx.strokeStyle = 'rgba(197,160,89,0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, padTop);
+        ctx.lineTo(padLeft, padTop + plotH);
+        ctx.lineTo(padLeft + plotW, padTop + plotH);
+        ctx.stroke();
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '500 11px Inter, sans-serif';
+        ctx.fillText('Machine', 10, padTop + plotH / 2);
+        ctx.font = '10px JetBrains Mono, monospace';
+        ctx.fillStyle = '#8892B0';
+        var step = Math.max(1, Math.floor(totalP / 10));
+        for (var t = 0; t <= totalP; t += step) {
+            var x = padLeft + t * xScale;
+            ctx.beginPath();
+            ctx.moveTo(x, padTop + plotH);
+            ctx.lineTo(x, padTop + plotH + 5);
+            ctx.stroke();
+            ctx.fillText('t=' + t, x - 10, padTop + plotH + 18);
+        }
+        var palette = ['#7aa2f7', '#C5A059', '#64ffda', '#ff6b6b', '#D4AF37', '#a8b2d1', '#9e7ac7', '#ff9d6b'];
+        var cum = 0;
+        for (var k = 0; k < sequence.length; k++) {
+            var jj = jobs[sequence[k]];
+            var bx = padLeft + cum * xScale;
+            var bw = jj.p * xScale;
+            var by = padTop + 20;
+            var bh = plotH - 40;
+            ctx.fillStyle = palette[sequence[k] % palette.length];
+            ctx.globalAlpha = 0.78;
+            ctx.fillRect(bx, by, bw, bh);
+            ctx.globalAlpha = 1;
+            ctx.strokeStyle = 'rgba(10,25,47,0.9)';
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(bx, by, bw, bh);
+            ctx.fillStyle = '#0A192F';
+            ctx.font = '600 11px Inter, sans-serif';
+            if (bw > 28) ctx.fillText('J' + jj.id + ' p=' + jj.p, bx + 4, by + 16);
+            cum += jj.p;
+            var dx = padLeft + jj.d * xScale;
+            if (jj.d <= totalP) {
+                ctx.strokeStyle = (jj.d < cum) ? '#ff6b6b' : '#64ffda';
+                ctx.lineWidth = 1;
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath();
+                ctx.moveTo(dx, padTop);
+                ctx.lineTo(dx, padTop + plotH);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+        }
+        ctx.font = '10px Inter, sans-serif';
+        ctx.fillStyle = '#64ffda';
+        ctx.fillText('\u2014 \u2014 due date (on-time)', padLeft + plotW - 170, 40);
+        ctx.fillStyle = '#ff6b6b';
+        ctx.fillText('\u2014 \u2014 due date (missed)', padLeft + plotW - 170, 54);
+    }
+
+    function renderScheduleOutput() {
+        var div = document.getElementById('scheduleOutput');
+        if (!state.results) { div.textContent = 'No results.'; return; }
+        var row = null;
+        for (var i = 0; i < state.results.rows.length; i++) if (state.results.rows[i].key === state.selectedAlgo) { row = state.results.rows[i]; break; }
+        if (!row) { div.textContent = 'Select an algorithm.'; return; }
+        var jobs = state.results.jobs;
+        var lines = [row.algo + ' sequence:'];
+        var t = 0;
+        for (var k = 0; k < row.sequence.length; k++) {
+            var j = jobs[row.sequence[k]];
+            t += j.p;
+            var flag = (t > j.d) ? ' (T=' + (t - j.d) + ', tardy)' : ' (on-time)';
+            lines.push('  ' + (k+1) + '. J' + j.id + '  p=' + j.p + '  d=' + j.d + '  C=' + t + flag);
+        }
+        var e = row.eval;
+        lines.push('');
+        lines.push('Objectives:  \u03a3Cj=' + e.sumC + '   \u03a3wCj=' + e.sumWC + '   Lmax=' + e.Lmax + '   \u03a3Uj=' + e.sumU + '   \u03a3Tj=' + e.sumT + '   \u03a3wTj=' + e.sumWT);
+        div.textContent = lines.join('\n');
+    }
+
+    // ── Event wiring ──
+    document.querySelectorAll('.scenario-btn').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            document.querySelectorAll('.scenario-btn').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.scenarioIdx = parseInt(btn.getAttribute('data-scenario'), 10);
+            document.getElementById('scenarioContext').textContent = SCENARIOS[state.scenarioIdx].context;
+            renderJobsTable();
+            state.results = null;
+            document.getElementById('solverStatus').textContent = 'Scenario changed. Click Solve.';
+            setEmptyRow(document.getElementById('resultsBody'), 'Click Solve to run', 7);
+            var ctx = document.getElementById('ganttCanvas').getContext('2d');
+            ctx.clearRect(0, 0, 960, 260);
+            document.getElementById('scheduleOutput').textContent = 'Scenario changed. Solve to see schedule.';
+        });
+    });
+
+    document.querySelectorAll('.obj-chip').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            document.querySelectorAll('.obj-chip').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.selectedObj = btn.getAttribute('data-obj');
+            if (state.results) renderResults();
+        });
+    });
+
+    document.querySelectorAll('.algo-chip').forEach(function(btn){
+        btn.addEventListener('click', function(){
+            document.querySelectorAll('.algo-chip').forEach(function(b){ b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.selectedAlgo = btn.getAttribute('data-algo');
+            if (state.results) { renderGantt(); renderScheduleOutput(); }
+        });
+    });
+
+    document.getElementById('solveAllBtn').addEventListener('click', solveAll);
+
+    // ── Fade-in ──
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function (el) { io.observe(el); });
+    } else {
+        fades.forEach(function (el) { el.classList.add('visible'); });
+    }
+
+    // ── Initial render ──
+    renderJobsTable();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Short-Rate Models (Vasicek &amp; CIR) | Mathematical Modeling &amp; OR</title>
+    <meta name="description" content="Vasicek (1977) and Cox-Ingersoll-Ross (1985) one-factor short-rate models: mean-reverting SDEs, bond-price closed forms, yield curves. Educational demonstration.">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/short-rate-models.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --purple:#bb9af7; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        .navbar { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:1rem 0; z-index:1000; border-bottom:1px solid rgba(197,160,89,0.1); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; }
+        .nav-link:hover,.nav-link.active { color:var(--gold)!important; }
+        .breadcrumb-nav { padding:0.8rem 0; background:rgba(10,25,47,0.5); border-bottom:1px solid rgba(197,160,89,0.1); margin-top:56px; }
+        .breadcrumb-nav ol { list-style:none; display:flex; gap:0.5rem; font-size:0.8rem; letter-spacing:1px; text-transform:uppercase; padding:0; margin:0; }
+        .breadcrumb-nav li { color:var(--slate); } .breadcrumb-nav li a { color:var(--slate); text-decoration:none; } .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .hero { padding:4rem 2rem 2.5rem; text-align:center; }
+        .hero-icon { font-size:2.4rem; color:var(--gold); margin-bottom:1rem; filter:drop-shadow(0 0 10px rgba(197,160,89,0.35)) drop-shadow(0 0 30px rgba(122,162,247,0.15)); }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:2.6rem; font-weight:300; letter-spacing:3px; margin-bottom:0.7rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-subtitle { font-size:0.9rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1rem; }
+        .badge-chip { display:inline-block; padding:0.25rem 0.8rem; background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.68rem; letter-spacing:1.5px; color:var(--gold); text-transform:uppercase; margin:0 0.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1rem auto; }
+        .hero-desc { max-width:780px; margin:0 auto 1.5rem; color:var(--slate-light); font-size:0.95rem; line-height:1.8; }
+        .disclaimer-callout { max-width:900px; margin:1.2rem auto 0; padding:0.8rem 1.3rem; background:linear-gradient(135deg,rgba(255,107,107,0.06),rgba(197,160,89,0.04)); border:1px solid rgba(255,107,107,0.25); border-left:3px solid var(--red); border-radius:4px; font-size:0.8rem; color:var(--slate-light); line-height:1.65; text-align:left; }
+        .disclaimer-callout strong { color:var(--ivory); font-weight:500; }
+        .disclaimer-callout .disclaimer-title { font-size:0.66rem; color:var(--red); text-transform:uppercase; letter-spacing:2px; font-weight:600; margin-bottom:0.3rem; }
+        .section-header { text-align:center; margin-bottom:1.8rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:1.8rem; font-weight:300; letter-spacing:3px; color:var(--ivory); }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.78rem; letter-spacing:2px; text-transform:uppercase; margin-top:0.3rem; }
+        .problem-card { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1.6rem; margin-bottom:1.2rem; }
+        .complexity-box { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin-bottom:1rem; }
+        .complexity-box h3 { font-family:'Cormorant Garamond',serif; font-size:1.2rem; color:var(--gold); margin-bottom:0.6rem; letter-spacing:1.5px; }
+        .complexity-list { padding-left:1.1rem; }
+        .complexity-list li { color:var(--slate-light); font-size:0.85rem; line-height:1.8; margin-bottom:0.3rem; }
+        .complexity-list li strong { color:var(--ivory); }
+        .problem-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.3rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.6rem; }
+        .problem-card p { color:var(--slate-light); font-size:0.9rem; line-height:1.8; margin-bottom:0.7rem; }
+        .problem-card strong { color:var(--ivory); }
+        .problem-meta { display:flex; flex-wrap:wrap; gap:0.7rem; margin-bottom:0.9rem; padding-bottom:0.7rem; border-bottom:1px solid rgba(197,160,89,0.1); }
+        .problem-meta .meta-item { font-size:0.7rem; color:var(--slate); letter-spacing:1px; text-transform:uppercase; }
+        .problem-meta .meta-item strong { color:var(--gold); }
+        .formula-block { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.1rem 1.3rem; margin:0.7rem 0; font-size:0.9rem; color:var(--ivory); overflow-x:auto; }
+        .formula-block .form-label { font-size:0.7rem; color:var(--gold); text-transform:uppercase; letter-spacing:2px; font-weight:500; margin-bottom:0.5rem; display:block; }
+        .formula-block .caption { font-size:0.76rem; color:var(--slate); font-style:italic; margin-top:0.5rem; text-align:center; }
+        .solver-panel { background:var(--midnight-light); border:1px solid rgba(197,160,89,0.2); border-radius:4px; margin-bottom:1.2rem; overflow:hidden; }
+        .solver-panel-header { padding:0.9rem 1.3rem; background:linear-gradient(135deg,rgba(197,160,89,0.08),transparent); border-bottom:1px solid rgba(197,160,89,0.15); }
+        .solver-panel-header h3 { font-family:'Cormorant Garamond',serif; font-size:1.2rem; color:var(--gold); margin:0; letter-spacing:1px; }
+        .solver-body { padding:1.3rem; }
+        .solver-controls { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:0.9rem; margin-bottom:1.1rem; }
+        .control-group { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.1); border-radius:4px; padding:0.8rem 0.9rem; }
+        .control-group label { font-size:0.7rem; color:var(--gold); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:0.35rem; display:block; font-weight:500; }
+        .control-group input[type="range"] { width:100%; accent-color:var(--gold); cursor:pointer; }
+        .control-group select { width:100%; background:var(--midnight); border:1px solid rgba(197,160,89,0.2); color:var(--ivory); padding:0.35rem 0.6rem; border-radius:3px; font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .control-group .val-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; text-align:right; margin-top:0.2rem; }
+        .solver-canvas-wrap { background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; padding:0.5rem; margin-bottom:0.9rem; }
+        .solver-canvas-wrap canvas { width:100%; display:block; border-radius:2px; }
+        .kpi-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); gap:0.6rem; margin-bottom:0.9rem; }
+        .kpi { background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:3px; padding:0.6rem 0.7rem; text-align:center; }
+        .kpi .kpi-label { font-size:0.63rem; color:var(--slate); letter-spacing:1.5px; text-transform:uppercase; margin-bottom:0.25rem; }
+        .kpi .kpi-val { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; font-weight:500; }
+        .reference-item { padding:0.9rem 0; border-bottom:1px solid rgba(197,160,89,0.08); }
+        .reference-item:last-child { border-bottom:none; }
+        .reference-item .ref-authors { color:var(--ivory); font-weight:500; font-size:0.88rem; }
+        .reference-item .ref-title { color:var(--slate-light); font-style:italic; font-size:0.84rem; margin-top:0.1rem; }
+        .reference-item .ref-journal { color:var(--slate); font-size:0.78rem; margin-top:0.1rem; }
+        .reference-item .ref-journal a { color:var(--gold); text-decoration:none; border-bottom:1px dotted rgba(197,160,89,0.4); }
+        .cta-panel { background:linear-gradient(135deg,rgba(197,160,89,0.08),rgba(122,162,247,0.04)); border:1px solid rgba(197,160,89,0.25); border-radius:4px; padding:2rem; text-align:center; }
+        .cta-panel h3 { font-family:'Cormorant Garamond',serif; font-size:1.5rem; font-weight:400; letter-spacing:2px; margin-bottom:0.7rem; color:var(--ivory); }
+        .cta-panel p { color:var(--slate-light); font-size:0.88rem; max-width:700px; margin:0 auto 1.2rem; line-height:1.7; }
+        .cta-links { display:flex; justify-content:center; gap:0.8rem; flex-wrap:wrap; }
+        .cta-link { display:inline-flex; align-items:center; gap:0.4rem; padding:0.55rem 1.2rem; border:1px solid rgba(197,160,89,0.4); border-radius:3px; color:var(--gold); text-decoration:none; font-size:0.74rem; text-transform:uppercase; letter-spacing:1.5px; transition:all 0.3s; }
+        .cta-link:hover { background:var(--gold); color:var(--midnight); }
+        footer { padding:1.8rem 0; text-align:center; border-top:1px solid rgba(197,160,89,0.1); }
+        footer p { color:var(--slate); font-size:0.78rem; letter-spacing:1px; } footer a { color:var(--gold); text-decoration:underline; }
+        section { padding:2.2rem 0; } section.alt { background:var(--midnight-light); }
+        .fade-in { opacity:0; transform:translateY(18px); transition:opacity 0.5s ease, transform 0.5s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+    </style>
+</head>
+<body>
+
+<nav class="navbar navbar-expand-lg fixed-top"><div class="container">
+    <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+    <div class="collapse navbar-collapse justify-content-end"><ul class="navbar-nav">
+        <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+        <li class="nav-item"><a class="nav-link active" href="finance-domain.html">Finance</a></li>
+    </ul></div>
+</div></nav>
+
+<div class="breadcrumb-nav"><div class="container"><ol>
+    <li><a href="../index.html">Home</a></li>
+    <li><a href="finance-domain.html">Finance &amp; Insurance</a></li>
+    <li style="color:var(--gold);">Short-Rate Models</li>
+</ol></div></div>
+
+<section class="hero"><div class="container">
+    <div class="hero-icon"><i class="fas fa-wave-square"></i></div>
+    <h1>Short-Rate <span>Models</span></h1>
+    <div class="hero-subtitle">Vasicek (1977) &middot; Cox-Ingersoll-Ross (1985) &middot; One-factor SDEs</div>
+    <div><span class="badge-chip">Family 04</span><span class="badge-chip">Interest rates</span><span class="badge-chip">SDE</span><span class="badge-chip">$\mathbb{Q}$-measure</span></div>
+    <div class="gold-line"></div>
+    <p class="hero-desc">
+        Bonds, swaps, and rate derivatives require a model for the short interest rate $r_t$ under the risk-neutral
+        measure. Vasicek (1977) proposed a <strong>Gaussian mean-reverting</strong> SDE; Cox, Ingersoll &amp; Ross (1985)
+        a <strong>square-root</strong> diffusion that keeps rates non-negative. Both are one-factor <em>affine</em>
+        models with closed-form zero-coupon bond prices and tractable yield curves. Hull-White (1990) extended Vasicek
+        with time-varying parameters to fit observed curves; HJM (1992) generalised to arbitrary forward-rate dynamics.
+    </p>
+    <div class="disclaimer-callout"><div class="disclaimer-title"><i class="fas fa-exclamation-circle"></i> Educational Purpose</div>
+        Educational demonstration. Not investment, hedging, or regulatory advice. One-factor models are stylised;
+        production desks use multi-factor models (G2++, LIBOR market model) calibrated to the full swap/cap/swaption
+        matrix.
+    </div>
+</div></section>
+
+<section><div class="container">
+    <div class="section-header fade-in"><h2>The <span>models</span></h2></div>
+    <div class="problem-card fade-in">
+        <div class="problem-meta">
+            <span class="meta-item">OR family: <strong>Interest-rate modelling</strong></span>
+            <span class="meta-item">Solver class: <strong>SDE simulation</strong></span>
+            <span class="meta-item">Measure: <strong>Risk-neutral $\mathbb{Q}$</strong></span>
+            <span class="meta-item">Realism: <strong>&starf;&starf;&starf; Exact under model</strong></span>
+        </div>
+
+        <h3>Vasicek (1977)</h3>
+        <div class="formula-block">
+            <span class="form-label">Vasicek SDE</span>
+            $$ dr_t \;=\; a\,(b - r_t)\,dt \;+\; \sigma\, dW^{\mathbb{Q}}_t $$
+            <div class="caption">Ornstein-Uhlenbeck process. $a$ = mean-reversion speed, $b$ = long-run level, $\sigma$ = volatility. Short rate is <em>Gaussian</em> and can go negative.</div>
+        </div>
+
+        <h3>Cox-Ingersoll-Ross (1985)</h3>
+        <div class="formula-block">
+            <span class="form-label">CIR SDE</span>
+            $$ dr_t \;=\; a\,(b - r_t)\,dt \;+\; \sigma\, \sqrt{r_t}\, dW^{\mathbb{Q}}_t $$
+            <div class="caption">Square-root diffusion. Under the <em>Feller condition</em> $2ab \ge \sigma^2$, rates stay strictly positive. Non-central chi-square transition density.</div>
+        </div>
+
+        <h3>Zero-coupon bond price (affine form)</h3>
+        <p>Both Vasicek and CIR have closed-form bond prices $P(t, T) = A(t,T) \exp[-B(t,T) r_t]$. For Vasicek:</p>
+        <div class="formula-block">
+            <span class="form-label">Vasicek bond price</span>
+            $$ B(t,T) \;=\; \frac{1 - e^{-a(T-t)}}{a} $$
+            $$ A(t,T) \;=\; \exp\!\left[\,\left(b - \frac{\sigma^2}{2a^2}\right)\bigl(B(t,T) - (T-t)\bigr) \;-\; \frac{\sigma^2}{4a} B(t,T)^2\right] $$
+            <div class="caption">For CIR, $B$ and $A$ have different closed forms involving hyperbolic functions of $\sqrt{a^2 + 2\sigma^2}$. Yield $y(t,T) = -\ln P / (T-t)$.</div>
+        </div>
+
+        <h3>Long-run distribution (Vasicek)</h3>
+        <div class="formula-block">
+            $$ r_\infty \sim \mathcal{N}\!\left(b, \; \frac{\sigma^2}{2a}\right) $$
+            <div class="caption">Stationary Gaussian. Half-life of mean-reversion = $\ln 2 / a$.</div>
+        </div>
+    </div>
+</div></section>
+
+<section class="alt"><div class="container">
+    <div class="section-header fade-in"><h2>Interactive <span>curve simulator</span></h2></div>
+    <div class="solver-panel fade-in">
+        <div class="solver-panel-header"><h3><i class="fas fa-chart-line"></i> Yield curve &amp; simulated rate paths</h3></div>
+        <div class="solver-body">
+            <div class="solver-controls">
+                <div class="control-group"><label>Model</label><select id="inModel"><option value="vasicek">Vasicek</option><option value="cir">CIR</option></select></div>
+                <div class="control-group"><label>Initial rate $r_0$</label><input type="range" id="inR0" min="0.005" max="0.1" step="0.001" value="0.04"><div class="val-display" id="outR0">4.0%</div></div>
+                <div class="control-group"><label>Mean-reversion $a$</label><input type="range" id="inA" min="0.05" max="2" step="0.05" value="0.5"><div class="val-display" id="outA">0.50</div></div>
+                <div class="control-group"><label>Long-run $b$</label><input type="range" id="inB" min="0.01" max="0.1" step="0.002" value="0.05"><div class="val-display" id="outB">5.0%</div></div>
+                <div class="control-group"><label>Vol $\sigma$</label><input type="range" id="inSig" min="0.001" max="0.05" step="0.001" value="0.015"><div class="val-display" id="outSig">1.5%</div></div>
+                <div class="control-group"><label>Paths $M$</label><input type="range" id="inM" min="10" max="200" step="10" value="40"><div class="val-display" id="outM">40</div></div>
+                <div class="control-group"><label>Horizon $T$ (years)</label><input type="range" id="inT" min="1" max="20" step="1" value="10"><div class="val-display" id="outT">10</div></div>
+                <div class="control-group"><label>Seed</label><input type="range" id="inSeed" min="1" max="999" step="1" value="42"><div class="val-display" id="outSeed">42</div></div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi"><div class="kpi-label">1y yield</div><div class="kpi-val" id="kpiY1">&mdash;</div></div>
+                <div class="kpi"><div class="kpi-label">5y yield</div><div class="kpi-val" id="kpiY5">&mdash;</div></div>
+                <div class="kpi"><div class="kpi-label">10y yield</div><div class="kpi-val" id="kpiY10">&mdash;</div></div>
+                <div class="kpi"><div class="kpi-label">30y yield</div><div class="kpi-val" id="kpiY30">&mdash;</div></div>
+                <div class="kpi"><div class="kpi-label">Half-life</div><div class="kpi-val" id="kpiHL">&mdash;</div></div>
+            </div>
+
+            <div class="solver-canvas-wrap">
+                <canvas id="pathsCanvas" width="820" height="260" aria-label="Simulated short-rate paths"></canvas>
+            </div>
+            <p style="font-size:0.78rem;color:var(--slate);text-align:center;margin-top:0.3rem;">
+                Simulated short-rate paths $r_t$. Gold dashed = long-run level $b$; coloured lines = sample trajectories under Euler-Maruyama discretisation.
+            </p>
+
+            <div class="solver-canvas-wrap" style="margin-top:0.8rem;">
+                <canvas id="curveCanvas" width="820" height="260" aria-label="Yield curve"></canvas>
+            </div>
+            <p style="font-size:0.78rem;color:var(--slate);text-align:center;margin-top:0.3rem;">
+                Closed-form zero-coupon yield curve $y(0, T)$ at the current parameters. Long-end yield converges to the stationary expectation; shape depends on $(r_0, b, a, \sigma)$.
+            </p>
+        </div>
+    </div>
+</div></section>
+
+<section><div class="container">
+    <div class="section-header fade-in"><h2>Extensions <span>&amp; limitations</span></h2></div>
+    <div class="complexity-box fade-in">
+        <h3><i class="fas fa-diagram-next"></i> Model extensions</h3>
+        <ul class="complexity-list">
+            <li><strong>Hull-White</strong> (1990): $b \to b(t)$ time-varying to fit initial yield curve exactly.</li>
+            <li><strong>Black-Karasinski</strong>: $\ln r_t$ mean-reverts (keeps $r_t &gt; 0$; no closed-form bond price).</li>
+            <li><strong>G2++ / two-factor Hull-White</strong>: adds a stochastic level factor; better fit to swaption surfaces.</li>
+            <li><strong>Heath-Jarrow-Morton (1992)</strong>: specifies forward-rate $f(t,T)$ dynamics directly; most general no-arbitrage framework.</li>
+            <li><strong>LIBOR Market Model (BGM 1997, Miltersen-Sandmann-Sondermann 1997)</strong>: discrete forward LIBORs as the primary modelling objects; simulated directly for cap/swaption pricing.</li>
+            <li><strong>SOFR-based models</strong>: post-LIBOR world, backward-looking in-arrears rates require modifications to all classical frameworks.</li>
+        </ul>
+    </div>
+    <div class="complexity-box fade-in">
+        <h3><i class="fas fa-triangle-exclamation"></i> Limitations</h3>
+        <ul class="complexity-list">
+            <li><strong>Vasicek rates go negative.</strong> Acceptable since 2015 eurozone era, but requires care in pre-2015 markets.</li>
+            <li><strong>One factor captures only parallel shifts</strong>. Multi-factor needed for curve steepening/flattening and butterfly risk.</li>
+            <li><strong>Calibration is ill-posed</strong>. Multiple parameter sets can fit observed instruments; principled regularisation matters.</li>
+            <li><strong>Volatility surface fitting</strong> requires local-vol / stochastic-vol extensions beyond one-factor models.</li>
+        </ul>
+    </div>
+</div></section>
+
+<section class="alt"><div class="container">
+    <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+    <div style="max-width:920px;margin:0 auto;" class="fade-in">
+        <div class="reference-item"><div class="ref-authors">Vasicek, O. (1977).</div><div class="ref-title">An Equilibrium Characterization of the Term Structure.</div><div class="ref-journal"><em>Journal of Financial Economics</em>, 5(2), 177&ndash;188. <a href="https://doi.org/10.1016/0304-405X(77)90016-2" target="_blank" rel="noopener">doi:10.1016/0304-405X(77)90016-2</a></div></div>
+        <div class="reference-item"><div class="ref-authors">Cox, J. C., Ingersoll, J. E. &amp; Ross, S. A. (1985).</div><div class="ref-title">A Theory of the Term Structure of Interest Rates.</div><div class="ref-journal"><em>Econometrica</em>, 53(2), 385&ndash;407. <a href="https://doi.org/10.2307/1911242" target="_blank" rel="noopener">doi:10.2307/1911242</a></div></div>
+        <div class="reference-item"><div class="ref-authors">Hull, J. &amp; White, A. (1990).</div><div class="ref-title">Pricing Interest-Rate-Derivative Securities.</div><div class="ref-journal"><em>The Review of Financial Studies</em>, 3(4), 573&ndash;592. <a href="https://doi.org/10.1093/rfs/3.4.573" target="_blank" rel="noopener">doi:10.1093/rfs/3.4.573</a></div></div>
+        <div class="reference-item"><div class="ref-authors">Heath, D., Jarrow, R. &amp; Morton, A. (1992).</div><div class="ref-title">Bond Pricing and the Term Structure of Interest Rates.</div><div class="ref-journal"><em>Econometrica</em>, 60(1), 77&ndash;105. <a href="https://doi.org/10.2307/2951677" target="_blank" rel="noopener">doi:10.2307/2951677</a></div></div>
+        <div class="reference-item"><div class="ref-authors">Brace, A., G&aacute;tarek, D. &amp; Musiela, M. (1997).</div><div class="ref-title">The Market Model of Interest Rate Dynamics.</div><div class="ref-journal"><em>Mathematical Finance</em>, 7(2), 127&ndash;155. <a href="https://doi.org/10.1111/1467-9965.00028" target="_blank" rel="noopener">doi:10.1111/1467-9965.00028</a></div></div>
+        <div class="reference-item"><div class="ref-authors">Brigo, D. &amp; Mercurio, F. (2006).</div><div class="ref-title">Interest Rate Models &mdash; Theory and Practice, 2nd ed.</div><div class="ref-journal">Springer. ISBN 978-3-540-22149-4.</div></div>
+        <div class="reference-item"><div class="ref-authors">Filipovic, D. (2009).</div><div class="ref-title">Term-Structure Models.</div><div class="ref-journal">Springer. ISBN 978-3-540-09726-6.</div></div>
+    </div>
+</div></section>
+
+<section><div class="container">
+    <div class="cta-panel fade-in">
+        <h3>Related sub-applications</h3>
+        <div class="cta-links">
+            <a href="finance-domain.html" class="cta-link"><i class="fas fa-compass"></i> Finance</a>
+            <a href="merton-credit.html" class="cta-link"><i class="fas fa-landmark"></i> Credit</a>
+            <a href="asset-liability-management.html" class="cta-link"><i class="fas fa-scale-balanced"></i> ALM</a>
+            <a href="black-scholes.html" class="cta-link"><i class="fas fa-chart-line"></i> Black-Scholes</a>
+        </div>
+    </div>
+    <div class="disclaimer-callout fade-in" style="margin-top:1.2rem;">
+        <div class="disclaimer-title"><i class="fas fa-exclamation-circle"></i> Reminder</div>
+        Not investment or regulatory advice. Real desks use multi-factor calibrations; the one-factor simulator here is pedagogical.
+    </div>
+</div></section>
+
+<footer><div class="container"><p><a href="../index.html">&larr; Home</a> &ensp;&middot;&ensp; &copy; 2025 Mohammad Ghafourian Nasiri &ensp;&middot;&ensp; <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" defer
+    onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false},{left:'\\(',right:'\\)',display:false},{left:'\\[',right:'\\]',display:true}],throwOnError:false});"></script>
+<script>
+(function(){
+    "use strict";
+    function mkRng(s){var a=s>>>0;return function(){a=(a+0x6D2B79F5)>>>0;var t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return((t^(t>>>14))>>>0)/4294967296;};}
+    function bmN(rng){var u1=rng()||1e-12,u2=rng();return Math.sqrt(-2*Math.log(u1))*Math.cos(2*Math.PI*u2);}
+
+    // Simulate short-rate paths (Euler-Maruyama)
+    function simulate(model, r0, a, b, sig, T, N, M, seed) {
+        var dt = T / N;
+        var rng = mkRng(seed);
+        var paths = [];
+        for (var m = 0; m < M; m++) {
+            var r = r0;
+            var path = [r];
+            for (var n = 1; n <= N; n++) {
+                var z = bmN(rng);
+                if (model === 'vasicek') {
+                    r = r + a*(b - r)*dt + sig*Math.sqrt(dt)*z;
+                } else {
+                    r = r + a*(b - r)*dt + sig*Math.sqrt(Math.max(r, 0)*dt)*z;
+                    if (r < 0) r = 0;
+                }
+                path.push(r);
+            }
+            paths.push(path);
+        }
+        return paths;
+    }
+
+    // Vasicek bond price closed form
+    function vasicekBond(t, T, r, a, b, sig) {
+        var tau = T - t;
+        var B = (1 - Math.exp(-a*tau)) / a;
+        var A = Math.exp((b - sig*sig/(2*a*a)) * (B - tau) - sig*sig * B*B / (4*a));
+        return A * Math.exp(-B * r);
+    }
+
+    // CIR bond closed form
+    function cirBond(t, T, r, a, b, sig) {
+        var tau = T - t;
+        var gamma = Math.sqrt(a*a + 2*sig*sig);
+        var exp_gt = Math.exp(gamma*tau);
+        var denom = (gamma + a)*(exp_gt - 1) + 2*gamma;
+        var B = 2*(exp_gt - 1) / denom;
+        var A_base = 2*gamma*Math.exp((a+gamma)*tau/2) / denom;
+        var A = Math.pow(A_base, 2*a*b/(sig*sig));
+        return A * Math.exp(-B * r);
+    }
+
+    function yieldAt(model, r, tau, a, b, sig) {
+        if (tau < 1e-6) return r;
+        var P = (model === 'vasicek') ? vasicekBond(0, tau, r, a, b, sig) : cirBond(0, tau, r, a, b, sig);
+        return -Math.log(P) / tau;
+    }
+
+    function drawPaths(canvas, paths, T, b) {
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle='#112240'; ctx.fillRect(0,0,W,H);
+        if (!paths || paths.length === 0) return;
+        var padL=50, padR=20, padT=20, padB=35, plotW=W-padL-padR, plotH=H-padT-padB;
+        var N = paths[0].length - 1;
+        var allR = []; paths.forEach(function(p){ p.forEach(function(r){ allR.push(r); }); });
+        var rMin = Math.min.apply(null, allR); var rMax = Math.max.apply(null, allR);
+        rMin = Math.min(rMin, b) - 0.005; rMax = Math.max(rMax, b) + 0.005;
+
+        function sx(i){ return padL + (i/N)*plotW; }
+        function sy(r){ return H-padB - ((r-rMin)/(rMax-rMin))*plotH; }
+
+        // long-run level
+        ctx.strokeStyle='rgba(197,160,89,0.4)'; ctx.lineWidth=1.5; ctx.setLineDash([4,3]);
+        var yb = sy(b);
+        ctx.beginPath(); ctx.moveTo(padL, yb); ctx.lineTo(W-padR, yb); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle='#C5A059'; ctx.font='10px Inter,sans-serif'; ctx.textAlign='left';
+        ctx.fillText('b='+(b*100).toFixed(1)+'%', padL+4, yb-4);
+
+        var colors = ['#7aa2f7','#64ffda','#bb9af7','#ff9e64','#ff6b6b','#9ece6a','#e0af68','#73daca','#f7768e'];
+        paths.forEach(function(p, idx){
+            ctx.strokeStyle = colors[idx % colors.length] + '80'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            for (var i = 0; i <= N; i++) { var x=sx(i), y=sy(p[i]); if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+            ctx.stroke();
+        });
+
+        ctx.strokeStyle='rgba(197,160,89,0.25)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H-padB); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(padL, H-padB); ctx.lineTo(W-padR, H-padB); ctx.stroke();
+
+        ctx.fillStyle='#8892B0'; ctx.font='9px JetBrains Mono, monospace'; ctx.textAlign='right';
+        for (var ty = 0; ty <= 4; ty++) { var vy = rMin + (rMax-rMin)*ty/4; ctx.fillText((vy*100).toFixed(1)+'%', padL-6, sy(vy)+3); }
+        ctx.textAlign='center';
+        for (var tx = 0; tx <= 4; tx++) { var vxT = T*tx/4; ctx.fillText(vxT.toFixed(0)+'y', sx(N*tx/4), H-padB+14); }
+    }
+
+    function drawCurve(canvas, model, r, a, b, sig) {
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle='#112240'; ctx.fillRect(0,0,W,H);
+        var padL=55, padR=20, padT=20, padB=35, plotW=W-padL-padR, plotH=H-padT-padB;
+
+        var taus = [0.25, 0.5, 1, 2, 3, 5, 7, 10, 15, 20, 30];
+        var ys = taus.map(function(tau){ return yieldAt(model, r, tau, a, b, sig); });
+        var yMin = Math.min.apply(null, ys); var yMax = Math.max.apply(null, ys);
+        yMin = Math.min(yMin, r, b) - 0.003; yMax = Math.max(yMax, r, b) + 0.003;
+
+        function sx(tau){ return padL + (tau/30)*plotW; }
+        function sy(y){ return H-padB - ((y-yMin)/(yMax-yMin))*plotH; }
+
+        ctx.strokeStyle='rgba(197,160,89,0.05)'; ctx.lineWidth=0.5;
+        for (var g = 0; g <= 5; g++) { var gy = padT + plotH*g/5; ctx.beginPath(); ctx.moveTo(padL, gy); ctx.lineTo(W-padR, gy); ctx.stroke(); }
+
+        // curve
+        ctx.strokeStyle='#C5A059'; ctx.lineWidth=2.5;
+        ctx.beginPath();
+        for (var i = 0; i < taus.length; i++) { var x=sx(taus[i]), y=sy(ys[i]); if (i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+        ctx.stroke();
+
+        ctx.fillStyle='#C5A059';
+        for (var i2 = 0; i2 < taus.length; i2++) { ctx.beginPath(); ctx.arc(sx(taus[i2]), sy(ys[i2]), 3, 0, Math.PI*2); ctx.fill(); }
+
+        ctx.strokeStyle='rgba(197,160,89,0.25)'; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H-padB); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(padL, H-padB); ctx.lineTo(W-padR, H-padB); ctx.stroke();
+
+        ctx.fillStyle='#8892B0'; ctx.font='9px JetBrains Mono, monospace'; ctx.textAlign='right';
+        for (var ty = 0; ty <= 4; ty++) { var vy = yMin + (yMax-yMin)*ty/4; ctx.fillText((vy*100).toFixed(2)+'%', padL-6, sy(vy)+3); }
+        ctx.textAlign='center';
+        [0.5, 5, 10, 20, 30].forEach(function(tk){ ctx.fillText(tk+'y', sx(tk), H-padB+14); });
+        ctx.font='10px Inter,sans-serif'; ctx.fillText('Maturity (years)', W/2, H-6);
+        ctx.save(); ctx.translate(14, H/2); ctx.rotate(-Math.PI/2); ctx.fillText('Zero-coupon yield', 0, 0); ctx.restore();
+    }
+
+    function recompute() {
+        var model = document.getElementById('inModel').value;
+        var r0 = parseFloat(document.getElementById('inR0').value);
+        var a = parseFloat(document.getElementById('inA').value);
+        var b = parseFloat(document.getElementById('inB').value);
+        var sig = parseFloat(document.getElementById('inSig').value);
+        var M = parseInt(document.getElementById('inM').value, 10);
+        var T = parseInt(document.getElementById('inT').value, 10);
+        var seed = parseInt(document.getElementById('inSeed').value, 10);
+
+        var paths = simulate(model, r0, a, b, sig, T, 200, M, seed);
+        drawPaths(document.getElementById('pathsCanvas'), paths, T, b);
+        drawCurve(document.getElementById('curveCanvas'), model, r0, a, b, sig);
+
+        document.getElementById('kpiY1').textContent = (yieldAt(model, r0, 1, a, b, sig)*100).toFixed(3)+'%';
+        document.getElementById('kpiY5').textContent = (yieldAt(model, r0, 5, a, b, sig)*100).toFixed(3)+'%';
+        document.getElementById('kpiY10').textContent = (yieldAt(model, r0, 10, a, b, sig)*100).toFixed(3)+'%';
+        document.getElementById('kpiY30').textContent = (yieldAt(model, r0, 30, a, b, sig)*100).toFixed(3)+'%';
+        document.getElementById('kpiHL').textContent = (Math.log(2)/a).toFixed(2) + 'y';
+    }
+
+    function bindRange(id, out, fmt) {
+        var el = document.getElementById(id);
+        el.addEventListener('input', function(){ document.getElementById(out).textContent = fmt(parseFloat(el.value)); recompute(); });
+        document.getElementById(out).textContent = fmt(parseFloat(el.value));
+    }
+    bindRange('inR0','outR0', function(v){return (v*100).toFixed(1)+'%';});
+    bindRange('inA','outA', function(v){return v.toFixed(2);});
+    bindRange('inB','outB', function(v){return (v*100).toFixed(1)+'%';});
+    bindRange('inSig','outSig', function(v){return (v*100).toFixed(1)+'%';});
+    bindRange('inM','outM', function(v){return v.toFixed(0);});
+    bindRange('inT','outT', function(v){return v.toFixed(0);});
+    bindRange('inSeed','outSeed', function(v){return v.toFixed(0);});
+    document.getElementById('inModel').addEventListener('change', recompute);
+    recompute();
+
+    var els = document.querySelectorAll('.fade-in');
+    var obs = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) e.target.classList.add('visible'); }); }, { threshold: 0.08 });
+    els.forEach(function(el){ obs.observe(el); });
+})();
+</script>
+</body>
+</html>

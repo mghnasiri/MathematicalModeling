@@ -15,1869 +15,828 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <title>School Location Planning | Mathematical Modeling &amp; Operations Research</title>
-    <meta name="description" content="Interactive School Location Planning demo using p-Median optimization with Greedy Add, Greedy Swap (Teitz-Bart), and Random algorithms.">
-    <meta property="og:type" content="website">
+    <title>School Location Planning | Public Services | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="School location planning as the p-median problem — ReVelle &amp; Swain (1970), Teitz-Bart (1968) interchange heuristic, Kariv-Hakimi (1979) NP-hardness. Capacity constraints, equity-aware siting, and distinguishing from school-choice-mechanism.">
+    <meta property="og:type" content="article">
     <meta property="og:site_name" content="Mohammad G. Nasiri">
     <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/school-location.html">
-    <meta property="og:title" content="School Location Planning | Mathematical Modeling &amp; Operations Research">
-    <meta property="og:description" content="Interactive School Location Planning demo using p-Median optimization with Greedy Add, Greedy Swap (Teitz-Bart), and Random algorithms.">
+    <meta property="og:title" content="School Location Planning | Public Services">
+    <meta property="og:description" content="p-Median for school siting, with capacity and equity variants.">
     <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="School Location Planning | Mathematical Modeling &amp; Operations Research">
-    <meta name="twitter:description" content="Interactive School Location Planning demo using p-Median optimization with Greedy Add, Greedy Swap (Teitz-Bart), and Random algorithms.">
+    <meta name="twitter:title" content="School Location Planning | Public Services">
+    <meta name="twitter:description" content="p-Median for school siting.">
     <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/school-location.html" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <style>
-        :root {
-            --midnight: #0A192F;
-            --midnight-light: #112240;
-            --midnight-lighter: #1a2f4a;
-            --gold: #C5A059;
-            --gold-light: #D4AF37;
-            --gold-dim: rgba(197, 160, 89, 0.15);
-            --ivory: #F8F9FA;
-            --slate: #8892B0;
-            --slate-light: #a8b2d1;
-            --green: #64ffda;
-            --red: #ff6b6b;
-            --blue: #7aa2f7;
-        }
-
+        :root { --midnight: #0A192F; --midnight-light: #112240; --gold: #C5A059; --gold-light: #D4AF37; --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; --purple: #bb9af7; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
-
-        body {
-            font-family: 'Inter', sans-serif;
-            background: var(--midnight);
-            color: var(--ivory);
-            line-height: 1.7;
-            overflow-x: hidden;
-        }
-
-        .navbar {
-            background: rgba(10, 25, 47, 0.95);
-            backdrop-filter: blur(10px);
-            padding: 1rem 0;
-            z-index: 1000;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        .navbar-brand {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 600;
-            color: var(--gold) !important;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-        .nav-link {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.85rem;
-            color: var(--slate-light) !important;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            padding: 0.5rem 1rem !important;
-            transition: color 0.3s ease;
-        }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; } a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; }
         .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
         .navbar-toggler { border-color: var(--gold); }
-        .navbar-toggler-icon {
-            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e");
-        }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
 
-        .breadcrumb-nav {
-            padding: 1rem 0;
-            background: var(--midnight-light);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-        }
-        .breadcrumb-nav ol {
-            list-style: none;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            margin: 0;
-            padding: 0;
-        }
-        .breadcrumb-nav li {
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--slate);
-        }
-        .breadcrumb-nav li a {
-            color: var(--gold);
-            text-decoration: none;
-            transition: color 0.3s;
-        }
-        .breadcrumb-nav li a:hover { color: var(--gold-light); }
-        .breadcrumb-nav li + li::before {
-            content: '/';
-            margin-right: 0.5rem;
-            color: var(--slate);
-            opacity: 0.5;
-        }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
 
-        .hero {
-            padding: 6rem 2rem 4rem;
-            text-align: center;
-            position: relative;
-        }
-        .hero::before {
-            content: '';
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: linear-gradient(180deg, rgba(197,160,89,0.06) 0%, transparent 8%), repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(197,160,89,0.025) 80px), radial-gradient(ellipse at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 50%);
-            pointer-events: none;
-        }
-        .hero-icon {
-            font-size: 3rem;
-            color: var(--gold);
-            margin-bottom: 1.5rem;
-            opacity: 0.8;
-        }
-        .hero h1 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 3.5rem;
-            font-weight: 300;
-            letter-spacing: 4px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
+        .hero { padding: 5rem 2rem 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 55% 35% at 50% 100%, rgba(122,162,247,0.07) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); animation: pulseSc 3.5s ease-in-out infinite; }
+        @keyframes pulseSc { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(122,162,247,0.35)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.7rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.8rem; color: var(--ivory); }
         .hero h1 span { color: var(--gold); }
-        .hero-subtitle {
-            font-size: 1.05rem;
-            color: var(--slate);
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            margin-bottom: 1.5rem;
-        }
-        .gold-line {
-            width: 60px;
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--gold), transparent);
-            margin: 1.5rem auto;
-        }
-        .hero-desc {
-            max-width: 700px;
-            margin: 0 auto 2.5rem;
-            color: var(--slate-light);
-            font-size: 1rem;
-            line-height: 1.8;
-        }
+        .hero-subtitle { font-size: 0.95rem; color: var(--slate); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 1.2rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.2rem auto; }
+        .hero-desc { max-width: 820px; margin: 0 auto 1.5rem; color: var(--slate-light); font-size: 0.98rem; line-height: 1.85; }
 
-        .section-header {
-            text-align: center;
-            margin-bottom: 3rem;
-        }
-        .section-header h2 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2.5rem;
-            font-weight: 300;
-            letter-spacing: 3px;
-            margin-bottom: 0.5rem;
-        }
+        .edu-notice { max-width: 820px; margin: 1.2rem auto 0; padding: 0.9rem 1.2rem; background: rgba(122,162,247,0.06); border: 1px solid rgba(122,162,247,0.25); border-left: 3px solid var(--blue); border-radius: 4px; color: var(--slate-light); font-size: 0.82rem; line-height: 1.7; text-align: left; }
+        .edu-notice strong { color: var(--ivory); }
+
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
         .section-header h2 span { color: var(--gold); }
-        .section-header p {
-            color: var(--slate);
-            font-size: 0.95rem;
-            letter-spacing: 1px;
-        }
+        .section-header p { color: var(--slate); font-size: 0.84rem; letter-spacing: 1.5px; text-transform: uppercase; }
 
-        section { padding: 5rem 0; }
-        section:nth-of-type(even) { background: var(--midnight-light); }
+        .content-block { max-width: 820px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.85; }
+        .content-block p { margin-bottom: 1rem; }
+        .content-block strong { color: var(--ivory); }
+        .content-block em { color: var(--slate-light); }
+        .content-block cite { color: var(--gold); font-style: normal; }
 
-        .content-block {
-            max-width: 800px;
-            margin: 0 auto;
-            color: var(--slate-light);
-            font-size: 0.95rem;
-            line-height: 1.9;
-        }
-        .content-block p { margin-bottom: 1.2rem; }
-        .content-block strong { color: var(--ivory); font-weight: 500; }
+        .stakeholder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; margin: 1.4rem 0; }
+        .stakeholder-item { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.8rem 0.9rem; }
+        .stakeholder-who { font-size: 0.78rem; font-weight: 600; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.25rem; }
+        .stakeholder-what { color: var(--slate-light); font-size: 0.82rem; line-height: 1.6; }
 
-        .disclaimer-box {
-            background: rgba(122, 162, 247, 0.08);
-            border: 1px solid rgba(122, 162, 247, 0.2);
-            border-radius: 4px;
-            padding: 1.2rem 1.5rem;
-            margin: 2rem 0;
-            font-size: 0.88rem;
-            color: var(--slate-light);
-            line-height: 1.7;
-        }
-        .disclaimer-box .disclaimer-title {
-            color: var(--blue);
-            font-weight: 500;
-            margin-bottom: 0.3rem;
-            font-size: 0.9rem;
-        }
+        .formulation { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; padding: 1.3rem 1.5rem; margin: 1.3rem auto; max-width: 820px; font-family: 'JetBrains Mono', monospace; font-size: 0.86rem; line-height: 1.9; color: var(--ivory); overflow-x: auto; }
+        .form-label { display: block; font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); }
+        .keyword { color: var(--gold); font-weight: 500; }
+        .variable { color: var(--ivory); }
+        .comment { color: var(--slate); font-style: italic; }
 
-        .formulation {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 1.5rem 2rem;
-            margin-bottom: 1.5rem;
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
-            color: var(--slate-light);
-            line-height: 2;
-            overflow-x: auto;
-        }
-        .formulation .form-label {
-            color: var(--gold);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-bottom: 0.8rem;
-            display: block;
-            font-family: 'Inter', sans-serif;
-            font-weight: 500;
-        }
-        .formulation .keyword { color: var(--green); }
-        .formulation .variable { color: var(--blue); }
-        .formulation .comment { color: var(--slate); font-style: italic; }
+        .notation-table { width: 100%; max-width: 820px; margin: 1rem auto; border-collapse: collapse; font-size: 0.86rem; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .notation-table th { color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.72rem; border-bottom: 1px solid rgba(197,160,89,0.3); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold-light); width: 16%; white-space: nowrap; }
+        .notation-table td { color: var(--slate-light); }
 
-        .theory-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.4rem;
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
-            margin-top: 1rem;
-        }
-        .theory-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            border-color: var(--gold);
-        }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.5rem 1.6rem; margin: 1.5rem auto; max-width: 920px; }
+        .solver-panel-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.18); }
+        .solver-section-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .algo-chip { padding: 0.45rem 0.85rem; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; color: var(--slate-light); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; user-select: none; }
+        .algo-chip:hover { color: var(--ivory); border-color: var(--gold-light); }
+        .algo-chip.selected { color: var(--gold); background: rgba(197,160,89,0.12); border-color: var(--gold); }
+        .solver-slider { flex: 1; max-width: 260px; accent-color: var(--gold); }
+        .size-display { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.88rem; min-width: 30px; text-align: right; }
+        .solver-btn { margin-top: 0.8rem; padding: 0.6rem 1.4rem; background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; color: var(--midnight); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.25s; }
+        .solver-btn:hover { background: transparent; color: var(--gold); }
+        .solver-canvas-wrap { position: relative; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.5rem; margin-top: 1rem; }
+        .solver-canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+        .solver-status { margin-top: 0.8rem; font-size: 0.82rem; color: var(--slate); font-style: italic; line-height: 1.7; }
+        .solver-status strong { color: var(--ivory); font-style: normal; }
+        .results-table { width: 100%; margin-top: 1rem; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table th, .results-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .results-table th { color: var(--gold); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 500; }
+        .results-table td { color: var(--slate-light); }
+        .results-table td.highlight { color: var(--gold-light); font-family: 'JetBrains Mono', monospace; }
 
-        .solver-panel {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .solver-panel-header {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem 1.5rem;
-            background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent);
-            border-bottom: 1px solid rgba(197, 160, 89, 0.15);
-        }
-        .solver-panel-header h4 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.3rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin: 0;
-            color: var(--gold);
-        }
-        .solver-panel-header h4 i { margin-right: 0.5rem; }
-        .solver-body { padding: 1.5rem; }
+        .interpret-box { background: rgba(100,255,218,0.05); border: 1px solid rgba(100,255,218,0.2); border-left: 3px solid var(--green); border-radius: 4px; padding: 1.3rem 1.5rem; margin: 1.5rem auto; max-width: 880px; }
+        .interpret-box-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); margin-bottom: 0.6rem; }
+        .interpret-box p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; }
+        .interpret-box p + p { margin-top: 0.6rem; }
+        .interpret-box strong { color: var(--ivory); }
 
-        .solver-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
-            margin-bottom: 1.5rem;
-        }
-        @media (max-width: 768px) {
-            .solver-row { grid-template-columns: 1fr; }
-            .hero h1 { font-size: 2.2rem; }
-        }
+        .limits-section { background: rgba(255,107,107,0.04); border-top: 1px solid rgba(255,107,107,0.2); border-bottom: 1px solid rgba(255,107,107,0.2); }
+        .limits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; max-width: 1100px; margin: 0 auto; }
+        .limit-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(255,107,107,0.2); border-radius: 4px; padding: 1.2rem 1.1rem; }
+        .limit-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; letter-spacing: 1.3px; color: var(--red); margin-bottom: 0.5rem; }
+        .limit-card p { color: var(--slate-light); font-size: 0.84rem; line-height: 1.7; }
+        .limit-card .refs { margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px dashed rgba(255,107,107,0.15); font-size: 0.74rem; color: var(--slate); }
+        .limit-card .refs em { color: var(--slate-light); font-style: normal; }
 
-        .solver-section-label {
-            font-size: 0.72rem;
-            color: var(--gold);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 0.8rem;
-            font-weight: 500;
-        }
+        .ext-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; max-width: 1080px; margin: 0 auto; }
+        .ext-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem 1.1rem; }
+        .ext-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1px; color: var(--gold); margin-bottom: 0.4rem; }
+        .ext-card p { color: var(--slate-light); font-size: 0.82rem; line-height: 1.65; }
 
-        .algo-chip {
-            padding: 6px 14px;
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 2px;
-            background: transparent;
-            color: var(--slate-light);
-            font-size: 0.72rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Inter', sans-serif;
-            user-select: none;
-        }
-        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
-        .algo-chip.active {
-            background: rgba(197, 160, 89, 0.15);
-            border-color: var(--gold);
-            color: var(--gold);
-        }
+        .reference-item { padding: 0.9rem 0; border-top: 1px solid rgba(197,160,89,0.1); max-width: 900px; margin: 0 auto; }
+        .reference-item:first-child { border-top: none; }
+        .reference-num { display: inline-block; margin-right: 0.4rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        .reference-authors { color: var(--ivory); font-size: 0.9rem; font-weight: 500; }
+        .reference-title { color: var(--slate-light); font-size: 0.86rem; font-style: italic; margin: 0.1rem 0; }
+        .reference-journal { color: var(--slate); font-size: 0.8rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
 
-        .solver-canvas-wrap {
-            background: var(--midnight-light);
-            border: 1px solid rgba(197, 160, 89, 0.1);
-            border-radius: 4px;
-            padding: 0.5rem;
-            position: relative;
-        }
-        .solver-canvas-wrap canvas {
-            width: 100%;
-            display: block;
-            border-radius: 2px;
-        }
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.9rem; max-width: 1100px; margin: 0 auto; }
+        .related-card { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.14); border-radius: 4px; padding: 1rem 1.1rem; text-decoration: none; transition: all 0.25s; display: block; }
+        .related-card:hover { border-color: var(--gold); transform: translateY(-2px); color: inherit; }
+        .related-card-head { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1px; color: var(--ivory); margin-bottom: 0.3rem; }
+        .related-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 1px 6px; border-radius: 3px; color: var(--gold); background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.25); display: inline-block; margin-bottom: 0.3rem; }
+        .related-card-desc { color: var(--slate-light); font-size: 0.78rem; line-height: 1.6; }
 
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.82rem;
-        }
-        .results-table thead th {
-            font-family: 'Inter', sans-serif;
-            font-size: 0.7rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--gold);
-            padding: 0.6rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.2);
-            text-align: left;
-        }
-        .results-table tbody td {
-            padding: 0.5rem 0.8rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-        }
-        .results-table tbody tr:hover td { color: var(--ivory); }
-        .results-table .best-val { color: var(--green); font-weight: 600; }
-        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 4rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 300; letter-spacing: 2.5px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.4rem; padding: 0.85rem 2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.82rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
 
-        .solver-status {
-            font-size: 0.78rem;
-            color: var(--slate);
-            margin-top: 0.5rem;
-            font-style: italic;
-        }
-        .bin-output {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.75rem;
-            color: var(--slate-light);
-            margin-top: 0.8rem;
-            padding: 0.8rem 1rem;
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.08);
-            border-radius: 4px;
-            line-height: 1.8;
-            max-height: 240px;
-            overflow-y: auto;
-            white-space: pre;
-        }
-
-        .complexity-box {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            padding: 2rem 2.5rem;
-            margin-top: 2rem;
-        }
-        .complexity-box h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.5rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 1.2rem;
-            color: var(--ivory);
-        }
-        .complexity-box h3 i { color: var(--gold); margin-right: 0.5rem; }
-        .complexity-list {
-            list-style: none;
-            padding: 0;
-        }
-        .complexity-list li {
-            padding: 0.5rem 0 0.5rem 1.5rem;
-            position: relative;
-            color: var(--slate-light);
-            font-size: 0.9rem;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-        }
-        .complexity-list li:last-child { border-bottom: none; }
-        .complexity-list li::before {
-            content: '\f054';
-            font-family: 'Font Awesome 6 Free';
-            font-weight: 900;
-            position: absolute;
-            left: 0;
-            color: var(--gold);
-            font-size: 0.6rem;
-            top: 0.75rem;
-        }
-
-        .algo-card {
-            background: var(--midnight);
-            border: 1px solid rgba(197, 160, 89, 0.15);
-            border-radius: 4px;
-            padding: 2rem 2.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .algo-card h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 1.4rem;
-            font-weight: 500;
-            letter-spacing: 1px;
-            margin-bottom: 0.8rem;
-            color: var(--ivory);
-        }
-        .algo-card .algo-complexity {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 0.78rem;
-            color: var(--green);
-            margin-bottom: 1rem;
-            display: inline-block;
-        }
-        .algo-card p {
-            color: var(--slate-light);
-            font-size: 0.9rem;
-            line-height: 1.8;
-            margin-bottom: 0.5rem;
-        }
-        .algo-card .algo-tag {
-            display: inline-block;
-            padding: 2px 10px;
-            border: 1px solid rgba(122, 162, 247, 0.3);
-            border-radius: 2px;
-            font-size: 0.68rem;
-            color: var(--blue);
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 0.8rem;
-        }
-
-        .reference-list {
-            list-style: none;
-            padding: 0;
-        }
-        .reference-list li {
-            padding: 0.6rem 0;
-            border-bottom: 1px solid rgba(197, 160, 89, 0.05);
-            color: var(--slate-light);
-            font-size: 0.88rem;
-            line-height: 1.6;
-        }
-        .reference-list li:last-child { border-bottom: none; }
-        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
-        .reference-list .ref-title { font-style: italic; }
-        .reference-list .ref-journal { color: var(--slate); }
-
-        .cta-panel {
-            background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02));
-            border: 1px solid rgba(197, 160, 89, 0.2);
-            border-radius: 4px;
-            padding: 3rem;
-            text-align: center;
-        }
-        .cta-panel h3 {
-            font-family: 'Cormorant Garamond', serif;
-            font-size: 2rem;
-            font-weight: 400;
-            letter-spacing: 2px;
-            margin-bottom: 1rem;
-            color: var(--ivory);
-        }
-        .cta-panel p {
-            color: var(--slate-light);
-            font-size: 0.95rem;
-            max-width: 650px;
-            margin: 0 auto 2rem;
-            line-height: 1.8;
-        }
-        .cta-links {
-            display: flex;
-            justify-content: center;
-            gap: 1.5rem;
-            flex-wrap: wrap;
-        }
-        .cta-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-            padding: 0.7rem 1.8rem;
-            border: 1px solid rgba(197, 160, 89, 0.4);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.82rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            transition: all 0.3s;
-        }
-        .cta-link:hover {
-            background: var(--gold);
-            color: var(--midnight);
-            border-color: var(--gold);
-        }
-
-        .back-link {
-            position: fixed;
-            bottom: 2rem;
-            right: 2rem;
-            padding: 0.8rem 1.5rem;
-            background: rgba(10, 25, 47, 0.9);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 4px;
-            color: var(--gold);
-            text-decoration: none;
-            font-size: 0.78rem;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            backdrop-filter: blur(10px);
-            transition: all 0.3s;
-            z-index: 999;
-        }
-        .back-link:hover { background: var(--gold); color: var(--midnight); }
-
-        footer {
-            padding: 3rem 0;
-            text-align: center;
-            border-top: 1px solid rgba(197, 160, 89, 0.1);
-        }
-        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer { text-align: center; padding: 2.5rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.82rem; }
         footer a { color: var(--gold); text-decoration: underline; }
-        footer a:hover { color: var(--gold-light); }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.76rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
 
-        .fade-in {
-            opacity: 0;
-            transform: translateY(20px);
-            transition: opacity 0.6s ease, transform 0.6s ease;
-        }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
         .fade-in.visible { opacity: 1; transform: translateY(0); }
 
-        .theme-toggle {
-            position: relative;
-            width: 44px; height: 24px;
-            background: var(--midnight-lighter);
-            border: 1px solid rgba(197, 160, 89, 0.3);
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.4s ease;
-            display: flex;
-            align-items: center;
-            padding: 0 3px;
-            margin-left: 0.8rem;
-            flex-shrink: 0;
-        }
-        .theme-toggle::before {
-            content: '';
-            width: 18px; height: 18px;
-            border-radius: 50%;
-            background: var(--gold);
-            transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35);
-            box-shadow: 0 0 8px rgba(197, 160, 89, 0.4);
-        }
-        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
-        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
-        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
-        html[data-theme="light"] {
-            --midnight: #F5F1EB; --midnight-light: #EDE8E0; --midnight-lighter: #E3DDD4;
-            --ivory: #1a1a2e; --slate: #5a6178; --slate-light: #3d4155;
-        }
-        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
-        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
-        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
-        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
-        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
-        html[data-theme="light"] canvas { filter: invert(0.85) hue-rotate(180deg); }
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; background: var(--midnight-light); border: 1px solid var(--gold); padding: 0.6rem 1rem; border-radius: 4px; color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
 
-        .cmd-palette-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.6);
-            backdrop-filter: blur(8px);
-            z-index: 10000;
-            display: none;
-            align-items: flex-start;
-            justify-content: center;
-            padding-top: 15vh;
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.82rem; letter-spacing: 1.3px; }
+            .hero-desc { font-size: 0.9rem; }
+            section { padding: 2.5rem 0; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            .back-link { bottom: 1rem; right: 1rem; font-size: 0.72rem; padding: 0.45rem 0.75rem; }
         }
-        .cmd-palette-overlay.open { display: flex; }
-        .cmd-palette {
-            width: 90%; max-width: 580px;
-            background: var(--midnight-light);
-            border: 1px solid rgba(197,160,89,0.25);
-            border-radius: 12px;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-            overflow: hidden;
-        }
-        .cmd-input-wrap {
-            display: flex; align-items: center;
-            padding: 1rem 1.2rem;
-            border-bottom: 1px solid rgba(197,160,89,0.15);
-            gap: 0.8rem;
-        }
-        .cmd-input-wrap i { color: var(--gold); font-size: 1rem; }
-        .cmd-input {
-            flex: 1; background: transparent; border: none; outline: none;
-            color: var(--ivory); font-family: 'Inter', sans-serif; font-size: 1rem;
-            caret-color: var(--gold);
-        }
-        .cmd-input::placeholder { color: var(--slate); }
-        .cmd-kbd {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.65rem;
-            padding: 2px 6px; border: 1px solid rgba(197,160,89,0.25);
-            border-radius: 4px; color: var(--slate); background: rgba(197,160,89,0.05);
-        }
-        .cmd-results { max-height: 340px; overflow-y: auto; padding: 0.5rem; }
-        .cmd-group-label {
-            font-size: 0.65rem; color: var(--gold); text-transform: uppercase;
-            letter-spacing: 2px; padding: 0.6rem 0.8rem 0.3rem; font-weight: 600;
-        }
-        .cmd-result {
-            display: flex; align-items: center; gap: 0.8rem;
-            padding: 0.6rem 0.8rem; border-radius: 8px; cursor: pointer;
-            transition: background 0.15s; text-decoration: none; color: var(--ivory);
-        }
-        .cmd-result:hover, .cmd-result.active { background: rgba(197,160,89,0.12); color: var(--ivory); }
-        .cmd-result .cmd-icon {
-            width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
-            border-radius: 6px; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.85rem; flex-shrink: 0;
-        }
-        .cmd-result .cmd-info { flex: 1; min-width: 0; }
-        .cmd-result .cmd-title { font-size: 0.88rem; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .cmd-result .cmd-subtitle { font-size: 0.72rem; color: var(--slate); }
-        .cmd-result .cmd-badge { font-size: 0.6rem; padding: 2px 6px; border-radius: 3px; text-transform: uppercase; letter-spacing: 0.5px; flex-shrink: 0; }
-        .cmd-empty { padding: 2rem; text-align: center; color: var(--slate); font-size: 0.88rem; }
-        .cmd-footer {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 0.6rem 1.2rem; border-top: 1px solid rgba(197,160,89,0.1); font-size: 0.68rem; color: var(--slate);
-        }
-        .cmd-footer-keys { display: flex; gap: 0.8rem; }
-        .cmd-footer-keys span { display: flex; align-items: center; gap: 0.3rem; }
-
-        .hero-particles {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            pointer-events: none; z-index: 0;
-        }
-        .hero > .container { position: relative; z-index: 1; }
-
-        .scroll-progress {
-            position: fixed; top: 0; left: 0; height: 3px;
-            background: linear-gradient(90deg, var(--gold), var(--gold-light));
-            z-index: 9999; width: 0%;
-            box-shadow: 0 0 8px rgba(197,160,89,0.4);
-        }
-        .scroll-top-btn {
-            position: fixed; bottom: 5rem; right: 2rem; width: 42px; height: 42px;
-            border-radius: 50%; background: rgba(10,25,47,0.9);
-            border: 1px solid rgba(197,160,89,0.3); color: var(--gold);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(10px);
-            transition: all 0.3s ease; z-index: 998;
-            opacity: 0; transform: translateY(10px); pointer-events: none;
-        }
-        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); }
-
-        .nav-search-trigger {
-            display: flex; align-items: center; gap: 0.5rem;
-            padding: 0.35rem 0.8rem; border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px; background: rgba(197,160,89,0.05);
-            color: var(--slate); font-size: 0.78rem; cursor: pointer;
-            transition: all 0.3s; margin-left: 0.5rem; white-space: nowrap;
-        }
-        .nav-search-trigger:hover { border-color: var(--gold); color: var(--gold); }
-        .nav-search-trigger .search-shortcut {
-            font-family: 'JetBrains Mono', monospace; font-size: 0.6rem;
-            padding: 1px 5px; border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 3px; background: rgba(197,160,89,0.05);
-        }
-
-        .decision-chain {
-            display: flex; align-items: center; gap: 0.5rem;
-            flex-wrap: wrap; margin: 2rem 0; justify-content: center;
-        }
-        .chain-step {
-            display: flex; flex-direction: column; align-items: center;
-            padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2);
-            border-radius: 6px; font-size: 0.85rem; color: var(--slate-light);
-            text-align: center; min-width: 110px;
-        }
-        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
-        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; }
-        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
-        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
-
-        .scenario-switcher {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 0.6rem; margin-bottom: 1rem;
-        }
-        .scenario-btn {
-            display: flex; flex-direction: column; padding: 0.75rem 1rem;
-            border: 1px solid rgba(197,160,89,0.15); border-radius: 4px;
-            background: transparent; cursor: pointer; transition: all 0.3s;
-            font-family: 'Inter', sans-serif; text-align: left;
-        }
-        .scenario-btn:hover { border-color: var(--gold); }
-        .scenario-btn.active { background: rgba(197,160,89,0.1); border-color: var(--gold); }
-        .scenario-btn .sc-name { font-size: 0.78rem; font-weight: 500; color: var(--ivory); text-transform: uppercase; letter-spacing: 1px; }
-        .scenario-btn .sc-detail { font-size: 0.72rem; color: var(--slate); margin-top: 0.2rem; }
-        .scenario-btn.active .sc-name { color: var(--gold); }
-
-        .gen-table { width: 100%; border-collapse: collapse; font-size: 0.78rem; margin-bottom: 1rem; }
-        .gen-table thead th {
-            font-family: 'Inter', sans-serif; font-size: 0.68rem; font-weight: 600;
-            text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold);
-            padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.2); text-align: left;
-        }
-        .gen-table tbody td {
-            padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.05);
-            color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.75rem;
-        }
-
-        .total-cost-display {
-            text-align: center; padding: 1.2rem;
-            background: rgba(197,160,89,0.06); border: 1px solid rgba(197,160,89,0.15);
-            border-radius: 6px; margin-bottom: 1rem;
-        }
-        .total-cost-display .cost-value {
-            font-family: 'Cormorant Garamond', serif; font-size: 2.5rem;
-            font-weight: 600; color: var(--gold); line-height: 1;
-        }
-        .total-cost-display .cost-label {
-            font-size: 0.72rem; color: var(--slate); text-transform: uppercase;
-            letter-spacing: 2px; margin-top: 0.3rem;
-        }
-        .total-cost-display .cost-sub {
-            font-size: 0.78rem; color: var(--slate-light); margin-top: 0.2rem;
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        .business-panel { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-        @media (max-width: 576px) {
-            .business-panel { grid-template-columns: 1fr; }
-            .chain-step { min-width: 80px; font-size: 0.75rem; padding: 0.5rem 0.8rem; }
-            .scroll-top-btn { bottom: 4rem; right: 1rem; }
-            .nav-search-trigger .search-shortcut { display: none; }
-        }
-        .biz-card {
-            background: var(--midnight); border: 1px solid rgba(197,160,89,0.12);
-            border-radius: 4px; padding: 1.2rem 1.5rem; text-align: center;
-        }
-        .biz-card .biz-val {
-            font-family: 'Cormorant Garamond', serif; font-size: 1.8rem;
-            font-weight: 600; color: var(--gold); line-height: 1;
-        }
-        .biz-card .biz-label {
-            font-size: 0.68rem; color: var(--slate); text-transform: uppercase;
-            letter-spacing: 1.5px; margin-top: 0.3rem;
-        }
-
-        @keyframes resultFadeIn {
-            from { opacity: 0; transform: translateX(-10px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        .results-table tbody tr { animation: resultFadeIn 0.3s ease-out both; cursor: pointer; transition: background 0.15s; }
-        .results-table tbody tr:nth-child(1) { animation-delay: 0s; }
-        .results-table tbody tr:nth-child(2) { animation-delay: 0.05s; }
-        .results-table tbody tr:nth-child(3) { animation-delay: 0.1s; }
-        .results-table tbody tr:hover { background: rgba(197,160,89,0.06); }
-
-        .p-slider-wrap {
-            display: flex; align-items: center; gap: 1rem; margin-bottom: 1.2rem;
-            padding: 0.8rem 1rem; background: rgba(197,160,89,0.04);
-            border: 1px solid rgba(197,160,89,0.1); border-radius: 4px;
-        }
-        .p-slider-wrap label {
-            font-size: 0.78rem; color: var(--gold); text-transform: uppercase;
-            letter-spacing: 1.5px; font-weight: 500; white-space: nowrap;
-        }
-        .p-slider-wrap input[type="range"] {
-            flex: 1; accent-color: var(--gold); cursor: pointer;
-        }
-        .p-slider-wrap .p-val {
-            font-family: 'Cormorant Garamond', serif; font-size: 1.8rem;
-            font-weight: 600; color: var(--gold); min-width: 2ch; text-align: center;
-        }
-        .hero-icon--public-services { filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)) drop-shadow(0 -2px 20px rgba(197,160,89,0.2)); animation: institutionGlow 5s ease-in-out infinite; }
-        @keyframes institutionGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)); } 50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.7)) drop-shadow(0 -2px 30px rgba(197,160,89,0.25)); } }
-    
     </style>
 
     <script type="application/ld+json">
     {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Applications",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "School Location Planning",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/school-location.html"
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Public Services", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/public-services-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "School Location Planning", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/school-location.html" }
+      ]
     }
-  ]
-}
     </script>
 </head>
 <body>
-<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
-
-<!-- TODO -->
+<div class="scroll-progress" id="scrollProgress"></div>
 
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="../families/continuous.html">Families</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
-                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
-                <li class="nav-item d-flex align-items-center">
-                    <div class="nav-search-trigger" id="navSearchTrigger">
-                        <i class="fas fa-search" aria-hidden="true" style="font-size:0.75rem"></i>
-                        <span>Search</span>
-                        <span class="search-shortcut">&#8984;K</span>
-                    </div>
-                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
-                        <span class="toggle-icon icon-sun"><i class="fas fa-sun" aria-hidden="true"></i></span>
-                        <span class="toggle-icon icon-moon"><i class="fas fa-moon" aria-hidden="true"></i></span>
-                    </div>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="public-services-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <main id="main-content">
+
 <nav aria-label="breadcrumb" class="breadcrumb-nav">
     <div class="container">
-        <a href="../index.html">Home</a>
-        <span class="bc-sep">›</span>
-        <a href="public-services-domain.html">Public Services</a>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">School Location Planning</span>
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="public-services-domain.html">Public Services</a></li>
+            <li class="active">School Location Planning</li>
+        </ol>
     </div>
 </nav>
 
-<!-- Hero -->
 <section class="hero">
     <div class="container">
-        <div class="hero-icon hero-icon--public-services"><i class="fas fa-school" aria-hidden="true"></i></div>
+        <div class="hero-icon"><i class="fas fa-school" aria-hidden="true"></i></div>
         <h1>School Location <span>Planning</span></h1>
-        <p class="hero-subtitle">p-Median Problem &mdash; NP-Hard</p>
+        <p class="hero-subtitle">p-Median &middot; ReVelle-Swain (1970) &middot; Teitz-Bart interchange</p>
+        <a href="p-median-problem.html" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;margin-top:0.3rem;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--green);border:1px solid rgba(100,255,218,0.25);border-radius:20px;text-decoration:none;background:rgba(100,255,218,0.05);">
+            <i class="fas fa-link" aria-hidden="true" style="font-size:0.68rem;opacity:0.9;"></i>
+            <span>Canonical method: p-Median</span>
+        </a>
         <div class="gold-line" aria-hidden="true"></div>
         <p class="hero-desc">
-            A municipal education authority must decide which candidate sites to open as new schools
-            to minimize the average distance children travel. Each mislocated school affects
-            500&ndash;2,000 students for a 30-year lifespan, with annual busing costs of
-            $200&ndash;$800 per student for those beyond walking distance.
+            Where should a district build (or close) schools so the total distance students travel is minimised?
+            The question reduces to the classical <em>p-median problem</em> &mdash; open <em>p</em> facilities to
+            minimise weighted distance from a set of demand points. <cite>Hakimi (1964)</cite> introduced the absolute
+            p-center / p-median on graphs; <cite>ReVelle &amp; Swain (1970)</cite> gave the first LP-based formulation;
+            <cite>Teitz &amp; Bart (1968)</cite> contributed the interchange heuristic that remains the practical
+            workhorse. <strong>Distinct from</strong> <a href="school-choice-mechanism.html">school-choice-mechanism</a>:
+            this is about <em>where schools exist</em>; that is about <em>who gets assigned</em>.
         </p>
-    </div>
-</section>
-
-<!-- Decision Chain -->
-<section>
-    <div class="container">
-        <div class="section-header fade-in">
-            <h2>Where This <span>Decision Fits</span></h2>
-            <p>Public education planning &mdash; the highlighted step is what this page optimizes</p>
-        </div>
-        <div class="decision-chain fade-in">
-            <div class="chain-step active">Infrastructure<span class="chain-sub">School location</span></div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">Service Scheduling<span class="chain-sub">Bell times &amp; shifts</span></div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">Emergency<span class="chain-sub">Evacuation plans</span></div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">Resource Allocation<span class="chain-sub">Staff &amp; budgets</span></div>
+        <div class="edu-notice">
+            <strong>Educational resource.</strong> This page describes a mathematical model used for school-facility
+            planning studies. It is a teaching tool, not district-policy guidance. Real school siting decisions involve
+            enrollment forecasting, political feasibility, historical equity considerations, transportation budgets,
+            building condition assessments, and federal / state compliance (IDEA, ADA, civil-rights) that no p-median
+            captures. The Limitations &amp; Critique section below is not optional reading.
         </div>
     </div>
 </section>
 
-<!-- The Problem -->
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The <span>Problem</span></h2>
-            <p>Select p sites from candidates to minimize total weighted student travel distance</p>
+            <h2>Problem <span>context</span></h2>
+            <p>Where a school exists shapes who can attend it</p>
         </div>
         <div class="content-block fade-in">
             <p>
-                A municipal district evaluates <strong>6 candidate school sites</strong> to serve
-                <strong>10 residential demand zones</strong> with student populations ranging from
-                200 to 1,200 children. The authority must open exactly <em>p</em> schools
-                (determined by budget constraints) such that the total population-weighted
-                travel distance is minimized.
+                A school district (or a state, or a nonprofit charter network) has a budget to open <em>p</em> schools
+                from a set of candidate locations. Each residential block has an expected student population; each
+                candidate location carries opening costs, capacity bounds, and proximity characteristics. The
+                operational question is <em>which p locations minimise the total (weighted) distance students travel</em>.
+                In most practical studies this is also constrained by maximum travel time (a busing budget), school
+                capacity, and a requirement that every student be assigned to exactly one school.
             </p>
             <p>
-                This is the classical <strong>p-Median Problem</strong>, proven NP-hard by
-                reduction from Set Cover (Kariv &amp; Hakimi, 1979). Unlike the uncapacitated
-                facility location problem, here the number of open facilities is fixed at <em>p</em>
-                rather than being a cost-driven decision.
+                The p-median formulation traces to <cite>Hakimi (1964)</cite> and <cite>ReVelle &amp; Swain (1970)</cite>;
+                <cite>Kariv &amp; Hakimi (1979)</cite> proved it NP-hard for general <em>p</em>. The <cite>Teitz &amp; Bart
+                (1968)</cite> vertex-interchange heuristic &mdash; repeatedly swap one open facility with a closed
+                candidate if the swap improves the objective &mdash; is the practical baseline; modern practitioners add
+                Lagrangian relaxation, MILP with valid inequalities, or tabu-search.
             </p>
-
-            <div class="formulation">
-                <span class="form-label">p-Median Formulation</span>
-                <span class="keyword">minimize</span> &nbsp; <span class="variable">&Sigma;<sub>i</sub>&Sigma;<sub>j</sub> w<sub>j</sub> &middot; d<sub>ij</sub> &middot; x<sub>ij</sub></span> &nbsp; <span class="comment">// total weighted distance</span><br>
-                <span class="keyword">subject to</span><br>
-                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> x<sub>ij</sub> = 1 &nbsp; &forall; j</span> &nbsp;&nbsp; <span class="comment">// each zone assigned to exactly one school</span><br>
-                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &le; y<sub>i</sub> &nbsp; &forall; i,j</span> &nbsp;&nbsp; <span class="comment">// assign only to open schools</span><br>
-                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> y<sub>i</sub> = p</span> &nbsp;&nbsp; <span class="comment">// open exactly p schools</span><br>
-                &nbsp;&nbsp;<span class="variable">y<sub>i</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// open or not</span><br>
-                &nbsp;&nbsp;<span class="variable">x<sub>ij</sub> &ge; 0</span> &nbsp; <span class="comment">// assignment fraction</span>
+            <p>
+                For public-school siting specifically, the formulation carries equity constraints that generic p-median
+                does not. Districts often require that no neighbourhood's travel distance exceed a <em>maximum</em>
+                threshold (a p-center-like constraint), that school capacity reflect enrollment forecasts rather than
+                physical building size, and that <em>proposed</em> closures trigger different decision politics than
+                <em>proposed</em> new sites. The mathematical tool is stable; the policy wrapping is where the action
+                is.
+            </p>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:1.5px;color:var(--gold);margin-top:1rem;margin-bottom:0.6rem;text-transform:uppercase;">Multi-stakeholder framing</h4>
+            <div class="stakeholder-grid">
+                <div class="stakeholder-item"><div class="stakeholder-who">Students &amp; families</div><div class="stakeholder-what">Commute daily; travel time compounds over years; closure means disruption to friendships and routines.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Teachers</div><div class="stakeholder-what">Work locations change with siting decisions; career stability and community embeddedness at stake.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">District / DOE</div><div class="stakeholder-what">Balances capacity utilisation, capital budget, equity of access; responsible for state-reportable outcomes.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">School board / council</div><div class="stakeholder-what">Approves siting decisions; faces direct electoral accountability for closures and new-build locations.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Affected neighbourhoods</div><div class="stakeholder-what">School closure in a community of colour / low-income area is a documented pattern historically correlated with disinvestment.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Federal / state regulators</div><div class="stakeholder-what">Enforce IDEA (special education), ADA (accessibility), civil-rights compliance; have cause of action if siting creates disparate impact.</div></div>
             </div>
-
-            <p>
-                Where <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">w<sub>j</sub></span>
-                is the student population of zone <em>j</em>,
-                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">d<sub>ij</sub></span>
-                is the distance from candidate site <em>i</em> to zone <em>j</em>,
-                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">y<sub>i</sub></span>
-                is the binary open/close decision, and
-                <span style="font-family:'JetBrains Mono',monospace; color:var(--blue);">x<sub>ij</sub></span>
-                is the assignment variable.
-            </p>
-
-            <a href="../families/continuous.html" class="theory-link">
-                <i class="fas fa-arrow-right" aria-hidden="true"></i> See Integer Programming theory
-            </a>
         </div>
     </div>
 </section>
 
-<!-- Try It Yourself -->
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>p-Median, capacitated, and equity-constrained variants</p>
+        </div>
+
+        <table class="notation-table fade-in" aria-label="Notation">
+            <tr><th>Symbol</th><th>Definition</th><th>Domain</th></tr>
+            <tr><td>I</td><td>Set of demand points (blocks with students)</td><td>|I| = n</td></tr>
+            <tr><td>J</td><td>Set of candidate school sites</td><td>|J| = m</td></tr>
+            <tr><td>w<sub>i</sub></td><td>Number of students at demand point i</td><td>&#8469;&#8314;</td></tr>
+            <tr><td>d<sub>ij</sub></td><td>Distance (or travel time) from i to j</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>q<sub>j</sub></td><td>Capacity of candidate site j</td><td>&#8469;&#8314;</td></tr>
+            <tr><td>p</td><td>Number of schools to open</td><td>&#8469;&#8314;</td></tr>
+            <tr><td>x<sub>j</sub></td><td>Binary: 1 if school opened at j</td><td>{0, 1}</td></tr>
+            <tr><td>y<sub>ij</sub></td><td>Binary (or fractional): 1 if demand i assigned to j</td><td>{0, 1}</td></tr>
+        </table>
+
+        <div class="formulation fade-in">
+            <span class="form-label">Classical p-Median (ReVelle &amp; Swain 1970)</span>
+            <span class="keyword">min</span> &Sigma;<sub>i</sub> &Sigma;<sub>j</sub> <span class="variable">w<sub>i</sub></span> <span class="variable">d<sub>ij</sub></span> <span class="variable">y<sub>ij</sub></span> &nbsp;<span class="comment">// total weighted distance</span><br>
+            <span class="keyword">s.t.</span> &Sigma;<sub>j</sub> <span class="variable">y<sub>ij</sub></span> = 1 &nbsp; &forall; <span class="variable">i</span> &nbsp;<span class="comment">// each demand point assigned to exactly one school</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">y<sub>ij</sub></span> &le; <span class="variable">x<sub>j</sub></span> &nbsp; &forall; <span class="variable">i, j</span> &nbsp;<span class="comment">// must assign to open site</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; &Sigma;<sub>j</sub> <span class="variable">x<sub>j</sub></span> = <span class="variable">p</span> &nbsp;<span class="comment">// open exactly p schools</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x<sub>j</sub></span>, <span class="variable">y<sub>ij</sub></span> &isin; {0, 1}<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Capacitated p-Median (CPMP)</span>
+            Add: &Sigma;<sub>i</sub> <span class="variable">w<sub>i</sub></span> <span class="variable">y<sub>ij</sub></span> &le; <span class="variable">q<sub>j</sub></span> &nbsp; &forall; <span class="variable">j</span> &nbsp;<span class="comment">// capacity constraint per school</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; Allow fractional y<sub>ij</sub> for multi-assignment (e.g., grade-band splits)<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Equity-constrained (max-distance cap)</span>
+            Add: <span class="variable">d<sub>ij</sub></span> <span class="variable">y<sub>ij</sub></span> &le; <span class="variable">D<sub>max</sub></span> &nbsp; &forall; <span class="variable">i, j</span> &nbsp;<span class="comment">// nobody assigned farther than D_max</span><br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Complexity</span>
+            Uncapacitated p-median NP-hard (Kariv-Hakimi 1979); exact MILP practical for n,m &lesssim; 500 via modern solvers. Heuristics: Teitz-Bart vertex interchange (O(nmp)), greedy add / drop, Lagrangian, GRASP, tabu search.
+        </div>
+    </div>
+</section>
+
 <section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Try It <span>Yourself</span></h2>
-            <p>Choose p and an algorithm to find the best school locations</p>
+            <h2>Interactive <span>solver</span></h2>
+            <p>Greedy + Teitz-Bart interchange on a synthetic district map</p>
         </div>
 
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
-                <h3><i class="fas fa-school" aria-hidden="true"></i> School Location Optimizer</h3>
-                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">6 Sites &middot; 10 Zones</span>
+                <h2><i class="fas fa-school" aria-hidden="true" style="margin-right:0.4rem;"></i>p-Median School Siting Solver</h2>
             </div>
-            <div class="solver-body">
-                <div class="solver-section-label">Scenario</div>
-                <div class="scenario-switcher">
-                    <button class="scenario-btn" data-scenario="urban" onclick="loadScenario('urban')">
-                        <span class="sc-name">Urban District</span>
-                        <span class="sc-detail">Dense, 4 high-pop zones &middot; 10 zones</span>
-                    </button>
-                    <button class="scenario-btn" data-scenario="suburban" onclick="loadScenario('suburban')">
-                        <span class="sc-name">Suburban Expansion</span>
-                        <span class="sc-detail">Spread demand &middot; 10 zones</span>
-                    </button>
-                    <button class="scenario-btn" data-scenario="budget" onclick="loadScenario('budget')">
-                        <span class="sc-name">Budget = 2 Schools</span>
-                        <span class="sc-detail">Tight budget &middot; only 2 schools</span>
-                    </button>
-                </div>
 
-                <div class="solver-section-label">Number of Schools (p)</div>
-                <div class="p-slider-wrap">
-                    <label for="pSlider">p =</label>
-                    <input type="range" id="pSlider" min="1" max="4" value="3">
-                    <span class="p-val" id="pVal">3</span>
-                </div>
-
-                <div class="solver-section-label">Candidate Sites</div>
-                <div style="overflow-x:auto;margin-bottom:1rem;">
-                    <table class="gen-table" id="site-table">
-                        <thead><tr><th scope="col">Site</th><th scope="col">Location</th><th scope="col">Build Cost ($M)</th></tr></thead>
-                        <tbody id="siteBody"></tbody>
-                    </table>
-                </div>
-
-                <div class="solver-section-label">Demand Zones</div>
-                <div style="overflow-x:auto;margin-bottom:1rem;">
-                    <table class="gen-table" id="zone-table">
-                        <thead><tr><th scope="col">Zone</th><th scope="col">Students</th><th scope="col">Households (k)</th></tr></thead>
-                        <tbody id="zoneBody"></tbody>
-                    </table>
-                </div>
-
-                <div class="solver-section-label" style="margin-bottom:0.5rem;">Algorithm</div>
-                <div style="display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.2rem;">
-                    <button class="algo-chip active" data-algo="greedy-add" onclick="selectAlgo('greedy-add')">Greedy Add</button>
-                    <button class="algo-chip" data-algo="greedy-swap" onclick="selectAlgo('greedy-swap')">Greedy Swap (Teitz-Bart)</button>
-                    <button class="algo-chip" data-algo="random" onclick="selectAlgo('random')">Random</button>
-                </div>
-
-                <button class="algo-chip active" onclick="solveLocation()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
-                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
-                </button>
-
-                <div class="total-cost-display" id="costDisplay" style="display:none;">
-                    <div class="cost-value" id="costValue">&mdash;</div>
-                    <div class="cost-label">Minimum Total Weighted Distance</div>
-                    <div class="cost-sub" id="costSub"></div>
-                </div>
-
-                <div class="solver-section-label">District Map</div>
-                <div class="solver-canvas-wrap"><canvas id="mapCanvas" width="900" height="500"></canvas></div>
-
-                <p class="solver-status" id="solver-status">Ready. Click &ldquo;Solve &amp; Compare All Algorithms&rdquo; to run.</p>
-
-                <div class="solver-row" style="margin-top: 1.5rem;">
-                    <div>
-                        <div class="solver-section-label">Algorithm Comparison</div>
-                        <table class="results-table" id="results-table">
-                            <thead><tr><th scope="col">Algorithm</th><th scope="col">Total Wt. Dist.</th><th scope="col">Schools Open</th><th scope="col">Time</th></tr></thead>
-                            <tbody><tr><td colspan="4" style="text-align:center;color:var(--slate);font-family:Inter,sans-serif;">Click Solve &amp; Compare All Algorithms</td></tr></tbody>
-                        </table>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Assignment Detail</div>
-                        <div class="bin-output" id="dispatch-output">Assignment details will appear here after solving.</div>
-                    </div>
-                </div>
-
-                <div class="business-panel" id="bizPanel" style="display:none;">
-                    <div class="biz-card"><div class="biz-val" id="bizBusCost">&mdash;</div><div class="biz-label">Busing Cost per Student-km / Year ($)</div></div>
-                    <div class="biz-card"><div class="biz-val" id="bizStudents">&mdash;</div><div class="biz-label">Students Affected</div></div>
-                </div>
+            <div class="solver-section-label">Scenario (neighbourhood layout)</div>
+            <div class="algo-select" id="slScenarios">
+                <div class="algo-chip selected" data-algo="small">12 neighbourhoods</div>
+                <div class="algo-chip" data-algo="medium">18 neighbourhoods</div>
+                <div class="algo-chip" data-algo="large">24 neighbourhoods</div>
             </div>
+
+            <div class="solver-section-label">Number of schools p</div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <input type="range" class="solver-slider" id="slP" min="2" max="6" value="3">
+                <span class="size-display" id="slPVal">3</span>
+            </div>
+
+            <div class="solver-section-label">Algorithm</div>
+            <div class="algo-select" id="slAlg">
+                <div class="algo-chip selected" data-algo="greedy">Greedy add (cheapest first)</div>
+                <div class="algo-chip" data-algo="teitz">Teitz-Bart interchange</div>
+            </div>
+
+            <div class="solver-section-label">Capacity constraint</div>
+            <div class="algo-select" id="slCap">
+                <div class="algo-chip selected" data-algo="off">Uncapacitated</div>
+                <div class="algo-chip" data-algo="on">Each school cap: 1.2 &times; avg</div>
+            </div>
+
+            <button class="solver-btn" id="slSolve" type="button">
+                <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve
+            </button>
+
+            <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                <canvas id="slCanvas" width="820" height="440"></canvas>
+            </div>
+
+            <div id="slResults" style="margin-top:1rem;"></div>
+            <div class="solver-status" id="slStatus">Choose scenario, p, algorithm, and capacity option, then click Solve. Greedy is O(nmp); Teitz-Bart adds vertex-interchange local search to polish. Teaching-quality only &mdash; production studies use MILP solvers.</div>
         </div>
     </div>
 </section>
 
-<!-- Algorithms -->
-<section>
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
     <div class="container">
         <div class="section-header fade-in">
-            <h2>The <span>Algorithms</span></h2>
-            <p>Three approaches to the p-Median problem</p>
+            <h2>Solution <span>interpretation</span></h2>
+            <p>Reading the map &mdash; and what it hides</p>
         </div>
-        <div class="content-block fade-in">
-            <div class="algo-card">
-                <div class="algo-tag">Constructive</div>
-                <h3>Greedy Add</h3>
-                <span class="algo-complexity">O(p &middot; n &middot; m) &nbsp;|&nbsp; No guarantee for p-Median</span>
-                <p>
-                    Start with no schools open. At each step, evaluate the reduction in total
-                    weighted distance from opening each remaining candidate. Open the site with
-                    the greatest improvement. Repeat until exactly <em>p</em> schools are open.
-                    This constructive heuristic is fast and often produces good initial solutions,
-                    though it may miss the global optimum because early greedy choices cannot be undone.
-                </p>
-            </div>
-            <div class="algo-card">
-                <div class="algo-tag">Local Search</div>
-                <h3>Greedy Swap (Teitz-Bart)</h3>
-                <span class="algo-complexity">O(iter &middot; p &middot; (n&minus;p) &middot; m) &nbsp;|&nbsp; Local optimum</span>
-                <p>
-                    Begin from the Greedy Add solution with <em>p</em> open schools. At each iteration,
-                    try every possible swap: close one open school, open one closed site. Accept the
-                    swap that yields the largest cost reduction. Repeat until no improving swap exists.
-                    This is the classical Teitz &amp; Bart (1968) vertex substitution method, which
-                    often reaches a strong local optimum and is the basis for many practical
-                    p-Median solvers.
-                </p>
-            </div>
-            <div class="algo-card">
-                <div class="algo-tag">Baseline</div>
-                <h3>Random</h3>
-                <span class="algo-complexity">O(k &middot; m) &nbsp;|&nbsp; No guarantee</span>
-                <p>
-                    Randomly select <em>p</em> candidate sites and evaluate the resulting total weighted
-                    distance. Repeat for a fixed number of random trials and return the best solution
-                    found. This stochastic approach serves as a baseline to compare against the
-                    intelligent heuristics, illustrating how much structure the greedy and swap
-                    methods exploit.
-                </p>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- Real-World Complexity -->
-<section>
-    <div class="container">
-        <div class="section-header fade-in">
-            <h2>Real-World <span>Complexity</span></h2>
-            <p>Why practical school siting goes beyond the basic p-Median model</p>
-        </div>
-        <div class="content-block fade-in">
-            <div class="complexity-box">
-                <h3><i class="fas fa-school" aria-hidden="true"></i> Beyond the p-Median</h3>
-                <ul class="complexity-list">
-                    <li><strong>Capacity constraints</strong> &mdash; Each school has a maximum enrollment; the uncapacitated model may overload popular sites</li>
-                    <li><strong>Walking distance thresholds</strong> &mdash; Students within 1&ndash;2 km walk; beyond that threshold busing is required, creating a step-function cost</li>
-                    <li><strong>Equity requirements</strong> &mdash; Regulations may mandate that no child travels more than a maximum distance, adding covering constraints</li>
-                    <li><strong>Demographic forecasting</strong> &mdash; Birth-rate trends, housing developments, and migration shift student populations over the 30-year school lifespan</li>
-                    <li><strong>Multi-level schooling</strong> &mdash; Elementary, middle, and high schools serve different age groups with different catchment radii</li>
-                    <li><strong>Safe routes</strong> &mdash; Network distance along safe walking routes differs from Euclidean distance; highway crossings and crime zones affect feasibility</li>
-                    <li><strong>Existing infrastructure</strong> &mdash; Renovation of existing schools vs. greenfield construction creates asymmetric cost structures</li>
-                </ul>
-            </div>
-        </div>
-    </div>
-</section>
-
-<!-- References -->
-<section>
-    <div class="container">
-        <div class="section-header fade-in">
-            <h2>Key <span>References</span></h2>
-            <p>Foundational works in facility location and the p-Median problem</p>
-        </div>
-        <div class="content-block fade-in">
-            <ul class="reference-list">
-                <li>
-                    <span class="ref-author">Hakimi, S.L.</span> (1964).
-                    <span class="ref-title">&ldquo;Optimum Locations of Switching Centers and the Absolute Centers and Medians of a Graph.&rdquo;</span>
-                    <span class="ref-journal">Operations Research, 12(3), 450&ndash;459.</span>
-                </li>
-                <li>
-                    <span class="ref-author">Teitz, M.B. &amp; Bart, P.</span> (1968).
-                    <span class="ref-title">&ldquo;Heuristic Methods for Estimating the Generalized Vertex Median of a Weighted Graph.&rdquo;</span>
-                    <span class="ref-journal">Operations Research, 16(5), 955&ndash;961.</span>
-                </li>
-                <li>
-                    <span class="ref-author">Kariv, O. &amp; Hakimi, S.L.</span> (1979).
-                    <span class="ref-title">&ldquo;An Algorithmic Approach to Network Location Problems. Part II: The p-Medians.&rdquo;</span>
-                    <span class="ref-journal">SIAM Journal on Applied Mathematics, 37(3), 539&ndash;560.</span>
-                </li>
-            </ul>
-        </div>
-    </div>
-</section>
-
-<!-- CTA -->
-<section>
-    <div class="container">
-        <div class="cta-panel fade-in">
-            <h3>Need to optimize your school network?</h3>
+        <div class="interpret-box fade-in">
+            <div class="interpret-box-title"><i class="fas fa-lightbulb" aria-hidden="true" style="margin-right:0.35rem;"></i>Reading the output</div>
             <p>
-                From school siting to bus routing and staff allocation,
-                mathematical modeling can transform public infrastructure decisions.
-                Let&rsquo;s discuss how Operations Research can work for you.
+                <strong>Teitz-Bart typically beats greedy on the same instance</strong> &mdash; greedy is myopic and
+                can trap itself in a poor configuration that a single swap would improve. On small scenarios the two
+                often match; on larger ones the interchange advantage grows.
             </p>
-            <div class="cta-links">
-                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link">
-                    <i class="fab fa-linkedin" aria-hidden="true"></i> Connect on LinkedIn
-                </a>
+            <p>
+                <strong>Adding the capacity constraint</strong> generally increases total weighted distance (the feasible
+                set is smaller). Students from populous neighbourhoods may now be assigned to a farther school when
+                their nearest one is full. This is a policy-relevant effect: uncapped p-median underestimates the
+                real-world distance students travel in districts with actual capacity constraints.
+            </p>
+            <p>
+                <strong>The map's aggregate metric (total weighted distance)</strong> can hide large variance. A few
+                isolated neighbourhoods may have 2&ndash;3x the average travel distance. Districts often respond by
+                adding a <em>maximum-distance</em> (p-center-like) constraint &mdash; reducing aggregate efficiency to
+                bound the worst case. The equity constraint is the policy knob that makes this model acceptable.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="limits-section">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Limitations &amp; <span>Critique</span></h2>
+            <p>Why &ldquo;minimise average distance&rdquo; is not the whole story</p>
+        </div>
+        <div class="limits-grid fade-in">
+            <div class="limit-card">
+                <h4>School closures track historical disinvestment</h4>
+                <p>
+                    When districts close schools, the closures have disproportionately affected communities of colour
+                    and low-income neighbourhoods &mdash; documented in Chicago, Philadelphia, Detroit, and elsewhere.
+                    A p-median solution that closes the &ldquo;highest-cost&rdquo; school may be mathematically right
+                    and socially catastrophic. The efficiency objective cannot adjudicate this; it must be a policy
+                    decision with community input.
+                </p>
+                <div class="refs">
+                    <em>Ewing (2018)</em>. Ghosts in the Schoolyard: Racism and School Closings on Chicago's South Side.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Enrollment forecasts drive everything and are often wrong</h4>
+                <p>
+                    Demand <em>w<sub>i</sub></em> is a forecast (typically 5&ndash;10 years out). Births, migration,
+                    gentrification, charter-school growth, and policy changes all shift it. Districts routinely close
+                    schools because projected enrollment fell, then scramble to re-open or bus in when projections were
+                    wrong. Robust and scenario-based p-median address this but are rarely used in practice.
+                </p>
+                <div class="refs">
+                    <em>Snyder &amp; Daskin (2006)</em> on robust location problems.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Distance is a coarse accessibility proxy</h4>
+                <p>
+                    Travel distance ignores transit access, pedestrian safety, crossing dangerous arterials, school
+                    start-time alignment with parent work schedules, and the specific-needs geography of special
+                    education. A 2-km walk past a highway is functionally different from a 2-km walk in a residential
+                    neighbourhood.
+                </p>
+                <div class="refs">
+                    <em>Williams (2021)</em> on school-accessibility measures beyond Euclidean distance.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Legacy schools are capital-sunk</h4>
+                <p>
+                    New schools cost $10M&ndash;$100M. Closures forfeit those capital investments. A p-median model
+                    that recommends closing 20-year-old schools to open greenfield sites conflates total-cost with
+                    future-marginal-cost. Conditional / relocation p-median that treats existing schools as low-cost-
+                    to-keep is more realistic.
+                </p>
+                <div class="refs">
+                    <em>Current, ReVelle &amp; Cohon (1990)</em>. Dynamic location problems.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Segregation persists across siting choices</h4>
+                <p>
+                    Because residential patterns are themselves segregated, p-median solutions tend to concentrate
+                    neighbourhood students in nearest-school attendance zones &mdash; replicating residential
+                    segregation. Fighting this requires controlled-choice assignment (see
+                    <a href="school-choice-mechanism.html">school-choice-mechanism</a>), which is a different problem,
+                    or intentional zone-boundary design, which has its own political costs.
+                </p>
+                <div class="refs">
+                    <em>Orfield &amp; Frankenberg (2013)</em>. Educational Delusions? Why Choice Can Deepen Inequality.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Capacity means different things in different eras</h4>
+                <p>
+                    A building's physical capacity and its instructional capacity diverge. Class-size regulations,
+                    special-education requirements, programme needs (music, science labs), and post-COVID ventilation
+                    standards all shift usable capacity. The q<sub>j</sub> parameter cannot be a single static number
+                    and be taken seriously.
+                </p>
+                <div class="refs">
+                    <em>Green &amp; Turner (2010)</em>. Capacity planning under uncertainty in school districts.
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<section style="padding: 2rem 0;">
+<section>
     <div class="container">
-        <div class="disclaimer-box">
-            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
-            Data shown is illustrative. Site names, locations, student populations, and costs are representative
-            scenarios for educational purposes and do not reflect any specific school district or municipality.
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Capacity, equity, dynamics, robustness</p>
+        </div>
+        <div class="ext-grid fade-in">
+            <div class="ext-card"><h4>Capacitated p-median (CPMP)</h4><p>Add capacity constraint q<sub>j</sub> per site; more realistic for school planning. Lorena &amp; Senne (2004) column generation.</p></div>
+            <div class="ext-card"><h4>Equity-constrained p-median</h4><p>Cap maximum assigned distance per student. Blends p-median efficiency with p-center equity.</p></div>
+            <div class="ext-card"><h4>Dynamic / multi-period p-median</h4><p>Enrollment changes over 5&ndash;10 years; open / close schools across a planning horizon. Current-ReVelle-Cohon (1990).</p></div>
+            <div class="ext-card"><h4>Robust p-median</h4><p>Snyder &amp; Daskin (2006). Uncertainty-set over demand or distance; conservative siting under forecast error.</p></div>
+            <div class="ext-card"><h4>Conditional / relocation p-median</h4><p>Existing schools are cheap to keep; closures have political cost. Marginal-gain formulation more realistic than greenfield.</p></div>
+            <div class="ext-card"><h4>Multi-objective</h4><p>ε-constraint over {total distance, max distance, closure count, equity Gini}. Surfaces the tradeoff.</p></div>
+            <div class="ext-card"><h4>Network-based distance</h4><p>Use street network travel times / walking-safe routes, not Euclidean distance. Changes optimal maps in cities with highways or rivers.</p></div>
+            <div class="ext-card"><h4>Joint location-routing for bus fleet</h4><p>If the district buses students, the siting problem interacts with a VRP. Laporte, Nickel, Saldanha-da-Gama (2019) handbook.</p></div>
         </div>
     </div>
 </section>
-</main>
 
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Cited above &middot; DOIs where available</p>
+        </div>
+
+        <div class="reference-item fade-in"><span class="reference-num">[1]</span><span class="reference-authors">Hakimi, S.&nbsp;L. (1964).</span><div class="reference-title">&ldquo;Optimum locations of switching centers and the absolute centers and medians of a graph.&rdquo;</div><div class="reference-journal"><em>Operations Research</em> 12(3), 450&ndash;459. <a href="https://doi.org/10.1287/opre.12.3.450" target="_blank" rel="noopener">doi:10.1287/opre.12.3.450</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[2]</span><span class="reference-authors">Teitz, M.&nbsp;B., &amp; Bart, P. (1968).</span><div class="reference-title">&ldquo;Heuristic methods for estimating the generalized vertex median of a weighted graph.&rdquo;</div><div class="reference-journal"><em>Operations Research</em> 16(5), 955&ndash;961. <a href="https://doi.org/10.1287/opre.16.5.955" target="_blank" rel="noopener">doi:10.1287/opre.16.5.955</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[3]</span><span class="reference-authors">ReVelle, C., &amp; Swain, R.&nbsp;W. (1970).</span><div class="reference-title">&ldquo;Central facilities location.&rdquo;</div><div class="reference-journal"><em>Geographical Analysis</em> 2(1), 30&ndash;42. <a href="https://doi.org/10.1111/j.1538-4632.1970.tb00142.x" target="_blank" rel="noopener">doi:10.1111/j.1538-4632.1970.tb00142.x</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[4]</span><span class="reference-authors">Kariv, O., &amp; Hakimi, S.&nbsp;L. (1979).</span><div class="reference-title">&ldquo;An algorithmic approach to network location problems, II: The p-medians.&rdquo;</div><div class="reference-journal"><em>SIAM Journal on Applied Mathematics</em> 37(3), 539&ndash;560. <a href="https://doi.org/10.1137/0137041" target="_blank" rel="noopener">doi:10.1137/0137041</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[5]</span><span class="reference-authors">Current, J., ReVelle, C., &amp; Cohon, J. (1990).</span><div class="reference-title">&ldquo;An interactive approach to identify the best compromise solution for two objective shortest path problems.&rdquo;</div><div class="reference-journal"><em>Computers &amp; Operations Research</em> 17(2), 187&ndash;198. <a href="https://doi.org/10.1016/0305-0548(90)90040-D" target="_blank" rel="noopener">doi:10.1016/0305-0548(90)90040-D</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[6]</span><span class="reference-authors">Lorena, L.&nbsp;A.&nbsp;N., &amp; Senne, E.&nbsp;L.&nbsp;F. (2004).</span><div class="reference-title">&ldquo;A column generation approach to capacitated p-median problems.&rdquo;</div><div class="reference-journal"><em>Computers &amp; Operations Research</em> 31(6), 863&ndash;876. <a href="https://doi.org/10.1016/S0305-0548(03)00039-X" target="_blank" rel="noopener">doi:10.1016/S0305-0548(03)00039-X</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[7]</span><span class="reference-authors">Snyder, L.&nbsp;V., &amp; Daskin, M.&nbsp;S. (2006).</span><div class="reference-title">&ldquo;Stochastic p-robust location problems.&rdquo;</div><div class="reference-journal"><em>IIE Transactions</em> 38(11), 971&ndash;985. <a href="https://doi.org/10.1080/07408170500469113" target="_blank" rel="noopener">doi:10.1080/07408170500469113</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[8]</span><span class="reference-authors">Laporte, G., Nickel, S., &amp; Saldanha-da-Gama, F. (Eds.). (2019).</span><div class="reference-title"><em>Location Science</em> (2nd ed.).</div><div class="reference-journal">Springer. <a href="https://doi.org/10.1007/978-3-030-32177-2" target="_blank" rel="noopener">doi:10.1007/978-3-030-32177-2</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[9]</span><span class="reference-authors">Ewing, E.&nbsp;L. (2018).</span><div class="reference-title"><em>Ghosts in the Schoolyard: Racism and School Closings on Chicago's South Side.</em></div><div class="reference-journal">University of Chicago Press.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[10]</span><span class="reference-authors">Orfield, G., &amp; Frankenberg, E. (2013).</span><div class="reference-title"><em>Educational Delusions? Why Choice Can Deepen Inequality and How to Make Schools Fair.</em></div><div class="reference-journal">University of California Press.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[11]</span><span class="reference-authors">Daskin, M.&nbsp;S. (2013).</span><div class="reference-title"><em>Network and Discrete Location: Models, Algorithms, and Applications</em> (2nd ed.).</div><div class="reference-journal">Wiley. <a href="https://doi.org/10.1002/9781118537015" target="_blank" rel="noopener">doi:10.1002/9781118537015</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[12]</span><span class="reference-authors">ReVelle, C.&nbsp;S., &amp; Eiselt, H.&nbsp;A. (2005).</span><div class="reference-title">&ldquo;Location analysis: A synthesis and survey.&rdquo;</div><div class="reference-journal"><em>European Journal of Operational Research</em> 165(1), 1&ndash;19. <a href="https://doi.org/10.1016/j.ejor.2003.11.032" target="_blank" rel="noopener">doi:10.1016/j.ejor.2003.11.032</a></div></div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+            <p>The siting / assignment siblings</p>
+        </div>
+        <div class="related-grid fade-in">
+            <a class="related-card" href="school-choice-mechanism.html"><span class="related-card-tag">Matching</span><div class="related-card-head">School Choice Mechanism</div><div class="related-card-desc">Once schools exist, how are students assigned? Deferred acceptance and TTC. Sister page in the education row.</div></a>
+            <a class="related-card" href="fire-station-siting.html"><span class="related-card-tag">MCLP</span><div class="related-card-head">Fire Station Siting</div><div class="related-card-desc">Coverage-radius sibling to p-median &mdash; different objective, same family.</div></a>
+            <a class="related-card" href="political-districting.html"><span class="related-card-tag">MILP</span><div class="related-card-head">Political Districting</div><div class="related-card-desc">Partition-geography sibling &mdash; school attendance zones are a soft districting problem.</div></a>
+            <a class="related-card" href="public-services-domain.html"><span class="related-card-tag">Back to domain</span><div class="related-card-head">Public Services Landing</div><div class="related-card-desc">See all thirteen applications organised by service sector and decision type.</div></a>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Advising a school district<br>or educational-facility planning study?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<div class="disclaimer">
+    Data and numerical examples are illustrative. This page is an educational tool, not district-policy or operational advice.
+</div>
+
+</main>
 
 <footer>
     <div class="container">
-        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+        <p>
+            <a href="public-services-domain.html">&larr; Back to Public Services</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
     </div>
 </footer>
 
-<a href="../index.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+<a class="back-link" href="public-services-domain.html"><i class="fas fa-arrow-left" aria-hidden="true" style="margin-right:0.4rem"></i> Public Services</a>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script>
-(function() {
+(function(){
     'use strict';
 
-    var ZONE_COLOR = { fill: 'rgba(122,162,247,0.4)', stroke: '#7aa2f7' };
-    var SITE_CLOSED = { fill: 'rgba(136,146,176,0.2)', stroke: 'rgba(136,146,176,0.5)' };
-    var SITE_OPEN = { fill: 'rgba(197,160,89,0.6)', stroke: '#D4AF37' };
-
-    var SCENARIOS = {
-        urban: {
-            name: 'Urban District',
-            defaultP: 3,
-            sites: [
-                { name: 'Central Park Site',    loc: 'Downtown Core',       cost: 28, x: 0.48, y: 0.42 },
-                { name: 'Eastview Grounds',     loc: 'East Residential',    cost: 18, x: 0.78, y: 0.32 },
-                { name: 'Westbrook Field',      loc: 'West End',            cost: 22, x: 0.18, y: 0.48 },
-                { name: 'Northgate Campus',     loc: 'North Quarter',       cost: 20, x: 0.42, y: 0.12 },
-                { name: 'Harborside Lot',       loc: 'Waterfront South',    cost: 25, x: 0.62, y: 0.78 },
-                { name: 'Southridge Parcel',    loc: 'South District',      cost: 16, x: 0.32, y: 0.82 }
-            ],
-            zones: [
-                { name: 'Zone A', weight: 1100, households: 4.2,  x: 0.44, y: 0.38 },
-                { name: 'Zone B', weight: 1200, households: 4.8,  x: 0.54, y: 0.46 },
-                { name: 'Zone C', weight: 900,  households: 3.5,  x: 0.72, y: 0.28 },
-                { name: 'Zone D', weight: 1050, households: 4.0,  x: 0.82, y: 0.42 },
-                { name: 'Zone E', weight: 800,  households: 3.2,  x: 0.22, y: 0.42 },
-                { name: 'Zone F', weight: 350,  households: 1.4,  x: 0.12, y: 0.55 },
-                { name: 'Zone G', weight: 700,  households: 2.8,  x: 0.38, y: 0.16 },
-                { name: 'Zone H', weight: 500,  households: 2.0,  x: 0.50, y: 0.18 },
-                { name: 'Zone I', weight: 650,  households: 2.6,  x: 0.58, y: 0.72 },
-                { name: 'Zone J', weight: 450,  households: 1.8,  x: 0.36, y: 0.76 }
-            ]
-        },
-        suburban: {
-            name: 'Suburban Expansion',
-            defaultP: 3,
-            sites: [
-                { name: 'Highway Junction',     loc: 'Interchange 7',       cost: 14, x: 0.50, y: 0.50 },
-                { name: 'Lakeside Meadow',      loc: 'Lake Road',           cost: 12, x: 0.12, y: 0.22 },
-                { name: 'Tech Park Annex',      loc: 'Innovation Blvd',     cost: 19, x: 0.82, y: 0.18 },
-                { name: 'Community Field',      loc: 'Maple Ave',           cost: 11, x: 0.28, y: 0.72 },
-                { name: 'Airport Road Plot',    loc: 'Terminal Dr',         cost: 16, x: 0.88, y: 0.68 },
-                { name: 'County Fairgrounds',   loc: 'County Line',         cost: 9,  x: 0.08, y: 0.82 }
-            ],
-            zones: [
-                { name: 'Zone A', weight: 400,  households: 1.6,  x: 0.10, y: 0.18 },
-                { name: 'Zone B', weight: 480,  households: 1.9,  x: 0.28, y: 0.12 },
-                { name: 'Zone C', weight: 550,  households: 2.2,  x: 0.58, y: 0.22 },
-                { name: 'Zone D', weight: 320,  households: 1.3,  x: 0.85, y: 0.12 },
-                { name: 'Zone E', weight: 600,  households: 2.4,  x: 0.45, y: 0.55 },
-                { name: 'Zone F', weight: 420,  households: 1.7,  x: 0.68, y: 0.42 },
-                { name: 'Zone G', weight: 510,  households: 2.0,  x: 0.22, y: 0.68 },
-                { name: 'Zone H', weight: 380,  households: 1.5,  x: 0.38, y: 0.82 },
-                { name: 'Zone I', weight: 460,  households: 1.8,  x: 0.78, y: 0.72 },
-                { name: 'Zone J', weight: 280,  households: 1.1,  x: 0.92, y: 0.55 }
-            ]
-        },
-        budget: {
-            name: 'Budget = 2 Schools',
-            defaultP: 2,
-            sites: [
-                { name: 'Town Square Site',     loc: 'Main & 3rd',          cost: 32, x: 0.45, y: 0.45 },
-                { name: 'University Heights',   loc: 'Campus Rd',           cost: 17, x: 0.72, y: 0.22 },
-                { name: 'Riverside Tract',      loc: 'River Blvd',          cost: 21, x: 0.22, y: 0.62 },
-                { name: 'Industrial Parcel',    loc: 'Factory Lane',        cost: 10, x: 0.88, y: 0.78 },
-                { name: 'Heritage Park',        loc: 'Heritage St',         cost: 24, x: 0.35, y: 0.28 },
-                { name: 'Transit Depot Site',   loc: 'Station Rd',          cost: 27, x: 0.58, y: 0.68 }
-            ],
-            zones: [
-                { name: 'Zone A', weight: 1000, households: 3.8,  x: 0.40, y: 0.40 },
-                { name: 'Zone B', weight: 850,  households: 3.4,  x: 0.52, y: 0.52 },
-                { name: 'Zone C', weight: 700,  households: 2.8,  x: 0.68, y: 0.20 },
-                { name: 'Zone D', weight: 600,  households: 2.4,  x: 0.78, y: 0.28 },
-                { name: 'Zone E', weight: 800,  households: 3.2,  x: 0.25, y: 0.58 },
-                { name: 'Zone F', weight: 500,  households: 2.0,  x: 0.18, y: 0.68 },
-                { name: 'Zone G', weight: 650,  households: 2.6,  x: 0.38, y: 0.22 },
-                { name: 'Zone H', weight: 450,  households: 1.8,  x: 0.28, y: 0.32 },
-                { name: 'Zone I', weight: 550,  households: 2.2,  x: 0.62, y: 0.70 },
-                { name: 'Zone J', weight: 200,  households: 0.8,  x: 0.82, y: 0.72 }
-            ]
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = (h.scrollTop || b.scrollTop);
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
         }
-    };
-
-    var currentScenario = 'urban';
-    var selectedAlgo = 'greedy-add';
-    var currentP = 3;
-    var lastResults = null;
-    var animFrame = null;
-    var animPhase = 0;
-
-    function getData() { return SCENARIOS[currentScenario]; }
-
-    function dist(a, b) {
-        var dx = a.x - b.x, dy = a.y - b.y;
-        return Math.sqrt(dx * dx + dy * dy);
     }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-    function evalSolution(openSet, data) {
-        var totalWD = 0;
-        var assignments = [];
-        data.zones.forEach(function(z) {
-            var bestDist = Infinity, bestSite = -1;
-            openSet.forEach(function(i) {
-                var d = dist(data.sites[i], z);
-                if (d < bestDist) { bestDist = d; bestSite = i; }
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+
+    function bindExclusive(containerId) {
+        var el = document.getElementById(containerId); if (!el) return;
+        el.querySelectorAll('.algo-chip').forEach(function(chip){
+            chip.addEventListener('click', function(){
+                el.querySelectorAll('.algo-chip').forEach(function(c){ c.classList.remove('selected'); });
+                chip.classList.add('selected');
             });
-            totalWD += z.weight * bestDist;
-            assignments.push(bestSite);
         });
-        return { totalWD: totalWD, assignments: assignments, openSet: openSet.slice() };
+    }
+    bindExclusive('slScenarios');
+    bindExclusive('slAlg');
+    bindExclusive('slCap');
+
+    var slP = document.getElementById('slP'); var slPVal = document.getElementById('slPVal');
+    if (slP && slPVal) slP.addEventListener('input', function(){ slPVal.textContent = slP.value; });
+
+    function selectedChip(containerId){ var c = document.querySelector('#' + containerId + ' .algo-chip.selected'); return c ? c.getAttribute('data-algo') : null; }
+
+    function mulberry32(seed){
+        return function(){
+            seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+            var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
     }
 
-    function solveGreedyAdd() {
-        var t0 = performance.now();
-        var data = getData();
-        var n = data.sites.length;
-        var open = [];
-
-        for (var step = 0; step < currentP; step++) {
-            var bestSite = -1, bestCost = Infinity;
-            for (var i = 0; i < n; i++) {
-                if (open.indexOf(i) >= 0) continue;
-                var trial = open.concat([i]);
-                var ev = evalSolution(trial, data);
-                if (ev.totalWD < bestCost) { bestCost = ev.totalWD; bestSite = i; }
-            }
-            open.push(bestSite);
+    function buildScenario(n, seed){
+        var rand = mulberry32(seed);
+        var hoods = [];
+        for (var i = 0; i < n; i++) {
+            var angle = (i / n) * Math.PI * 2 + rand() * 0.6;
+            var radius = 60 + rand() * 160;
+            hoods.push({
+                x: 410 + Math.cos(angle) * radius + (rand() - 0.5) * 30,
+                y: 220 + Math.sin(angle) * radius * 0.78 + (rand() - 0.5) * 30,
+                students: Math.round(50 + rand() * 350),
+                name: 'N' + (i + 1)
+            });
         }
-
-        var result = evalSolution(open, data);
-        return { name: 'Greedy Add', totalWD: result.totalWD, openSet: result.openSet, assignments: result.assignments, time: performance.now() - t0 };
+        return hoods;
     }
 
-    function solveGreedySwap() {
-        var t0 = performance.now();
-        var data = getData();
-        var n = data.sites.length;
+    function dist(a, b) { var dx = a.x - b.x, dy = a.y - b.y; return Math.sqrt(dx*dx + dy*dy); }
 
-        var addResult = solveGreedyAdd();
-        var open = addResult.openSet.slice();
-        var bestCost = addResult.totalWD;
-
-        var improved = true;
-        var maxIter = 100;
-        var iter = 0;
-        while (improved && iter < maxIter) {
-            improved = false;
-            iter++;
-            for (var oi = 0; oi < open.length; oi++) {
-                for (var ci = 0; ci < n; ci++) {
-                    if (open.indexOf(ci) >= 0) continue;
-                    var trial = open.slice();
-                    trial[oi] = ci;
-                    var ev = evalSolution(trial, data);
-                    if (ev.totalWD < bestCost - 1e-9) {
-                        bestCost = ev.totalWD;
-                        open = trial;
-                        improved = true;
-                    }
+    function totalWeightedDistance(hoods, sites, capOn) {
+        var totalStudents = 0; hoods.forEach(function(h){ totalStudents += h.students; });
+        var cap = capOn ? (totalStudents * 1.2 / sites.length) : Infinity;
+        var assigned = new Array(hoods.length).fill(-1);
+        var schoolLoad = new Array(sites.length).fill(0);
+        // Assign each hood to nearest open school with remaining capacity
+        hoods.forEach(function(h, i){
+            var order = sites.map(function(s, si){ return { si: si, d: dist(h, hoods[s]) }; });
+            order.sort(function(a, b){ return a.d - b.d; });
+            for (var k = 0; k < order.length; k++) {
+                if (schoolLoad[order[k].si] + h.students <= cap) {
+                    assigned[i] = order[k].si;
+                    schoolLoad[order[k].si] += h.students;
+                    break;
                 }
             }
+            if (assigned[i] === -1) {
+                // Fallback: assign to nearest regardless of capacity (teaching demo; flag in results)
+                assigned[i] = order[0].si;
+                schoolLoad[order[0].si] += h.students;
+            }
+        });
+        var total = 0, maxD = 0;
+        hoods.forEach(function(h, i){
+            var d = dist(h, hoods[sites[assigned[i]]]);
+            total += h.students * d;
+            if (d > maxD) maxD = d;
+        });
+        return { total: total, maxD: maxD, assigned: assigned, schoolLoad: schoolLoad };
+    }
+
+    function greedyPMed(hoods, p, capOn) {
+        var n = hoods.length;
+        var sites = [];
+        for (var step = 0; step < p; step++) {
+            var bestI = -1, bestTotal = Infinity;
+            for (var i = 0; i < n; i++) {
+                if (sites.indexOf(i) !== -1) continue;
+                var trial = sites.concat([i]);
+                var m = totalWeightedDistance(hoods, trial, capOn);
+                if (m.total < bestTotal) { bestTotal = m.total; bestI = i; }
+            }
+            if (bestI === -1) break;
+            sites.push(bestI);
         }
-
-        var result = evalSolution(open, data);
-        return { name: 'Greedy Swap (Teitz-Bart)', totalWD: result.totalWD, openSet: result.openSet, assignments: result.assignments, time: performance.now() - t0 };
+        return sites;
     }
 
-    function solveRandom() {
-        var t0 = performance.now();
-        var data = getData();
-        var n = data.sites.length;
-        var trials = 500;
-        var bestCost = Infinity;
-        var bestOpen = [];
-
-        for (var t = 0; t < trials; t++) {
-            var indices = [];
-            for (var i = 0; i < n; i++) indices.push(i);
-            // Fisher-Yates shuffle
-            for (var k = indices.length - 1; k > 0; k--) {
-                var j = Math.floor(Math.random() * (k + 1));
-                var tmp = indices[k]; indices[k] = indices[j]; indices[j] = tmp;
-            }
-            var open = indices.slice(0, currentP);
-            var ev = evalSolution(open, data);
-            if (ev.totalWD < bestCost) {
-                bestCost = ev.totalWD;
-                bestOpen = open.slice();
+    function teitzBart(hoods, p, capOn) {
+        var sites = greedyPMed(hoods, p, capOn);
+        var improved = true; var iter = 0;
+        while (improved && iter < 20) {
+            improved = false; iter++;
+            var currBest = totalWeightedDistance(hoods, sites, capOn).total;
+            for (var k = 0; k < sites.length; k++) {
+                for (var j = 0; j < hoods.length; j++) {
+                    if (sites.indexOf(j) !== -1) continue;
+                    var trial = sites.slice();
+                    trial[k] = j;
+                    var val = totalWeightedDistance(hoods, trial, capOn).total;
+                    if (val < currBest - 0.001) { sites = trial; currBest = val; improved = true; break; }
+                }
+                if (improved) break;
             }
         }
-
-        var result = evalSolution(bestOpen, data);
-        return { name: 'Random (500 trials)', totalWD: result.totalWD, openSet: result.openSet, assignments: result.assignments, time: performance.now() - t0 };
+        return sites;
     }
 
-    function renderSiteTable() {
-        var data = getData();
-        var tbody = document.getElementById('siteBody');
-        var rows = [];
-        data.sites.forEach(function(s) {
-            rows.push('<tr>' +
-                '<td style="font-family:Inter,sans-serif;color:var(--ivory);font-weight:500;">' + s.name + '</td>' +
-                '<td>' + s.loc + '</td>' +
-                '<td>$' + s.cost + 'M</td></tr>');
-        });
-        tbody.textContent = '';
-        tbody.insertAdjacentHTML('beforeend', rows.join(''));
-    }
-
-    function renderZoneTable() {
-        var data = getData();
-        var tbody = document.getElementById('zoneBody');
-        var rows = [];
-        data.zones.forEach(function(z) {
-            rows.push('<tr>' +
-                '<td style="font-family:Inter,sans-serif;color:var(--ivory);font-weight:500;">' + z.name + '</td>' +
-                '<td>' + z.weight + '</td>' +
-                '<td>' + z.households + '</td></tr>');
-        });
-        tbody.textContent = '';
-        tbody.insertAdjacentHTML('beforeend', rows.join(''));
-    }
-
-    function updateConfigSummary() {
-        var data = getData();
-        document.getElementById('configSummary').textContent =
-            data.sites.length + ' Sites \u00b7 ' + data.zones.length + ' Zones \u00b7 p=' + currentP;
-    }
-
-    function clearResults() {
-        var tbody = document.getElementById('results-table').querySelector('tbody');
-        tbody.textContent = '';
-        var td = document.createElement('td');
-        td.setAttribute('colspan', '4');
-        td.style.cssText = 'text-align:center;color:var(--slate);font-family:Inter,sans-serif;';
-        td.textContent = 'Click Solve & Compare All Algorithms';
-        var tr = document.createElement('tr');
-        tr.appendChild(td);
-        tbody.appendChild(tr);
-        document.getElementById('dispatch-output').textContent = 'Assignment details will appear here after solving.';
-        document.getElementById('costDisplay').style.display = 'none';
-        document.getElementById('bizPanel').style.display = 'none';
-        document.getElementById('solver-status').textContent = 'Ready. Click "Solve & Compare All Algorithms" to run.';
-        lastResults = null;
-        drawMap(null);
-    }
-
-    window.loadScenario = function(key) {
-        currentScenario = key;
-        var data = getData();
-        currentP = data.defaultP;
-        var slider = document.getElementById('pSlider');
-        slider.max = 4;
-        slider.value = currentP;
-        document.getElementById('pVal').textContent = currentP;
-        renderSiteTable();
-        renderZoneTable();
-        updateConfigSummary();
-        clearResults();
-        document.querySelectorAll('.scenario-btn').forEach(function(btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-scenario') === key);
-        });
-    };
-
-    window.selectAlgo = function(algo) {
-        selectedAlgo = algo;
-        document.querySelectorAll('.algo-chip[data-algo]').forEach(function(btn) {
-            btn.classList.toggle('active', btn.getAttribute('data-algo') === algo);
-        });
-    };
-
-    var pSlider = document.getElementById('pSlider');
-    if (pSlider) {
-        pSlider.addEventListener('input', function() {
-            currentP = parseInt(pSlider.value);
-            document.getElementById('pVal').textContent = currentP;
-            updateConfigSummary();
-        });
-    }
-
-    window.solveLocation = function() {
-        var results = [solveGreedyAdd(), solveGreedySwap(), solveRandom()];
-        results.sort(function(a, b) { return a.totalWD - b.totalWD; });
-        lastResults = results;
-        var best = results[0];
-
-        var costDisplay = document.getElementById('costDisplay');
-        costDisplay.style.display = 'block';
-        document.getElementById('costValue').textContent = best.totalWD.toFixed(1);
-        document.getElementById('costSub').textContent =
-            best.name + ' \u00b7 ' + best.openSet.length + ' schools opened';
-
-        document.getElementById('bizPanel').style.display = 'grid';
-        var data = getData();
-        var totalStudents = data.zones.reduce(function(s, z) { return s + z.weight; }, 0);
-        var busCostPerKm = 420;
-        document.getElementById('bizBusCost').textContent = '$' + busCostPerKm;
-        document.getElementById('bizStudents').textContent = totalStudents.toLocaleString();
-
-        var tbody = document.getElementById('results-table').querySelector('tbody');
-        tbody.textContent = '';
-        results.forEach(function(r, i) {
-            var tr = document.createElement('tr');
-            var td1 = document.createElement('td'); td1.className = 'algo-label'; td1.textContent = r.name;
-            var td2 = document.createElement('td'); td2.textContent = r.totalWD.toFixed(1); if (i === 0) td2.className = 'best-val';
-            var td3 = document.createElement('td'); td3.textContent = r.openSet.length + '/' + data.sites.length;
-            var td4 = document.createElement('td'); td4.textContent = r.time < 1 ? r.time.toFixed(2) + ' ms' : (r.time / 1000).toFixed(3) + ' s';
-            tr.appendChild(td1); tr.appendChild(td2); tr.appendChild(td3); tr.appendChild(td4);
-            tr.addEventListener('click', (function(res) { return function() { showResult(res); }; })(r));
-            tbody.appendChild(tr);
-        });
-
-        showResult(best);
-
-        var statusParts = ['Solved with ' + results.length + ' algorithms.'];
-        statusParts.push('Best: ' + best.name + ' (wt. dist. = ' + best.totalWD.toFixed(1) + ').');
-        var avgD = 0;
-        best.assignments.forEach(function(si, j) { avgD += dist(data.sites[si], data.zones[j]); });
-        avgD /= data.zones.length;
-        statusParts.push('Avg distance per child: ' + avgD.toFixed(3) + '.');
-        document.getElementById('solver-status').textContent = statusParts.join(' ');
-    };
-
-    function showResult(result) {
-        startAnimation(result);
-        var data = getData();
-        var lines = ['=== ' + result.name + ' ===', ''];
-        lines.push('Open schools (' + result.openSet.length + '):');
-        result.openSet.forEach(function(i) {
-            var s = data.sites[i];
-            lines.push('  \u2713 ' + pad(s.name, 22) + '  ' + s.loc);
-        });
-        lines.push('');
-        lines.push('Assignments:');
-        var totalWD = 0;
-        data.zones.forEach(function(z, j) {
-            var si = result.assignments[j];
-            var s = data.sites[si];
-            var d = dist(s, z);
-            var wd = z.weight * d;
-            totalWD += wd;
-            lines.push('  ' + pad(z.name, 8) + ' (students=' + pad(String(z.weight), 4) + ') \u2192 ' + pad(s.name, 22) + '  dist=' + d.toFixed(3) + '  wd=' + wd.toFixed(1));
-        });
-        lines.push('');
-        lines.push('Total weighted distance: ' + totalWD.toFixed(1));
-        var avgD = 0;
-        result.assignments.forEach(function(si, j) { avgD += dist(data.sites[si], data.zones[j]); });
-        avgD /= data.zones.length;
-        lines.push('Average distance per child: ' + avgD.toFixed(3));
-        document.getElementById('dispatch-output').textContent = lines.join('\n');
-    }
-
-    function pad(s, n) {
-        s = String(s);
-        while (s.length < n) s += ' ';
-        return s;
-    }
-
-    function startAnimation(result) {
-        if (animFrame) cancelAnimationFrame(animFrame);
-        animPhase = 0;
-        var duration = 60;
-        (function tick() {
-            animPhase++;
-            drawMap(result, Math.min(animPhase / duration, 1));
-            if (animPhase < duration) {
-                animFrame = requestAnimationFrame(tick);
-            }
-        })();
-    }
-
-    function drawMap(result, progress) {
-        if (typeof progress === 'undefined') progress = 1;
-        var canvas = document.getElementById('mapCanvas');
+    function draw(hoods, sites, result) {
+        var canvas = document.getElementById('slCanvas');
         var ctx = canvas.getContext('2d');
         var W = canvas.width, H = canvas.height;
-        ctx.clearRect(0, 0, W, H);
+        ctx.clearRect(0, 0, W, H); ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
+        ctx.strokeStyle = 'rgba(197,160,89,0.04)'; ctx.lineWidth = 0.5;
+        for (var g = 0; g < W; g += 40) { ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, H); ctx.stroke(); }
+        for (var g2 = 0; g2 < H; g2 += 40) { ctx.beginPath(); ctx.moveTo(0, g2); ctx.lineTo(W, g2); ctx.stroke(); }
 
-        var pd = { top: 40, right: 40, bottom: 40, left: 40 };
-        var cW = W - pd.left - pd.right, cH = H - pd.top - pd.bottom;
-
-        ctx.fillStyle = 'rgba(10,25,47,0.3)';
-        ctx.fillRect(0, 0, W, H);
-
-        var data = getData();
-
-        // Grid
-        ctx.strokeStyle = 'rgba(197,160,89,0.06)';
-        ctx.lineWidth = 1;
-        for (var g = 0; g <= 10; g++) {
-            var gx = pd.left + (g / 10) * cW;
-            ctx.beginPath(); ctx.moveTo(gx, pd.top); ctx.lineTo(gx, pd.top + cH); ctx.stroke();
-            var gy = pd.top + (g / 10) * cH;
-            ctx.beginPath(); ctx.moveTo(pd.left, gy); ctx.lineTo(pd.left + cW, gy); ctx.stroke();
-        }
-
-        // Assignment lines with animation
-        if (result) {
-            data.zones.forEach(function(z, j) {
-                var si = result.assignments[j];
-                var s = data.sites[si];
-                var sx = pd.left + s.x * cW, sy = pd.top + s.y * cH;
-                var zx = pd.left + z.x * cW, zy = pd.top + z.y * cH;
-
-                var endX = sx + (zx - sx) * progress;
-                var endY = sy + (zy - sy) * progress;
-
-                var alpha = 0.15 + 0.15 * (z.weight / 1200);
-                ctx.strokeStyle = 'rgba(197,160,89,' + alpha + ')';
-                ctx.lineWidth = 1 + (z.weight / 1200) * 1.5;
-                ctx.setLineDash([4, 4]);
-                ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(endX, endY); ctx.stroke();
-                ctx.setLineDash([]);
+        // Assignment lines
+        if (result && result.assigned) {
+            var palette = ['#C5A059', '#7aa2f7', '#64ffda', '#bb9af7', '#f2d06b', '#ff9e6b'];
+            hoods.forEach(function(h, i){
+                var schoolSi = result.assigned[i];
+                if (schoolSi < 0) return;
+                var s = hoods[sites[schoolSi]];
+                ctx.strokeStyle = palette[schoolSi % palette.length];
+                ctx.lineWidth = 1;
+                ctx.globalAlpha = 0.35;
+                ctx.beginPath(); ctx.moveTo(h.x, h.y); ctx.lineTo(s.x, s.y); ctx.stroke();
+                ctx.globalAlpha = 1;
             });
         }
 
-        // Draw candidate sites as squares
-        data.sites.forEach(function(s, i) {
-            var sx = pd.left + s.x * cW, sy = pd.top + s.y * cH;
-            var size = 12;
-            var isOpen = result && result.openSet.indexOf(i) >= 0;
-
-            if (isOpen) {
-                ctx.shadowColor = 'rgba(212,175,55,0.6)';
-                ctx.shadowBlur = 16;
-            }
-
-            ctx.fillStyle = isOpen ? SITE_OPEN.fill : SITE_CLOSED.fill;
-            ctx.strokeStyle = isOpen ? SITE_OPEN.stroke : SITE_CLOSED.stroke;
-            ctx.lineWidth = isOpen ? 2.5 : 1.5;
-            ctx.fillRect(sx - size, sy - size, size * 2, size * 2);
-            ctx.strokeRect(sx - size, sy - size, size * 2, size * 2);
-
-            ctx.shadowColor = 'transparent';
-            ctx.shadowBlur = 0;
-
-            // School icon inside square
-            if (isOpen) {
-                ctx.fillStyle = '#F8F9FA';
-                ctx.font = '10px "Font Awesome 6 Free"';
-                ctx.textAlign = 'center';
-                ctx.textBaseline = 'middle';
-                ctx.fillText('\uf549', sx, sy);
-            }
-
-            ctx.fillStyle = isOpen ? '#F8F9FA' : 'rgba(136,146,176,0.6)';
-            ctx.font = '9px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'alphabetic';
-            ctx.fillText(s.name, sx, sy - size - 6);
-        });
-
-        // Draw demand zones as circles sized by student count
-        data.zones.forEach(function(z) {
-            var zx = pd.left + z.x * cW, zy = pd.top + z.y * cH;
-            var r = Math.max(5, Math.sqrt(z.weight / 30));
-
-            ctx.beginPath();
-            ctx.arc(zx, zy, r, 0, Math.PI * 2);
-            ctx.fillStyle = ZONE_COLOR.fill;
+        // Hood dots
+        hoods.forEach(function(h, i){
+            var sz = 3 + (h.students / 400) * 5;
+            ctx.beginPath(); ctx.arc(h.x, h.y, sz, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(168,178,209,0.55)';
             ctx.fill();
-            ctx.strokeStyle = ZONE_COLOR.stroke;
-            ctx.lineWidth = 1.5;
-            ctx.stroke();
-
-            ctx.fillStyle = 'rgba(168,178,209,0.8)';
-            ctx.font = '8px Inter, sans-serif';
-            ctx.textAlign = 'center';
-            ctx.fillText(z.name, zx, zy + r + 12);
-            ctx.font = '8px JetBrains Mono, monospace';
-            ctx.fillText(z.weight + ' students', zx, zy + r + 22);
+            ctx.strokeStyle = 'rgba(168,178,209,0.7)';
+            ctx.lineWidth = 1; ctx.stroke();
+            ctx.fillStyle = '#8892B0';
+            ctx.font = '9px JetBrains Mono, monospace'; ctx.textAlign = 'center';
+            ctx.fillText(h.name, h.x, h.y - sz - 5);
         });
 
-        // Title
-        ctx.fillStyle = 'rgba(197,160,89,0.8)';
-        ctx.font = '13px Inter, sans-serif';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'alphabetic';
-        ctx.fillText(result ? 'p-Median Solution (p=' + result.openSet.length + ')' : 'Candidate Sites & Demand Zones', W / 2, 24);
-
-        // Legend
-        var lx = pd.left, ly = H - 14;
-        ctx.font = '10px Inter, sans-serif';
-        ctx.textBaseline = 'alphabetic';
-
-        ctx.fillStyle = SITE_OPEN.fill;
-        ctx.fillRect(lx, ly - 8, 12, 12);
-        ctx.strokeStyle = SITE_OPEN.stroke;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(lx, ly - 8, 12, 12);
-        ctx.fillStyle = 'rgba(136,146,176,0.8)';
-        ctx.textAlign = 'left';
-        ctx.fillText('Open School', lx + 16, ly + 3);
-        lx += 95;
-
-        ctx.fillStyle = SITE_CLOSED.fill;
-        ctx.fillRect(lx, ly - 8, 12, 12);
-        ctx.strokeStyle = SITE_CLOSED.stroke;
-        ctx.strokeRect(lx, ly - 8, 12, 12);
-        ctx.fillStyle = 'rgba(136,146,176,0.8)';
-        ctx.fillText('Closed', lx + 16, ly + 3);
-        lx += 65;
-
-        ctx.beginPath();
-        ctx.arc(lx + 5, ly - 2, 5, 0, Math.PI * 2);
-        ctx.fillStyle = ZONE_COLOR.fill;
-        ctx.fill();
-        ctx.strokeStyle = ZONE_COLOR.stroke;
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(136,146,176,0.8)';
-        ctx.fillText('Demand Zone (size = students)', lx + 16, ly + 3);
-    }
-
-    // Fade-in observer
-    var observer = new IntersectionObserver(function(entries) {
-        entries.forEach(function(e) { if (e.isIntersecting) e.target.classList.add('visible'); });
-    }, { threshold: 0.1 });
-    document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
-
-    // Initialize
-    loadScenario('urban');
-})();
-</script>
-
-<div class="scroll-progress" id="scrollProgress"></div>
-<button class="scroll-top-btn" id="scrollTopBtn" aria-label="Scroll to top"><i class="fas fa-chevron-up" aria-hidden="true"></i></button>
-
-<div class="cmd-palette-overlay" id="cmdPalette">
-    <div class="cmd-palette">
-        <div class="cmd-input-wrap">
-            <i class="fas fa-search" aria-hidden="true"></i>
-            <input class="cmd-input" id="cmdInput" type="text" placeholder="Search problems, algorithms, pages..." autocomplete="off" spellcheck="false">
-            <span class="cmd-kbd">ESC</span>
-        </div>
-        <div class="cmd-results" id="cmdResults"></div>
-        <div class="cmd-footer">
-            <div class="cmd-footer-keys">
-                <span><kbd class="cmd-kbd">&uarr;&darr;</kbd> navigate</span>
-                <span><kbd class="cmd-kbd">&crarr;</kbd> open</span>
-            </div>
-            <span>Search across all problems</span>
-        </div>
-    </div>
-</div>
-<script>
-(function() {
-    'use strict';
-
-    var themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        var saved = localStorage.getItem('or-theme') || 'dark';
-        if (saved === 'light') document.documentElement.setAttribute('data-theme', 'light');
-        themeToggle.addEventListener('click', function() {
-            var isLight = document.documentElement.getAttribute('data-theme') === 'light';
-            var t = isLight ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', t);
-            localStorage.setItem('or-theme', t);
-        });
-    }
-    if (localStorage.getItem('or-theme') === 'light') document.documentElement.setAttribute('data-theme', 'light');
-
-    var SEARCH_DATA = [
-        { title: 'Continuous Optimization', subtitle: 'LP, QP', icon: 'fa-wave-square', url: 'families/continuous.html', group: 'Families', badge: 'Family' },
-        { title: 'Store Location', subtitle: 'p-Median \u00b7 Retail', icon: 'fa-store', url: 'applications/store-location.html', group: 'Applications', badge: 'Demo' },
-        { title: 'School Location', subtitle: 'p-Median \u00b7 Education', icon: 'fa-school', url: 'applications/school-location.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Power Plant Siting', subtitle: 'Facility Location \u00b7 Energy', icon: 'fa-industry', url: 'applications/energy-plant-siting.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Warehouse Packing', subtitle: 'Bin Packing', icon: 'fa-warehouse', url: 'applications/warehouse-packing.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Delivery Routing', subtitle: 'CVRP', icon: 'fa-truck', url: 'applications/delivery-routing.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Investment Portfolio', subtitle: 'Robust Portfolio', icon: 'fa-chart-pie', url: 'applications/portfolio.html', group: 'Applications', badge: 'Demo' },
-        { title: 'Crop Selection', subtitle: 'LP \u00b7 Agriculture', icon: 'fa-seedling', url: 'applications/crop-selection.html', group: 'Applications', badge: 'Demo' },
-    ];
-
-    var depth = (window.location.pathname.match(/families\/|applications\//)) ? '../' : '';
-    var overlay = document.getElementById('cmdPalette');
-    var input = document.getElementById('cmdInput');
-    var resultsDiv = document.getElementById('cmdResults');
-    var activeIdx = -1;
-
-    function openPalette() { overlay.classList.add('open'); input.value = ''; input.focus(); renderResults(''); activeIdx = -1; }
-    function closePalette() { overlay.classList.remove('open'); activeIdx = -1; }
-
-    function renderResults(query) {
-        var q = query.toLowerCase();
-        var filtered = SEARCH_DATA.filter(function(it) {
-            return !q || it.title.toLowerCase().indexOf(q) >= 0 || it.subtitle.toLowerCase().indexOf(q) >= 0;
-        });
-        if (!filtered.length) { resultsDiv.textContent = 'No results found'; return; }
-        var groups = {};
-        filtered.forEach(function(it) { if (!groups[it.group]) groups[it.group] = []; groups[it.group].push(it); });
-        var frag = document.createDocumentFragment();
-        ['Families','Applications'].forEach(function(g) {
-            if (!groups[g]) return;
-            var lbl = document.createElement('div'); lbl.className = 'cmd-group-label'; lbl.textContent = g; frag.appendChild(lbl);
-            groups[g].forEach(function(it) {
-                var a = document.createElement('a'); a.className = 'cmd-result'; a.href = depth + it.url;
-                var icon = document.createElement('div'); icon.className = 'cmd-icon';
-                var ic = document.createElement('i'); ic.className = 'fas ' + it.icon; icon.appendChild(ic);
-                var info = document.createElement('div'); info.className = 'cmd-info';
-                var ttl = document.createElement('div'); ttl.className = 'cmd-title'; ttl.textContent = it.title;
-                var sub = document.createElement('div'); sub.className = 'cmd-subtitle'; sub.textContent = it.subtitle;
-                info.appendChild(ttl); info.appendChild(sub);
-                var badge = document.createElement('span'); badge.className = 'cmd-badge'; badge.textContent = it.badge;
-                a.appendChild(icon); a.appendChild(info); a.appendChild(badge);
-                frag.appendChild(a);
+        // School sites
+        if (sites) {
+            sites.forEach(function(idx, si){
+                var s = hoods[idx];
+                ctx.beginPath();
+                // square marker (distinct from fire-station triangles)
+                ctx.fillStyle = '#C5A059';
+                ctx.fillRect(s.x - 9, s.y - 9, 18, 18);
+                ctx.strokeStyle = '#0A192F'; ctx.lineWidth = 2;
+                ctx.strokeRect(s.x - 9, s.y - 9, 18, 18);
+                ctx.fillStyle = '#0A192F';
+                ctx.font = 'bold 11px Inter, sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('S' + (si + 1), s.x, s.y + 4);
             });
-        });
-        resultsDiv.textContent = '';
-        resultsDiv.appendChild(frag);
+        }
     }
 
-    if (input) input.addEventListener('input', function() { renderResults(input.value); activeIdx = -1; });
+    function renderResults(hoods, sites, result, algName, capOn) {
+        var el = document.getElementById('slResults');
+        while (el.firstChild) el.removeChild(el.firstChild);
+        var tbl = document.createElement('table'); tbl.className = 'results-table';
+        var thead = document.createElement('thead'); var hr = document.createElement('tr');
+        ['Metric', 'Value'].forEach(function(h){ var th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
+        thead.appendChild(hr); tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        function row(label, val) { var tr = document.createElement('tr'); var t1 = document.createElement('td'); t1.textContent = label; tr.appendChild(t1); var t2 = document.createElement('td'); t2.textContent = val; t2.className = 'highlight'; tr.appendChild(t2); tbody.appendChild(tr); }
 
-    document.addEventListener('keydown', function(e) {
-        if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); overlay.classList.contains('open') ? closePalette() : openPalette(); return; }
-        if (!overlay.classList.contains('open')) return;
-        if (e.key === 'Escape') { closePalette(); return; }
-        var items = resultsDiv.querySelectorAll('.cmd-result');
-        if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx+1, items.length-1); items.forEach(function(r,i){r.classList.toggle('active',i===activeIdx);}); }
-        else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx-1,0); items.forEach(function(r,i){r.classList.toggle('active',i===activeIdx);}); }
-        else if (e.key === 'Enter' && activeIdx >= 0 && items[activeIdx]) { e.preventDefault(); items[activeIdx].click(); }
+        var totalStudents = 0; hoods.forEach(function(h){ totalStudents += h.students; });
+        row('Neighbourhoods', hoods.length);
+        row('Total students', totalStudents.toLocaleString());
+        row('Schools opened', sites.length);
+        row('Students per school (avg)', Math.round(totalStudents / sites.length).toLocaleString());
+        row('Total weighted distance', Math.round(result.total).toLocaleString());
+        row('Average distance per student', (result.total / totalStudents).toFixed(1));
+        row('Max distance any student travels', Math.round(result.maxD));
+        row('Algorithm', algName);
+        row('Capacity constraint', capOn ? 'On (1.2 × avg)' : 'Off');
+        tbl.appendChild(tbody);
+        el.appendChild(tbl);
+    }
+
+    function setStatus(el, algName, avgD, maxD, capOn) {
+        while (el.firstChild) el.removeChild(el.firstChild);
+        var s = document.createElement('strong'); s.textContent = 'Solved.'; el.appendChild(s);
+        el.appendChild(document.createTextNode(' ' + algName + '. Avg student-distance '));
+        var s2 = document.createElement('strong'); s2.textContent = avgD.toFixed(1); el.appendChild(s2);
+        el.appendChild(document.createTextNode(', worst '));
+        var s3 = document.createElement('strong'); s3.textContent = Math.round(maxD); el.appendChild(s3);
+        el.appendChild(document.createTextNode('. ' + (capOn ? 'Capacity on — some hoods assigned to non-nearest school. ' : '') + 'Switch algorithm or toggle capacity to compare.'));
+    }
+
+    document.getElementById('slSolve').addEventListener('click', function(){
+        var scenario = selectedChip('slScenarios');
+        var alg = selectedChip('slAlg');
+        var capOn = selectedChip('slCap') === 'on';
+        var p = parseInt(document.getElementById('slP').value, 10);
+        var n = scenario === 'small' ? 12 : scenario === 'medium' ? 18 : 24;
+        var seed = 42 + n * 3 + p + (alg === 'teitz' ? 100 : 0) + (capOn ? 500 : 0);
+        var hoods = buildScenario(n, seed);
+        var sites = alg === 'greedy' ? greedyPMed(hoods, p, capOn) : teitzBart(hoods, p, capOn);
+        var result = totalWeightedDistance(hoods, sites, capOn);
+        draw(hoods, sites, result);
+        var algName = alg === 'greedy' ? 'Greedy add (myopic)' : 'Teitz-Bart interchange';
+        renderResults(hoods, sites, result, algName, capOn);
+        var totalStudents = 0; hoods.forEach(function(h){ totalStudents += h.students; });
+        setStatus(document.getElementById('slStatus'), algName, result.total / totalStudents, result.maxD, capOn);
     });
 
-    if (overlay) overlay.addEventListener('click', function(e) { if (e.target === overlay) closePalette(); });
-    var st = document.getElementById('navSearchTrigger');
-    if (st) st.addEventListener('click', openPalette);
-
-    // Particles
-    var heroEl = document.querySelector('.hero');
-    if (heroEl) {
-        var cvs = document.createElement('canvas');
-        cvs.className = 'hero-particles';
-        heroEl.insertBefore(cvs, heroEl.firstChild);
-        var pctx = cvs.getContext('2d');
-        var parts = [];
-        function rsz() { cvs.width = heroEl.offsetWidth; cvs.height = heroEl.offsetHeight; }
-        rsz(); window.addEventListener('resize', rsz);
-        for (var i = 0; i < 40; i++) parts.push({ x: Math.random()*cvs.width, y: Math.random()*cvs.height, vx: (Math.random()-0.5)*0.4, vy: (Math.random()-0.5)*0.4, r: Math.random()*2+1 });
-        (function anim() {
-            pctx.clearRect(0,0,cvs.width,cvs.height);
-            parts.forEach(function(p) {
-                p.x += p.vx; p.y += p.vy;
-                if (p.x<0||p.x>cvs.width) p.vx*=-1;
-                if (p.y<0||p.y>cvs.height) p.vy*=-1;
-                pctx.beginPath(); pctx.arc(p.x,p.y,p.r,0,Math.PI*2); pctx.fillStyle='rgba(197,160,89,0.35)'; pctx.fill();
-            });
-            for (var i=0;i<parts.length;i++) for (var j=i+1;j<parts.length;j++) {
-                var dx=parts[i].x-parts[j].x, dy=parts[i].y-parts[j].y, d=Math.sqrt(dx*dx+dy*dy);
-                if (d<120) { pctx.beginPath(); pctx.moveTo(parts[i].x,parts[i].y); pctx.lineTo(parts[j].x,parts[j].y); pctx.strokeStyle='rgba(197,160,89,'+(0.12*(1-d/120))+')'; pctx.lineWidth=0.6; pctx.stroke(); }
-            }
-            requestAnimationFrame(anim);
-        })();
-    }
-
-    // Scroll progress
-    var pb = document.getElementById('scrollProgress');
-    var stb = document.getElementById('scrollTopBtn');
-    window.addEventListener('scroll', function() {
-        var s = window.scrollY, h = document.documentElement.scrollHeight - window.innerHeight;
-        if (pb) pb.style.width = (h>0?(s/h)*100:0)+'%';
-        if (stb) stb.classList.toggle('visible', s>400);
-    }, { passive: true });
-    if (stb) stb.addEventListener('click', function() { window.scrollTo({top:0,behavior:'smooth'}); });
+    (function initial(){
+        var hoods = buildScenario(12, 42 + 36 + 3);
+        draw(hoods, null, null);
+    })();
 })();
 </script>
 </body>

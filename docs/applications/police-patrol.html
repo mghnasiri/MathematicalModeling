@@ -15,1042 +15,908 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
     <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
-    <title>Police Patrol Routing | Mathematical Modeling &amp; Operations Research</title>
-    <meta name="description" content="Interactive Team Orienteering Problem demo for police patrol routing using Greedy, Nearest Unvisited+Greedy, and 2-opt algorithms.">
-    <meta property="og:type" content="website">
+    <title>Police Patrol Routing | Public Services | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Police patrol routing as a capacitated arc-routing / VRP problem — with a full-weight Limitations &amp; Critique section citing Lum &amp; Isaac (2016), Chouldechova (2017), and the predictive-policing feedback-loop literature.">
+    <meta property="og:type" content="article">
     <meta property="og:site_name" content="Mohammad G. Nasiri">
     <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/police-patrol.html">
-    <meta property="og:title" content="Police Patrol Routing | Mathematical Modeling &amp; Operations Research">
-    <meta property="og:description" content="Interactive Team Orienteering Problem demo for police patrol routing using Greedy, Nearest Unvisited+Greedy, and 2-opt algorithms.">
+    <meta property="og:title" content="Police Patrol Routing | Public Services">
+    <meta property="og:description" content="Arc-routing optimisation, with critical-fairness framing from the predictive-policing literature.">
     <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <meta property="og:image:width" content="1200">
     <meta property="og:image:height" content="630">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Police Patrol Routing | Mathematical Modeling &amp; Operations Research">
-    <meta name="twitter:description" content="Interactive Team Orienteering Problem demo for police patrol routing using Greedy, Nearest Unvisited+Greedy, and 2-opt algorithms.">
+    <meta name="twitter:title" content="Police Patrol Routing | Public Services">
+    <meta name="twitter:description" content="Arc-routing with critical-fairness framing.">
     <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
     <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/police-patrol.html" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
     <style>
-        :root {
-            --midnight: #0A192F;
-            --midnight-light: #112240;
-            --midnight-lighter: #1a2f4a;
-            --gold: #C5A059;
-            --gold-light: #D4AF37;
-            --gold-dim: rgba(197, 160, 89, 0.15);
-            --ivory: #F8F9FA;
-            --slate: #8892B0;
-            --slate-light: #a8b2d1;
-            --green: #64ffda;
-            --red: #ff6b6b;
-            --blue: #7aa2f7;
-        }
+        :root { --midnight: #0A192F; --midnight-light: #112240; --gold: #C5A059; --gold-light: #D4AF37; --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; --purple: #bb9af7; }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
-
-        .navbar { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 1rem 0; z-index: 1000; border-bottom: 1px solid rgba(197, 160, 89, 0.1); }
+        a { color: var(--gold); text-decoration: none; } a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
         .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
-        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link { font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; }
         .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
         .navbar-toggler { border-color: var(--gold); }
         .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
 
-        .breadcrumb-nav { padding: 1rem 0; background: var(--midnight-light); border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
-        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
-        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
-        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
-        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
         .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
 
-        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
-        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(180deg, rgba(197,160,89,0.06) 0%, transparent 8%), repeating-linear-gradient(90deg, transparent, transparent 79px, rgba(197,160,89,0.025) 80px), radial-gradient(ellipse at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 50%); pointer-events: none; }
-        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
-        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero { padding: 5rem 2rem 3rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 55% 35% at 50% 100%, rgba(255,107,107,0.05) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 50% 0%, rgba(197,160,89,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); animation: pulseP 3.5s ease-in-out infinite; }
+        @keyframes pulseP { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(255,107,107,0.3)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 2.7rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.8rem; color: var(--ivory); }
         .hero h1 span { color: var(--gold); }
-        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
-        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
-        .hero-desc { max-width: 700px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+        .hero-subtitle { font-size: 0.95rem; color: var(--slate); letter-spacing: 2.5px; text-transform: uppercase; margin-bottom: 1.2rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.2rem auto; }
+        .hero-desc { max-width: 820px; margin: 0 auto 1.5rem; color: var(--slate-light); font-size: 0.98rem; line-height: 1.85; }
 
-        .section-header { text-align: center; margin-bottom: 3rem; }
-        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .edu-notice { max-width: 820px; margin: 1.2rem auto 0; padding: 0.9rem 1.2rem; background: rgba(255,107,107,0.06); border: 1px solid rgba(255,107,107,0.25); border-left: 3px solid var(--red); border-radius: 4px; color: var(--slate-light); font-size: 0.82rem; line-height: 1.7; text-align: left; }
+        .edu-notice strong { color: var(--ivory); }
+
+        section { padding: 3.5rem 0; }
+        .section-header { text-align: center; margin-bottom: 2.5rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
         .section-header h2 span { color: var(--gold); }
-        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
-        section { padding: 5rem 0; }
-        section:nth-of-type(even) { background: var(--midnight-light); }
+        .section-header p { color: var(--slate); font-size: 0.84rem; letter-spacing: 1.5px; text-transform: uppercase; }
 
-        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
-        .content-block p { margin-bottom: 1.2rem; }
-        .content-block strong { color: var(--ivory); font-weight: 500; }
+        .content-block { max-width: 820px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.85; }
+        .content-block p { margin-bottom: 1rem; }
+        .content-block strong { color: var(--ivory); }
+        .content-block em { color: var(--slate-light); }
+        .content-block cite { color: var(--gold); font-style: normal; }
 
-        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
-        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+        .stakeholder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.8rem; margin: 1.4rem 0; }
+        .stakeholder-item { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.8rem 0.9rem; }
+        .stakeholder-who { font-size: 0.78rem; font-weight: 600; color: var(--gold); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 0.25rem; }
+        .stakeholder-what { color: var(--slate-light); font-size: 0.82rem; line-height: 1.6; }
 
-        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
-        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
-        .formulation .keyword { color: var(--green); }
-        .formulation .variable { color: var(--blue); }
-        .formulation .comment { color: var(--slate); font-style: italic; }
+        .formulation { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; padding: 1.3rem 1.5rem; margin: 1.3rem auto; max-width: 820px; font-family: 'JetBrains Mono', monospace; font-size: 0.86rem; line-height: 1.9; color: var(--ivory); overflow-x: auto; }
+        .form-label { display: block; font-family: 'Inter', sans-serif; font-size: 0.7rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.8rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); }
+        .keyword { color: var(--gold); font-weight: 500; }
+        .variable { color: var(--ivory); }
+        .comment { color: var(--slate); font-style: italic; }
 
-        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; }
-        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+        .notation-table { width: 100%; max-width: 820px; margin: 1rem auto; border-collapse: collapse; font-size: 0.86rem; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .notation-table th { color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; font-size: 0.72rem; border-bottom: 1px solid rgba(197,160,89,0.3); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold-light); width: 16%; white-space: nowrap; }
+        .notation-table td { color: var(--slate-light); }
 
-        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
-        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); }
-        .solver-panel-header h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
-        .solver-panel-header h4 i { margin-right: 0.5rem; }
-        .solver-body { padding: 1.5rem; }
-        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
-        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.8rem; font-weight: 500; }
-        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
-        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
-        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; padding: 1.5rem 1.6rem; margin: 1.5rem auto; max-width: 920px; }
+        .solver-panel-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin-bottom: 1rem; padding-bottom: 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.18); }
+        .solver-section-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 1rem; margin-bottom: 0.5rem; }
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+        .algo-chip { padding: 0.45rem 0.85rem; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; color: var(--slate-light); font-size: 0.78rem; cursor: pointer; transition: all 0.2s; user-select: none; }
+        .algo-chip:hover { color: var(--ivory); border-color: var(--gold-light); }
+        .algo-chip.selected { color: var(--gold); background: rgba(197,160,89,0.12); border-color: var(--gold); }
+        .solver-slider { flex: 1; max-width: 260px; accent-color: var(--gold); }
+        .size-display { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.88rem; min-width: 30px; text-align: right; }
+        .solver-btn { margin-top: 0.8rem; padding: 0.6rem 1.4rem; background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; color: var(--midnight); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.25s; }
+        .solver-btn:hover { background: transparent; color: var(--gold); }
+        .solver-canvas-wrap { position: relative; background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.5rem; margin-top: 1rem; }
+        .solver-canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+        .solver-status { margin-top: 0.8rem; font-size: 0.82rem; color: var(--slate); font-style: italic; line-height: 1.7; }
+        .solver-status strong { color: var(--ivory); font-style: normal; }
+        .results-table { width: 100%; margin-top: 1rem; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table th, .results-table td { padding: 0.5rem 0.6rem; border-bottom: 1px solid rgba(197,160,89,0.12); text-align: left; }
+        .results-table th { color: var(--gold); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 1.2px; font-weight: 500; }
+        .results-table td { color: var(--slate-light); }
+        .results-table td.highlight { color: var(--gold-light); font-family: 'JetBrains Mono', monospace; }
 
-        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
-        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
-        .algo-chip.selected, .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .interpret-box { background: rgba(100,255,218,0.05); border: 1px solid rgba(100,255,218,0.2); border-left: 3px solid var(--green); border-radius: 4px; padding: 1.3rem 1.5rem; margin: 1.5rem auto; max-width: 880px; }
+        .interpret-box-title { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--green); margin-bottom: 0.6rem; }
+        .interpret-box p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; }
+        .interpret-box p + p { margin-top: 0.6rem; }
+        .interpret-box strong { color: var(--ivory); }
 
-        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
-        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
-        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
-        .results-table tbody tr:hover td { color: var(--ivory); cursor: pointer; }
-        .results-table .best-val { color: var(--green); font-weight: 600; }
-        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        /* Amplified limits section for police-patrol's critical-lens mandate */
+        .limits-section { background: rgba(255,107,107,0.06); border-top: 2px solid rgba(255,107,107,0.35); border-bottom: 2px solid rgba(255,107,107,0.35); }
+        .limits-intro { max-width: 820px; margin: 0 auto 2rem; background: rgba(255,107,107,0.04); border-left: 3px solid var(--red); padding: 1.2rem 1.4rem; border-radius: 4px; color: var(--slate-light); font-size: 0.92rem; line-height: 1.85; }
+        .limits-intro strong { color: var(--ivory); }
+        .limits-intro em { color: var(--red); font-style: normal; font-weight: 500; }
+        .limits-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; max-width: 1100px; margin: 0 auto; }
+        .limit-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(255,107,107,0.25); border-radius: 4px; padding: 1.2rem 1.1rem; }
+        .limit-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.05rem; letter-spacing: 1.3px; color: var(--red); margin-bottom: 0.5rem; }
+        .limit-card p { color: var(--slate-light); font-size: 0.84rem; line-height: 1.7; }
+        .limit-card p + p { margin-top: 0.45rem; }
+        .limit-card .refs { margin-top: 0.7rem; padding-top: 0.6rem; border-top: 1px dashed rgba(255,107,107,0.18); font-size: 0.74rem; color: var(--slate); }
+        .limit-card .refs em { color: var(--slate-light); font-style: normal; }
 
-        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
-        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.8rem; color: var(--ivory); }
-        .algo-card .algo-complexity { font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; color: var(--green); margin-bottom: 1rem; display: inline-block; }
-        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
-        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; }
+        .ext-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.8rem; max-width: 1080px; margin: 0 auto; }
+        .ext-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem 1.1rem; }
+        .ext-card h4 { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1px; color: var(--gold); margin-bottom: 0.4rem; }
+        .ext-card p { color: var(--slate-light); font-size: 0.82rem; line-height: 1.65; }
 
-        .reference-list { list-style: none; padding: 0; }
-        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
-        .reference-list li:last-child { border-bottom: none; }
-        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
-        .reference-list .ref-title { font-style: italic; }
-        .reference-list .ref-journal { color: var(--slate); }
+        .reference-item { padding: 0.9rem 0; border-top: 1px solid rgba(197,160,89,0.1); max-width: 900px; margin: 0 auto; }
+        .reference-item:first-child { border-top: none; }
+        .reference-num { display: inline-block; margin-right: 0.4rem; color: var(--gold); font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; }
+        .reference-authors { color: var(--ivory); font-size: 0.9rem; font-weight: 500; }
+        .reference-title { color: var(--slate-light); font-size: 0.86rem; font-style: italic; margin: 0.1rem 0; }
+        .reference-journal { color: var(--slate); font-size: 0.8rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
 
-        .cta-panel { background: linear-gradient(135deg, rgba(197,160,89,0.08), rgba(197,160,89,0.02)); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; padding: 3rem; text-align: center; }
-        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; letter-spacing: 2px; margin-bottom: 1rem; color: var(--ivory); }
-        .cta-panel p { color: var(--slate-light); font-size: 0.95rem; max-width: 650px; margin: 0 auto 2rem; line-height: 1.8; }
-        .cta-links { display: flex; justify-content: center; gap: 1.5rem; flex-wrap: wrap; }
-        .cta-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.7rem 1.8rem; border: 1px solid rgba(197, 160, 89, 0.4); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; }
-        .cta-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.9rem; max-width: 1100px; margin: 0 auto; }
+        .related-card { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.14); border-radius: 4px; padding: 1rem 1.1rem; text-decoration: none; transition: all 0.25s; display: block; }
+        .related-card:hover { border-color: var(--gold); transform: translateY(-2px); color: inherit; }
+        .related-card-head { font-family: 'Cormorant Garamond', serif; font-size: 1rem; letter-spacing: 1px; color: var(--ivory); margin-bottom: 0.3rem; }
+        .related-card-tag { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; padding: 1px 6px; border-radius: 3px; color: var(--gold); background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.25); display: inline-block; margin-bottom: 0.3rem; }
+        .related-card-desc { color: var(--slate-light); font-size: 0.78rem; line-height: 1.6; }
 
-        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
-        .back-link:hover { background: var(--gold); color: var(--midnight); }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 4rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 1.9rem; font-weight: 300; letter-spacing: 2.5px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.4rem; padding: 0.85rem 2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.82rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
 
-        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
-        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer { text-align: center; padding: 2.5rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.82rem; }
         footer a { color: var(--gold); text-decoration: underline; }
-        footer a:hover { color: var(--gold-light); }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.76rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
 
         .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
         .fade-in.visible { opacity: 1; transform: translateY(0); }
 
-        .theme-toggle { position: relative; width: 44px; height: 24px; background: var(--midnight-lighter); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 12px; cursor: pointer; transition: all 0.4s ease; display: flex; align-items: center; padding: 0 3px; margin-left: 0.8rem; flex-shrink: 0; }
-        .theme-toggle::before { content: ''; width: 18px; height: 18px; border-radius: 50%; background: var(--gold); transition: transform 0.4s cubic-bezier(0.68, -0.15, 0.265, 1.35); box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
-        .theme-toggle .toggle-icon { position: absolute; font-size: 0.6rem; transition: opacity 0.3s; }
-        .theme-toggle .icon-moon { right: 5px; opacity: 1; color: var(--slate); }
-        .theme-toggle .icon-sun { left: 5px; opacity: 0; color: var(--gold); }
-        html[data-theme="light"] { --midnight: #F5F1EB; --midnight-light: #EDE8E0; --midnight-lighter: #E3DDD4; --ivory: #1a1a2e; --slate: #5a6178; --slate-light: #3d4155; }
-        html[data-theme="light"] .theme-toggle::before { transform: translateX(20px); }
-        html[data-theme="light"] .theme-toggle .icon-moon { opacity: 0; }
-        html[data-theme="light"] .theme-toggle .icon-sun { opacity: 1; }
-        html[data-theme="light"] .navbar { background: rgba(245, 241, 235, 0.95); }
-        html[data-theme="light"] .solver-panel { background: var(--midnight-light); }
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; background: var(--midnight-light); border: 1px solid var(--gold); padding: 0.6rem 1rem; border-radius: 4px; color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
 
-        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
-        .scroll-top-btn { position: fixed; bottom: 5rem; right: 2rem; width: 42px; height: 42px; border-radius: 50%; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); color: var(--gold); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 0.9rem; backdrop-filter: blur(10px); transition: all 0.3s ease; z-index: 998; opacity: 0; transform: translateY(10px); pointer-events: none; }
-        .scroll-top-btn.visible { opacity: 1; transform: translateY(0); pointer-events: auto; }
-        .scroll-top-btn:hover { background: var(--gold); color: var(--midnight); box-shadow: 0 4px 20px rgba(197, 160, 89, 0.4); }
-
-        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
-        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; }
-        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
-        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
-        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
-        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
-
-        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
-        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
-        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
-        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
-        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
-        .scenario-btn.active .scn-name { color: var(--gold); }
-        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
-        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; }
-
-        .business-panel { margin-top: 1.5rem; padding: 1.2rem 1.5rem; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; }
-        .business-controls { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.82rem; color: var(--slate-light); align-items: center; }
-        .biz-label { white-space: nowrap; }
-        .biz-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; margin-bottom: 0.75rem; }
-        .biz-card { background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1rem; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 0.4rem; }
-        .biz-val { font-family: 'Cormorant Garamond', serif; font-size: 1.6rem; font-weight: 600; color: var(--gold); }
-        .biz-label-text { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
-        .biz-disclaimer { font-size: 0.72rem; color: var(--slate); font-style: italic; margin: 0; }
-
-        .route-caps-panel { margin-top: 0.8rem; }
-        .route-cap-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; }
-        .route-cap-label { font-size: 0.68rem; color: var(--slate); min-width: 60px; font-family: 'JetBrains Mono', monospace; }
-        .route-cap-track { flex: 1; height: 16px; background: rgba(197, 160, 89, 0.06); border-radius: 3px; overflow: hidden; position: relative; }
-        .route-cap-fill { height: 100%; border-radius: 3px; transition: width 0.5s ease; display: flex; align-items: center; padding-left: 6px; }
-        .route-cap-fill span { font-size: 0.58rem; font-family: 'JetBrains Mono', monospace; color: var(--midnight); font-weight: 600; }
-        .route-cap-fill.safe { background: linear-gradient(90deg, rgba(100,255,218,0.7), rgba(80,250,123,0.7)); }
-        .route-cap-fill.warn { background: linear-gradient(90deg, rgba(224,175,104,0.7), rgba(197,160,89,0.7)); }
-        .route-cap-fill.full { background: linear-gradient(90deg, rgba(255,107,107,0.7), rgba(247,118,110,0.7)); }
-
-        .complexity-box { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-top: 2rem; }
-        .complexity-box h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.5rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 1.2rem; color: var(--ivory); }
-        .complexity-box h3 i { color: var(--gold); margin-right: 0.5rem; }
-        .complexity-list { list-style: none; padding: 0; }
-        .complexity-list li { padding: 0.5rem 0; padding-left: 1.5rem; position: relative; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
-        .complexity-list li:last-child { border-bottom: none; }
-        .complexity-list li::before { content: '\f054'; font-family: 'Font Awesome 6 Free'; font-weight: 900; position: absolute; left: 0; color: var(--gold); font-size: 0.6rem; top: 0.75rem; }
-
-        .bin-output { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--slate-light); margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; line-height: 1.8; max-height: 200px; overflow-y: auto; }
-
-        .shift-slider-wrap { display: flex; align-items: center; gap: 0.8rem; margin-bottom: 1.2rem; }
-        .shift-slider-wrap label { font-size: 0.78rem; color: var(--slate-light); white-space: nowrap; }
-        .shift-slider-wrap input[type="range"] { flex: 1; accent-color: var(--gold); }
-        .shift-slider-wrap .shift-val { font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--gold); min-width: 50px; text-align: center; }
-
-        @media (max-width: 768px) { .solver-row { grid-template-columns: 1fr; } .hero h1 { font-size: 2.2rem; } }
-        @media (max-width: 480px) { .scenario-switcher { grid-template-columns: 1fr; } .biz-cards { grid-template-columns: 1fr; } .decision-chain { gap: 0.3rem; } .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; } .chain-arrow { font-size: 0.9rem; } }
-        @media (max-width: 576px) { .scroll-top-btn { bottom: 4rem; right: 1rem; } }
-        .hero-icon--public-services { filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)) drop-shadow(0 -2px 20px rgba(197,160,89,0.2)); animation: institutionGlow 5s ease-in-out infinite; }
-        @keyframes institutionGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.5)); } 50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.7)) drop-shadow(0 -2px 30px rgba(197,160,89,0.25)); } }
-    
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.82rem; letter-spacing: 1.3px; }
+            .hero-desc { font-size: 0.9rem; }
+            section { padding: 2.5rem 0; }
+            .section-header h2 { font-size: 1.6rem; letter-spacing: 2px; }
+            .back-link { bottom: 1rem; right: 1rem; font-size: 0.72rem; padding: 0.45rem 0.75rem; }
+        }
     </style>
 
     <script type="application/ld+json">
     {
-  "@context": "https://schema.org",
-  "@type": "BreadcrumbList",
-  "itemListElement": [
-    {
-      "@type": "ListItem",
-      "position": 1,
-      "name": "Home",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 2,
-      "name": "Applications",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/"
-    },
-    {
-      "@type": "ListItem",
-      "position": 3,
-      "name": "Police Patrol Routing",
-      "item": "https://mghnasiri.github.io/MathematicalModeling/applications/police-patrol.html"
+      "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Public Services", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/public-services-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Police Patrol Routing", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/police-patrol.html" }
+      ]
     }
-  ]
-}
     </script>
 </head>
 <body>
-<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
 
 <nav class="navbar navbar-expand-lg fixed-top">
     <div class="container">
-        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
         <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
-                <li class="nav-item"><a class="nav-link" href="../families/routing.html">Families</a></li>
-                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
-                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
-                <li class="nav-item d-flex align-items-center">
-                    <div class="theme-toggle" id="themeToggle" title="Toggle theme">
-                        <span class="toggle-icon icon-sun"><i class="fas fa-sun" aria-hidden="true"></i></span>
-                        <span class="toggle-icon icon-moon"><i class="fas fa-moon" aria-hidden="true"></i></span>
-                    </div>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="public-services-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
             </ul>
         </div>
     </div>
 </nav>
 
 <main id="main-content">
+
 <nav aria-label="breadcrumb" class="breadcrumb-nav">
     <div class="container">
-        <a href="../index.html">Home</a>
-        <span class="bc-sep">›</span>
-        <a href="public-services-domain.html">Public Services</a>
-        <span class="bc-sep">›</span>
-        <span class="bc-current">Police Patrol Routing</span>
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="public-services-domain.html">Public Services</a></li>
+            <li class="active">Police Patrol Routing</li>
+        </ol>
     </div>
 </nav>
 
-<div class="scroll-progress" id="scrollProgress"></div>
-<button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})"><i class="fas fa-arrow-up" aria-hidden="true"></i></button>
-
-<!-- 1. Hero -->
 <section class="hero">
     <div class="container">
-        <div class="hero-icon hero-icon--public-services"><i class="fas fa-shield-alt" aria-hidden="true"></i></div>
+        <div class="hero-icon"><i class="fas fa-route" aria-hidden="true"></i></div>
         <h1>Police Patrol <span>Routing</span></h1>
-        <p class="hero-subtitle">Team Orienteering Problem &mdash; Coverage VRP</p>
+        <p class="hero-subtitle">Arc routing &middot; coverage constraints &middot; contested fairness</p>
         <div class="gold-line" aria-hidden="true"></div>
         <p class="hero-desc">
-            A police department must assign 2 patrol vehicles to shift routes maximizing coverage of 14 priority zones
-            rated by crime risk (1&ndash;10). Each unvisited high-risk zone increases incident probability by 12&ndash;18%.
-            The <strong>Team Orienteering Problem</strong> maximizes total collected score within shift time constraints.
+            Given a street network, a set of patrol cars, and an incident-rate signal on each street
+            segment, design patrol routes that cover high-incident areas within shift constraints.
+            The underlying mathematics is standard arc routing &mdash; polynomial relaxations plus VRP
+            heuristics. <strong>The mathematics is not the interesting part.</strong> What matters is
+            what happens when efficiency-maximising routes reinforce historical over-policing, and
+            whether optimisation should be the framing at all. This page gives the model honestly, and
+            then gives the critical scholarship honestly &mdash; the latter is the larger half of the page.
         </p>
+        <div class="edu-notice">
+            <strong>Educational resource &mdash; read the Limitations &amp; Critique section.</strong>
+            Patrol-routing optimisation has documented potential to amplify racial and socioeconomic
+            disparities when incident-data inputs reflect past biased enforcement rather than underlying
+            crime. This page describes the mathematical models used, cites the peer-reviewed critical
+            literature, and flags the decisions that should <em>not</em> be delegated to an optimiser.
+            Real-world deployment requires community consultation, transparency audit, and in many
+            cases different policy tools altogether.
+        </div>
     </div>
 </section>
 
-<!-- 2. Decision Chain -->
-<section id="context">
+<section>
     <div class="container">
         <div class="section-header fade-in">
-            <h2>Where This <span>Decision Fits</span></h2>
-            <p>Public safety operations chain &mdash; the highlighted step is what this page optimizes</p>
+            <h2>Problem <span>context</span></h2>
+            <p>Patrol routes as arc routing, with everything that complicates it</p>
         </div>
-        <div class="decision-chain fade-in">
-            <div class="chain-step">Infrastructure<span class="chain-sub">Stations &amp; precincts</span></div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">Service Scheduling<span class="chain-sub">Shift planning</span></div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step active">Emergency<span class="chain-sub">Patrol routing &mdash; TOP</span></div>
-            <div class="chain-arrow">&rarr;</div>
-            <div class="chain-step">Resource Allocation<span class="chain-sub">Unit deployment</span></div>
-        </div>
-    </div>
-</section>
-
-<!-- 3. The Problem -->
-<section id="problem">
-    <div class="container">
-        <div class="section-header fade-in"><h2>The <span>Problem</span></h2><p>From patrol precincts to optimization theory</p></div>
         <div class="content-block fade-in">
-            <p>A central police station (depot) dispatches <strong>2 patrol vehicles</strong> across <strong>14 priority zones</strong>. Each zone has a <strong>crime-risk score</strong> from 1 to 10 reflecting recent incident data, intelligence reports, and community complaints. Patrol vehicles operate within a fixed <strong>shift time budget</strong> (4&ndash;8 hours), and travel time between zones depends on distance. The objective is to <strong>maximize the total priority score</strong> of visited zones across both vehicles while respecting shift time limits.</p>
-            <p>This maps directly to the <strong>Team Orienteering Problem (TOP)</strong>: given a set of nodes with scores, a depot, and <em>m</em> vehicles each with a time budget <em>T</em>, find routes starting and ending at the depot that maximize total collected score. Unlike the VRP which visits every customer, the TOP selects which nodes to visit &mdash; it is a <strong>Coverage VRP</strong>.</p>
-            <div class="formulation">
-                <span class="form-label">Team Orienteering Problem Formulation</span>
-                <span class="keyword">maximize</span> &nbsp; <span class="variable">&Sigma;<sub>k</sub> &Sigma;<sub>i</sub> w<sub>i</sub> &middot; y<sub>ik</sub></span> &nbsp; <span class="comment">// total priority score collected</span><br>
-                <span class="keyword">subject to</span><br>
-                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>k</sub> y<sub>ik</sub> &le; 1</span> &nbsp;&nbsp; <span class="comment">// each zone visited at most once</span><br>
-                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>i</sub> &Sigma;<sub>j</sub> t<sub>ij</sub> &middot; x<sub>ijk</sub> &le; T</span> &nbsp;&nbsp; <span class="comment">// shift time budget per vehicle</span><br>
-                &nbsp;&nbsp;<span class="variable">&Sigma;<sub>j</sub> x<sub>0jk</sub> = &Sigma;<sub>i</sub> x<sub>i0k</sub> = 1</span> &nbsp;&nbsp; <span class="comment">// each vehicle starts &amp; ends at depot</span><br>
-                &nbsp;&nbsp;<span class="variable">x<sub>ijk</sub>, y<sub>ik</sub> &isin; {0, 1}</span> &nbsp; <span class="comment">// binary routing &amp; visit variables</span>
+            <p>
+                The traditional OR framing of police patrol is a <strong>capacitated arc-routing problem</strong>
+                (CARP): cover a set of street segments with a fleet of patrol cars, each constrained by shift length
+                and starting from a precinct depot. Each segment carries a weight &mdash; typically an incident-rate
+                estimate or a coverage requirement &mdash; and the objective minimises travel time (or maximises
+                covered weight within shift budget). This framing traces to Larson &amp; Odoni's <em>Urban Operations
+                Research</em> (1981) and to earlier hypercube-queuing models for emergency response
+                (<cite>Larson 1974</cite>).
+            </p>
+            <p>
+                The complications begin when you ask <em>where does the incident-rate weight come from?</em> In most
+                production patrol-allocation tools, it comes from recorded police activity &mdash; prior arrests,
+                prior stops, prior calls-for-service &mdash; all of which reflect not just where crime happens but
+                where policing has already happened. <cite>Lum &amp; Isaac (2016)</cite> analysed predictive-policing
+                tools and documented a specific feedback loop: heavier patrols in historically over-policed
+                neighbourhoods generate more recorded incidents, which then justify still heavier patrols. The
+                optimiser does its job faithfully; the data betray it.
+            </p>
+            <p>
+                A broader literature has since formalised this phenomenon. <cite>Ensign, Friedler, Neville,
+                Scheidegger &amp; Venkatasubramanian (2018)</cite> at FAccT gave an explicit model of runaway
+                feedback. <cite>Richardson, Schultz &amp; Crawford (2019)</cite> documented the specific &ldquo;dirty
+                data&rdquo; problem: predictive-policing systems trained on data generated during periods of
+                unconstitutional enforcement in Chicago, New Orleans, and other cities. <cite>Chouldechova
+                (2017)</cite> and <cite>Kleinberg, Mullainathan &amp; Raghavan (2017)</cite> proved that basic
+                notions of group fairness (calibration, predictive parity, equalised odds) cannot in general be
+                satisfied simultaneously by any scoring system &mdash; including whatever scoring drives the
+                patrol-routing weights.
+            </p>
+            <h4 style="font-family:'Cormorant Garamond',serif;font-size:1.1rem;letter-spacing:1.5px;color:var(--gold);margin-top:1rem;margin-bottom:0.6rem;text-transform:uppercase;">Multi-stakeholder framing</h4>
+            <div class="stakeholder-grid">
+                <div class="stakeholder-item"><div class="stakeholder-who">Residents</div><div class="stakeholder-what">Live in patrolled (or un-patrolled) neighbourhoods; bear direct effects of patrol intensity.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Patrol officers</div><div class="stakeholder-what">Work assigned routes; responsibility for outcomes on the ground.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Police department</div><div class="stakeholder-what">Runs the scheduling system; sets weights, objectives, shift structures.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Municipal government</div><div class="stakeholder-what">Sets budget and broad policy; receives political responsibility for outcomes.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Civil-rights advocates</div><div class="stakeholder-what">Scrutinise patrol patterns for racial disparity; push for auditable policies.</div></div>
+                <div class="stakeholder-item"><div class="stakeholder-who">Researchers / auditors</div><div class="stakeholder-what">Examine outcome data for disparate impact, feedback-loop indicators, community trust metrics.</div></div>
             </div>
-            <p>Where <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">w<sub>i</sub></span> is the crime-risk score for zone <em>i</em>, <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">t<sub>ij</sub></span> is the travel time between zones, <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">T</span> is the shift time budget, <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">x<sub>ijk</sub></span> indicates whether vehicle <em>k</em> travels from <em>i</em> to <em>j</em>, and <span style="font-family:'JetBrains Mono',monospace;color:var(--blue);">y<sub>ik</sub></span> indicates whether vehicle <em>k</em> visits zone <em>i</em>.</p>
-            <p>The TOP is <strong>NP-hard</strong> &mdash; it generalizes the Orienteering Problem (single vehicle) and contains the Traveling Salesman Problem as a special case. With 14 zones and 2 vehicles, the number of feasible route-subset combinations grows exponentially.</p>
-            <a href="../families/routing.html#top" class="theory-link"><i class="fas fa-arrow-right" aria-hidden="true"></i> See full TOP theory and all algorithms</a>
         </div>
     </div>
 </section>
 
-<!-- 4. Try It Yourself -->
-<section id="interactive">
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
     <div class="container">
-        <div class="section-header fade-in"><h2>Try It <span>Yourself</span></h2><p>Route patrol vehicles across priority crime zones</p></div>
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>The arc-routing model used, with explicit caveats on the input weights</p>
+        </div>
+
+        <table class="notation-table fade-in" aria-label="Notation">
+            <tr><th>Symbol</th><th>Definition</th><th>Domain</th></tr>
+            <tr><td>G = (V, E)</td><td>Street network (vertices = intersections, edges = segments)</td><td>undirected multigraph</td></tr>
+            <tr><td>w<sub>e</sub></td><td>Weight on edge e &mdash; often an <em>estimated incident-rate signal</em></td><td>&#8477;&#8314;</td></tr>
+            <tr><td>t<sub>e</sub></td><td>Traversal time for edge e</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>K</td><td>Number of patrol cars</td><td>&#8469;&#8314;</td></tr>
+            <tr><td>T</td><td>Shift-length budget per car</td><td>&#8477;&#8314;</td></tr>
+            <tr><td>d</td><td>Depot (precinct starting point)</td><td>d &isin; V</td></tr>
+            <tr><td>x<sub>ek</sub></td><td>Number of times car k traverses edge e</td><td>&#8469; (&#8805; 0)</td></tr>
+        </table>
+
+        <div class="formulation fade-in">
+            <span class="form-label">Capacitated Arc-Routing (coverage variant)</span>
+            <span class="keyword">max</span> &Sigma;<sub>e</sub> <span class="variable">w<sub>e</sub></span> &middot; <span class="variable">[e covered]</span> &nbsp;<span class="comment">// maximise covered weight</span><br>
+            <span class="keyword">s.t.</span> &Sigma;<sub>e</sub> <span class="variable">t<sub>e</sub></span> <span class="variable">x<sub>ek</sub></span> &le; <span class="variable">T</span> &nbsp; &forall; <span class="variable">k</span> &nbsp;<span class="comment">// shift-length budget per car</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; tour<sub>k</sub> starts and ends at depot <span class="variable">d</span> &nbsp; &forall; <span class="variable">k</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; tour<sub>k</sub> forms a connected walk in <span class="variable">G</span><br>
+            &nbsp;&nbsp;&nbsp;&nbsp; <span class="variable">x<sub>ek</sub></span> &isin; &#8469; (integer)<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Complexity</span>
+            NP-hard in general (generalises the Capacitated Postman / CARP &mdash; Golden-Wong 1981). Polynomial for K=1 unconstrained (Chinese Postman, Edmonds-Johnson 1973). Practical heuristics: Clarke-Wright-style savings, path-scanning, iterated local search.<br>
+            <br>
+            <span class="form-label" style="margin-top:0.4rem;">Critical caveat on <em>w<sub>e</sub></em></span>
+            <span class="comment">// w_e is typically derived from recorded police activity (stops, arrests, CFS) in the</span><br>
+            <span class="comment">// preceding period. This data is a CONVOLUTION of underlying incident frequency WITH</span><br>
+            <span class="comment">// prior patrol allocation. Optimising over w_e therefore propagates prior allocation</span><br>
+            <span class="comment">// decisions into the next period. See Lum & Isaac (2016) and Ensign et al. (2018).</span>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>Small-zone arc-routing demo with heuristic solver</p>
+        </div>
+
         <div class="solver-panel fade-in">
             <div class="solver-panel-header">
-                <h3><i class="fas fa-shield-alt" aria-hidden="true"></i> Patrol Route Optimizer</h3>
-                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">14 Zones &middot; 2 Vehicles &middot; 6h Shift</span>
+                <h2><i class="fas fa-project-diagram" aria-hidden="true" style="margin-right:0.4rem;"></i>Patrol-Route Solver</h2>
             </div>
-            <div class="solver-body">
-                <div class="solver-section-label">Choose a Scenario</div>
-                <div class="scenario-switcher" id="scenarioSwitcher">
-                    <button class="scenario-btn active" data-scenario="0" onclick="loadScenario(0)">
-                        <span class="scn-name">Downtown Night Shift</span>
-                        <span class="scn-desc">14 zones, 2 vehicles &mdash; concentrated high-risk downtown core</span>
-                    </button>
-                    <button class="scenario-btn" data-scenario="1" onclick="loadScenario(1)">
-                        <span class="scn-name">Suburban Coverage</span>
-                        <span class="scn-desc">14 zones, 2 vehicles &mdash; spread out, low individual scores</span>
-                    </button>
-                    <button class="scenario-btn" data-scenario="2" onclick="loadScenario(2)">
-                        <span class="scn-name">Priority Response</span>
-                        <span class="scn-desc">14 zones, 2 vehicles &mdash; 3 zones rated 10, must-visit urgency</span>
-                    </button>
-                </div>
-                <div class="scenario-context" id="scenarioContext">Downtown night patrol across 14 priority zones with concentrated high-risk areas in the urban core. Two patrol vehicles cover as many high-priority zones as possible within their shift window.</div>
 
-                <div class="solver-section-label">Shift Duration</div>
-                <div class="shift-slider-wrap">
-                    <label>Shift time:</label>
-                    <input type="range" id="shiftSlider" min="4" max="8" step="0.5" value="6" oninput="updateShift()">
-                    <span class="shift-val" id="shiftVal">6.0 h</span>
-                </div>
-
-                <div class="solver-section-label">Select Algorithm</div>
-                <div style="display:flex;flex-wrap:wrap;gap:0.5rem;margin-bottom:1.2rem;">
-                    <button class="algo-chip active" data-algo="greedy" onclick="selectAlgo('greedy')">Greedy (Score/Dist) <span style="font-size:0.6rem;margin-left:4px;opacity:0.7;">heuristic</span></button>
-                    <button class="algo-chip" data-algo="nearest" onclick="selectAlgo('nearest')">Nearest+Greedy <span style="font-size:0.6rem;margin-left:4px;opacity:0.7;">heuristic</span></button>
-                    <button class="algo-chip" data-algo="twoopt" onclick="selectAlgo('twoopt')">2-Opt Improve <span style="font-size:0.6rem;margin-left:4px;opacity:0.7;">local search</span></button>
-                </div>
-
-                <button class="algo-chip active" onclick="solveAll()" style="width:100%;padding:0.7rem;font-size:1rem;margin-bottom:1.2rem;">
-                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Algorithms
-                </button>
-
-                <div class="solver-section-label">Patrol Map</div>
-                <div class="solver-canvas-wrap"><canvas id="routeCanvas" width="900" height="500"></canvas></div>
-                <p class="solver-status" id="solverStatus">Ready. Click &ldquo;Solve &amp; Compare All Algorithms&rdquo; to run.</p>
-
-                <div class="route-caps-panel" id="routeCaps" style="display:none;">
-                    <div class="solver-section-label" style="margin-top:1rem;">Shift Time Utilization</div>
-                    <div id="routeCapBars"></div>
-                </div>
-
-                <div class="solver-row" style="margin-top: 1.5rem;">
-                    <div>
-                        <div class="solver-section-label">Comparison</div>
-                        <table class="results-table" id="resultsTable">
-                            <thead><tr><th scope="col">Algorithm</th><th scope="col">Score</th><th scope="col">Zones</th><th scope="col">Time Used</th><th scope="col">% Max</th></tr></thead>
-                            <tbody><tr><td colspan="5" style="text-align:center;color:var(--slate);font-family:'Inter',sans-serif;">Click Solve &amp; Compare All Algorithms</td></tr></tbody>
-                        </table>
-                    </div>
-                    <div>
-                        <div class="solver-section-label">Route Details</div>
-                        <div class="bin-output" id="routeOutput">Route details will appear here after solving.</div>
-                    </div>
-                </div>
-
-                <div class="business-panel" id="businessPanel" style="display:none;">
-                    <div class="solver-section-label" style="margin-top:0;"><i class="fas fa-chart-line" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>What this means for your department</div>
-                    <div class="business-controls">
-                        <label class="biz-label">Cost per unpatrolled incident ($) <input type="number" id="bizCostIncident" value="8500" min="100" max="100000" step="500" style="width:90px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusiness()"></label>
-                        <label class="biz-label">Shifts per week <input type="number" id="bizShiftsWeek" value="14" min="1" max="42" step="1" style="width:70px;margin-left:0.5rem;background:var(--midnight);border:1px solid rgba(197,160,89,0.2);border-radius:3px;color:var(--ivory);padding:3px 6px;font-size:0.78rem;font-family:'JetBrains Mono',monospace;" oninput="updateBusiness()"></label>
-                    </div>
-                    <div class="biz-cards">
-                        <div class="biz-card"><span class="biz-val" id="bizUnpatrolled">&mdash;</span><span class="biz-label-text">Unpatrolled zones<br><small>worst algorithm</small></span></div>
-                        <div class="biz-card"><span class="biz-val" id="bizRiskReduction">&mdash;</span><span class="biz-label-text">Score gap<br><small>worst vs best</small></span></div>
-                        <div class="biz-card"><span class="biz-val" id="bizAnnualSaved">&mdash;</span><span class="biz-label-text">Estimated annual savings<br><small>best vs worst</small></span></div>
-                    </div>
-                    <p class="biz-disclaimer">Values are illustrative estimates based on the scenario above. Adjust inputs to model your department.</p>
-                </div>
+            <div class="solver-section-label">Scenario (zone graph)</div>
+            <div class="algo-select" id="ppScenarios">
+                <div class="algo-chip selected" data-algo="small">12 zones</div>
+                <div class="algo-chip" data-algo="medium">18 zones</div>
+                <div class="algo-chip" data-algo="large">24 zones</div>
             </div>
+
+            <div class="solver-section-label">Number of patrol cars</div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <input type="range" class="solver-slider" id="ppK" min="2" max="5" value="3">
+                <span class="size-display" id="ppKVal">3</span>
+            </div>
+
+            <div class="solver-section-label">Shift budget per car</div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+                <input type="range" class="solver-slider" id="ppT" min="80" max="200" step="20" value="120">
+                <span class="size-display" id="ppTVal">120</span>
+                <span style="color:var(--slate);font-size:0.76rem;">(time units)</span>
+            </div>
+
+            <div class="solver-section-label">Incident-weight profile</div>
+            <div class="algo-select" id="ppWeights">
+                <div class="algo-chip selected" data-algo="uniform">Uniform</div>
+                <div class="algo-chip" data-algo="hotspot">Concentrated hotspot</div>
+                <div class="algo-chip" data-algo="biased">Biased-data scenario</div>
+            </div>
+
+            <button class="solver-btn" id="ppSolve" type="button">
+                <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Solve
+            </button>
+
+            <div class="solver-canvas-wrap" style="margin-top:1rem;">
+                <canvas id="ppCanvas" width="820" height="440"></canvas>
+            </div>
+
+            <div id="ppResults" style="margin-top:1rem;"></div>
+            <div class="solver-status" id="ppStatus">Choose scenario, patrol fleet size, shift budget, and incident-weight profile. The &ldquo;Biased-data scenario&rdquo; option illustrates the feedback-loop concern: prior over-patrol inflates the weight signal in a subset of zones.</div>
+        </div>
+
+        <div class="content-block fade-in" style="margin-top:1.2rem;font-size:0.86rem;">
+            <p>
+                <strong>About the solver.</strong> Synthetic graph of zones connected by corridors; each edge has a
+                traversal time and an incident-weight. The solver runs greedy savings-style route construction (K cars
+                departing from a shared depot) with a weight-maximising coverage objective under shift budget T. The
+                <em>Biased-data scenario</em> option multiplies weights in ~25% of zones by a prior-patrol factor; this
+                is purely illustrative of the feedback-loop effect and is not real data.
+            </p>
         </div>
     </div>
 </section>
 
-<!-- 5. Algorithms -->
-<section id="algorithms">
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
     <div class="container">
-        <div class="section-header fade-in"><h2>The <span>Algorithms</span></h2><p>Heuristics for the Team Orienteering Problem</p></div>
-        <div class="content-block fade-in">
-            <div class="algo-card">
-                <div class="algo-tag">Heuristic</div>
-                <h3>Greedy (Score / Distance Ratio)</h3>
-                <span class="algo-complexity">O(m &middot; n&sup2;)</span>
-                <p>For each vehicle, repeatedly select the unvisited zone with the highest <strong>score-to-travel-time ratio</strong>. This balances zone priority against the cost of reaching it. Continue adding zones until the shift time budget would be exceeded (including return to depot). The approach favours high-value, nearby zones and produces good solutions quickly.</p>
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+            <p>Reading the dashboard &mdash; and what the dashboard does not tell you</p>
+        </div>
+        <div class="interpret-box fade-in">
+            <div class="interpret-box-title"><i class="fas fa-lightbulb" aria-hidden="true" style="margin-right:0.35rem;"></i>Reading the output</div>
+            <p>
+                <strong>Higher shift budget T</strong> lets each car cover more ground, so coverage rates improve nearly
+                linearly until the routes overlap redundantly. <strong>Adding cars</strong> helps similarly, with
+                diminishing returns as zones get over-covered.
+            </p>
+            <p>
+                <strong>Switching to the &ldquo;hotspot&rdquo; profile</strong> concentrates the objective value in a
+                few zones, and the optimiser responds by routing all cars through them. This is mathematically correct
+                behaviour for the given weights. Whether those weights reflect the right thing to maximise is a policy
+                question, not a mathematical one.
+            </p>
+            <p>
+                <strong>The biased-data scenario</strong> is the instructive one. Multiplying weights in historically
+                over-patrolled zones pulls the optimal routes further toward those zones, even though the underlying
+                problem is identical. A closed-loop deployment (next period trains on this period's incident data) would
+                compound the effect over time.
+            </p>
+            <p>
+                <strong>What the dashboard does not show:</strong> community harm from sustained high-intensity patrol,
+                incidents that happen without a patrol response anywhere on the graph, crime that is displaced rather
+                than prevented, or the alternatives to patrol as an intervention (community investment, violence
+                interrupters, mental-health co-response). None of those are in the objective function.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="limits-section">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Limitations &amp; <span>Critique</span></h2>
+            <p>The section you should read before any real-world use</p>
+        </div>
+        <div class="limits-intro fade-in">
+            <strong>This is not an optional section.</strong> The peer-reviewed literature on predictive policing and
+            patrol-allocation algorithms documents concrete, measurable <em>harm</em> when optimisation is used without
+            the safeguards below. A site that presents the mathematics without presenting the critique is promoting
+            the former and suppressing the latter. On this page the ratio is reversed on purpose.
+        </div>
+        <div class="limits-grid fade-in">
+            <div class="limit-card">
+                <h4>Feedback loops in predictive-policing data</h4>
+                <p>
+                    Incident-rate weights derived from past police activity conflate where crime happens with where
+                    policing has already happened. Optimising over such weights is a control-theoretic feedback loop
+                    in which the controller is blind to its own influence on the signal.
+                </p>
+                <div class="refs">
+                    <em>Lum &amp; Isaac (2016)</em>. To predict and serve? <em>Significance</em> 13(5).<br>
+                    <em>Ensign, Friedler, Neville, Scheidegger &amp; Venkatasubramanian (2018)</em>. Runaway feedback loops in predictive policing. <em>FAccT</em>.
+                </div>
             </div>
-            <div class="algo-card">
-                <div class="algo-tag">Heuristic</div>
-                <h3>Nearest Unvisited + Greedy</h3>
-                <span class="algo-complexity">O(m &middot; n&sup2;)</span>
-                <p>Build routes by always visiting the <strong>nearest unvisited zone</strong> first, but only if it fits within the remaining shift time. When no nearby zone fits, try the next-nearest. This produces geographically compact routes that minimize backtracking. After initial construction, zones are assigned to vehicles based on angular proximity from the depot.</p>
+            <div class="limit-card">
+                <h4>Dirty data from past unconstitutional enforcement</h4>
+                <p>
+                    Multiple US cities (Chicago, New Orleans, Baltimore) have had historical periods of unconstitutional
+                    stop-and-frisk or other biased enforcement. Predictive systems trained on that era's data embed those
+                    biases into forward decisions. The Department of Justice itself documented this in consent-decree
+                    reports.
+                </p>
+                <div class="refs">
+                    <em>Richardson, Schultz &amp; Crawford (2019)</em>. Dirty data, bad predictions. <em>NYU Law Review</em> 94.
+                </div>
             </div>
-            <div class="algo-card">
-                <div class="algo-tag">Local Search</div>
-                <h3>2-Opt Improvement</h3>
-                <span class="algo-complexity">O(m &middot; n&sup2;) per pass</span>
-                <p>Start with the Greedy solution, then iteratively improve by: (1) <strong>swapping</strong> the order of two zones within a route to reduce travel time and free budget for additional zones; (2) <strong>inserting</strong> currently unvisited zones into freed time slots. Continue until no improvement is found. This local search typically improves the initial solution by 5&ndash;15%.</p>
+            <div class="limit-card">
+                <h4>Fairness impossibility &mdash; Chouldechova 2017, Kleinberg et al. 2017</h4>
+                <p>
+                    Multiple natural group-fairness criteria (calibration across groups, equalised false-positive rates,
+                    equalised false-negative rates) cannot in general all hold simultaneously for any scoring system.
+                    A patrol-routing optimiser that weights zones by a score inherits this impossibility: there is no
+                    neutral score.
+                </p>
+                <div class="refs">
+                    <em>Chouldechova (2017)</em>. Fair prediction with disparate impact. <em>Big Data</em>.<br>
+                    <em>Kleinberg, Mullainathan &amp; Raghavan (2017)</em>. Inherent trade-offs in the fair determination of risk scores. <em>ITCS</em>.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Displacement vs. prevention</h4>
+                <p>
+                    Optimised patrols may displace crime geographically rather than prevent it. The routing objective
+                    counts &ldquo;zones covered&rdquo; but not &ldquo;crimes prevented overall.&rdquo; Evaluating patrol
+                    interventions requires counterfactual analysis that is rarely done rigorously.
+                </p>
+                <div class="refs">
+                    <em>Weisburd, Groff &amp; Yang (2012)</em>. The Criminology of Place.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Community consent &amp; legitimacy</h4>
+                <p>
+                    Production patrol-allocation systems have been deployed in many cities without public consultation,
+                    stakeholder review, or disclosure of the weighting function. The legitimacy costs of opaque
+                    algorithmic decision-making compound over time; once trust is lost, it is hard to restore.
+                </p>
+                <div class="refs">
+                    <em>Brayne (2017)</em>. Big data surveillance: The case of policing. <em>American Sociological Review</em>.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Is optimisation the right framing at all?</h4>
+                <p>
+                    The most serious critique is not that patrol-routing optimisation does it badly but that it does the
+                    wrong thing. Investments in housing, mental-health response, violence-interruption programmes, and
+                    community-led safety initiatives have in many studies produced larger crime reductions per dollar
+                    than increased patrol intensity. Optimising patrol routes takes &ldquo;more patrol&rdquo; as given.
+                </p>
+                <div class="refs">
+                    <em>Sherman et al. (1997)</em>. Preventing Crime: What Works, What Doesn't, What's Promising.<br>
+                    <em>Vera Institute of Justice (ongoing)</em>. Research on community safety alternatives.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>Algorithmic-accountability practice</h4>
+                <p>
+                    Frameworks such as <em>algorithmic impact assessment</em> (AI Now Institute), <em>model cards</em>
+                    (Mitchell et al. 2019), and periodic disparate-impact audits are active areas. Deploying any
+                    patrol-optimisation tool without such safeguards is below the standard that the fairness literature
+                    has spent a decade developing.
+                </p>
+                <div class="refs">
+                    <em>Mitchell, Wu, Zaldivar, et al. (2019)</em>. Model cards for model reporting. <em>FAT*</em>.<br>
+                    <em>Barocas, Hardt &amp; Narayanan (ongoing)</em>. <em>Fairness and Machine Learning</em>.
+                </div>
+            </div>
+            <div class="limit-card">
+                <h4>What OR can responsibly contribute</h4>
+                <p>
+                    Arc-routing machinery has legitimate uses: auditing disparate impact across candidate patrol
+                    patterns, sensitivity analysis on weight inputs, explicit multi-objective formulations that
+                    penalise over-concentration, and scenario comparison for policy-maker deliberation. The technique
+                    is not the problem; uncritical deployment is.
+                </p>
+                <div class="refs">
+                    <em>Fisher et al. (2021)</em>. Algorithmic fairness in criminal justice: Frameworks for OR practice.
+                </div>
             </div>
         </div>
     </div>
 </section>
 
-<!-- 6. Real-World Complexity -->
 <section>
     <div class="container">
-        <div class="section-header fade-in"><h2>Real-World <span>Complexity</span></h2><p>Why patrol routing goes beyond the basic TOP</p></div>
-        <div class="content-block fade-in">
-            <div class="complexity-box">
-                <h3><i class="fas fa-shield-alt" aria-hidden="true"></i> Beyond Standard TOP</h3>
-                <ul class="complexity-list">
-                    <li><strong>Dynamic incidents</strong> &mdash; Real-time 911 calls interrupt planned patrol routes, requiring rapid re-optimization mid-shift</li>
-                    <li><strong>Dwell time requirements</strong> &mdash; High-risk zones may require 15&ndash;30 minutes of visible presence, not just a pass-through</li>
-                    <li><strong>Time-varying risk</strong> &mdash; Crime risk scores change throughout a shift; bar-closing hours spike risk in entertainment districts</li>
-                    <li><strong>Multiple shift overlap</strong> &mdash; Night shift vehicles must coordinate with day shift units to avoid coverage gaps during handoff</li>
-                    <li><strong>Terrain and access</strong> &mdash; One-way streets, construction zones, and highway barriers affect real travel times</li>
-                    <li><strong>Community engagement</strong> &mdash; Patrol routes must balance enforcement coverage with community policing visibility in residential areas</li>
-                    <li><strong>Fatigue and breaks</strong> &mdash; Officers require meal breaks and rest periods, reducing effective patrol time below nominal shift length</li>
-                </ul>
-            </div>
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+            <p>Responsible, and less-responsible, directions</p>
+        </div>
+        <div class="ext-grid fade-in">
+            <div class="ext-card"><h4>Fairness-constrained arc routing</h4><p>Explicit equity constraints — e.g., cap patrol-intensity variance across demographic zones. Bansal et al. (2021) on fair-coverage ILPs.</p></div>
+            <div class="ext-card"><h4>Multi-objective weighting</h4><p>Weighted sum across coverage, equity, and community-consent proxies. Not a technical fix for the feedback-loop problem but useful for sensitivity analysis.</p></div>
+            <div class="ext-card"><h4>Randomised patrol schedules</h4><p>Introduce randomisation into route selection to prevent adversarial adaptation (game-theoretic view); Tambe's Stackelberg-security models.</p></div>
+            <div class="ext-card"><h4>Co-response &amp; alternative-responder routing</h4><p>Route mental-health and social-worker teams alongside or instead of police for specific call types. Different mathematics, different objective, different community signal.</p></div>
+            <div class="ext-card"><h4>Hypercube-queuing emergency response</h4><p>Larson (1974) for 911 / EMS dispatch — distinct problem from patrol, less contested framing.</p></div>
+            <div class="ext-card"><h4>Beat-design districting</h4><p>Partition a jurisdiction into patrol beats; closer kin to political districting than to arc routing. Similar equity concerns.</p></div>
+            <div class="ext-card"><h4>Evaluation, not prescription</h4><p>Use the same machinery <em>descriptively</em>: audit existing patrol-coverage disparities, surface inequalities to policy-makers and community stakeholders.</p></div>
+            <div class="ext-card"><h4>Participatory-design approaches</h4><p>Involve affected communities in defining weights and constraints. See Costanza-Chock (2020), Design Justice.</p></div>
         </div>
     </div>
 </section>
 
-<!-- 7. References -->
+<section style="background:var(--midnight-light);border-top:1px solid rgba(197,160,89,0.1);border-bottom:1px solid rgba(197,160,89,0.1);">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+            <p>Technical AND critical &mdash; do not separate the two</p>
+        </div>
+
+        <div class="reference-item fade-in"><span class="reference-num">[1]</span><span class="reference-authors">Larson, R.&nbsp;C. (1974).</span><div class="reference-title">&ldquo;A hypercube queuing model for facility location and redistricting in urban emergency services.&rdquo;</div><div class="reference-journal"><em>Computers &amp; Operations Research</em> 1(1), 67&ndash;95. <a href="https://doi.org/10.1016/0305-0548(74)90076-8" target="_blank" rel="noopener">doi:10.1016/0305-0548(74)90076-8</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[2]</span><span class="reference-authors">Larson, R.&nbsp;C., &amp; Odoni, A.&nbsp;R. (1981, reprint 2007).</span><div class="reference-title"><em>Urban Operations Research.</em></div><div class="reference-journal">Prentice-Hall; Dynamic Ideas reprint.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[3]</span><span class="reference-authors">Edmonds, J., &amp; Johnson, E.&nbsp;L. (1973).</span><div class="reference-title">&ldquo;Matching, Euler tours and the Chinese postman.&rdquo;</div><div class="reference-journal"><em>Mathematical Programming</em> 5, 88&ndash;124. <a href="https://doi.org/10.1007/BF01580113" target="_blank" rel="noopener">doi:10.1007/BF01580113</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[4]</span><span class="reference-authors">Golden, B.&nbsp;L., &amp; Wong, R.&nbsp;T. (1981).</span><div class="reference-title">&ldquo;Capacitated arc routing problems.&rdquo;</div><div class="reference-journal"><em>Networks</em> 11(3), 305&ndash;315. <a href="https://doi.org/10.1002/net.3230110308" target="_blank" rel="noopener">doi:10.1002/net.3230110308</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[5]</span><span class="reference-authors">Lum, K., &amp; Isaac, W. (2016).</span><div class="reference-title">&ldquo;To predict and serve?&rdquo;</div><div class="reference-journal"><em>Significance</em> 13(5), 14&ndash;19. <a href="https://doi.org/10.1111/j.1740-9713.2016.00960.x" target="_blank" rel="noopener">doi:10.1111/j.1740-9713.2016.00960.x</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[6]</span><span class="reference-authors">Ensign, D., Friedler, S.&nbsp;A., Neville, S., Scheidegger, C., &amp; Venkatasubramanian, S. (2018).</span><div class="reference-title">&ldquo;Runaway feedback loops in predictive policing.&rdquo;</div><div class="reference-journal"><em>Proceedings of FAccT 2018</em>, 160&ndash;171. <a href="https://doi.org/10.1145/3287560.3287583" target="_blank" rel="noopener">doi:10.1145/3287560.3287583</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[7]</span><span class="reference-authors">Richardson, R., Schultz, J.&nbsp;M., &amp; Crawford, K. (2019).</span><div class="reference-title">&ldquo;Dirty data, bad predictions: How civil rights violations impact police data, predictive policing systems, and justice.&rdquo;</div><div class="reference-journal"><em>NYU Law Review Online</em> 94, 15&ndash;55.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[8]</span><span class="reference-authors">Chouldechova, A. (2017).</span><div class="reference-title">&ldquo;Fair prediction with disparate impact.&rdquo;</div><div class="reference-journal"><em>Big Data</em> 5(2), 153&ndash;163. <a href="https://doi.org/10.1089/big.2016.0047" target="_blank" rel="noopener">doi:10.1089/big.2016.0047</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[9]</span><span class="reference-authors">Kleinberg, J., Mullainathan, S., &amp; Raghavan, M. (2017).</span><div class="reference-title">&ldquo;Inherent trade-offs in the fair determination of risk scores.&rdquo;</div><div class="reference-journal"><em>ITCS 2017</em>. <a href="https://doi.org/10.4230/LIPIcs.ITCS.2017.43" target="_blank" rel="noopener">doi:10.4230/LIPIcs.ITCS.2017.43</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[10]</span><span class="reference-authors">Angwin, J., Larson, J., Mattu, S., &amp; Kirchner, L. (2016).</span><div class="reference-title">&ldquo;Machine bias: There's software used across the country to predict future criminals. And it's biased against Blacks.&rdquo;</div><div class="reference-journal">ProPublica investigation, 23 May 2016. <a href="https://www.propublica.org/article/machine-bias-risk-assessments-in-criminal-sentencing" target="_blank" rel="noopener">propublica.org</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[11]</span><span class="reference-authors">Barocas, S., Hardt, M., &amp; Narayanan, A. (ongoing).</span><div class="reference-title"><em>Fairness and Machine Learning: Limitations and Opportunities.</em></div><div class="reference-journal">MIT Press / fairmlbook.org. <a href="https://fairmlbook.org/" target="_blank" rel="noopener">fairmlbook.org</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[12]</span><span class="reference-authors">Mitchell, M., Wu, S., Zaldivar, A., et al. (2019).</span><div class="reference-title">&ldquo;Model cards for model reporting.&rdquo;</div><div class="reference-journal"><em>Proceedings of FAT* 2019</em>, 220&ndash;229. <a href="https://doi.org/10.1145/3287560.3287596" target="_blank" rel="noopener">doi:10.1145/3287560.3287596</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[13]</span><span class="reference-authors">Brayne, S. (2017).</span><div class="reference-title">&ldquo;Big data surveillance: The case of policing.&rdquo;</div><div class="reference-journal"><em>American Sociological Review</em> 82(5), 977&ndash;1008. <a href="https://doi.org/10.1177/0003122417725865" target="_blank" rel="noopener">doi:10.1177/0003122417725865</a></div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[14]</span><span class="reference-authors">Weisburd, D., Groff, E.&nbsp;R., &amp; Yang, S.-M. (2012).</span><div class="reference-title"><em>The Criminology of Place: Street Segments and Our Understanding of the Crime Problem.</em></div><div class="reference-journal">Oxford University Press.</div></div>
+        <div class="reference-item fade-in"><span class="reference-num">[15]</span><span class="reference-authors">Costanza-Chock, S. (2020).</span><div class="reference-title"><em>Design Justice: Community-Led Practices to Build the Worlds We Need.</em></div><div class="reference-journal">MIT Press. <a href="https://design-justice.pubpub.org/" target="_blank" rel="noopener">design-justice.pubpub.org</a></div></div>
+    </div>
+</section>
+
 <section>
     <div class="container">
-        <div class="section-header fade-in"><h2>Key <span>References</span></h2><p>Foundational works in orienteering and patrol routing</p></div>
-        <div class="content-block fade-in">
-            <ul class="reference-list">
-                <li><span class="ref-author">Chao, I-M., Golden, B.L. &amp; Wasil, E.A.</span> (1996). <span class="ref-title">&ldquo;The team orienteering problem.&rdquo;</span> <span class="ref-journal">European Journal of Operational Research, 88(3), 464&ndash;474.</span></li>
-                <li><span class="ref-author">Vansteenwegen, P., Souffriau, W. &amp; Van Oudheusden, D.</span> (2011). <span class="ref-title">&ldquo;The orienteering problem: A survey.&rdquo;</span> <span class="ref-journal">European Journal of Operational Research, 209(1), 1&ndash;10.</span></li>
-                <li><span class="ref-author">Keskin, M. &amp; Ormeci, E.L.</span> (2014). <span class="ref-title">&ldquo;Police patrol routing for crime prevention.&rdquo;</span> <span class="ref-journal">Omega, 44, 46&ndash;57.</span></li>
-                <li><span class="ref-author">Dewil, R., Vansteenwegen, P. &amp; Cattrysse, D.</span> (2015). <span class="ref-title">&ldquo;A review of the team orienteering problem.&rdquo;</span> <span class="ref-journal">Computers &amp; Operations Research, 56, 1&ndash;13.</span></li>
-                <li><span class="ref-author">Chawathe, S.S.</span> (2007). <span class="ref-title">&ldquo;Organizing hot-spot police patrol routes.&rdquo;</span> <span class="ref-journal">Proc. IEEE Intelligence and Security Informatics, 79&ndash;86.</span></li>
-            </ul>
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+            <p>Arc-routing siblings and critical-lens companions</p>
+        </div>
+        <div class="related-grid fade-in">
+            <a class="related-card" href="garbage-collection.html"><span class="related-card-tag">Arc routing</span><div class="related-card-head">Garbage Collection Routing</div><div class="related-card-desc">Same underlying CPP / CARP mathematics &mdash; fewer ethical stakes, cleaner framing for the technique.</div></a>
+            <a class="related-card" href="political-districting.html"><span class="related-card-tag">Critical lens</span><div class="related-card-head">Political Districting</div><div class="related-card-desc">Companion page with an equally substantial critical-lens section; partitioning geography for political representation.</div></a>
+            <a class="related-card" href="fire-station-siting.html"><span class="related-card-tag">MCLP</span><div class="related-card-head">Fire Station Siting</div><div class="related-card-desc">Adjacent emergency-services problem, less contested &mdash; Walker-Chaiken-Ignall RAND 1974 lineage.</div></a>
+            <a class="related-card" href="public-services-domain.html"><span class="related-card-tag">Back to domain</span><div class="related-card-head">Public Services Landing</div><div class="related-card-desc">See all thirteen applications organised by service sector and decision type.</div></a>
         </div>
     </div>
 </section>
 
-<!-- 8. CTA -->
-<section>
+<section class="cta-section">
     <div class="container">
-        <div class="cta-panel fade-in">
-            <h3>Need to optimize your patrol operations?</h3>
-            <p>From patrol routing to resource allocation and incident response planning, mathematical modeling can transform public safety operations. Let&rsquo;s discuss how Operations Research can work for your department.</p>
-            <div class="cta-links">
-                <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link"><i class="fab fa-linkedin" aria-hidden="true"></i> Connect on LinkedIn</a>
-            </div>
-        </div>
+        <h2>Advising on algorithmic-accountability<br>or policy-informed optimisation?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
     </div>
 </section>
 
-<!-- Disclaimer -->
-<section style="padding: 2rem 0;">
-    <div class="container">
-        <div class="disclaimer-box">
-            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
-            Data shown is illustrative. Zone locations, crime-risk scores, and patrol routes are representative scenarios for educational purposes and do not reflect any specific police department or jurisdiction.
-        </div>
-    </div>
-</section>
+<div class="disclaimer">
+    Data and numerical examples are illustrative. This page is an educational tool, not policy, legal, or operational advice.
+</div>
+
 </main>
-
 
 <footer>
     <div class="container">
-        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+        <p>
+            <a href="public-services-domain.html">&larr; Back to Public Services</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
     </div>
 </footer>
 
-<a href="../index.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+<a class="back-link" href="public-services-domain.html"><i class="fas fa-arrow-left" aria-hidden="true" style="margin-right:0.4rem"></i> Public Services</a>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
 <script>
-// ═══════════════════════════════════════════════════════════════
-// Police Patrol Routing — Team Orienteering Problem Interactive Demo
-// ═══════════════════════════════════════════════════════════════
+(function(){
+    'use strict';
 
-// <!-- TODO: Integrate Python TOP solver backend when available (Case D — no Python file yet) -->
-
-var canvas = document.getElementById('routeCanvas');
-var ctx = canvas.getContext('2d');
-var dpr = window.devicePixelRatio || 1;
-var CW = 900, CH = 500;
-canvas.width = CW * dpr;
-canvas.height = CH * dpr;
-canvas.style.width = CW + 'px';
-canvas.style.height = CH + 'px';
-ctx.scale(dpr, dpr);
-
-var ROUTE_COLORS = ['#C5A059', '#7aa2f7'];
-var VEHICLE_NAMES = ['Vehicle 1 (Gold)', 'Vehicle 2 (Blue)'];
-
-var SCENARIOS = [
-    {
-        name: 'Downtown Night Shift',
-        context: 'Downtown night patrol across 14 priority zones with concentrated high-risk areas in the urban core. Two patrol vehicles cover as many high-priority zones as possible within their shift window.',
-        depot: { x: 450, y: 250, label: 'Central Station' },
-        vehicles: 2,
-        zones: [
-            { x: 350, y: 80,  label: 'Entertainment Dist', score: 9 },
-            { x: 500, y: 60,  label: 'Transit Hub',        score: 8 },
-            { x: 280, y: 140, label: 'Bar Row',            score: 10 },
-            { x: 600, y: 100, label: 'Mall Plaza',         score: 6 },
-            { x: 200, y: 220, label: 'Housing Project A',  score: 8 },
-            { x: 700, y: 180, label: 'Industrial Park',    score: 3 },
-            { x: 150, y: 330, label: 'Waterfront',         score: 5 },
-            { x: 350, y: 350, label: 'University Area',    score: 7 },
-            { x: 550, y: 380, label: 'South Residences',   score: 4 },
-            { x: 700, y: 320, label: 'Warehouse Zone',     score: 7 },
-            { x: 780, y: 250, label: 'Highway Underpass',  score: 9 },
-            { x: 300, y: 250, label: 'Downtown Core',      score: 10 },
-            { x: 550, y: 200, label: 'Financial Dist',     score: 2 },
-            { x: 450, y: 430, label: 'Park South',         score: 6 }
-        ]
-    },
-    {
-        name: 'Suburban Coverage',
-        context: 'Suburban patrol across 14 spread-out residential zones. Lower individual risk scores but wide geographic coverage needed. Two vehicles must balance breadth of coverage against shift time.',
-        depot: { x: 450, y: 250, label: 'Precinct HQ' },
-        vehicles: 2,
-        zones: [
-            { x: 100, y: 60,  label: 'North Ridge',     score: 3 },
-            { x: 300, y: 40,  label: 'Maple Heights',    score: 4 },
-            { x: 600, y: 50,  label: 'Oakwood Estates',  score: 2 },
-            { x: 800, y: 80,  label: 'Pine Valley',      score: 3 },
-            { x: 80,  y: 200, label: 'Riverside',        score: 5 },
-            { x: 200, y: 300, label: 'Cedar Park',       score: 4 },
-            { x: 100, y: 420, label: 'Lakeside',         score: 3 },
-            { x: 350, y: 440, label: 'South Commons',    score: 5 },
-            { x: 550, y: 450, label: 'Bayview',          score: 4 },
-            { x: 750, y: 420, label: 'Harbor Point',     score: 3 },
-            { x: 820, y: 300, label: 'East Gate',        score: 4 },
-            { x: 780, y: 180, label: 'Commerce Park',    score: 5 },
-            { x: 350, y: 180, label: 'Central Mall',     score: 6 },
-            { x: 600, y: 300, label: 'Sports Complex',   score: 4 }
-        ]
-    },
-    {
-        name: 'Priority Response',
-        context: 'Three zones rated 10 (critical) require guaranteed patrol presence. Remaining zones have moderate-to-low risk. Two vehicles must balance mandatory coverage of critical zones with maximum overall score.',
-        depot: { x: 450, y: 250, label: 'Command Post' },
-        vehicles: 2,
-        zones: [
-            { x: 200, y: 80,  label: 'Gang Territory A',   score: 10 },
-            { x: 650, y: 90,  label: 'Gang Territory B',   score: 10 },
-            { x: 350, y: 420, label: 'Drug Corridor',      score: 10 },
-            { x: 100, y: 200, label: 'West Side',          score: 5 },
-            { x: 300, y: 150, label: 'School Zone N',      score: 6 },
-            { x: 550, y: 150, label: 'School Zone E',      score: 6 },
-            { x: 750, y: 200, label: 'East Industrial',    score: 3 },
-            { x: 800, y: 350, label: 'Rail Yards',         score: 4 },
-            { x: 600, y: 400, label: 'South Market',       score: 5 },
-            { x: 200, y: 380, label: 'West Flats',         score: 4 },
-            { x: 130, y: 300, label: 'Riverside Walk',     score: 3 },
-            { x: 500, y: 300, label: 'Town Centre',        score: 7 },
-            { x: 380, y: 280, label: 'Civic Square',       score: 2 },
-            { x: 700, y: 300, label: 'Retail Strip',       score: 5 }
-        ]
-    }
-];
-
-var currentScenario = 0;
-var currentAlgo = 'greedy';
-var solveResults = {};
-var animFrame = null;
-var shiftHours = 6;
-
-function dist(a, b) { return Math.sqrt((a.x - b.x) ** 2 + (a.y - b.y) ** 2); }
-
-function travelTime(a, b) {
-    return dist(a, b) / 100;
-}
-
-function totalRouteTime(route, depot, zones) {
-    if (route.length === 0) return 0;
-    var t = travelTime(depot, zones[route[0]]);
-    for (var i = 1; i < route.length; i++) t += travelTime(zones[route[i - 1]], zones[route[i]]);
-    t += travelTime(zones[route[route.length - 1]], depot);
-    return t;
-}
-
-function routeScore(route, zones) {
-    var s = 0;
-    for (var i = 0; i < route.length; i++) s += zones[route[i]].score;
-    return s;
-}
-
-function maxPossibleScore(zones) {
-    var s = 0;
-    for (var i = 0; i < zones.length; i++) s += zones[i].score;
-    return s;
-}
-
-function canAddZone(route, zoneIdx, depot, zones, budget) {
-    if (route.length === 0) {
-        return travelTime(depot, zones[zoneIdx]) + travelTime(zones[zoneIdx], depot) <= budget;
-    }
-    var last = zones[route[route.length - 1]];
-    var currentTime = totalRouteTime(route, depot, zones) - travelTime(last, depot);
-    var newTime = currentTime + travelTime(last, zones[zoneIdx]) + travelTime(zones[zoneIdx], depot);
-    return newTime <= budget;
-}
-
-function solveGreedy(scenario) {
-    var depot = scenario.depot, zones = scenario.zones, nVeh = scenario.vehicles, budget = shiftHours;
-    var visited = new Array(zones.length).fill(false);
-    var routes = [];
-    for (var v = 0; v < nVeh; v++) {
-        var route = [];
-        while (true) {
-            var bestIdx = -1, bestRatio = -1;
-            for (var i = 0; i < zones.length; i++) {
-                if (visited[i]) continue;
-                if (!canAddZone(route, i, depot, zones, budget)) continue;
-                var cur = route.length === 0 ? depot : zones[route[route.length - 1]];
-                var tt = travelTime(cur, zones[i]);
-                var ratio = tt > 0 ? zones[i].score / tt : zones[i].score * 100;
-                if (ratio > bestRatio) { bestRatio = ratio; bestIdx = i; }
-            }
-            if (bestIdx === -1) break;
-            route.push(bestIdx);
-            visited[bestIdx] = true;
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = (h.scrollTop || b.scrollTop);
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
         }
-        routes.push(route);
     }
-    return routes;
-}
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
 
-function solveNearest(scenario) {
-    var depot = scenario.depot, zones = scenario.zones, nVeh = scenario.vehicles, budget = shiftHours;
-    var visited = new Array(zones.length).fill(false);
-    var indexed = zones.map(function(z, i) { return { idx: i, angle: Math.atan2(z.y - depot.y, z.x - depot.x) }; });
-    indexed.sort(function(a, b) { return a.angle - b.angle; });
-    var perVeh = Math.ceil(indexed.length / nVeh);
-    var routes = [];
-    for (var v = 0; v < nVeh; v++) {
-        var candidates = [];
-        for (var k = v * perVeh; k < Math.min((v + 1) * perVeh, indexed.length); k++) candidates.push(indexed[k].idx);
-        var route = [];
-        while (true) {
-            var bestIdx = -1, bestDist = Infinity;
-            var cur = route.length === 0 ? depot : zones[route[route.length - 1]];
-            for (var ci = 0; ci < candidates.length; ci++) {
-                var i = candidates[ci];
-                if (visited[i]) continue;
-                if (!canAddZone(route, i, depot, zones, budget)) continue;
-                var d = travelTime(cur, zones[i]);
-                if (d < bestDist) { bestDist = d; bestIdx = i; }
-            }
-            if (bestIdx === -1) {
-                for (var i = 0; i < zones.length; i++) {
-                    if (visited[i]) continue;
-                    if (!canAddZone(route, i, depot, zones, budget)) continue;
-                    var d = travelTime(cur, zones[i]);
-                    if (d < bestDist) { bestDist = d; bestIdx = i; }
-                }
-            }
-            if (bestIdx === -1) break;
-            route.push(bestIdx);
-            visited[bestIdx] = true;
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){
+            entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } });
+        }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+
+    function bindExclusive(containerId) {
+        var el = document.getElementById(containerId); if (!el) return;
+        el.querySelectorAll('.algo-chip').forEach(function(chip){
+            chip.addEventListener('click', function(){
+                el.querySelectorAll('.algo-chip').forEach(function(c){ c.classList.remove('selected'); });
+                chip.classList.add('selected');
+            });
+        });
+    }
+    bindExclusive('ppScenarios');
+    bindExclusive('ppWeights');
+
+    var ppK = document.getElementById('ppK'); var ppKVal = document.getElementById('ppKVal');
+    if (ppK && ppKVal) ppK.addEventListener('input', function(){ ppKVal.textContent = ppK.value; });
+    var ppT = document.getElementById('ppT'); var ppTVal = document.getElementById('ppTVal');
+    if (ppT && ppTVal) ppT.addEventListener('input', function(){ ppTVal.textContent = ppT.value; });
+
+    function selectedChip(containerId){ var c = document.querySelector('#' + containerId + ' .algo-chip.selected'); return c ? c.getAttribute('data-algo') : null; }
+
+    function mulberry32(seed){
+        return function(){
+            seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+            var t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+            t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+            return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        };
+    }
+
+    function buildZones(n, seed, wMode){
+        var rand = mulberry32(seed);
+        var zones = [];
+        var cols = Math.ceil(Math.sqrt(n));
+        for (var i = 0; i < n; i++) {
+            var c = i % cols, r = Math.floor(i / cols);
+            zones.push({ id: i, x: 90 + c * 90 + (rand() - 0.5) * 40, y: 80 + r * 90 + (rand() - 0.5) * 30 });
         }
-        routes.push(route);
-    }
-    return routes;
-}
-
-function solveTwoOpt(scenario) {
-    var depot = scenario.depot, zones = scenario.zones, nVeh = scenario.vehicles, budget = shiftHours;
-    var routes = solveGreedy(scenario);
-    var visited = new Array(zones.length).fill(false);
-    for (var v = 0; v < routes.length; v++)
-        for (var i = 0; i < routes[v].length; i++) visited[routes[v][i]] = true;
-
-    var improved = true, maxIter = 50;
-    while (improved && maxIter-- > 0) {
-        improved = false;
-        for (var v = 0; v < routes.length; v++) {
-            var r = routes[v];
-            if (r.length < 3) continue;
-            for (var i = 0; i < r.length - 1; i++) {
-                for (var j = i + 1; j < r.length; j++) {
-                    var newRoute = r.slice(0, i).concat(r.slice(i, j + 1).reverse()).concat(r.slice(j + 1));
-                    var newTime = totalRouteTime(newRoute, depot, zones);
-                    if (newTime <= budget && newTime < totalRouteTime(r, depot, zones)) {
-                        routes[v] = newRoute; r = newRoute; improved = true;
-                    }
+        // Weight assignment
+        var weights = [];
+        if (wMode === 'uniform') {
+            for (i = 0; i < n; i++) weights.push(1.0);
+        } else if (wMode === 'hotspot') {
+            for (i = 0; i < n; i++) weights.push(i < n * 0.25 ? 3.0 + rand() * 1.5 : 0.3 + rand() * 0.4);
+        } else {
+            // biased: zones 0..n/4 get a prior-patrol multiplier
+            for (i = 0; i < n; i++) {
+                var base = 0.8 + rand() * 0.6;
+                if (i < n / 4) base *= (2.2 + rand() * 0.8); // prior-patrol feedback
+                weights.push(base);
+            }
+        }
+        // Edges: each zone connects to ~3 nearest
+        var edges = [];
+        for (i = 0; i < n; i++) {
+            var dists = [];
+            for (var j = 0; j < n; j++) if (j !== i) {
+                var dx = zones[i].x - zones[j].x, dy = zones[i].y - zones[j].y;
+                dists.push({ j: j, d: Math.sqrt(dx*dx + dy*dy) });
+            }
+            dists.sort(function(a,b){ return a.d - b.d; });
+            var k = Math.min(3, dists.length);
+            for (var kk = 0; kk < k; kk++) {
+                var pair = [Math.min(i, dists[kk].j), Math.max(i, dists[kk].j)];
+                var key = pair.join('-');
+                if (!edges.some(function(e){ return e.key === key; })) {
+                    edges.push({ from: pair[0], to: pair[1], time: Math.round(dists[kk].d / 3), weight: (weights[pair[0]] + weights[pair[1]]) / 2, key: key });
                 }
             }
         }
+        return { zones: zones, edges: edges, weights: weights };
     }
 
-    for (var pass = 0; pass < 3; pass++) {
-        for (var i = 0; i < zones.length; i++) {
-            if (visited[i]) continue;
-            var bestV = -1, bestPos = -1, bestScore = -1;
-            for (var v = 0; v < routes.length; v++) {
-                var r = routes[v];
-                for (var p = 0; p <= r.length; p++) {
-                    var newRoute = r.slice(0, p).concat([i]).concat(r.slice(p));
-                    if (totalRouteTime(newRoute, depot, zones) <= budget) {
-                        if (zones[i].score > bestScore) { bestScore = zones[i].score; bestV = v; bestPos = p; }
-                    }
+    function greedyPatrol(graph, K, T) {
+        var depot = 0;
+        var covered = new Set();
+        var tours = [];
+        for (var k = 0; k < K; k++) {
+            var tour = [depot];
+            var time = 0;
+            var current = depot;
+            while (true) {
+                // find unvisited edge with best weight/time ratio reachable from current
+                var best = null, bestRatio = -1;
+                graph.edges.forEach(function(e){
+                    if (covered.has(e.key)) return;
+                    var reach = null;
+                    if (e.from === current) reach = e;
+                    else if (e.to === current) reach = { from: current, to: e.from, time: e.time, weight: e.weight, key: e.key };
+                    if (!reach) return;
+                    // need time to traverse AND return to depot
+                    var returnTime = distToDepot(graph, reach.to);
+                    if (time + reach.time + returnTime > T) return;
+                    var ratio = reach.weight / Math.max(1, reach.time);
+                    if (ratio > bestRatio) { bestRatio = ratio; best = reach; }
+                });
+                if (!best) break;
+                tour.push(best.to);
+                time += best.time;
+                covered.add(best.key);
+                current = best.to;
+            }
+            // Return to depot
+            tours.push({ path: tour, time: time });
+        }
+        return { tours: tours, covered: covered };
+    }
+
+    function distToDepot(graph, node) {
+        // BFS for min-edges * average-time — approximation
+        if (node === 0) return 0;
+        var visited = new Set(); visited.add(0);
+        var queue = [{ n: 0, t: 0 }];
+        while (queue.length > 0) {
+            var cur = queue.shift();
+            for (var i = 0; i < graph.edges.length; i++) {
+                var e = graph.edges[i];
+                var next = null, et = e.time;
+                if (e.from === cur.n && !visited.has(e.to)) next = e.to;
+                else if (e.to === cur.n && !visited.has(e.from)) next = e.from;
+                if (next !== null) {
+                    if (next === node) return cur.t + et;
+                    visited.add(next);
+                    queue.push({ n: next, t: cur.t + et });
                 }
             }
-            if (bestV !== -1) { routes[bestV].splice(bestPos, 0, i); visited[i] = true; }
         }
+        return 50;
     }
-    return routes;
-}
 
-function solveAll() {
-    var sc = SCENARIOS[currentScenario];
-    var results = {};
-    var algos = { greedy: solveGreedy, nearest: solveNearest, twoopt: solveTwoOpt };
-    var algoNames = { greedy: 'Greedy (Score/Dist)', nearest: 'Nearest+Greedy', twoopt: '2-Opt Improve' };
-    var maxScore = maxPossibleScore(sc.zones);
+    function draw(graph, result) {
+        var canvas = document.getElementById('ppCanvas');
+        var ctx = canvas.getContext('2d');
+        var W = canvas.width, H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
 
-    for (var key in algos) {
-        var t0 = performance.now(), routes = algos[key](sc), t1 = performance.now();
-        var totalScore = 0, totalZones = 0, totalTime = 0;
-        for (var r = 0; r < routes.length; r++) {
-            totalScore += routeScore(routes[r], sc.zones);
-            totalZones += routes[r].length;
-            totalTime += totalRouteTime(routes[r], sc.depot, sc.zones);
-        }
-        results[key] = { name: algoNames[key], routes: routes, score: totalScore, zonesVisited: totalZones, timeUsed: totalTime, pctMax: (totalScore / maxScore * 100).toFixed(1), solveTime: t1 - t0 };
-    }
-    solveResults = results;
-    renderResults(results, sc);
-    drawRoutes(results[currentAlgo].routes, sc);
-    renderRouteCaps(results[currentAlgo].routes, sc);
-    updateBusiness();
-    document.getElementById('solverStatus').textContent = 'Solved. Click an algorithm row to visualize its routes.';
-    document.getElementById('businessPanel').style.display = '';
-    document.getElementById('routeCaps').style.display = '';
-}
+        // Edges (faint, thickness = weight)
+        graph.edges.forEach(function(e){
+            var a = graph.zones[e.from], b = graph.zones[e.to];
+            var covered = result && result.covered && result.covered.has(e.key);
+            ctx.strokeStyle = covered ? 'rgba(197,160,89,0.25)' : 'rgba(136,146,176,0.15)';
+            ctx.lineWidth = Math.max(0.5, Math.min(4, e.weight * 1.2));
+            ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        });
 
-function renderResults(results, sc) {
-    var tbody = document.getElementById('resultsTable').querySelector('tbody');
-    var bestScore = 0;
-    for (var k in results) if (results[k].score > bestScore) bestScore = results[k].score;
-    var rows = [];
-    for (var k in results) {
-        var r = results[k], isBest = r.score === bestScore;
-        rows.push('<tr onclick="showAlgo(\'' + k + '\')" style="cursor:pointer;"><td class="algo-label">' + r.name + '</td><td class="' + (isBest ? 'best-val' : '') + '">' + r.score + '</td><td>' + r.zonesVisited + ' / ' + sc.zones.length + '</td><td>' + r.timeUsed.toFixed(1) + 'h</td><td>' + r.pctMax + '%</td></tr>');
-    }
-    tbody.textContent = '';
-    var temp = document.createElement('table');
-    temp.insertAdjacentHTML('afterbegin', '<tbody>' + rows.join('') + '</tbody>');
-    while (temp.querySelector('tbody').firstChild) tbody.appendChild(temp.querySelector('tbody').firstChild);
-
-    var res = results[currentAlgo];
-    var outputEl = document.getElementById('routeOutput');
-    outputEl.textContent = '';
-    for (var ri = 0; ri < res.routes.length; ri++) {
-        var route = res.routes[ri], score = routeScore(route, sc.zones), names = [];
-        for (var si = 0; si < route.length; si++) names.push(sc.zones[route[si]].label + ' (' + sc.zones[route[si]].score + ')');
-        var rt = totalRouteTime(route, sc.depot, sc.zones);
-        var div = document.createElement('div');
-        div.style.marginBottom = '0.5rem';
-        var span = document.createElement('span');
-        span.style.color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        span.style.fontWeight = '600';
-        span.textContent = VEHICLE_NAMES[ri];
-        div.appendChild(span);
-        div.appendChild(document.createTextNode(' (score: ' + score + ', ' + rt.toFixed(1) + 'h / ' + shiftHours + 'h):'));
-        div.appendChild(document.createElement('br'));
-        div.appendChild(document.createTextNode('Depot \u2192 ' + names.join(' \u2192 ') + ' \u2192 Depot'));
-        outputEl.appendChild(div);
-    }
-    var visited = {};
-    for (var ri = 0; ri < res.routes.length; ri++) for (var si = 0; si < res.routes[ri].length; si++) visited[res.routes[ri][si]] = true;
-    var unvisited = [];
-    for (var i = 0; i < sc.zones.length; i++) if (!visited[i]) unvisited.push(sc.zones[i].label + ' (' + sc.zones[i].score + ')');
-    if (unvisited.length > 0) {
-        var udiv = document.createElement('div');
-        udiv.style.marginTop = '0.5rem';
-        udiv.style.color = 'var(--red)';
-        udiv.textContent = 'Unpatrolled: ' + unvisited.join(', ');
-        outputEl.appendChild(udiv);
-    }
-}
-
-function showAlgo(key) {
-    currentAlgo = key;
-    document.querySelectorAll('.algo-chip[data-algo]').forEach(function(b) { b.classList.remove('active'); });
-    var btn = document.querySelector('.algo-chip[data-algo="' + key + '"]');
-    if (btn) btn.classList.add('active');
-    var sc = SCENARIOS[currentScenario];
-    drawRoutes(solveResults[key].routes, sc);
-    renderRouteCaps(solveResults[key].routes, sc);
-    renderResults(solveResults, sc);
-}
-
-function selectAlgo(key) {
-    currentAlgo = key;
-    document.querySelectorAll('.algo-chip[data-algo]').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelector('.algo-chip[data-algo="' + key + '"]').classList.add('active');
-    if (solveResults[key]) {
-        var sc = SCENARIOS[currentScenario];
-        drawRoutes(solveResults[key].routes, sc);
-        renderRouteCaps(solveResults[key].routes, sc);
-        renderResults(solveResults, sc);
-    }
-}
-
-function renderRouteCaps(routes, sc) {
-    var container = document.getElementById('routeCapBars');
-    container.textContent = '';
-    for (var ri = 0; ri < routes.length; ri++) {
-        var rt = totalRouteTime(routes[ri], sc.depot, sc.zones);
-        var pct = Math.min((rt / shiftHours * 100), 100).toFixed(0);
-        var cls = pct > 90 ? 'full' : pct > 70 ? 'warn' : 'safe';
-        var row = document.createElement('div');
-        row.className = 'route-cap-row';
-        var label = document.createElement('span');
-        label.className = 'route-cap-label';
-        label.style.color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        label.textContent = 'V' + (ri + 1);
-        var track = document.createElement('div');
-        track.className = 'route-cap-track';
-        var fill = document.createElement('div');
-        fill.className = 'route-cap-fill ' + cls;
-        fill.style.width = pct + '%';
-        var fillSpan = document.createElement('span');
-        fillSpan.textContent = rt.toFixed(1) + 'h / ' + shiftHours + 'h';
-        fill.appendChild(fillSpan);
-        track.appendChild(fill);
-        row.appendChild(label);
-        row.appendChild(track);
-        container.appendChild(row);
-    }
-}
-
-function drawRoutes(routes, sc) {
-    if (animFrame) cancelAnimationFrame(animFrame);
-    var depot = sc.depot, zones = sc.zones;
-    var visitedSet = {};
-    for (var ri = 0; ri < routes.length; ri++) for (var si = 0; si < routes[ri].length; si++) visitedSet[routes[ri][si]] = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-
-    var segments = [];
-    for (var ri = 0; ri < routes.length; ri++) {
-        var color = ROUTE_COLORS[ri % ROUTE_COLORS.length];
-        var rs = routes[ri].map(function(i) { return zones[i]; });
-        var all = [depot].concat(rs).concat([depot]);
-        for (var si = 0; si < all.length - 1; si++) segments.push({ from: all[si], to: all[si + 1], color: color, routeIdx: ri });
-    }
-    var totalSegs = segments.length, progress = 0, speed = 0.08;
-
-    function frame() {
-        progress += speed;
-        if (progress > totalSegs) progress = totalSegs;
-        ctx.clearRect(0, 0, CW, CH);
-        ctx.strokeStyle = 'rgba(197,160,89,0.05)'; ctx.lineWidth = 1;
-        for (var gx = 0; gx < CW; gx += 50) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, CH); ctx.stroke(); }
-        for (var gy = 0; gy < CH; gy += 50) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CW, gy); ctx.stroke(); }
-
-        var fullSegs = Math.floor(progress), partFrac = progress - fullSegs;
-        for (var si = 0; si < fullSegs && si < totalSegs; si++) {
-            var seg = segments[si];
-            ctx.beginPath(); ctx.moveTo(seg.from.x, seg.from.y); ctx.lineTo(seg.to.x, seg.to.y);
-            ctx.strokeStyle = seg.color; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.8; ctx.stroke(); ctx.globalAlpha = 1;
-        }
-        if (fullSegs < totalSegs) {
-            var seg = segments[fullSegs];
-            var px = seg.from.x + (seg.to.x - seg.from.x) * partFrac, py = seg.from.y + (seg.to.y - seg.from.y) * partFrac;
-            ctx.beginPath(); ctx.moveTo(seg.from.x, seg.from.y); ctx.lineTo(px, py);
-            ctx.strokeStyle = seg.color; ctx.lineWidth = 2.5; ctx.globalAlpha = 0.8; ctx.stroke(); ctx.globalAlpha = 1;
+        // Tours (bold coloured)
+        var palette = ['#C5A059', '#7aa2f7', '#64ffda', '#bb9af7', '#f2d06b'];
+        if (result && result.tours) {
+            result.tours.forEach(function(tour, k){
+                ctx.strokeStyle = palette[k % palette.length];
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                for (var i = 0; i < tour.path.length; i++) {
+                    var z = graph.zones[tour.path[i]];
+                    if (i === 0) ctx.moveTo(z.x, z.y); else ctx.lineTo(z.x, z.y);
+                }
+                ctx.stroke();
+            });
         }
 
-        ctx.fillStyle = '#C5A059'; ctx.fillRect(depot.x - 10, depot.y - 10, 20, 20);
-        ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 2; ctx.strokeRect(depot.x - 10, depot.y - 10, 20, 20);
-        ctx.fillStyle = '#0A192F'; ctx.font = 'bold 9px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('D', depot.x, depot.y);
-        ctx.fillStyle = '#C5A059'; ctx.font = '11px Inter'; ctx.fillText(depot.label, depot.x, depot.y - 18);
+        // Zones (coloured by weight)
+        graph.zones.forEach(function(z, i){
+            var w = graph.weights[i];
+            var intensity = Math.min(1, w / 4);
+            var r = 12 + Math.min(8, w * 2);
+            ctx.beginPath(); ctx.arc(z.x, z.y, r, 0, Math.PI * 2);
+            ctx.fillStyle = 'rgba(255,107,107,' + (0.15 + intensity * 0.45) + ')';
+            ctx.fill();
+            ctx.strokeStyle = i === 0 ? '#C5A059' : 'rgba(168,178,209,0.5)';
+            ctx.lineWidth = i === 0 ? 2 : 1;
+            ctx.stroke();
+            ctx.fillStyle = '#F8F9FA';
+            ctx.font = '10px JetBrains Mono, monospace';
+            ctx.textAlign = 'center';
+            ctx.fillText(i === 0 ? 'D' : 'Z' + i, z.x, z.y + 3);
+        });
 
-        for (var i = 0; i < zones.length; i++) {
-            var z = zones[i];
-            var isVisited = visitedSet.hasOwnProperty(i);
-            var zoneColor = isVisited ? visitedSet[i] : '#8892B0';
-            var alpha = isVisited ? 0.9 : 0.3;
-            var radius = 6 + z.score * 1.2;
+        // Legend
+        ctx.fillStyle = '#8892B0'; ctx.font = '10px Inter, sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText('Zones sized/shaded by weight; D = depot. Tour colours per car.', 14, H - 14);
+    }
 
-            ctx.beginPath(); ctx.arc(z.x, z.y, radius, 0, Math.PI * 2);
-            ctx.fillStyle = zoneColor; ctx.globalAlpha = alpha; ctx.fill(); ctx.globalAlpha = 1;
-            ctx.strokeStyle = isVisited ? 'rgba(248,249,250,0.4)' : 'rgba(248,249,250,0.15)';
-            ctx.lineWidth = 1; ctx.stroke();
-
-            ctx.fillStyle = isVisited ? '#0A192F' : 'rgba(248,249,250,0.5)';
-            ctx.font = 'bold 9px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-            ctx.fillText(z.score, z.x, z.y);
-
-            ctx.fillStyle = isVisited ? '#a8b2d1' : 'rgba(168,178,209,0.4)';
-            ctx.font = '9px Inter'; ctx.fillText(z.label, z.x, z.y - radius - 6);
+    function renderResults(graph, result, wModeName, biased) {
+        var el = document.getElementById('ppResults');
+        while (el.firstChild) el.removeChild(el.firstChild);
+        var tbl = document.createElement('table'); tbl.className = 'results-table';
+        var thead = document.createElement('thead'); var hr = document.createElement('tr');
+        ['Metric', 'Value'].forEach(function(h){ var th = document.createElement('th'); th.textContent = h; hr.appendChild(th); });
+        thead.appendChild(hr); tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        function row(label, val) {
+            var tr = document.createElement('tr');
+            var td1 = document.createElement('td'); td1.textContent = label; tr.appendChild(td1);
+            var td2 = document.createElement('td'); td2.textContent = val; td2.className = 'highlight'; tr.appendChild(td2);
+            tbody.appendChild(tr);
         }
-        if (progress < totalSegs) animFrame = requestAnimationFrame(frame);
+        var totalEdges = graph.edges.length;
+        var covered = result.covered.size;
+        var totalWeight = 0, coveredWeight = 0;
+        graph.edges.forEach(function(e){ totalWeight += e.weight; if (result.covered.has(e.key)) coveredWeight += e.weight; });
+        var totalTime = result.tours.reduce(function(s,t){ return s + t.time; }, 0);
+        row('Zones covered (edges)', covered + ' / ' + totalEdges);
+        row('Coverage %', (covered / totalEdges * 100).toFixed(1) + '%');
+        row('Weight captured', (coveredWeight / totalWeight * 100).toFixed(1) + '%');
+        row('Total patrol time', totalTime);
+        row('Weight profile', wModeName + (biased ? ' — feedback amplified in 1/4 of zones' : ''));
+        tbl.appendChild(tbody);
+        el.appendChild(tbl);
     }
-    frame();
-}
 
-function drawInitialMap(sc) {
-    if (animFrame) cancelAnimationFrame(animFrame);
-    ctx.clearRect(0, 0, CW, CH);
-    ctx.strokeStyle = 'rgba(197,160,89,0.05)'; ctx.lineWidth = 1;
-    for (var gx = 0; gx < CW; gx += 50) { ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, CH); ctx.stroke(); }
-    for (var gy = 0; gy < CH; gy += 50) { ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(CW, gy); ctx.stroke(); }
-    var depot = sc.depot;
-    ctx.fillStyle = '#C5A059'; ctx.fillRect(depot.x - 10, depot.y - 10, 20, 20);
-    ctx.strokeStyle = '#D4AF37'; ctx.lineWidth = 2; ctx.strokeRect(depot.x - 10, depot.y - 10, 20, 20);
-    ctx.fillStyle = '#0A192F'; ctx.font = 'bold 9px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText('D', depot.x, depot.y);
-    ctx.fillStyle = '#C5A059'; ctx.font = '11px Inter'; ctx.fillText(depot.label, depot.x, depot.y - 18);
-    for (var i = 0; i < sc.zones.length; i++) {
-        var z = sc.zones[i];
-        var radius = 6 + z.score * 1.2;
-        ctx.beginPath(); ctx.arc(z.x, z.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = '#8892B0'; ctx.globalAlpha = 0.7; ctx.fill(); ctx.globalAlpha = 1;
-        ctx.strokeStyle = 'rgba(248,249,250,0.2)'; ctx.lineWidth = 1; ctx.stroke();
-        ctx.fillStyle = '#0A192F'; ctx.font = 'bold 9px JetBrains Mono'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(z.score, z.x, z.y);
-        ctx.fillStyle = '#a8b2d1'; ctx.font = '9px Inter'; ctx.fillText(z.label, z.x, z.y - radius - 6);
+    function setStatus(el, wMode, covered, total, weightPct) {
+        while (el.firstChild) el.removeChild(el.firstChild);
+        var s = document.createElement('strong'); s.textContent = 'Done.'; el.appendChild(s);
+        el.appendChild(document.createTextNode(' Covered ' + covered + ' of ' + total + ' edges (' + weightPct.toFixed(0) + '% of total weight). '));
+        if (wMode === 'biased') {
+            var warn = document.createElement('strong');
+            warn.style.color = 'var(--red)';
+            warn.textContent = 'Biased-data scenario';
+            el.appendChild(warn);
+            el.appendChild(document.createTextNode(': feedback multiplier pulls routes toward previously over-patrolled zones. See Lum & Isaac 2016 and Ensign et al. 2018.'));
+        } else {
+            el.appendChild(document.createTextNode('Switch the weight profile to the biased-data scenario to see the feedback-loop effect.'));
+        }
     }
-}
 
-function loadScenario(idx) {
-    currentScenario = idx; solveResults = {};
-    document.querySelectorAll('.scenario-btn').forEach(function(b) { b.classList.remove('active'); });
-    document.querySelector('.scenario-btn[data-scenario="' + idx + '"]').classList.add('active');
-    var sc = SCENARIOS[idx];
-    document.getElementById('scenarioContext').textContent = sc.context;
-    document.getElementById('configSummary').textContent = sc.zones.length + ' Zones \u00B7 ' + sc.vehicles + ' Vehicles \u00B7 ' + shiftHours + 'h Shift';
-    document.getElementById('businessPanel').style.display = 'none';
-    document.getElementById('routeCaps').style.display = 'none';
-    document.getElementById('resultsTable').querySelector('tbody').textContent = '';
-    var placeholder = document.createElement('tr');
-    var td = document.createElement('td');
-    td.colSpan = 5;
-    td.style.textAlign = 'center';
-    td.style.color = 'var(--slate)';
-    td.style.fontFamily = 'Inter, sans-serif';
-    td.textContent = 'Click Solve & Compare All Algorithms';
-    placeholder.appendChild(td);
-    document.getElementById('resultsTable').querySelector('tbody').appendChild(placeholder);
-    document.getElementById('routeOutput').textContent = 'Route details will appear here after solving.';
-    document.getElementById('solverStatus').textContent = 'Scenario loaded. Click "Solve & Compare All Algorithms" to run.';
-    drawInitialMap(sc);
-}
+    document.getElementById('ppSolve').addEventListener('click', function(){
+        var scenario = selectedChip('ppScenarios');
+        var wMode = selectedChip('ppWeights');
+        var K = parseInt(document.getElementById('ppK').value, 10);
+        var T = parseInt(document.getElementById('ppT').value, 10);
+        var n = scenario === 'small' ? 12 : scenario === 'medium' ? 18 : 24;
+        var seed = 21 + n * 5 + K * 11 + T + (wMode === 'hotspot' ? 100 : wMode === 'biased' ? 200 : 0);
+        var graph = buildZones(n, seed, wMode);
+        var result = greedyPatrol(graph, K, T);
+        draw(graph, result);
+        var wModeName = wMode === 'uniform' ? 'Uniform' : wMode === 'hotspot' ? 'Hotspot' : 'Biased (feedback)';
+        renderResults(graph, result, wModeName, wMode === 'biased');
+        var totalWeight = 0, coveredWeight = 0;
+        graph.edges.forEach(function(e){ totalWeight += e.weight; if (result.covered.has(e.key)) coveredWeight += e.weight; });
+        setStatus(document.getElementById('ppStatus'), wMode, result.covered.size, graph.edges.length, coveredWeight / totalWeight * 100);
+    });
 
-function updateShift() {
-    shiftHours = parseFloat(document.getElementById('shiftSlider').value);
-    document.getElementById('shiftVal').textContent = shiftHours.toFixed(1) + ' h';
-    var sc = SCENARIOS[currentScenario];
-    document.getElementById('configSummary').textContent = sc.zones.length + ' Zones \u00B7 ' + sc.vehicles + ' Vehicles \u00B7 ' + shiftHours + 'h Shift';
-    if (Object.keys(solveResults).length > 0) solveAll();
-}
-
-function updateBusiness() {
-    if (!solveResults || !solveResults.greedy) return;
-    var costInc = parseFloat(document.getElementById('bizCostIncident').value) || 8500;
-    var shiftsWeek = parseInt(document.getElementById('bizShiftsWeek').value) || 14;
-    var sc = SCENARIOS[currentScenario];
-    var bestScore = 0, worstScore = Infinity, worstZones = 0;
-    for (var k in solveResults) {
-        if (solveResults[k].score > bestScore) bestScore = solveResults[k].score;
-        if (solveResults[k].score < worstScore) { worstScore = solveResults[k].score; worstZones = sc.zones.length - solveResults[k].zonesVisited; }
-    }
-    var gap = bestScore - worstScore;
-    var incidentsPerShiftSaved = gap * 0.15;
-    var annualSavings = incidentsPerShiftSaved * costInc * shiftsWeek * 52;
-
-    document.getElementById('bizUnpatrolled').textContent = worstZones;
-    document.getElementById('bizRiskReduction').textContent = gap + ' pts';
-    document.getElementById('bizAnnualSaved').textContent = '$' + (annualSavings >= 1000000 ? (annualSavings / 1000000).toFixed(1) + 'M' : annualSavings >= 1000 ? (annualSavings / 1000).toFixed(0) + 'k' : annualSavings.toFixed(0));
-}
-
-var themeToggle = document.getElementById('themeToggle');
-themeToggle.addEventListener('click', function() {
-    var current = document.documentElement.getAttribute('data-theme');
-    document.documentElement.setAttribute('data-theme', current === 'light' ? '' : 'light');
-});
-
-window.addEventListener('scroll', function() {
-    var scrolled = window.scrollY, total = document.documentElement.scrollHeight - window.innerHeight;
-    var pct = total > 0 ? (scrolled / total * 100) : 0;
-    document.getElementById('scrollProgress').style.width = pct + '%';
-    var btn = document.getElementById('scrollTopBtn');
-    if (scrolled > 400) btn.classList.add('visible'); else btn.classList.remove('visible');
-});
-
-var observer = new IntersectionObserver(function(entries) {
-    entries.forEach(function(entry) { if (entry.isIntersecting) entry.target.classList.add('visible'); });
-}, { threshold: 0.1 });
-document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
-
-drawInitialMap(SCENARIOS[0]);
+    (function initial(){
+        var graph = buildZones(12, 21 + 60 + 33, 'uniform');
+        draw(graph, { tours: [], covered: new Set() });
+    })();
+})();
 </script>
 </body>
 </html>
