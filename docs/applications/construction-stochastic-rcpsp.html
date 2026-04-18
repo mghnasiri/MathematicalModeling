@@ -1,0 +1,907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Stochastic RCPSP (SRCPSP) | Construction | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Stochastic project scheduling for construction (SRCPSP). Interactive Monte Carlo simulator with proactive time-buffer insertion, reactive right-shift dispatching, and completion-probability (CDF) visualisation. Anchored on Herroelen &amp; Leus (2005) and the stochastic RCPSP variants in Hartmann &amp; Briskorn (2022).">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/construction-stochastic-rcpsp.html">
+    <meta property="og:title" content="Stochastic RCPSP (SRCPSP) | Construction | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Monte Carlo makespan distribution under uncertain activity durations; proactive buffers and reactive dispatching.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Stochastic RCPSP (SRCPSP)">
+    <meta name="twitter:description" content="Monte Carlo simulator for SRCPSP with proactive/reactive policies.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/construction-stochastic-rcpsp.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}]});"></script>
+    <style>
+        :root {
+            --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a;
+            --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1;
+            --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(122,162,247,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(197,160,89,0.06) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; filter: drop-shadow(0 0 10px rgba(197,160,89,0.35)); }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+
+        .content-block { max-width: 840px; margin: 0 auto; padding: 0 1rem; }
+        .content-block p { color: var(--slate-light); margin-bottom: 1.2rem; font-size: 0.95rem; }
+        .content-block p strong { color: var(--ivory); }
+        .content-block cite { color: var(--gold); font-style: normal; }
+
+        .formulation { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.3rem 1.8rem; margin: 1.5rem 0; }
+        .formulation .form-label { display: block; margin-bottom: 0.8rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; color: var(--gold); letter-spacing: 1.5px; text-transform: uppercase; }
+
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; color: var(--gold); font-size: 0.82rem; letter-spacing: 1px; margin-top: 0.5rem; }
+        .theory-link:hover { color: var(--gold-light); }
+
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; margin: 2rem auto; max-width: 1080px; }
+        .solver-panel-header { background: rgba(197,160,89,0.08); border-bottom: 1px solid rgba(197,160,89,0.18); padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; }
+        .solver-panel-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--ivory); margin: 0; letter-spacing: 1.5px; }
+        .solver-panel-header h3 i { color: var(--gold); margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-section-label { font-size: 0.75rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.5rem; font-family: 'Inter', sans-serif; }
+
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { background: var(--midnight); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; padding: 0.7rem 0.9rem; text-align: left; color: var(--slate-light); cursor: pointer; transition: all 0.25s; }
+        .scenario-btn:hover { border-color: var(--gold); color: var(--ivory); }
+        .scenario-btn.active { background: rgba(197,160,89,0.1); border-color: var(--gold); color: var(--ivory); }
+        .scn-name { display: block; font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--gold); margin-bottom: 0.2rem; letter-spacing: 0.5px; }
+        .scn-desc { display: block; font-size: 0.74rem; color: var(--slate); line-height: 1.4; white-space: normal; }
+
+        .control-row { display: flex; align-items: center; gap: 1rem; padding: 0.5rem 0; flex-wrap: wrap; margin-bottom: 0.4rem; }
+        .control-row label { font-size: 0.8rem; color: var(--slate-light); min-width: 150px; }
+        .control-row input[type="range"] { flex: 1; min-width: 200px; accent-color: var(--gold); }
+        .control-val { font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: var(--gold); min-width: 90px; text-align: right; }
+
+        .policy-switch { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; }
+        .policy-chip { cursor: pointer; padding: 0.4rem 0.9rem; border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; font-size: 0.78rem; color: var(--slate-light); background: var(--midnight); transition: all 0.15s; }
+        .policy-chip.active { color: var(--ivory); background: rgba(197,160,89,0.15); border-color: var(--gold); }
+        .policy-chip:hover { color: var(--ivory); }
+
+        .solver-btn { width: 100%; padding: 0.7rem; border-radius: 4px; background: var(--gold); color: var(--midnight); border: none; cursor: pointer; font-weight: 600; font-size: 0.95rem; letter-spacing: 1px; text-transform: uppercase; transition: all 0.25s; margin-bottom: 1rem; }
+        .solver-btn:hover { background: var(--gold-light); }
+
+        .solver-canvas-wrap { background: var(--midnight); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.6rem; margin-bottom: 1rem; overflow-x: auto; }
+        .solver-canvas-wrap canvas { display: block; max-width: 100%; height: auto; }
+
+        .solver-status { font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--slate); padding: 0.5rem 0; }
+
+        .results-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-top: 1rem; }
+        .result-kpi { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.9rem 1rem; }
+        .result-kpi .kpi-val { display: block; font-family: 'JetBrains Mono', monospace; font-size: 1.4rem; color: var(--gold); font-weight: 600; }
+        .result-kpi .kpi-label { font-size: 0.7rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1.2px; }
+
+        .algo-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; max-width: 1080px; margin: 0 auto; }
+        .algo-card { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.2rem 1.3rem; }
+        .algo-tag { display: inline-block; padding: 2px 8px; background: rgba(197,160,89,0.1); border: 1px solid rgba(197,160,89,0.3); border-radius: 3px; font-family: 'JetBrains Mono', monospace; font-size: 0.68rem; color: var(--gold); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 0.6rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.2rem; color: var(--ivory); margin-bottom: 0.4rem; letter-spacing: 1px; }
+        .algo-card .algo-complexity { display: block; font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: var(--slate); margin-bottom: 0.6rem; }
+        .algo-card p { color: var(--slate-light); font-size: 0.86rem; line-height: 1.7; }
+        .algo-card p strong { color: var(--ivory); }
+
+        .complexity-box { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.2rem 1.4rem; }
+        .complexity-box h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-size: 1.15rem; margin-bottom: 0.7rem; }
+        .complexity-box h3 i { color: var(--gold); margin-right: 0.4rem; }
+        .complexity-list { list-style: none; padding: 0; margin: 0; }
+        .complexity-list li { padding: 0.4rem 0 0.4rem 1.3rem; position: relative; color: var(--slate-light); font-size: 0.88rem; }
+        .complexity-list li::before { content: '\25B8'; position: absolute; left: 0; color: var(--gold); }
+        .complexity-list li strong { color: var(--ivory); }
+
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 0.7rem; max-width: 1080px; margin: 1.2rem auto; }
+        .extension-card { padding: 0.8rem 1rem; background: rgba(197,160,89,0.06); border: 1px solid rgba(197,160,89,0.2); border-radius: 4px; }
+        .extension-card strong { color: var(--gold); }
+        .extension-card a { display: block; margin-top: 0.3rem; font-size: 0.78rem; }
+
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+
+        .cta-panel { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 3rem 2rem; border-radius: 8px; max-width: 900px; margin: 0 auto; border: 1px solid rgba(197,160,89,0.15); }
+        .cta-panel h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; font-weight: 300; letter-spacing: 2px; color: var(--ivory); line-height: 1.4; margin-bottom: 1rem; }
+        .cta-panel p { color: var(--slate-light); margin-bottom: 1.2rem; font-size: 0.92rem; }
+        .cta-links { display: flex; justify-content: center; gap: 1rem; flex-wrap: wrap; }
+        .cta-link { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.7rem 1.5rem; border: 1px solid var(--gold); border-radius: 4px; color: var(--gold); font-size: 0.82rem; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.25s; }
+        .cta-link:hover { background: var(--gold); color: var(--midnight); }
+        .disclaimer-box { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1rem 1.3rem; font-size: 0.82rem; color: var(--slate); font-style: italic; max-width: 900px; margin: 0 auto; }
+        .disclaimer-title { font-style: normal; color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.4rem; }
+
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .back-link { position: fixed; bottom: 1.5rem; left: 1.5rem; padding: 0.6rem 1rem; background: rgba(10,25,47,0.92); color: var(--gold); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.78rem; letter-spacing: 1.2px; text-transform: uppercase; z-index: 999; }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.3rem; letter-spacing: 2px; }
+            .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; }
+            .hero-desc { font-size: 0.92rem; }
+            section { padding: 3rem 0; }
+            .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 90px; padding: 0.55rem 0.8rem; font-size: 0.75rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Construction",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/construction-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Stochastic RCPSP",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/construction-stochastic-rcpsp.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="construction-domain.html">Construction</a></li>
+            <li class="active">Stochastic RCPSP</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-dice" aria-hidden="true"></i></div>
+        <h1>Stochastic <span>RCPSP</span></h1>
+        <p class="hero-subtitle">SRCPSP &middot; Uncertain Durations &middot; Proactive-Reactive</p>
+        <a href="construction-domain.html?lens=matrix#framework" style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.4rem 1rem;margin-top:0.3rem;font-size:0.7rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);border:1px solid rgba(197,160,89,0.25);border-radius:20px;text-decoration:none;background:rgba(197,160,89,0.05);">
+            <i class="fas fa-sitemap" aria-hidden="true" style="font-size:0.68rem;opacity:0.9;"></i>
+            <span>Construction &middot; Schedule &amp; Sequence &middot; Tactical</span>
+        </a>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Construction durations are chronically uncertain &mdash; weather, permits, subcontractor delivery, and learning-curve effects all distort the tidy deterministic schedule. The <strong style="color:var(--gold);">Stochastic Resource-Constrained Project Scheduling Problem (SRCPSP)</strong> models each activity duration as a random variable \( \tilde p_i \) and asks: <em>what schedule minimises expected makespan</em>, or maximises the probability of meeting the owner's deadline? <cite>Herroelen &amp; Leus (2005)</cite> surveyed the landscape and distinguished <strong>proactive</strong> strategies (insert time buffers during baseline scheduling to absorb variance) from <strong>reactive</strong> ones (right-shift activities as durations are realised during execution). The page lets you run Monte Carlo simulations under both policies.
+        </p>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where This <span>Decision Fits</span></h2><p>Schedule risk management &mdash; the highlighted step is what this page optimises</p></div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">Baseline RCPSP<span class="chain-sub">Deterministic schedule</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Duration Uncertainty<span class="chain-sub">Variance per activity</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">Stochastic RCPSP<span class="chain-sub">Proactive / reactive</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Resource Leveling<span class="chain-sub">Under buffers</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">Execute &amp; Re-plan<span class="chain-sub">Repair as needed</span></div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Problem</span></h2><p>Makespan distribution under uncertain durations</p></div>
+        <div class="content-block fade-in">
+            <p>Take the deterministic RCPSP of the previous page and replace fixed durations \( p_i \) with random variables \( \tilde p_i \sim F_i \). Construction practice typically uses a <strong>beta</strong>, <strong>triangular</strong>, or <strong>lognormal</strong> distribution with a point estimate \( \mu_i \) (the deterministic duration) and a standard deviation \( \sigma_i = \kappa_i \mu_i \), where \( \kappa_i \) is the <strong>coefficient of variation</strong>. For low-risk civil work \( \kappa \approx 0.1 \); for permit-heavy or weather-exposed activities it can exceed \( 0.4 \).</p>
+            <p>A common objective is to minimise the <strong>expected makespan</strong> given a policy \( \pi \) (the rule that decides when each activity starts given observed durations so far):</p>
+            <div class="formulation">
+                <span class="form-label">SRCPSP &mdash; expected-makespan objective</span>
+                $$ \min_{\pi \in \Pi} \;\; \mathbb{E}\!\left[\, s_{n+1}(\pi, \tilde{\mathbf{p}}) \,\right] $$
+                $$ \text{s.t.} \quad s_j(\pi, \mathbf{p}) \ge s_i(\pi, \mathbf{p}) + p_i \quad \forall (i,j) \in \mathcal{E}, \; \forall \mathbf{p} $$
+                $$ \sum_{i\,:\,s_i \le t < s_i + p_i}\; r_{ik} \;\le\; R_k \quad \forall k, \; \forall t, \; \forall \mathbf{p} $$
+            </div>
+            <p>The policy space \( \Pi \) is the key modelling choice:</p>
+            <ul style="color:var(--slate-light);padding-left:1.5rem;margin-bottom:1rem;font-size:0.92rem;">
+                <li><strong style="color:var(--gold);">Deterministic (naive):</strong> schedule on mean durations \( \mu_i \); right-shift only when a predecessor actually finishes late.</li>
+                <li><strong style="color:var(--gold);">Proactive buffered:</strong> schedule on mean durations plus a <em>time buffer</em> \( b_i \) per activity, sized so that cumulative variance on the critical path is absorbed. <cite>Van de Vonder et&nbsp;al. (2007)</cite> propose the Starting Time Criticality (STC) heuristic.</li>
+                <li><strong style="color:var(--gold);">Reactive dispatch:</strong> at each decision epoch, re-run Serial SGS on the remaining activities with the realised durations so far. Higher computational cost per realisation, but usually the lowest expected makespan.</li>
+            </ul>
+            <p>Chance-constrained alternative: \( \Pr(s_{n+1} \le T) \ge 1 - \alpha \) &mdash; the deadline must be met with probability \( 1 - \alpha \) (typical owner requirements: \( \alpha = 0.1 \) or \( 0.05 \)). This becomes a \( (1-\alpha) \)-quantile constraint on the makespan CDF.</p>
+            <a href="construction-project-scheduling.html" class="theory-link"><i class="fas fa-arrow-right" aria-hidden="true"></i> See the deterministic RCPSP formulation</a>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Try It <span>Yourself</span></h2><p>Monte Carlo over uncertain durations under three policies</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-dice" aria-hidden="true"></i> Stochastic RCPSP Simulator</h3>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">10 Activities &middot; 1000 replications</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Choose a Scenario</div>
+                <div class="scenario-switcher" id="scenarioSwitcher"></div>
+                <div class="solver-status" id="scenarioContext"></div>
+
+                <div class="solver-section-label" style="margin-top:1rem;">Uncertainty level (coefficient of variation \( \kappa \))</div>
+                <div class="control-row">
+                    <input type="range" id="kappaSlider" min="0.05" max="0.5" value="0.2" step="0.05">
+                    <span class="control-val" id="kappaDisplay">\u03ba = 0.20</span>
+                </div>
+                <p style="font-size:0.78rem;color:var(--slate);font-style:italic;margin-top:-0.2rem;margin-bottom:0.8rem;">0.1 = civil-works typical, 0.2 = average, 0.4+ = permit/weather exposed.</p>
+
+                <div class="solver-section-label">Owner deadline T (days)</div>
+                <div class="control-row">
+                    <input type="range" id="deadlineSlider" min="20" max="80" value="45" step="1">
+                    <span class="control-val" id="deadlineDisplay">45 d</span>
+                </div>
+
+                <div class="solver-section-label">Scheduling policy</div>
+                <div class="policy-switch" id="policySwitch">
+                    <div class="policy-chip active" data-policy="naive">Deterministic (mean)</div>
+                    <div class="policy-chip" data-policy="proactive">Proactive (STC buffers)</div>
+                    <div class="policy-chip" data-policy="reactive">Reactive (dispatching)</div>
+                </div>
+
+                <button class="solver-btn" id="solveBtn" type="button"><i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem;"></i>Run 1000 Monte Carlo Replications</button>
+
+                <div class="solver-section-label">Makespan distribution</div>
+                <div class="solver-canvas-wrap"><canvas id="histCanvas" width="960" height="260"></canvas></div>
+
+                <div class="solver-section-label">Completion probability vs. deadline (CDF)</div>
+                <div class="solver-canvas-wrap"><canvas id="cdfCanvas" width="960" height="240"></canvas></div>
+
+                <p class="solver-status" id="solverStatus">Pick a scenario, set uncertainty + deadline, choose a policy, and click Run.</p>
+
+                <div class="results-row" id="resultsRow" style="display:none;">
+                    <div class="result-kpi"><span class="kpi-val" id="kpiMean">&mdash;</span><span class="kpi-label">E[makespan] (days)</span></div>
+                    <div class="result-kpi"><span class="kpi-val" id="kpiP90">&mdash;</span><span class="kpi-label">P<sub>90</sub> makespan (days)</span></div>
+                    <div class="result-kpi"><span class="kpi-val" id="kpiProb">&mdash;</span><span class="kpi-label">P(on-time &le; T)</span></div>
+                    <div class="result-kpi"><span class="kpi-val" id="kpiBuffer">&mdash;</span><span class="kpi-label">Avg. buffer used (d)</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>Algorithms</span></h2><p>Three canonical policies plus Monte Carlo evaluation</p></div>
+        <div class="algo-grid">
+            <div class="algo-card fade-in">
+                <div class="algo-tag">Naive Baseline</div>
+                <h3>Deterministic (mean-based)</h3>
+                <span class="algo-complexity">O(n\u00b2) per replication &mdash; Serial SGS on \u03bc</span>
+                <p>Schedule every activity at its <strong>mean duration</strong>. During simulated execution, push any successor that the realised finish of its predecessor would push &mdash; right-shifting the tail. Simple but chronically <em>over-optimistic</em>; the actual makespan is usually 15&ndash;30% longer than the deterministic CPM result when variance is material.</p>
+            </div>
+            <div class="algo-card fade-in">
+                <div class="algo-tag">Proactive</div>
+                <h3>Starting-Time Criticality (STC) Buffers</h3>
+                <span class="algo-complexity">O(n\u00b2 + R &middot; n) &mdash; Monte Carlo sizing, R reps</span>
+                <p><cite>Van de Vonder, Demeulemeester &amp; Herroelen (2007)</cite> score each activity's <strong>starting-time criticality</strong> &mdash; the probability that the activity's start is delayed beyond the deterministic baseline &mdash; using a short pre-simulation. Buffers are inserted in front of the highest-STC activities, sized to hit a target on-time completion probability. Robust to execution noise; worse expected makespan than reactive dispatching but predictable.</p>
+            </div>
+            <div class="algo-card fade-in">
+                <div class="algo-tag">Reactive</div>
+                <h3>Right-Shift Dispatching</h3>
+                <span class="algo-complexity">O(n\u00b2 \u00b7 R) &mdash; re-schedule per realisation</span>
+                <p>At every decision epoch (activity finish event), re-run Serial SGS with realised durations so far and a priority rule (LFT, MTS, GRPW). <cite>Ballestín (2007)</cite> showed reactive policies dominate proactive ones in expected makespan when \( \kappa \ge 0.2 \); at lower uncertainty the proactive schedule is competitive and gives owners a stable delivery date.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-World <span>Complexity</span></h2><p>Why construction uncertainty goes beyond basic SRCPSP</p></div>
+        <div class="content-block fade-in">
+            <div class="complexity-box">
+                <h3><i class="fas fa-hard-hat" aria-hidden="true"></i> Beyond Independent Durations</h3>
+                <ul class="complexity-list">
+                    <li><strong>Correlated durations</strong> &mdash; Weather affects all concurrent outdoor activities; supply-chain disruptions hit related material-dependent activities together. Independent sampling is a convenient lie.</li>
+                    <li><strong>Bayesian updating</strong> &mdash; As the project progresses, observations refine the duration distribution of future activities (same trade, same subcontractor, same crew).</li>
+                    <li><strong>Resource uncertainty</strong> &mdash; Crew availability also fluctuates (absenteeism, competing projects). Robust extensions add stochastic \( R_k \) on top of stochastic \( p_i \).</li>
+                    <li><strong>Partial preemption</strong> &mdash; Activities can sometimes be paused (formwork cures, inspections pending) without restart cost; the scheduler can exploit this for cheap robustness.</li>
+                    <li><strong>Learning curves</strong> &mdash; Repetitive activities (floor framings, highway paving stations) get faster with experience, so durations are sequence-dependent &mdash; not independent draws.</li>
+                    <li><strong>Rare-but-catastrophic events</strong> &mdash; Strikes, floods, design-change orders. Heavy-tailed distributions (Pareto) dominate expected-makespan calculations; percentile objectives (P<sub>95</sub>, P<sub>99</sub>) are a saner metric than the mean.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="section-header fade-in"><h2>Related <span>RCPSP Variants</span></h2><p>SRCPSP is the uncertainty arm of the Hartmann-Briskorn taxonomy</p></div>
+        <div class="extensions-grid">
+            <div class="extension-card">
+                <strong>RCPSP &mdash; deterministic base.</strong> The zero-variance limit of this page. Start here before layering uncertainty.
+                <a href="construction-project-scheduling.html">&rarr; Open Project Scheduling</a>
+            </div>
+            <div class="extension-card">
+                <strong>Time-Cost Tradeoff (MRCPSP).</strong> Crashing in expectation &mdash; mode selection that accounts for both duration and risk. Often paired with stochastic models.
+                <a href="construction-time-cost-tradeoff.html">&rarr; Open Time-Cost Tradeoff</a>
+            </div>
+            <div class="extension-card">
+                <strong>Resource Leveling.</strong> Once buffers are inserted, the resource histogram reshapes; levelling post-processes the buffered schedule.
+                <a href="construction-resource-leveling.html">&rarr; Open Resource Leveling</a>
+            </div>
+            <div class="extension-card">
+                <strong>Linear / LOB Scheduling.</strong> Repetitive construction adds sequence-dependent learning effects; stochastic LOB is an open research frontier.
+                <a href="construction-linear-scheduling.html">&rarr; Open Linear Scheduling</a>
+            </div>
+            <div class="extension-card">
+                <strong>Cash-Flow Optimisation.</strong> Under uncertain durations, cash draw schedules need to carry their own buffers &mdash; a second-order stochastic problem.
+                <a href="construction-cash-flow.html">&rarr; Open Cash Flow</a>
+            </div>
+            <div class="extension-card">
+                <strong>Robust / DRO RCPSP.</strong> Distributionally robust variants minimise worst-case expected makespan over a family of distributions. Active research; not yet modelled here.
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>References</span></h2><p>Cited above &middot; DOIs &amp; permanent URLs</p></div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Herroelen, W., &amp; Leus, R. (2005).</div>
+                    <div class="reference-title">&ldquo;Project scheduling under uncertainty: survey and research potentials.&rdquo;</div>
+                    <div class="reference-journal"><em>European Journal of Operational Research</em>, 165(2), 289&ndash;306. (The canonical SRCPSP survey.) <a href="https://doi.org/10.1016/j.ejor.2004.04.002" target="_blank" rel="noopener">doi:10.1016/j.ejor.2004.04.002</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Ballest&iacute;n, F. (2007).</div>
+                    <div class="reference-title">&ldquo;When it is worthwhile to work with the stochastic RCPSP?&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of Scheduling</em>, 10(3), 153&ndash;166. (Empirically compares deterministic vs. stochastic policies as a function of variance.) <a href="https://doi.org/10.1007/s10951-007-0012-1" target="_blank" rel="noopener">doi:10.1007/s10951-007-0012-1</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Van de Vonder, S., Demeulemeester, E., &amp; Herroelen, W. (2007).</div>
+                    <div class="reference-title">&ldquo;A classification of predictive-reactive project scheduling procedures.&rdquo;</div>
+                    <div class="reference-journal"><em>Journal of Scheduling</em>, 10(3), 195&ndash;207. (The Starting Time Criticality buffer-sizing heuristic.) <a href="https://doi.org/10.1007/s10951-007-0011-2" target="_blank" rel="noopener">doi:10.1007/s10951-007-0011-2</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">M&ouml;hring, R.&nbsp;H. (1984).</div>
+                    <div class="reference-title">&ldquo;Minimizing costs of resource requirements in project networks subject to a fixed completion time.&rdquo;</div>
+                    <div class="reference-journal"><em>Operations Research</em>, 32(1), 89&ndash;120. (Early stochastic extensions of PERT/RCPSP.) <a href="https://doi.org/10.1287/opre.32.1.89" target="_blank" rel="noopener">doi:10.1287/opre.32.1.89</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Igelmund, G., &amp; Radermacher, F.&nbsp;J. (1983).</div>
+                    <div class="reference-title">&ldquo;Preselective strategies for the optimization of stochastic project networks under resource constraints.&rdquo;</div>
+                    <div class="reference-journal"><em>Networks</em>, 13(1), 1&ndash;28. (Foundational work on policy-based SRCPSP.) <a href="https://doi.org/10.1002/net.3230130102" target="_blank" rel="noopener">doi:10.1002/net.3230130102</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Stork, F. (2001).</div>
+                    <div class="reference-title"><em>Stochastic Resource-Constrained Project Scheduling.</em></div>
+                    <div class="reference-journal">PhD thesis, TU Berlin. (Canonical dissertation defining robustness measures for SRCPSP.) <a href="https://doi.org/10.14279/depositonce-326" target="_blank" rel="noopener">doi:10.14279/depositonce-326</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Artigues, C., Leus, R., &amp; Talla Nobibon, F. (2013).</div>
+                    <div class="reference-title">&ldquo;Robust optimization for resource-constrained project scheduling with uncertain activity durations.&rdquo;</div>
+                    <div class="reference-journal"><em>Flexible Services and Manufacturing Journal</em>, 25(1-2), 175&ndash;205. (Robust-optimization formulations under interval uncertainty.) <a href="https://doi.org/10.1007/s10696-012-9147-2" target="_blank" rel="noopener">doi:10.1007/s10696-012-9147-2</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Demeulemeester, E., &amp; Herroelen, W. (2011).</div>
+                    <div class="reference-title"><em>Robust Project Scheduling.</em></div>
+                    <div class="reference-journal">Foundations and Trends in Technology, Information and Operations Management, 3(3&ndash;4), 201&ndash;376. (Book-length treatment of robust / stochastic RCPSP.) <a href="https://doi.org/10.1561/0200000021" target="_blank" rel="noopener">doi:10.1561/0200000021</a></div>
+                </div>
+                <div class="reference-item fade-in">
+                    <div class="reference-authors">Hartmann, S., &amp; Briskorn, D. (2022).</div>
+                    <div class="reference-title">&ldquo;An updated survey of variants and extensions of the resource-constrained project scheduling problem.&rdquo;</div>
+                    <div class="reference-journal"><em>European Journal of Operational Research</em>, 297(1), 1&ndash;14. (Stochastic and robust sections.) <a href="https://doi.org/10.1016/j.ejor.2021.05.004" target="_blank" rel="noopener">doi:10.1016/j.ejor.2021.05.004</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section>
+    <div class="container">
+        <div class="cta-panel fade-in">
+            <h3>Need to schedule under uncertainty?</h3>
+            <p>From stochastic project scheduling to time-cost tradeoff and robust cash-flow planning, mathematical modelling translates construction variance into predictable delivery. Let's discuss how Operations Research can work for you.</p>
+            <div class="cta-links"><a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" target="_blank" class="cta-link"><i class="fab fa-linkedin" aria-hidden="true"></i> Connect on LinkedIn</a></div>
+        </div>
+    </div>
+</section>
+
+<section style="padding:2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
+            Activity durations, variances, and Monte Carlo replications are illustrative values for pedagogical comparison of policies. Real construction uncertainty quantification requires project-specific historical data, expert elicitation, and correlation modelling.
+        </div>
+    </div>
+</section>
+</main>
+
+<footer><div class="container"><p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p></div></footer>
+<a href="construction-domain.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Back</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+'use strict';
+
+var SCENARIOS = [
+    {
+        name: 'Office Tower Fit-Out',
+        desc: '10 activities with moderate duration uncertainty. Crew cap 5.',
+        crewCap: 5,
+        activities: [
+            {id:0, name:'Strip-out', preds:[], dur:4, crew:2},
+            {id:1, name:'Structural Mods', preds:[0], dur:6, crew:3},
+            {id:2, name:'Electrical', preds:[0], dur:5, crew:2},
+            {id:3, name:'Plumbing', preds:[0], dur:4, crew:2},
+            {id:4, name:'HVAC', preds:[1], dur:5, crew:2},
+            {id:5, name:'Interior Build', preds:[2,3], dur:7, crew:3},
+            {id:6, name:'Ceilings', preds:[4,5], dur:3, crew:2},
+            {id:7, name:'Flooring', preds:[5], dur:3, crew:2},
+            {id:8, name:'Finishes', preds:[6,7], dur:3, crew:2},
+            {id:9, name:'Handover', preds:[8], dur:2, crew:1}
+        ]
+    },
+    {
+        name: 'Highway Bridge (Weather-Exposed)',
+        desc: '9 activities, outdoor &mdash; weather dominates variance on pours and surfacing.',
+        crewCap: 6,
+        activities: [
+            {id:0, name:'Site Prep', preds:[], dur:5, crew:3},
+            {id:1, name:'Pile Driving', preds:[0], dur:7, crew:4},
+            {id:2, name:'Pier Caps', preds:[1], dur:6, crew:3},
+            {id:3, name:'Girder Erection', preds:[2], dur:5, crew:4},
+            {id:4, name:'Deck Pour', preds:[3], dur:4, crew:3},
+            {id:5, name:'Barriers', preds:[4], dur:3, crew:2},
+            {id:6, name:'Joints', preds:[4], dur:2, crew:2},
+            {id:7, name:'Paving', preds:[5,6], dur:4, crew:2},
+            {id:8, name:'Opening', preds:[7], dur:1, crew:1}
+        ]
+    },
+    {
+        name: 'Hospital Wing (Permit-Heavy)',
+        desc: '10 activities with permit and inspection gates driving tail risk.',
+        crewCap: 5,
+        activities: [
+            {id:0, name:'Strip-out', preds:[], dur:5, crew:2},
+            {id:1, name:'Infection Control', preds:[0], dur:3, crew:2},
+            {id:2, name:'Structural Mods', preds:[0], dur:7, crew:3},
+            {id:3, name:'Medical Gas', preds:[2], dur:5, crew:2},
+            {id:4, name:'HVAC HEPA', preds:[2], dur:6, crew:2},
+            {id:5, name:'IT/Nurse Call', preds:[2], dur:4, crew:2},
+            {id:6, name:'Partitions', preds:[1,3,4,5], dur:5, crew:3},
+            {id:7, name:'Casework', preds:[6], dur:4, crew:2},
+            {id:8, name:'Commissioning', preds:[7], dur:3, crew:2},
+            {id:9, name:'Handover', preds:[8], dur:2, crew:1}
+        ]
+    }
+];
+
+var REPLICATIONS = 1000;
+var currentScenarioIdx = 0;
+var currentPolicy = 'naive';
+var lastResults = null;
+
+var sw = document.getElementById('scenarioSwitcher');
+var kappaSlider = document.getElementById('kappaSlider');
+var kappaDisplay = document.getElementById('kappaDisplay');
+var deadlineSlider = document.getElementById('deadlineSlider');
+var deadlineDisplay = document.getElementById('deadlineDisplay');
+var policySwitch = document.getElementById('policySwitch');
+var solveBtn = document.getElementById('solveBtn');
+var solverStatus = document.getElementById('solverStatus');
+var scenarioContext = document.getElementById('scenarioContext');
+var configSummary = document.getElementById('configSummary');
+var histCanvas = document.getElementById('histCanvas');
+var cdfCanvas = document.getElementById('cdfCanvas');
+var histCtx = histCanvas.getContext('2d');
+var cdfCtx = cdfCanvas.getContext('2d');
+var resultsRow = document.getElementById('resultsRow');
+
+SCENARIOS.forEach(function(sc, i){
+    var b = document.createElement('button');
+    b.className = 'scenario-btn' + (i===0?' active':'');
+    var n = document.createElement('span'); n.className='scn-name'; n.textContent = sc.name;
+    var d = document.createElement('span'); d.className='scn-desc'; d.textContent = sc.desc;
+    b.appendChild(n); b.appendChild(d);
+    b.onclick = function(){ loadScenario(i); };
+    sw.appendChild(b);
+});
+
+kappaSlider.oninput = function(){
+    var v = parseFloat(kappaSlider.value);
+    kappaDisplay.textContent = '\u03ba = ' + v.toFixed(2);
+};
+deadlineSlider.oninput = function(){
+    deadlineDisplay.textContent = deadlineSlider.value + ' d';
+    if(lastResults) drawCDF(lastResults);
+};
+policySwitch.querySelectorAll('.policy-chip').forEach(function(c){
+    c.onclick = function(){
+        policySwitch.querySelectorAll('.policy-chip').forEach(function(x){ x.classList.remove('active'); });
+        c.classList.add('active');
+        currentPolicy = c.getAttribute('data-policy');
+    };
+});
+solveBtn.onclick = runSimulation;
+
+function loadScenario(idx){
+    currentScenarioIdx = idx;
+    var sc = SCENARIOS[idx];
+    document.querySelectorAll('.scenario-btn').forEach(function(b,i){ b.classList.toggle('active', i===idx); });
+    scenarioContext.textContent = sc.desc;
+    configSummary.textContent = sc.activities.length + ' Activities \u00b7 1000 replications';
+    clearCanvases();
+    resultsRow.style.display = 'none';
+    solverStatus.textContent = 'Scenario loaded. Set uncertainty and deadline, pick a policy, and click Run.';
+}
+
+function clearCanvases(){
+    [[histCanvas, histCtx], [cdfCanvas, cdfCtx]].forEach(function(pair){
+        var c = pair[0], cx = pair[1];
+        cx.fillStyle='#0A192F'; cx.fillRect(0,0,c.width,c.height);
+        cx.fillStyle='rgba(136,146,176,0.5)'; cx.font='13px Inter'; cx.textAlign='center';
+        cx.fillText('Click Run to simulate', c.width/2, c.height/2);
+    });
+}
+
+/* Box-Muller: sample from N(0,1) */
+function randn(){
+    var u = 0, v = 0;
+    while(u === 0) u = Math.random();
+    while(v === 0) v = Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+/* Sample from a lognormal with mean=mu, stddev=sigma (on the untransformed scale) */
+function sampleLognormal(mu, sigma){
+    if(sigma <= 0) return mu;
+    var varOver = Math.log(1 + (sigma*sigma)/(mu*mu));
+    var sd = Math.sqrt(varOver);
+    var m = Math.log(mu) - 0.5*varOver;
+    return Math.exp(m + sd * randn());
+}
+
+/* Compute deterministic schedule via Serial SGS with LFT priority */
+function scheduleWithDurs(sc, durs){
+    var acts = sc.activities, n = acts.length;
+    var es = new Array(n).fill(0);
+    for(var pass=0; pass<n; pass++){
+        for(var j=0;j<n;j++) acts[j].preds.forEach(function(p){ var v = es[p]+durs[p]; if(v>es[j]) es[j]=v; });
+    }
+    var maxT = 0;
+    for(var i=0;i<n;i++){ var f = es[i]+durs[i]; if(f>maxT) maxT=f; }
+    var succ = []; for(var i=0;i<n;i++) succ.push([]);
+    for(var j=0;j<n;j++) acts[j].preds.forEach(function(p){ succ[p].push(j); });
+    var lf = new Array(n).fill(maxT);
+    for(var pass=0; pass<n; pass++){
+        for(var i=n-1;i>=0;i--) succ[i].forEach(function(s){ var v = lf[s]-durs[s]; if(v<lf[i]) lf[i]=v; });
+    }
+    var order = []; for(var i=0;i<n;i++) order.push(i);
+    order.sort(function(a,b){ return lf[a]-lf[b]; });
+
+    var horizon = Math.ceil(maxT) + 60;
+    var crewUse = new Array(horizon).fill(0);
+    var st = new Array(n).fill(0), ft = new Array(n).fill(0);
+    order.forEach(function(idx){
+        var earliest = 0;
+        acts[idx].preds.forEach(function(p){ if(ft[p] > earliest) earliest = ft[p]; });
+        earliest = Math.ceil(earliest);
+        var d = Math.max(1, Math.round(durs[idx])), c = acts[idx].crew;
+        for(var t=earliest; t<horizon-d; t++){
+            var ok = true;
+            for(var u=0; u<d; u++){ if(crewUse[t+u]+c > sc.crewCap){ ok=false; break; } }
+            if(ok){
+                st[idx]=t; ft[idx]=t+durs[idx];
+                for(var u=0;u<d;u++) crewUse[t+u] += c;
+                break;
+            }
+        }
+    });
+    var ms = 0; for(var i=0;i<n;i++) if(ft[i]>ms) ms = ft[i];
+    return { starts:st, finishes:ft, makespan:ms };
+}
+
+/* Compute STC-style buffer per activity */
+function computeSTCBuffers(sc, kappa){
+    var acts = sc.activities, n = acts.length;
+    /* Pre-sim: estimate start-time standard deviation per activity */
+    var R_pre = 200;
+    var starts = []; for(var i=0;i<n;i++) starts.push([]);
+    for(var r=0; r<R_pre; r++){
+        var durs = acts.map(function(a){ return sampleLognormal(a.dur, kappa*a.dur); });
+        var sch = scheduleWithDurs(sc, durs);
+        for(var i=0;i<n;i++) starts[i].push(sch.starts[i]);
+    }
+    var buffers = [];
+    for(var i=0;i<n;i++){
+        var mean = 0; starts[i].forEach(function(s){ mean += s; }); mean /= R_pre;
+        var vari = 0; starts[i].forEach(function(s){ vari += (s-mean)*(s-mean); }); vari /= R_pre;
+        var sd = Math.sqrt(vari);
+        /* Buffer = 1.0 sigma to target ~84% on-time per activity (coarse heuristic) */
+        buffers.push(Math.round(sd));
+    }
+    return buffers;
+}
+
+/* Run a single replication under a given policy. Returns realised makespan. */
+function runOneRep(sc, kappa, policy, buffers){
+    var acts = sc.activities, n = acts.length;
+    var actualDurs = acts.map(function(a){ return Math.max(1, sampleLognormal(a.dur, kappa*a.dur)); });
+
+    if(policy === 'naive'){
+        /* Baseline on mean, right-shift */
+        var baseDurs = acts.map(function(a){ return a.dur; });
+        var baseSch = scheduleWithDurs(sc, baseDurs);
+        /* Replace each activity's duration with actual, cascade */
+        var st = baseSch.starts.slice();
+        var ft = new Array(n).fill(0);
+        /* Topological order by baseline start */
+        var order = []; for(var i=0;i<n;i++) order.push(i);
+        order.sort(function(a,b){ return st[a]-st[b]; });
+        order.forEach(function(idx){
+            var earliest = st[idx];
+            acts[idx].preds.forEach(function(p){ if(ft[p] > earliest) earliest = ft[p]; });
+            st[idx] = earliest; ft[idx] = earliest + actualDurs[idx];
+        });
+        var ms = 0; for(var i=0;i<n;i++) if(ft[i]>ms) ms = ft[i];
+        return { makespan:ms, bufferUsed: 0 };
+    }
+
+    if(policy === 'proactive'){
+        /* Baseline on mean + buffer, right-shift */
+        var baseDurs = acts.map(function(a,i){ return a.dur + (buffers[i] || 0); });
+        var baseSch = scheduleWithDurs(sc, baseDurs);
+        var st = baseSch.starts.slice();
+        var ft = new Array(n).fill(0);
+        var order = []; for(var i=0;i<n;i++) order.push(i);
+        order.sort(function(a,b){ return st[a]-st[b]; });
+        order.forEach(function(idx){
+            var earliest = st[idx];
+            acts[idx].preds.forEach(function(p){ if(ft[p] > earliest) earliest = ft[p]; });
+            st[idx] = earliest; ft[idx] = earliest + actualDurs[idx];
+        });
+        var ms = 0; for(var i=0;i<n;i++) if(ft[i]>ms) ms = ft[i];
+        var totalBuffer = 0; buffers.forEach(function(b){ totalBuffer += b; });
+        return { makespan:ms, bufferUsed: totalBuffer / n };
+    }
+
+    if(policy === 'reactive'){
+        /* Re-schedule with actual durations via Serial SGS */
+        var sch = scheduleWithDurs(sc, actualDurs);
+        return { makespan: sch.makespan, bufferUsed: 0 };
+    }
+
+    return { makespan: 0, bufferUsed: 0 };
+}
+
+function runSimulation(){
+    var sc = SCENARIOS[currentScenarioIdx];
+    var kappa = parseFloat(kappaSlider.value);
+    var T = parseInt(deadlineSlider.value, 10);
+
+    solverStatus.textContent = 'Running ' + REPLICATIONS + ' replications...';
+
+    var buffers = currentPolicy === 'proactive' ? computeSTCBuffers(sc, kappa) : null;
+
+    var makespans = [];
+    var totalBuffer = 0;
+    for(var r=0; r<REPLICATIONS; r++){
+        var out = runOneRep(sc, kappa, currentPolicy, buffers);
+        makespans.push(out.makespan);
+        totalBuffer += out.bufferUsed;
+    }
+    makespans.sort(function(a,b){ return a-b; });
+    var mean = makespans.reduce(function(a,b){return a+b;},0)/REPLICATIONS;
+    var p90 = makespans[Math.floor(0.9*REPLICATIONS)];
+    var onTime = makespans.filter(function(m){ return m <= T; }).length / REPLICATIONS;
+    var avgBuffer = totalBuffer / REPLICATIONS;
+
+    lastResults = { makespans:makespans, mean:mean, p90:p90, onTime:onTime, avgBuffer:avgBuffer, T:T, policy:currentPolicy };
+
+    drawHist(lastResults);
+    drawCDF(lastResults);
+    document.getElementById('kpiMean').textContent = mean.toFixed(1);
+    document.getElementById('kpiP90').textContent = p90.toFixed(1);
+    document.getElementById('kpiProb').textContent = (onTime*100).toFixed(0) + '%';
+    document.getElementById('kpiBuffer').textContent = avgBuffer.toFixed(1);
+    resultsRow.style.display = 'grid';
+    solverStatus.textContent = 'Simulation complete (' + currentPolicy + ' policy). Mean makespan ' + mean.toFixed(1) + ' d, on-time probability ' + (onTime*100).toFixed(0) + '%.';
+}
+
+function drawHist(r){
+    var W = histCanvas.width, H = histCanvas.height, cx = histCtx;
+    cx.fillStyle = '#0A192F'; cx.fillRect(0,0,W,H);
+    var ms = r.makespans;
+    var mn = ms[0], mx = ms[ms.length-1];
+    var nBins = 30, binW = (mx - mn) / nBins;
+    if(binW <= 0) binW = 1;
+    var bins = new Array(nBins).fill(0);
+    ms.forEach(function(v){
+        var b = Math.min(nBins-1, Math.floor((v-mn)/binW));
+        bins[b]++;
+    });
+    var maxC = 0; bins.forEach(function(c){ if(c>maxC) maxC=c; });
+    var P = { t:20, b:40, l:50, r:25 }, cW = W-P.l-P.r, cH = H-P.t-P.b;
+    /* axis */
+    cx.strokeStyle='rgba(197,160,89,0.25)'; cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(P.l,P.t); cx.lineTo(P.l,H-P.b); cx.lineTo(W-P.r,H-P.b); cx.stroke();
+    /* x ticks */
+    for(var k=0;k<=6;k++){
+        var v = mn + (mx-mn)*k/6, x = P.l + (k/6)*cW;
+        cx.fillStyle='rgba(197,160,89,0.5)'; cx.font='10px JetBrains Mono'; cx.textAlign='center';
+        cx.fillText(v.toFixed(0),x,H-P.b+14);
+    }
+    cx.fillStyle='rgba(197,160,89,0.7)'; cx.font='11px Inter'; cx.textAlign='center';
+    cx.fillText('Realised makespan (days)', W/2, H-6);
+    /* bars */
+    var barW = cW / nBins;
+    bins.forEach(function(c, i){
+        var h = (c/maxC)*cH;
+        cx.fillStyle='rgba(197,160,89,0.6)';
+        cx.fillRect(P.l + i*barW, H-P.b-h, barW-1, h);
+    });
+    /* mean line */
+    var xm = P.l + ((r.mean - mn)/(mx-mn))*cW;
+    cx.strokeStyle='rgba(122,162,247,0.9)'; cx.setLineDash([4,4]); cx.beginPath(); cx.moveTo(xm,P.t); cx.lineTo(xm,H-P.b); cx.stroke(); cx.setLineDash([]);
+    cx.fillStyle='rgba(122,162,247,0.9)'; cx.font='10px Inter'; cx.textAlign='left'; cx.fillText('E[ms]='+r.mean.toFixed(1),xm+4,P.t+12);
+    /* T line */
+    if(r.T >= mn && r.T <= mx){
+        var xT = P.l + ((r.T - mn)/(mx-mn))*cW;
+        cx.strokeStyle='rgba(255,107,107,0.8)'; cx.setLineDash([4,4]); cx.beginPath(); cx.moveTo(xT,P.t); cx.lineTo(xT,H-P.b); cx.stroke(); cx.setLineDash([]);
+        cx.fillStyle='rgba(255,107,107,0.9)'; cx.font='10px Inter'; cx.textAlign='left'; cx.fillText('T='+r.T, xT+4, P.t+26);
+    }
+    /* title */
+    cx.fillStyle='rgba(197,160,89,0.7)'; cx.font='12px Inter'; cx.textAlign='left';
+    cx.fillText('Makespan histogram ('+r.policy+' policy, '+REPLICATIONS+' reps)', P.l, 14);
+}
+
+function drawCDF(r){
+    var W = cdfCanvas.width, H = cdfCanvas.height, cx = cdfCtx;
+    cx.fillStyle = '#0A192F'; cx.fillRect(0,0,W,H);
+    var T = parseInt(deadlineSlider.value, 10);
+    var ms = r.makespans, n = ms.length;
+    var mn = Math.min(ms[0], T-2), mx = Math.max(ms[n-1], T+2);
+    var P = { t:20, b:40, l:55, r:25 }, cW = W-P.l-P.r, cH = H-P.t-P.b;
+    cx.strokeStyle='rgba(197,160,89,0.25)'; cx.lineWidth=1;
+    cx.beginPath(); cx.moveTo(P.l,P.t); cx.lineTo(P.l,H-P.b); cx.lineTo(W-P.r,H-P.b); cx.stroke();
+    /* x-ticks */
+    for(var k=0;k<=6;k++){
+        var v = mn + (mx-mn)*k/6, x = P.l + (k/6)*cW;
+        cx.fillStyle='rgba(197,160,89,0.5)'; cx.font='10px JetBrains Mono'; cx.textAlign='center';
+        cx.fillText(v.toFixed(0),x,H-P.b+14);
+    }
+    cx.fillStyle='rgba(197,160,89,0.7)'; cx.font='11px Inter'; cx.textAlign='center';
+    cx.fillText('Deadline T (days)', W/2, H-6);
+    /* y-ticks (probability) */
+    for(var k=0;k<=4;k++){
+        var p = k/4, y = H-P.b - p*cH;
+        cx.strokeStyle='rgba(197,160,89,0.08)'; cx.beginPath(); cx.moveTo(P.l,y); cx.lineTo(W-P.r,y); cx.stroke();
+        cx.fillStyle='rgba(197,160,89,0.5)'; cx.font='10px JetBrains Mono'; cx.textAlign='right';
+        cx.fillText((p*100).toFixed(0)+'%',P.l-6,y+3);
+    }
+    /* CDF line */
+    cx.strokeStyle='rgba(197,160,89,0.85)'; cx.lineWidth=1.8;
+    cx.beginPath();
+    for(var i=0;i<n;i++){
+        var xv = P.l + ((ms[i]-mn)/(mx-mn))*cW;
+        var yv = H-P.b - ((i+1)/n)*cH;
+        if(i===0) cx.moveTo(xv,yv); else cx.lineTo(xv,yv);
+    }
+    cx.stroke();
+    /* T vertical + prob reading */
+    var xT = P.l + ((T-mn)/(mx-mn))*cW;
+    cx.strokeStyle='rgba(255,107,107,0.75)'; cx.setLineDash([4,4]); cx.beginPath(); cx.moveTo(xT,P.t); cx.lineTo(xT,H-P.b); cx.stroke(); cx.setLineDash([]);
+    var prob = ms.filter(function(m){ return m <= T; }).length / n;
+    var yp = H-P.b - prob*cH;
+    cx.fillStyle='rgba(100,255,218,0.9)'; cx.beginPath(); cx.arc(xT, yp, 5, 0, Math.PI*2); cx.fill();
+    cx.fillStyle='rgba(100,255,218,0.95)'; cx.font='11px Inter'; cx.textAlign='left';
+    cx.fillText('P(on-time) = '+(prob*100).toFixed(0)+'%', xT+8, yp-6);
+    /* title */
+    cx.fillStyle='rgba(197,160,89,0.7)'; cx.font='12px Inter'; cx.textAlign='left';
+    cx.fillText('Completion probability curve (empirical CDF)', P.l, 14);
+}
+
+var obs = new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible'); obs.unobserve(e.target);}});},{threshold:0.1});
+document.querySelectorAll('.fade-in').forEach(function(el){obs.observe(el);});
+
+(function(){
+    var pb=document.getElementById('scrollProgress');
+    function s(){ var h=document.documentElement; var d=h.scrollHeight-h.clientHeight; if(pb) pb.style.width = (d>0?(h.scrollTop/d)*100:0) + '%'; if(window.scrollY>50) document.querySelector('.navbar').classList.add('scrolled'); else document.querySelector('.navbar').classList.remove('scrolled'); }
+    window.addEventListener('scroll', s, {passive:true}); s();
+})();
+
+loadScenario(0);
+})();
+</script>
+</body>
+</html>
