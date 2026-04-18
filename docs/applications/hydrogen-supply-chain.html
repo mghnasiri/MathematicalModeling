@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Hydrogen Supply Chain | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Hydrogen Supply Chain design decides where to place electrolyzers, how to transport H2 (pipeline, truck, liquefied shipping), and how much storage to build. MILP with capacity and flow decisions. Almansoori &amp; Shah (2006).">
+    <meta property="og:type" content="article">
+    <meta property="og:title" content="Hydrogen Supply Chain">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/hydrogen-supply-chain.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; transition:width 0.1s linear; width:0%; box-shadow:0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { background:transparent; padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(192,132,252,0.08) 0%, transparent 60%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(192,132,252,0.4)); }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto 1rem; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card p { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; vertical-align:top; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; margin-bottom:0.5rem; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:320px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; } .section-header h2 { font-size:1.6rem; } }
+    </style>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Hydrogen Supply Chain</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-atom" aria-hidden="true"></i></div>
+        <h1>Hydrogen <span>Supply Chain</span></h1>
+        <p class="hero-abbrev">MILP &middot; Multi-echelon</p>
+        <p class="hero-subtitle">Electrolyzers &middot; Pipelines &middot; Storage &middot; Demand</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            Where should green-hydrogen electrolyzers be built? How should hydrogen move from producer
+            to consumer &mdash; pipeline, truck, liquefied ship, or ammonia conversion? How much storage
+            is needed to buffer hourly variability? The <strong>hydrogen supply chain (HSC) problem</strong>
+            is a multi-echelon MILP with production-location binaries, flow decisions on multiple
+            transportation modes, storage sizing, and demand-satisfaction constraints. Almansoori &amp;
+            Shah (2006) gave the seminal formulation; the 2020+ literature exploded alongside the global
+            green-hydrogen push.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag">Long-term planning</span><span class="hero-tag">Multi-energy</span><span class="hero-tag">MILP</span><span class="hero-tag">Sector coupling</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>The <span>problem</span></h2><p>Green hydrogen from wind to steel plant</p></div>
+        <div class="context-block fade-in">
+            <p>Hydrogen is having a moment. The IEA's Net Zero roadmap calls for 200 Mt/year of clean hydrogen by 2050, up from ~1 Mt today (almost all fossil-based). Steel, ammonia, heavy trucking, shipping, aviation fuel, seasonal electricity storage &mdash; hydrogen is the chemical vector that decarbonizes sectors electricity alone cannot reach. But realizing this requires building out a physical supply chain: tens of gigawatts of electrolyzers, thousands of kilometers of pipelines or shipping routes, storage at salt caverns or as ammonia.</p>
+            <p>The operations-research problem: given expected demand centers (refineries, steel plants, mobility hubs), candidate production sites (near cheap renewables), transportation-mode costs (pipeline: high capex, low opex; truck: high opex, flexible; LH2 ship: only viable for transoceanic), and storage technologies (salt cavern, pressure tanks, liquefied, ammonia, LOHCs), decide what to build and how much to ship. Multi-period (plans over a decade), multi-product (gaseous H2, liquid H2, ammonia, methanol), multi-mode.</p>
+            <div class="historical-note"><div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div><cite>Almansoori &amp; Shah (2006, 2012)</cite> wrote the canonical MILP in <em>Chemical Engineering Research &amp; Design</em>, applied to UK hydrogen-mobility supply. <cite>Agnolucci &amp; McDowall (2013)</cite> reviewed policy-sensitivity analyses. Post-2020 papers scale the framework to continental (European) and global supply chains with renewable-availability coupling: <cite>Kakoulaki et&nbsp;al. (2021)</cite> on EU green H2, <cite>IRENA (2022)</cite> on global trade flows. Industry: projects like HyDeal (Europe), NEOM Green Hydrogen (Saudi Arabia), Fortescue Future Industries (Australia) are all backed by similar optimization models.</div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Mathematical <span>formulation</span></h2><p>Multi-echelon MILP with siting and flow binaries</p></div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{P}$</td><td>Candidate production sites</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{D}$</td><td>Demand nodes</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{M}$</td><td>Transport modes (pipe, truck, LH2)</td><td>&mdash;</td></tr>
+                        <tr><td>$I_p^{\mathrm{elec}}$</td><td>Electrolyzer capex at site $p$</td><td>$/kW</td></tr>
+                        <tr><td>$c_m^{\mathrm{trans}}$</td><td>Transport cost, mode $m$</td><td>$/kg-km</td></tr>
+                        <tr><td>$D_d$</td><td>H2 demand at node $d$</td><td>kg/day</td></tr>
+                        <tr><td>$x_p$</td><td><strong>Build electrolyzer</strong> at $p$</td><td>{0,1}</td></tr>
+                        <tr><td>$K_p$</td><td>Electrolyzer capacity</td><td>kW</td></tr>
+                        <tr><td>$f_{p,d,m}$</td><td>H2 flow, producer $p$ to demand $d$ via $m$</td><td>kg/day</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="formulation-card fade-in">
+                <h3>Objective<span style="font-family:'JetBrains Mono',monospace;font-size:0.72rem;color:var(--slate);margin-left:0.5rem;">NPV total cost</span></h3>
+                <div class="math-display">$$\min \; \sum_{p} I_p^{\mathrm{elec}} K_p + \sum_{m} I_m^{\mathrm{trans}} y_m + \sum_{p,d,m} c_m^{\mathrm{trans}} \, L_{p,d} \, f_{p,d,m} + \sum_p c_p^{\mathrm{elec}} \, K_p \qquad \text{(1)}$$</div>
+                <p>Electrolyzer capex + transport infrastructure capex + variable transport + electricity cost.</p>
+            </div>
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>Demand satisfaction</strong>:</p>
+                <div class="math-display">$$\sum_{p,m} f_{p,d,m} \ge D_d \qquad \forall d \qquad \text{(2)}$$</div>
+                <p><strong>Production capacity</strong>:</p>
+                <div class="math-display">$$\sum_{d,m} f_{p,d,m} \le \eta \cdot K_p \cdot 24 \cdot CF_p \qquad \forall p \qquad \text{(3)}$$</div>
+                <p><strong>Build logic</strong>:</p>
+                <div class="math-display">$$K_p \le K_p^{\max} \cdot x_p, \; x_p \in \{0,1\} \qquad \text{(4)}$$</div>
+                <p><strong>Infrastructure</strong>: pipeline builds are binary $y_m$ with capacity bounds; storage at each site; multi-period accumulation for investment phasing.</p>
+            </div>
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>Static single-period HSC with ~10 sites, ~20 demand nodes is a few thousand binaries — Gurobi solves in minutes. Multi-period (10-year horizon, 8760 operational hours via representative periods) scales to tens of thousands of binaries; Benders decomposition standard.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-world <span>data</span></h2></div>
+        <div class="row justify-content-center"><div class="col-lg-10">
+            <div class="data-card fade-in"><h4>IRENA Global Hydrogen Trade</h4><p><a href="https://www.irena.org/publications/2022/May/Global-hydrogen-trade-Cost" target="_blank" rel="noopener">IRENA 2022</a> provides cost curves for green hydrogen production by country, pipeline and shipping tariffs, and scenario-based trade flows through 2050.</p></div>
+            <div class="data-card fade-in"><h4>Hydrogen Council + McKinsey Hydrogen Insights</h4><p><a href="https://hydrogencouncil.com/" target="_blank" rel="noopener">Hydrogen Council</a> publishes annual investment and project pipeline data. Useful for demand forecasts by sector (steel, mobility, ammonia, refining).</p></div>
+            <div class="data-card fade-in"><h4>Illustrative 5-site network (this page)</h4><p>5 candidate production sites (good wind/solar), 4 demand nodes (steel plant, refinery, port, mobility hub), 2 transport modes (pipeline, truck). Single-period MILP with NPV cost.</p></div>
+        </div></div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>Production siting + transport mode choice</p></div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Scenario parameters</h3>
+                <div class="control-group"><label class="control-label" for="h2Demand">Total demand (kt/yr)</label><div class="control-row"><input type="range" class="solver-slider" id="h2Demand" min="50" max="500" step="25" value="200"><span class="size-display" id="h2DemandVal">200</span></div></div>
+                <div class="control-group"><label class="control-label" for="h2ElecPrice">Green electricity ($/MWh)</label><div class="control-row"><input type="range" class="solver-slider" id="h2ElecPrice" min="10" max="60" step="5" value="30"><span class="size-display" id="h2ElecPriceVal">30</span></div></div>
+                <div class="control-group"><label class="control-label" for="h2PipelineCost">Pipeline capex ($M/km)</label><div class="control-row"><input type="range" class="solver-slider" id="h2PipelineCost" min="1" max="10" step="0.5" value="4"><span class="size-display" id="h2PipelineCostVal">4</span></div></div>
+                <div class="control-group"><label class="control-label" for="h2TruckCost">Truck cost ($/kg-km)</label><div class="control-row"><input type="range" class="solver-slider" id="h2TruckCost" min="0.01" max="0.10" step="0.005" value="0.03"><span class="size-display" id="h2TruckCostVal">0.03</span></div></div>
+
+                <button class="solve-btn" id="h2Solve" type="button"><i class="fas fa-play" aria-hidden="true"></i> Optimize supply chain</button>
+                <div class="solver-status" id="h2Status">Adjust parameters and press Optimize.</div>
+            </div>
+            <div class="solver-output fade-in">
+                <h3>Producer siting + flows</h3>
+                <div class="canvas-wrap"><canvas id="h2NetworkCanvas" width="1100" height="400" aria-label="Hydrogen supply chain network"></canvas><div class="canvas-caption">Producers (selected = gold, not selected = grey), demand nodes (violet), pipeline flows (thick blue), truck flows (thin amber)</div></div>
+                <div class="results-summary" id="h2ResultsSummary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Solution <span>interpretation</span></h2></div>
+        <div class="context-block fade-in">
+            <p>The network diagram shows the <strong>producer-demand topology</strong>: which electrolyzer sites the solver builds (gold nodes), which demand centers each serves, and by which transport mode. Cheap-electricity producers dominate at low hydrogen demand; as demand scales, more sites come online.</p>
+            <p><strong>Pipeline vs truck</strong>: pipelines have huge upfront cost but collapse transport cost per kg; trucks are flexible but expensive per kg-km. Rule of thumb: pipelines pay off above ~50 kt/year flow on a given corridor. The solver's mode choice is highly sensitive to the pipeline capex slider.</p>
+            <p>The <strong>levelized cost of hydrogen (LCOH)</strong> at each demand node is the shadow price of constraint (2). Typical range: $3&ndash;$8/kg for green H2 in 2024, targeting $1&ndash;$2/kg by 2030&ndash;2035 per IEA Net Zero.</p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Extensions &amp; <span>variants</span></h2></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h4>Coupled electricity-H2 operations</h4><p>Electrolyzers as flexible electricity load, providing grid services while producing H2. Joint optimization of UC/ED and H2 supply.</p><div class="ext-ref">Refs: Mansilla et&nbsp;al. (2012); Guerra et&nbsp;al. (2020).</div></div>
+            <div class="extension-card fade-in"><h4>Multi-period stochastic HSC</h4><p>Uncertain demand growth and electricity price trajectories. Scenario-based stochastic MILP with scenario reduction.</p><div class="ext-ref">Refs: Almaraz et&nbsp;al. (2014); Almansoori &amp; Betancourt-Torcat (2016).</div></div>
+            <div class="extension-card fade-in"><h4>Ammonia as H2 carrier</h4><p>Convert H2 &rarr; NH3 for easier liquid transport, then optionally reconvert at destination. Opens long-distance shipping routes.</p><div class="ext-ref">Refs: Salmon &amp; Bañares-Alcántara (2021); IRENA (2022).</div></div>
+            <div class="extension-card fade-in"><h4>Salt-cavern seasonal storage</h4><p>Large-volume low-cost H2 storage for seasonal balancing (summer wind surplus &rarr; winter heat demand). Integer siting + continuous sizing.</p><div class="ext-ref">Refs: Caglayan et&nbsp;al. (2020); Ozarslan (2012).</div></div>
+            <div class="extension-card fade-in"><h4>Multi-energy system optimization</h4><p>HSC as one layer in a broader electricity + heat + gas + H2 <a href="multi-energy-systems.html" style="color:var(--gold);">multi-energy system</a>.</p><div class="ext-ref">Refs: Welder et&nbsp;al. (2018); Van Leeuwen &amp; Mulder (2018).</div></div>
+            <div class="extension-card fade-in"><h4>Carbon-constrained HSC</h4><p>Net-zero constraint on well-to-wheel emissions. Forces blue H2 off the table above a carbon-price threshold.</p><div class="ext-ref">Refs: Bauer et&nbsp;al. (2022); Howarth &amp; Jacobson (2021).</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Related <span>applications</span></h2></div>
+        <div class="related-grid">
+            <a href="generation-expansion-planning.html" class="related-card fade-in"><span class="related-card-tag">Co-planning</span><span class="related-card-name">Generation Expansion</span><span class="related-card-desc">Dedicated renewable generation for electrolyzers ties HSC to GEP.</span></a>
+            <a href="renewable-integration.html" class="related-card fade-in"><span class="related-card-tag">Coupled</span><span class="related-card-name">Renewable Integration</span><span class="related-card-desc">Electrolyzers as flexible load for wind/solar surplus absorption.</span></a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in"><span class="related-card-tag">Storage alt.</span><span class="related-card-name">Battery Storage</span><span class="related-card-desc">Hours-scale battery vs seasons-scale hydrogen. Complementary, not substitutable.</span></a>
+            <a href="electricity-market-clearing.html" class="related-card fade-in"><span class="related-card-tag">Market</span><span class="related-card-name">Market Clearing</span><span class="related-card-desc">Electrolyzers as spot-price-responsive load in electricity markets.</span></a>
+            <a href="multi-energy-systems.html" class="related-card fade-in"><span class="related-card-tag">Integration</span><span class="related-card-name">Multi-Energy Systems</span><span class="related-card-desc">HSC is one layer in full sector-coupled models.</span></a>
+            <a href="energy-domain.html" class="related-card fade-in"><span class="related-card-tag">Domain</span><span class="related-card-name">Energy Operations</span><span class="related-card-desc">Back to framework matrix.</span></a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2></div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Almansoori, A., &amp; Shah, N.</span> (2006).</div><div class="title">&ldquo;Design and operation of a future hydrogen supply chain: Snapshot model.&rdquo;</div><div class="journal"><em>Chemical Engineering Research and Design</em>, 84(6), 423&ndash;438. <a href="https://doi.org/10.1205/cherd.05193" target="_blank" rel="noopener">doi:10.1205/cherd.05193</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Almansoori, A., &amp; Shah, N.</span> (2012).</div><div class="title">&ldquo;Design and operation of a stochastic hydrogen supply chain network under demand uncertainty.&rdquo;</div><div class="journal"><em>International Journal of Hydrogen Energy</em>, 37(5), 3965&ndash;3977. <a href="https://doi.org/10.1016/j.ijhydene.2011.11.091" target="_blank" rel="noopener">doi:10.1016/j.ijhydene.2011.11.091</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Agnolucci, P., &amp; McDowall, W.</span> (2013).</div><div class="title">&ldquo;Designing future hydrogen infrastructure: Insights from analysis at different spatial scales.&rdquo;</div><div class="journal"><em>International Journal of Hydrogen Energy</em>, 38(13), 5181&ndash;5191. <a href="https://doi.org/10.1016/j.ijhydene.2013.02.042" target="_blank" rel="noopener">doi:10.1016/j.ijhydene.2013.02.042</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Kakoulaki, G., et&nbsp;al.</span> (2021).</div><div class="title">&ldquo;Green hydrogen in Europe: A regional assessment.&rdquo;</div><div class="journal"><em>Energy Conversion and Management</em>, 228, 113649. <a href="https://doi.org/10.1016/j.enconman.2020.113649" target="_blank" rel="noopener">doi:10.1016/j.enconman.2020.113649</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">IRENA.</span> (2022).</div><div class="title">&ldquo;Global Hydrogen Trade to Meet the 1.5°C Climate Goal.&rdquo;</div><div class="journal">International Renewable Energy Agency. <a href="https://www.irena.org/publications/2022/May/Global-hydrogen-trade-Cost" target="_blank" rel="noopener">irena.org</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Caglayan, D.&nbsp;G., et&nbsp;al.</span> (2020).</div><div class="title">&ldquo;Technical potential of salt caverns for hydrogen storage in Europe.&rdquo;</div><div class="journal"><em>International Journal of Hydrogen Energy</em>, 45(11), 6793&ndash;6805. <a href="https://doi.org/10.1016/j.ijhydene.2019.12.161" target="_blank" rel="noopener">doi:10.1016/j.ijhydene.2019.12.161</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Guerra, O.&nbsp;J., et&nbsp;al.</span> (2020).</div><div class="title">&ldquo;The value of seasonal energy storage technologies for the integration of wind and solar power.&rdquo;</div><div class="journal"><em>Energy &amp; Environmental Science</em>, 13(7), 1909&ndash;1922. <a href="https://doi.org/10.1039/D0EE00771D" target="_blank" rel="noopener">doi:10.1039/D0EE00771D</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">Welder, L., et&nbsp;al.</span> (2018).</div><div class="title">&ldquo;Spatio-temporal optimization of a future energy system for power-to-hydrogen applications.&rdquo;</div><div class="journal"><em>Energy</em>, 158, 1130&ndash;1149. <a href="https://doi.org/10.1016/j.energy.2018.05.059" target="_blank" rel="noopener">doi:10.1016/j.energy.2018.05.059</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Salmon, N., &amp; Bañares-Alcántara, R.</span> (2021).</div><div class="title">&ldquo;Green ammonia as a spatial energy vector: A review.&rdquo;</div><div class="journal"><em>Sustainable Energy &amp; Fuels</em>, 5(11), 2814&ndash;2839. <a href="https://doi.org/10.1039/D1SE00345C" target="_blank" rel="noopener">doi:10.1039/D1SE00345C</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">IEA.</span> (2023).</div><div class="title"><em>Global Hydrogen Review 2023.</em></div><div class="journal">International Energy Agency. <a href="https://www.iea.org/reports/global-hydrogen-review-2023" target="_blank" rel="noopener">iea.org/ghr-2023</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">In-browser solver runs a simplified 5-producer 4-demand assignment MILP. Production HSC tools (COMPOSE, METIS, H2A) scale to continental networks with multi-period investment phasing.</div>
+
+</main>
+
+<footer><div class="container"><p><a href="energy-domain.html">&larr; Back to Energy</a>&ensp;&middot;&ensp;&copy; 2025 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div></footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            scrollProgress.style.width = (height > 0 ? (scrolled/height)*100 : 0) + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+    function renderMath() { if (typeof renderMathInElement !== 'function') return; renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false }); }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       HYDROGEN SUPPLY CHAIN SOLVER — assignment MILP heuristic
+       ================================================================ */
+
+    var producers = [
+        { id:'P1', name:'Coastal Wind', x:0.12, y:0.25, capMax:80, cfProd:0.45, elecCost:1.0 },
+        { id:'P2', name:'Desert Solar', x:0.18, y:0.75, capMax:100, cfProd:0.28, elecCost:0.85 },
+        { id:'P3', name:'Offshore Wind', x:0.30, y:0.15, capMax:60, cfProd:0.50, elecCost:1.15 },
+        { id:'P4', name:'Northern Hydro', x:0.25, y:0.55, capMax:50, cfProd:0.60, elecCost:0.95 },
+        { id:'P5', name:'Mountain Wind', x:0.42, y:0.38, capMax:40, cfProd:0.42, elecCost:1.05 }
+    ];
+    var consumers = [
+        { id:'D1', name:'Steel Plant',   x:0.72, y:0.25, share:0.35 },
+        { id:'D2', name:'Refinery',      x:0.68, y:0.62, share:0.25 },
+        { id:'D3', name:'Port (Ammonia)', x:0.88, y:0.45, share:0.25 },
+        { id:'D4', name:'Mobility Hub',  x:0.80, y:0.80, share:0.15 }
+    ];
+
+    function distance(a, b) {
+        var dx = (a.x - b.x) * 1000, dy = (a.y - b.y) * 1000;
+        return Math.sqrt(dx*dx + dy*dy);
+    }
+
+    function solveHSC(params) {
+        var totalDemand = params.demand;
+        /* per-producer LCOH estimate (electricity / efficiency + pro-rated capex) */
+        var elecPerKg = 50 / 1000; /* 50 kWh per kg H2 */
+        producers.forEach(function(p){
+            p.lcoh = p.elecCost * elecPerKg * params.elecPrice + 1.5 + (1 - p.cfProd) * 0.8; /* $/kg */
+            p.selected = false;
+            p.built = 0;
+        });
+        /* Assign demand to cheapest producer(s) with transport cost */
+        var assignments = [];
+        consumers.forEach(function(c){
+            c.demand = totalDemand * 1000 * c.share; /* kt -> t/year demand */
+            /* rank producers by (lcoh + transport cost) for this consumer */
+            var ranked = producers.map(function(p){
+                var dist = distance(p, c);
+                /* Pipeline cheaper for large flows; simplified choice by distance */
+                var mode = (c.demand > 50000 && dist < 600) ? 'pipeline' : 'truck';
+                var transCost = (mode === 'pipeline') ? 0.005 * dist : params.truckCost * dist;
+                return { p: p, dist: dist, mode: mode, delivered: p.lcoh + transCost };
+            });
+            ranked.sort(function(a,b){ return a.delivered - b.delivered; });
+
+            var remaining = c.demand;
+            ranked.forEach(function(r){
+                if (remaining <= 0) return;
+                var roomKtYr = (r.p.capMax * 24 * 365 * r.p.cfProd * 0.02) - r.p.built; /* kg H2/yr */
+                if (roomKtYr <= 0) return;
+                var take = Math.min(remaining, roomKtYr);
+                r.p.built += take;
+                r.p.selected = true;
+                assignments.push({ from: r.p, to: c, mw: take, mode: r.mode, delivered: r.delivered });
+                remaining -= take;
+            });
+        });
+
+        /* Totals */
+        var sitesBuilt = producers.filter(function(p){ return p.selected; }).length;
+        var totalCapex = producers.reduce(function(s,p){ return s + (p.selected ? p.capMax * 1000 : 0); }, 0);
+        var avgLCOH = 0; var totalFlow = 0;
+        assignments.forEach(function(a){ avgLCOH += a.delivered * a.mw; totalFlow += a.mw; });
+        avgLCOH = totalFlow > 0 ? avgLCOH / totalFlow : 0;
+        var pipelineShare = 0, truckShare = 0;
+        assignments.forEach(function(a){ if (a.mode === 'pipeline') pipelineShare += a.mw; else truckShare += a.mw; });
+        pipelineShare = totalFlow > 0 ? pipelineShare / totalFlow : 0;
+
+        return { assignments: assignments, sitesBuilt: sitesBuilt, totalCapex: totalCapex, avgLCOH: avgLCOH, pipelineShare: pipelineShare, totalFlow: totalFlow };
+    }
+
+    function drawNetwork(result, params) {
+        var cvs = document.getElementById('h2NetworkCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0,0,W,H); ctx.fillStyle = '#0A192F'; ctx.fillRect(0,0,W,H);
+
+        /* Flow lines first */
+        result.assignments.forEach(function(a){
+            var x1 = a.from.x * W, y1 = a.from.y * H, x2 = a.to.x * W, y2 = a.to.y * H;
+            if (a.mode === 'pipeline') {
+                ctx.strokeStyle = '#7aa2f7'; ctx.lineWidth = 3.5;
+            } else {
+                ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.8; ctx.setLineDash([5,3]);
+            }
+            ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+            ctx.setLineDash([]);
+        });
+
+        /* Producers */
+        producers.forEach(function(p){
+            var x = p.x * W, y = p.y * H;
+            ctx.fillStyle = p.selected ? '#C5A059' : 'rgba(136,146,176,0.3)';
+            ctx.strokeStyle = p.selected ? '#D4AF37' : '#8892B0';
+            ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 22, 0, 2*Math.PI); ctx.fill(); ctx.stroke();
+            ctx.fillStyle = p.selected ? '#0A192F' : '#F8F9FA';
+            ctx.font = 'bold 12px "JetBrains Mono", monospace'; ctx.textAlign = 'center';
+            ctx.fillText(p.id, x, y + 4);
+            /* Name */
+            ctx.fillStyle = p.selected ? '#C5A059' : '#8892B0';
+            ctx.font = '10px "Inter", sans-serif';
+            ctx.fillText(p.name, x, y - 28);
+            if (p.selected) {
+                ctx.fillStyle = '#a8b2d1'; ctx.font = '9px "JetBrains Mono", monospace';
+                ctx.fillText('$' + p.lcoh.toFixed(2) + '/kg', x, y + 35);
+            }
+        });
+
+        /* Consumers */
+        consumers.forEach(function(c){
+            var x = c.x * W, y = c.y * H;
+            ctx.fillStyle = '#c084fc'; ctx.strokeStyle = '#c084fc';
+            ctx.lineWidth = 2; ctx.beginPath();
+            /* Triangle for demand node */
+            ctx.moveTo(x, y-18); ctx.lineTo(x+16, y+10); ctx.lineTo(x-16, y+10); ctx.closePath();
+            ctx.fill();
+            ctx.fillStyle = '#0A192F'; ctx.font = 'bold 11px "JetBrains Mono", monospace';
+            ctx.textAlign = 'center'; ctx.fillText(c.id, x, y + 2);
+            ctx.fillStyle = '#c084fc'; ctx.font = '10px "Inter", sans-serif';
+            ctx.fillText(c.name, x, y - 24);
+        });
+
+        /* Legend */
+        ctx.fillStyle = '#a8b2d1'; ctx.font = '10px "Inter", sans-serif'; ctx.textAlign = 'left';
+        var lx = 20, ly = 20;
+        ctx.fillStyle = '#C5A059'; ctx.beginPath(); ctx.arc(lx+6, ly, 6, 0, 2*Math.PI); ctx.fill();
+        ctx.fillStyle = '#a8b2d1'; ctx.fillText('producer (built)', lx + 16, ly+3);
+        lx += 140;
+        ctx.fillStyle = 'rgba(136,146,176,0.3)'; ctx.beginPath(); ctx.arc(lx+6, ly, 6, 0, 2*Math.PI); ctx.fill();
+        ctx.strokeStyle='#8892B0'; ctx.lineWidth=1; ctx.stroke();
+        ctx.fillStyle = '#a8b2d1'; ctx.fillText('unbuilt', lx + 16, ly+3);
+        lx += 85;
+        ctx.fillStyle = '#c084fc'; ctx.beginPath();
+        ctx.moveTo(lx, ly-5); ctx.lineTo(lx+10, ly+5); ctx.lineTo(lx-10, ly+5); ctx.closePath(); ctx.fill();
+        ctx.fillStyle = '#a8b2d1'; ctx.fillText('demand', lx + 20, ly+3);
+        lx += 85;
+        ctx.strokeStyle = '#7aa2f7'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx+20, ly); ctx.stroke();
+        ctx.fillStyle = '#a8b2d1'; ctx.fillText('pipeline', lx + 25, ly+3);
+        lx += 85;
+        ctx.strokeStyle = '#fbbf24'; ctx.lineWidth = 1.5; ctx.setLineDash([5,3]);
+        ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(lx+20, ly); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#a8b2d1'; ctx.fillText('truck', lx + 25, ly+3);
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div'); card.className='res-card';
+        var lbl = document.createElement('div'); lbl.className='res-card-lbl'; lbl.textContent=label;
+        var val = document.createElement('div'); val.className='res-card-val'; val.textContent=value;
+        card.appendChild(lbl); card.appendChild(val); parent.appendChild(card);
+    }
+
+    function renderResults(result) {
+        var summary = document.getElementById('h2ResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+        appendCard(summary, 'Sites built', result.sitesBuilt + ' / 5');
+        appendCard(summary, 'Avg LCOH', '$' + result.avgLCOH.toFixed(2) + '/kg');
+        appendCard(summary, 'Pipeline share', (result.pipelineShare * 100).toFixed(0) + '%');
+        appendCard(summary, 'Total flow', (result.totalFlow / 1000).toFixed(0) + ' kt/yr');
+        appendCard(summary, 'Total capex', '$' + (result.totalCapex / 1e6).toFixed(0) + 'M');
+    }
+
+    function bindSlider(s, d, suf) {
+        var sl = document.getElementById(s), dl = document.getElementById(d);
+        if (!sl || !dl) return;
+        sl.addEventListener('input', function(){ dl.textContent = sl.value + (suf || ''); });
+    }
+    bindSlider('h2Demand','h2DemandVal',''); bindSlider('h2ElecPrice','h2ElecPriceVal','');
+    bindSlider('h2PipelineCost','h2PipelineCostVal',''); bindSlider('h2TruckCost','h2TruckCostVal','');
+
+    function runSolver() {
+        var params = {
+            demand: parseInt(document.getElementById('h2Demand').value, 10),
+            elecPrice: parseInt(document.getElementById('h2ElecPrice').value, 10),
+            pipelineCost: parseFloat(document.getElementById('h2PipelineCost').value),
+            truckCost: parseFloat(document.getElementById('h2TruckCost').value)
+        };
+        var t0 = performance.now();
+        var result = solveHSC(params);
+        var t1 = performance.now();
+        drawNetwork(result, params); renderResults(result);
+        document.getElementById('h2Status').textContent = 'Optimized in ' + (t1-t0).toFixed(1) + ' ms';
+    }
+    document.getElementById('h2Solve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>
