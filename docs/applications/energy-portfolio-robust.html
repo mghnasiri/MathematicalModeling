@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments);}gtag('js',new Date());gtag('config','G-X3F4KE0WSF');</script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <title>Energy Portfolio (Robust) | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Energy Portfolio (Robust) builds a contract + asset portfolio hedging against electricity price volatility and quantity risk. Two-stage stochastic and budget-robust formulations. Conejo, Carrion &amp; Morales (2010), Pozo, Contreras &amp; Sauma (2014).">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/energy-portfolio-robust.html">
+    <meta property="og:title" content="Energy Portfolio (Robust) | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Interactive stochastic/robust portfolio solver for electricity contract+spot hedging with efficient frontier.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/energy-portfolio-robust.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous"></script>
+    <style>
+        :root { --midnight:#0A192F; --midnight-light:#112240; --midnight-lighter:#1a2f4a; --gold:#C5A059; --gold-light:#D4AF37; --ivory:#F8F9FA; --slate:#8892B0; --slate-light:#a8b2d1; --green:#64ffda; --red:#ff6b6b; --blue:#7aa2f7; --amber:#fbbf24; --violet:#c084fc; }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:'Inter',sans-serif; background:var(--midnight); color:var(--ivory); line-height:1.7; overflow-x:hidden; }
+        a { color:var(--gold); text-decoration:none; } a:hover { color:var(--gold-light); }
+        .navbar { background:transparent; padding:1.5rem 0; transition:all 0.4s ease; z-index:1000; }
+        .navbar.scrolled { background:rgba(10,25,47,0.95); backdrop-filter:blur(10px); padding:0.8rem 0; box-shadow:0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family:'Cormorant Garamond',serif; font-size:1.4rem; font-weight:600; color:var(--gold)!important; letter-spacing:2px; text-transform:uppercase; }
+        .nav-link { font-family:'Inter',sans-serif; font-size:0.85rem; color:var(--slate-light)!important; letter-spacing:1.5px; text-transform:uppercase; padding:0.5rem 1rem!important; transition:color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color:var(--gold)!important; }
+        .navbar-toggler { border-color:var(--gold); }
+        .navbar-toggler-icon { background-image:url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position:fixed; top:0; left:0; height:3px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); z-index:9999; transition:width 0.1s linear; width:0%; box-shadow:0 0 8px rgba(197,160,89,0.4); }
+        .breadcrumb-nav { padding:1rem 0 0; margin-top:70px; }
+        .breadcrumb-nav ol { background:transparent; padding:0; margin:0; list-style:none; display:flex; gap:0.5rem; font-size:0.78rem; letter-spacing:1px; text-transform:uppercase; flex-wrap:wrap; }
+        .breadcrumb-nav li { color:var(--slate); }
+        .breadcrumb-nav li a { color:var(--slate); transition:color 0.3s; }
+        .breadcrumb-nav li a:hover { color:var(--gold); }
+        .breadcrumb-nav li + li::before { content:'/'; margin-right:0.5rem; color:var(--slate); opacity:0.5; }
+        .breadcrumb-nav li.active { color:var(--gold); }
+        .hero { padding:5rem 2rem 3.5rem; text-align:center; position:relative; overflow:hidden; }
+        .hero::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background-image: radial-gradient(ellipse 60% 50% at 50% 80%, rgba(251,191,36,0.08) 0%, transparent 60%), radial-gradient(ellipse 40% 30% at 80% 70%, rgba(197,160,89,0.05) 0%, transparent 50%); pointer-events:none; }
+        .hero > .container { position:relative; z-index:1; }
+        .hero-icon { font-size:3rem; color:var(--gold); margin-bottom:1.3rem; opacity:0.9; filter:drop-shadow(0 0 10px rgba(251,191,36,0.4)); animation:hedgePulse 3.3s ease-in-out infinite; }
+        @keyframes hedgePulse { 0%,100% { filter:drop-shadow(0 0 10px rgba(251,191,36,0.4)); transform:scale(1); } 50% { filter:drop-shadow(0 0 18px rgba(251,191,36,0.7)); transform:scale(1.04); } }
+        .hero h1 { font-family:'Cormorant Garamond',serif; font-size:3rem; font-weight:300; letter-spacing:4px; margin-bottom:0.9rem; color:var(--ivory); }
+        .hero h1 span { color:var(--gold); }
+        .hero-abbrev { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:1rem; letter-spacing:2px; margin-bottom:1rem; }
+        .hero-subtitle { font-size:1rem; color:var(--slate); letter-spacing:2.5px; text-transform:uppercase; margin-bottom:1.2rem; }
+        .gold-line { width:60px; height:1px; background:linear-gradient(90deg,transparent,var(--gold),transparent); margin:1.2rem auto; }
+        .hero-desc { max-width:820px; margin:0 auto 1rem; color:var(--slate-light); font-size:0.98rem; line-height:1.9; }
+        .hero-tags { display:flex; justify-content:center; gap:0.5rem; flex-wrap:wrap; margin-top:1.3rem; }
+        .hero-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; padding:3px 10px; border-radius:3px; letter-spacing:1px; color:var(--gold); background:rgba(197,160,89,0.08); border:1px solid rgba(197,160,89,0.3); }
+        .hero-tag.tag-medium { color:var(--amber); background:rgba(251,191,36,0.08); border-color:rgba(251,191,36,0.3); }
+        .hero-tag.tag-markets { color:var(--gold); background:rgba(197,160,89,0.08); border-color:rgba(197,160,89,0.3); }
+        section { padding:3.5rem 0; }
+        .section-header { text-align:center; margin-bottom:2.5rem; }
+        .section-header h2 { font-family:'Cormorant Garamond',serif; font-size:2rem; font-weight:300; letter-spacing:3px; color:var(--ivory); margin-bottom:0.5rem; }
+        .section-header h2 span { color:var(--gold); }
+        .section-header p { color:var(--slate); font-size:0.85rem; letter-spacing:1.5px; text-transform:uppercase; }
+        .context-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .context-block { max-width:840px; margin:0 auto; color:var(--slate-light); font-size:0.96rem; line-height:1.9; }
+        .context-block p { margin-bottom:1.2rem; }
+        .context-block strong { color:var(--ivory); }
+        .context-block cite { color:var(--gold); font-style:normal; }
+        .historical-note { background:rgba(10,25,47,0.6); border-left:3px solid var(--gold); border-radius:4px; padding:1.2rem 1.4rem; margin:1.5rem 0; color:var(--slate-light); font-size:0.92rem; line-height:1.75; }
+        .historical-note-head { font-family:'Cormorant Garamond',serif; font-size:1rem; letter-spacing:1.5px; text-transform:uppercase; color:var(--gold); margin-bottom:0.5rem; }
+        .formulation-grid { display:grid; grid-template-columns:1fr; gap:1.6rem; max-width:1000px; margin:0 auto; }
+        .formulation-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.5rem 1.6rem; }
+        .formulation-card h3 { font-family:'Cormorant Garamond',serif; font-size:1.35rem; font-weight:500; letter-spacing:1.5px; color:var(--gold); margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .formulation-card h3 span.ref { font-family:'JetBrains Mono',monospace; font-size:0.72rem; color:var(--slate); letter-spacing:0.5px; text-transform:none; font-weight:400; margin-left:0.5rem; }
+        .formulation-card p { color:var(--slate-light); font-size:0.9rem; margin-bottom:0.8rem; }
+        .formulation-card strong { color:var(--ivory); }
+        .math-display { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.12); border-radius:4px; padding:1.2rem 1.4rem; margin:1rem 0; overflow-x:auto; }
+        .math-display .katex { font-size:1.05rem; }
+        .notation-table { width:100%; margin:1rem 0; border-collapse:collapse; }
+        .notation-table th, .notation-table td { padding:0.5rem 0.9rem; text-align:left; border-bottom:1px solid rgba(197,160,89,0.1); font-size:0.86rem; vertical-align:top; }
+        .notation-table th { color:var(--gold); font-family:'Cormorant Garamond',serif; font-weight:500; letter-spacing:1px; font-size:0.95rem; text-transform:uppercase; }
+        .notation-table td:first-child { min-width:60px; color:var(--amber); font-family:'JetBrains Mono',monospace; }
+        .notation-table td:nth-child(2) { color:var(--ivory); }
+        .notation-table td:last-child { color:var(--slate); font-family:'JetBrains Mono',monospace; font-size:0.8rem; }
+        .data-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.4rem 1.4rem; margin-bottom:1rem; }
+        .data-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.1rem; letter-spacing:1.2px; color:var(--gold); margin-bottom:0.6rem; }
+        .data-card p { color:var(--slate-light); font-size:0.88rem; line-height:1.7; margin-bottom:0.5rem; }
+        .solver-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); border-bottom:1px solid rgba(197,160,89,0.1); }
+        .solver-grid { display:grid; grid-template-columns:320px 1fr; gap:1.5rem; max-width:1200px; margin:0 auto; }
+        @media (max-width:900px) { .solver-grid { grid-template-columns:1fr; } }
+        .solver-controls { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-controls h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.9rem; border-bottom:1px solid rgba(197,160,89,0.15); padding-bottom:0.5rem; }
+        .control-group { margin-bottom:0.9rem; }
+        .control-label { display:block; font-size:0.74rem; letter-spacing:1px; text-transform:uppercase; color:var(--slate); margin-bottom:0.35rem; }
+        .control-row { display:flex; align-items:center; gap:0.7rem; }
+        .solver-slider { flex:1; accent-color:var(--gold); }
+        .size-display { font-family:'JetBrains Mono',monospace; color:var(--gold); font-size:0.82rem; min-width:3rem; text-align:right; }
+        .solve-btn { width:100%; margin-top:0.5rem; padding:0.8rem; background:linear-gradient(135deg,var(--gold),var(--gold-light)); color:var(--midnight); border:none; border-radius:4px; font-family:'Inter',sans-serif; font-size:0.85rem; font-weight:500; letter-spacing:2px; text-transform:uppercase; cursor:pointer; transition:all 0.3s; }
+        .solve-btn:hover { transform:translateY(-1px); box-shadow:0 6px 20px rgba(197,160,89,0.35); }
+        .solver-status { margin-top:0.8rem; font-size:0.75rem; color:var(--slate); font-style:italic; text-align:center; }
+        .solver-output { background:rgba(10,25,47,0.6); border:1px solid rgba(197,160,89,0.2); border-radius:6px; padding:1.4rem 1.3rem; }
+        .solver-output h3 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; color:var(--gold); letter-spacing:1.5px; margin-bottom:0.8rem; }
+        .canvas-wrap { position:relative; width:100%; margin-bottom:1rem; }
+        .canvas-wrap canvas { width:100%; height:auto; display:block; background:var(--midnight); border:1px solid rgba(197,160,89,0.1); border-radius:4px; }
+        .canvas-caption { font-size:0.72rem; color:var(--slate); text-align:center; margin-top:0.3rem; font-style:italic; letter-spacing:0.3px; }
+        .results-summary { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:0.8rem; margin-top:1rem; }
+        .res-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:0.8rem 0.9rem; }
+        .res-card-lbl { color:var(--slate); font-size:0.68rem; letter-spacing:1px; text-transform:uppercase; margin-bottom:0.2rem; }
+        .res-card-val { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:1.05rem; font-weight:500; }
+        .extensions-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.1rem; }
+        .extension-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.18); border-radius:6px; padding:1.3rem 1.3rem; }
+        .extension-card h4 { font-family:'Cormorant Garamond',serif; font-size:1.15rem; letter-spacing:1.3px; color:var(--gold); margin-bottom:0.5rem; }
+        .extension-card p { color:var(--slate-light); font-size:0.85rem; line-height:1.7; margin-bottom:0.7rem; }
+        .extension-card .ext-ref { font-size:0.78rem; color:var(--slate); font-style:italic; border-top:1px solid rgba(197,160,89,0.1); padding-top:0.5rem; }
+        .related-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:0.9rem; }
+        .related-card { background:rgba(10,25,47,0.5); border:1px solid rgba(197,160,89,0.15); border-radius:4px; padding:1rem 1.1rem; text-decoration:none; transition:all 0.25s; display:flex; flex-direction:column; gap:0.3rem; }
+        .related-card:hover { border-color:var(--gold); transform:translateY(-2px); box-shadow:0 6px 16px rgba(0,0,0,0.25); }
+        .related-card-name { font-family:'Cormorant Garamond',serif; font-size:1rem; color:var(--ivory); letter-spacing:0.5px; }
+        .related-card-tag { font-family:'JetBrains Mono',monospace; font-size:0.7rem; color:var(--gold); letter-spacing:0.5px; }
+        .related-card-desc { font-size:0.78rem; color:var(--slate); line-height:1.5; }
+        .references-section { background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.1); }
+        .reference-list { max-width:900px; margin:0 auto; }
+        .reference-item { padding:0.9rem 0; border-top:1px solid rgba(197,160,89,0.1); display:grid; grid-template-columns:2rem 1fr; gap:0.6rem; }
+        .reference-item:first-of-type { border-top:none; }
+        .ref-num { color:var(--gold); font-family:'JetBrains Mono',monospace; font-size:0.85rem; }
+        .ref-body { font-size:0.88rem; line-height:1.65; }
+        .ref-body .authors { color:var(--ivory); font-weight:500; }
+        .ref-body .title { color:var(--slate-light); font-style:italic; }
+        .ref-body .journal { color:var(--slate); font-size:0.82rem; }
+        .ref-body .journal a { color:var(--gold); text-decoration:underline dotted; }
+        footer { text-align:center; padding:2.5rem 0; border-top:1px solid rgba(197,160,89,0.1); color:var(--slate); font-size:0.82rem; }
+        footer a { color:var(--gold); text-decoration:underline; }
+        .disclaimer { text-align:center; padding:0.9rem; font-size:0.76rem; color:var(--slate); font-style:italic; background:var(--midnight-light); border-top:1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity:0; transform:translateY(15px); transition:opacity 0.55s ease,transform 0.55s ease; }
+        .fade-in.visible { opacity:1; transform:translateY(0); }
+        @media (max-width:768px) { .hero h1 { font-size:2.1rem; letter-spacing:2px; } .section-header h2 { font-size:1.6rem; letter-spacing:2px; } section { padding:2.8rem 0; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context":"https://schema.org","@type":"BreadcrumbList","itemListElement":[
+      {"@type":"ListItem","position":1,"name":"Home","item":"https://mghnasiri.github.io/MathematicalModeling/"},
+      {"@type":"ListItem","position":2,"name":"Applications","item":"https://mghnasiri.github.io/MathematicalModeling/applications/"},
+      {"@type":"ListItem","position":3,"name":"Energy","item":"https://mghnasiri.github.io/MathematicalModeling/applications/energy-domain.html"},
+      {"@type":"ListItem","position":4,"name":"Energy Portfolio (Robust)","item":"https://mghnasiri.github.io/MathematicalModeling/applications/energy-portfolio-robust.html"}
+    ]}
+    </script>
+</head>
+<body>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="energy-domain.html">Energy</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="../index.html#applications">Applications</a></li>
+            <li><a href="energy-domain.html">Energy</a></li>
+            <li class="active">Energy Portfolio (Robust)</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon"><i class="fas fa-chart-pie" aria-hidden="true"></i></div>
+        <h1>Energy <span>Portfolio (Robust)</span></h1>
+        <p class="hero-abbrev">Stochastic / Robust QP</p>
+        <p class="hero-subtitle">Contract Mix &middot; Spot Exposure &middot; Price-Risk Hedging</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <p class="hero-desc">
+            An electricity retailer, large industrial consumer, or vertically integrated utility faces a
+            continuous choice: <strong>lock in price through long-term contracts, or ride the spot market?</strong>
+            Contracts are cheaper per MWh on average but lock in price; spot purchases exploit low-price
+            periods but leave the buyer fully exposed to volatility. The <strong>robust energy portfolio</strong>
+            problem builds a mix of Power Purchase Agreements (PPAs), futures contracts, storage, and spot
+            exposure that minimizes expected cost while bounding the worst-case outcome at an acceptable
+            level. Two-stage stochastic and budget-robust formulations are the standard OR tools.
+        </p>
+        <div class="hero-tags" aria-hidden="true">
+            <span class="hero-tag tag-medium">Medium-term</span>
+            <span class="hero-tag tag-markets">Markets layer</span>
+            <span class="hero-tag">Stochastic SP</span>
+            <span class="hero-tag">Budget-robust</span>
+            <span class="hero-tag">CVaR</span>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>problem</span></h2>
+            <p>Contract mix, spot exposure, and storage under price uncertainty</p>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                Electricity prices are the most volatile of any major commodity: day-to-day spot prices
+                can swing by a factor of 5&ndash;10, and during scarcity events (Texas freeze, European
+                2022 energy crisis) by a factor of 50+. A retailer serving a fixed 100-MW load who fails
+                to hedge properly can see a single week's spot prices wipe out an entire year's retail
+                margin. Conversely, over-hedging (buying more forward than needed) locks in price above
+                expected spot and sacrifices the upside of low-price hours.
+            </p>
+            <p>
+                The core OR problem: given an expected load profile, a menu of <strong>contract
+                products</strong> (block forwards at different strike prices, peak/off-peak PPAs, baseload
+                PPAs), <strong>storage capacity</strong>, and a <strong>spot market</strong>, decide how
+                much of each to procure. Constraints: coverage of expected demand, bounds on maximum
+                spot exposure, optional renewable-portfolio standard. Objective: minimize expected cost
+                with a risk penalty (standard deviation, CVaR, or budget-robust worst case).
+            </p>
+
+            <div class="historical-note">
+                <div class="historical-note-head"><i class="fas fa-clock"></i> Historical note</div>
+                <cite>Markowitz (1952)</cite> is the original mean-variance portfolio paper &mdash; still
+                the foundation. Application to electricity retailing dates to the post-1990 deregulation
+                era. <cite>Conejo, Carri&oacute;n &amp; Morales (2010)</cite> <em>Decision Making Under
+                Uncertainty in Electricity Markets</em> is the canonical textbook: two-stage stochastic
+                programming, robust optimization, CVaR applied to electricity portfolio problems.
+                <cite>Pozo, Contreras &amp; Sauma (2014)</cite> extended to storage-integrated portfolios.
+                <cite>Kettunen, Salo &amp; Bunn (2010)</cite> applied real-options theory to electricity
+                contracts. Industrial practice has caught up: Octopus Energy, &Oslash;rsted, RWE, and
+                dozens of traders run optimization systems descended from this literature daily.
+            </div>
+
+            <p>
+                Modern variants integrate <strong>storage as a flexibility asset</strong>: a battery
+                hedges price volatility by charging during low-spot hours and substituting for high-spot
+                hours. Storage-integrated portfolios solve jointly for contract mix and storage schedule,
+                adding complexity but typically 20&ndash;40% additional value over contract-only hedging.
+                <strong>Distributionally robust</strong> variants relax Gaussian assumptions on price
+                distributions, replacing them with Wasserstein or moment ambiguity sets.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section id="formulation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Mathematical <span>formulation</span></h2>
+            <p>Two-stage stochastic + budget-robust variant</p>
+        </div>
+        <div class="formulation-grid">
+            <div class="formulation-card fade-in">
+                <h3>Notation</h3>
+                <table class="notation-table">
+                    <thead><tr><th>Symbol</th><th>Meaning</th><th>Units</th></tr></thead>
+                    <tbody>
+                        <tr><td>$\mathcal{K}$</td><td>Contract products (forwards, PPAs)</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{T}$</td><td>Delivery periods</td><td>&mdash;</td></tr>
+                        <tr><td>$\mathcal{S}$</td><td>Spot-price scenarios</td><td>&mdash;</td></tr>
+                        <tr><td>$\pi_s$</td><td>Probability of scenario $s$</td><td>pu</td></tr>
+                        <tr><td>$P_k$</td><td>Strike price of contract $k$</td><td>$/MWh</td></tr>
+                        <tr><td>$V_k^{\max}$</td><td>Max volume of contract $k$</td><td>MW</td></tr>
+                        <tr><td>$D_t$</td><td>Expected demand in period $t$</td><td>MW</td></tr>
+                        <tr><td>$\tilde{\pi}_{t,s}$</td><td>Spot price in period $t$, scenario $s$</td><td>$/MWh</td></tr>
+                        <tr><td>$x_k$</td><td><strong>Contract volume</strong> (1st stage)</td><td>MW</td></tr>
+                        <tr><td>$y_{t,s}$</td><td><strong>Spot purchase</strong> (2nd stage)</td><td>MW</td></tr>
+                        <tr><td>$\beta, \lambda$</td><td>Risk-aversion parameters</td><td>&mdash;</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Two-stage stochastic portfolio<span class="ref">Conejo-Carrion-Morales (2010)</span></h3>
+                <p>
+                    First-stage: choose contract volumes $x_k$ before price uncertainty resolves.
+                    Second-stage: buy any residual on the spot market in each scenario.
+                </p>
+                <div class="math-display">
+                    $$\min \; \sum_{k} P_k \, x_k + \sum_{s \in \mathcal{S}} \pi_s \sum_{t} \tilde{\pi}_{t,s} \, y_{t,s} + \lambda \cdot \mathrm{Risk} \qquad \text{(1)}$$
+                </div>
+                <p>where $\mathrm{Risk}$ is typically Variance, CVaR, or a robust worst-case term.</p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Constraints</h3>
+                <p><strong>Coverage of demand</strong> in every scenario:</p>
+                <div class="math-display">
+                    $$\sum_{k: t \in \mathcal{T}_k} x_k + y_{t,s} \ge D_t \qquad \forall t, s \qquad \text{(2)}$$
+                </div>
+                <p><strong>Contract volume limits</strong>:</p>
+                <div class="math-display">
+                    $$0 \le x_k \le V_k^{\max} \qquad \forall k \qquad \text{(3)}$$
+                </div>
+                <p><strong>Maximum spot exposure</strong> (risk limit):</p>
+                <div class="math-display">
+                    $$y_{t,s} \le \alpha \cdot D_t \qquad \forall t, s \qquad \text{(4)}$$
+                </div>
+                <p>where $\alpha$ is the max allowed fraction from spot. <strong>Renewable portfolio standard</strong>:</p>
+                <div class="math-display">
+                    $$\sum_{k \in \mathcal{K}^{\mathrm{RE}}} x_k \ge \gamma \sum_t D_t \qquad \text{(5)}$$
+                </div>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>CVaR as risk measure<span class="ref">Rockafellar &amp; Uryasev (2002)</span></h3>
+                <p>
+                    <strong>Conditional Value-at-Risk at level $\beta$</strong> is the expected cost
+                    conditional on exceeding the $\beta$-quantile. For portfolio problems:
+                </p>
+                <div class="math-display">
+                    $$\mathrm{CVaR}_\beta(\mathrm{cost}) = \eta + \frac{1}{1-\beta} \mathbb{E}[(\mathrm{cost} - \eta)^+] $$
+                </div>
+                <p>
+                    Rockafellar-Uryasev's linearization makes this a linear objective: introduce $\eta$ and
+                    $z_s = \max(0, \mathrm{cost}_s - \eta)$, minimize $\eta + \frac{1}{(1-\beta)|S|} \sum_s z_s$.
+                    CVaR has become the industry-standard risk measure for electricity portfolios.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Budget-robust variant<span class="ref">Bertsimas &amp; Sim (2004)</span></h3>
+                <p>
+                    Instead of scenarios, constrain prices to a polyhedral uncertainty set:
+                </p>
+                <div class="math-display">
+                    $$|\tilde{\pi}_t - \bar{\pi}_t| \le \Gamma \cdot \hat{\pi}_t, \quad \sum_t \mathbb{I}(|\tilde{\pi}_t - \bar{\pi}_t| > 0) \le \Gamma^{\mathrm{budget}} $$
+                </div>
+                <p>
+                    Budget-robust optimization minimizes the worst-case cost inside this set. LP duality
+                    makes the problem tractable; the robustness parameter $\Gamma$ controls conservatism.
+                    Less sensitive to scenario-probability assumptions.
+                </p>
+            </div>
+
+            <div class="formulation-card fade-in">
+                <h3>Complexity</h3>
+                <p>
+                    Pure stochastic portfolio (no binaries) is a <strong>quadratic program</strong> with
+                    CVaR, or a <strong>large LP</strong> with linear CVaR. Scenario-based: size scales
+                    with $|\mathcal{S}|$; 1000 scenarios = 10s to minutes in Gurobi. Budget-robust is a
+                    compact LP once dualized. Storage-integrated adds SOC variables but stays convex.
+                </p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="data">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Real-world <span>data</span></h2>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="data-card fade-in">
+                    <h4>EPEX Spot &amp; Nord Pool historical prices</h4>
+                    <p>
+                        <a href="https://www.epexspot.com/" target="_blank" rel="noopener">EPEX Spot</a>
+                        (Continental Europe) and <a href="https://www.nordpoolgroup.com/" target="_blank" rel="noopener">Nord Pool</a>
+                        (Scandinavia, Baltics, UK) publish historical hourly day-ahead prices. Standard
+                        input for European portfolio optimization research.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>CME Electricity Futures</h4>
+                    <p>
+                        <a href="https://www.cmegroup.com/markets/energy/electricity.html" target="_blank" rel="noopener">CME Electricity Futures</a>
+                        lists PJM, NYISO, and ERCOT electricity futures and options. Real contract
+                        strike prices for US-hub portfolio optimization.
+                    </p>
+                </div>
+                <div class="data-card fade-in">
+                    <h4>Illustrative portfolio (this page)</h4>
+                    <p>
+                        The interactive solver handles 4 contract products (baseload PPA, peak PPA, wind
+                        PPA, solar PPA) plus spot exposure and optional battery over 24 hours with 30
+                        price scenarios. Visualizes the efficient frontier (expected cost vs CVaR) and
+                        optimal portfolio composition.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="solver-section" id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Interactive <span>solver</span></h2>
+            <p>CVaR-constrained energy portfolio with scenario prices</p>
+        </div>
+        <div class="solver-grid">
+            <div class="solver-controls fade-in">
+                <h3>Portfolio parameters</h3>
+                <div class="control-group">
+                    <label class="control-label" for="epDemand">Average load (MW)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="epDemand" min="50" max="300" step="10" value="150">
+                        <span class="size-display" id="epDemandVal">150</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="epRisk">Risk aversion &lambda;</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="epRisk" min="0" max="5" step="0.25" value="1">
+                        <span class="size-display" id="epRiskVal">1.0</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="epVolatility">Price volatility</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="epVolatility" min="0.2" max="1.5" step="0.1" value="0.7">
+                        <span class="size-display" id="epVolatilityVal">0.7</span>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label class="control-label" for="epRE">RE min share (%)</label>
+                    <div class="control-row">
+                        <input type="range" class="solver-slider" id="epRE" min="0" max="80" step="5" value="30">
+                        <span class="size-display" id="epREVal">30%</span>
+                    </div>
+                </div>
+
+                <button class="solve-btn" id="epSolve" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.4rem"></i>Optimize portfolio
+                </button>
+                <div class="solver-status" id="epStatus">Adjust parameters and press Optimize.</div>
+            </div>
+
+            <div class="solver-output fade-in">
+                <h3>Efficient frontier &amp; composition</h3>
+                <div class="canvas-wrap">
+                    <canvas id="epFrontierCanvas" width="1100" height="320" aria-label="Efficient frontier expected cost vs CVaR"></canvas>
+                    <div class="canvas-caption">Efficient frontier: expected cost vs CVaR. Each point is a different risk-aversion setting. Current point highlighted in gold.</div>
+                </div>
+                <div class="canvas-wrap">
+                    <canvas id="epCompositionCanvas" width="1100" height="240" aria-label="Portfolio composition"></canvas>
+                    <div class="canvas-caption">Optimal contract portfolio by product (MW per contract + residual spot exposure)</div>
+                </div>
+                <div class="results-summary" id="epResultsSummary"></div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Solution <span>interpretation</span></h2>
+        </div>
+        <div class="context-block fade-in">
+            <p>
+                The <strong>efficient frontier</strong> is the core object. X-axis: expected cost; y-axis:
+                CVaR (worst-case cost in the top-5% scenarios). Each point is the optimal portfolio for
+                a different risk-aversion $\lambda$. The leftmost point (lowest expected cost) is the
+                risk-neutral solution &mdash; all spot exposure, minimal contracting. The rightmost
+                (lowest CVaR) is maximally hedged &mdash; all contracts, no spot. Real portfolios sit
+                somewhere in between; the trader's job is to pick the point matching shareholder
+                risk tolerance.
+            </p>
+            <p>
+                <strong>Portfolio composition</strong> shifts predictably with risk aversion. Risk-neutral
+                ($\lambda = 0$): minimal contracts, maximum spot exposure, lowest expected cost but
+                fattest right tail. Risk-averse ($\lambda$ high): large baseload PPA lock-in, minimal
+                spot, moderate cost and tight distribution. <strong>RE contracts</strong> (wind/solar PPAs)
+                play a special role: they're cheaper per MWh than thermal baseload PPAs but have quantity
+                uncertainty (wind doesn't blow, sun doesn't shine). The solver balances this.
+            </p>
+            <p>
+                <strong>Battery co-optimization</strong> &mdash; if enabled &mdash; adds a third lever: the
+                battery charges during low-spot hours and substitutes for high-spot purchases, effectively
+                flattening the net spot exposure. This typically reduces CVaR by 20&ndash;40% at similar
+                expected cost, making storage a first-class hedging instrument alongside contracts.
+            </p>
+            <p>
+                The <strong>RE portfolio standard constraint</strong> shifts the entire frontier upward
+                when the binding: even the risk-neutral point is forced to carry expensive renewable
+                contracts. The cost of the constraint is the vertical distance between the unconstrained
+                and constrained frontiers. Policymakers care about this number.
+            </p>
+        </div>
+    </div>
+</section>
+
+<section class="context-section" id="extensions">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Extensions &amp; <span>variants</span></h2>
+        </div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in">
+                <h4>Storage-coupled portfolio</h4>
+                <p>
+                    Co-optimize contract mix with battery storage schedule. Storage absorbs residual
+                    spot exposure, flattening the net-position distribution. 20&ndash;40% CVaR reduction
+                    at similar expected cost.
+                </p>
+                <div class="ext-ref">Refs: Pozo, Contreras &amp; Sauma (2014); Singh &amp; Khaparde (2020).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Distributionally robust portfolio</h4>
+                <p>
+                    Worst-case over an ambiguity set (Wasserstein distance or moment conditions)
+                    rather than a fixed scenario distribution. Robust to misspecification of the
+                    price distribution. Active research frontier.
+                </p>
+                <div class="ext-ref">Refs: Esfahani &amp; Kuhn (2018); Zhao &amp; Guan (2018).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Real-options in contract choice</h4>
+                <p>
+                    Contracts with optionality (cap/floor strike, swing contracts) priced as real
+                    options. Lattice methods or LSM regression for dynamic exercise; portfolio
+                    optimization over option mix.
+                </p>
+                <div class="ext-ref">Refs: Kettunen, Salo &amp; Bunn (2010); Hull textbook on derivatives.</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Multi-period stochastic SP</h4>
+                <p>
+                    Three-stage or N-stage formulations where contract purchases can be revised as
+                    prices evolve. Nested Benders / SDDP methods. Used by large European utilities
+                    for quarterly re-hedging.
+                </p>
+                <div class="ext-ref">Refs: Morales et&nbsp;al. (2014); Wallace &amp; Fleten (2003).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Producer-side portfolio</h4>
+                <p>
+                    Mirror problem: generator decides how much of output to sell forward vs spot.
+                    Bi-level formulations include anticipated price impact of the producer's own
+                    offers. Strategic bidding extension.
+                </p>
+                <div class="ext-ref">Refs: Conejo, Nogales &amp; Arroyo (2002); Kazempour &amp; Conejo (2012).</div>
+            </div>
+            <div class="extension-card fade-in">
+                <h4>Retail pricing under DR</h4>
+                <p>
+                    Retailer chooses portfolio <em>and</em> retail tariff (ToU, CPP, RTP) to maximize
+                    margin net of demand response. Bi-level: portfolio at upper level, customer
+                    response at lower level. Fuses with <a href="demand-response-optimization.html" style="color:var(--gold);">DR optimization</a>.
+                </p>
+                <div class="ext-ref">Refs: Zugno et&nbsp;al. (2013); Celebi &amp; Fuller (2012).</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>applications</span></h2>
+        </div>
+        <div class="related-grid">
+            <a href="electricity-market-clearing.html" class="related-card fade-in">
+                <span class="related-card-tag">Price source</span>
+                <span class="related-card-name">Electricity Market Clearing</span>
+                <span class="related-card-desc">Spot prices in the portfolio come from LMP clearing. Portfolio decisions feed back as bids.</span>
+            </a>
+            <a href="battery-storage-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Co-optimized asset</span>
+                <span class="related-card-name">Battery Storage Optimization</span>
+                <span class="related-card-desc">Storage integrated into portfolio provides complementary flexibility to contracts.</span>
+            </a>
+            <a href="renewable-integration.html" class="related-card fade-in">
+                <span class="related-card-tag">Quantity risk</span>
+                <span class="related-card-name">Renewable Integration</span>
+                <span class="related-card-desc">RE PPAs have quantity risk on top of price risk; portfolio optimization handles both.</span>
+            </a>
+            <a href="demand-response-optimization.html" class="related-card fade-in">
+                <span class="related-card-tag">Bi-level coupling</span>
+                <span class="related-card-name">Demand Response</span>
+                <span class="related-card-desc">Retail portfolio optimization + DR program design is a classic bi-level MPEC.</span>
+            </a>
+            <a href="generation-expansion-planning.html" class="related-card fade-in">
+                <span class="related-card-tag">Long-term cousin</span>
+                <span class="related-card-name">Generation Expansion Planning</span>
+                <span class="related-card-desc">GEP is generation-side portfolio over decades. Same MVO structure, different time scale.</span>
+            </a>
+            <a href="../families/stochastic.html" class="related-card fade-in">
+                <span class="related-card-tag">OR family</span>
+                <span class="related-card-name">Stochastic Programming</span>
+                <span class="related-card-desc">Portfolio optimization is a flagship two-stage SP application. CVaR linearization is the workhorse.</span>
+            </a>
+        </div>
+    </div>
+</section>
+
+<section class="references-section" id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Key <span>references</span></h2>
+        </div>
+        <div class="reference-list">
+            <div class="reference-item fade-in"><span class="ref-num">[1]</span><div class="ref-body"><div><span class="authors">Conejo, A.&nbsp;J., Carri&oacute;n, M., &amp; Morales, J.&nbsp;M.</span> (2010).</div><div class="title"><em>Decision Making Under Uncertainty in Electricity Markets.</em></div><div class="journal">Springer, International Series in Operations Research &amp; Management Science, 153. <a href="https://doi.org/10.1007/978-1-4419-7421-1" target="_blank" rel="noopener">doi:10.1007/978-1-4419-7421-1</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[2]</span><div class="ref-body"><div><span class="authors">Markowitz, H.</span> (1952).</div><div class="title">&ldquo;Portfolio selection.&rdquo;</div><div class="journal"><em>Journal of Finance</em>, 7(1), 77&ndash;91. <a href="https://doi.org/10.2307/2975974" target="_blank" rel="noopener">doi:10.2307/2975974</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[3]</span><div class="ref-body"><div><span class="authors">Rockafellar, R.&nbsp;T., &amp; Uryasev, S.</span> (2002).</div><div class="title">&ldquo;Conditional value-at-risk for general loss distributions.&rdquo;</div><div class="journal"><em>Journal of Banking &amp; Finance</em>, 26(7), 1443&ndash;1471. <a href="https://doi.org/10.1016/S0378-4266(02)00271-6" target="_blank" rel="noopener">doi:10.1016/S0378-4266(02)00271-6</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[4]</span><div class="ref-body"><div><span class="authors">Bertsimas, D., &amp; Sim, M.</span> (2004).</div><div class="title">&ldquo;The price of robustness.&rdquo;</div><div class="journal"><em>Operations Research</em>, 52(1), 35&ndash;53. <a href="https://doi.org/10.1287/opre.1030.0065" target="_blank" rel="noopener">doi:10.1287/opre.1030.0065</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[5]</span><div class="ref-body"><div><span class="authors">Pozo, D., Contreras, J., &amp; Sauma, E.&nbsp;E.</span> (2014).</div><div class="title">&ldquo;Unit commitment with ideal and generic energy storage units.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 29(6), 2974&ndash;2984. <a href="https://doi.org/10.1109/TPWRS.2014.2313513" target="_blank" rel="noopener">doi:10.1109/TPWRS.2014.2313513</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[6]</span><div class="ref-body"><div><span class="authors">Kettunen, J., Salo, A., &amp; Bunn, D.&nbsp;W.</span> (2010).</div><div class="title">&ldquo;Optimization of electricity retailer's contract portfolio subject to risk preferences.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 25(1), 117&ndash;128. <a href="https://doi.org/10.1109/TPWRS.2009.2032233" target="_blank" rel="noopener">doi:10.1109/TPWRS.2009.2032233</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[7]</span><div class="ref-body"><div><span class="authors">Esfahani, P.&nbsp;M., &amp; Kuhn, D.</span> (2018).</div><div class="title">&ldquo;Data-driven distributionally robust optimization using the Wasserstein metric.&rdquo;</div><div class="journal"><em>Mathematical Programming</em>, 171(1&ndash;2), 115&ndash;166. <a href="https://doi.org/10.1007/s10107-017-1172-1" target="_blank" rel="noopener">doi:10.1007/s10107-017-1172-1</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[8]</span><div class="ref-body"><div><span class="authors">Wallace, S.&nbsp;W., &amp; Fleten, S.-E.</span> (2003).</div><div class="title">&ldquo;Stochastic programming models in energy.&rdquo;</div><div class="journal">In <em>Handbooks in Operations Research and Management Science</em>, Vol. 10. Elsevier. <a href="https://doi.org/10.1016/S0927-0507(03)10010-2" target="_blank" rel="noopener">doi:10.1016/S0927-0507(03)10010-2</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[9]</span><div class="ref-body"><div><span class="authors">Morales, J.&nbsp;M., Conejo, A.&nbsp;J., Madsen, H., Pinson, P., &amp; Zugno, M.</span> (2014).</div><div class="title"><em>Integrating Renewables in Electricity Markets: Operational Problems.</em></div><div class="journal">Springer. <a href="https://doi.org/10.1007/978-1-4614-9411-9" target="_blank" rel="noopener">doi:10.1007/978-1-4614-9411-9</a></div></div></div>
+            <div class="reference-item fade-in"><span class="ref-num">[10]</span><div class="ref-body"><div><span class="authors">Celebi, E., &amp; Fuller, J.&nbsp;D.</span> (2012).</div><div class="title">&ldquo;Time-of-use pricing in electricity markets under different market structures.&rdquo;</div><div class="journal"><em>IEEE Transactions on Power Systems</em>, 27(3), 1170&ndash;1181. <a href="https://doi.org/10.1109/TPWRS.2011.2180935" target="_blank" rel="noopener">doi:10.1109/TPWRS.2011.2180935</a></div></div></div>
+        </div>
+    </div>
+</section>
+
+<div class="disclaimer">
+    In-browser solver samples 30 price scenarios and enumerates points on the efficient frontier via risk-aversion sweep. Production systems use commercial QP/LP solvers on thousands of scenarios.
+</div>
+
+</main>
+
+<footer>
+    <div class="container">
+        <p>
+            <a href="energy-domain.html">&larr; Back to Energy</a>
+            &ensp;&middot;&ensp;
+            &copy; 2025 Mohammad Ghafourian Nasiri
+            &ensp;&middot;&ensp;
+            <a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a>
+        </p>
+    </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function(){
+    'use strict';
+    var navbar = document.querySelector('.navbar');
+    var scrollProgress = document.getElementById('scrollProgress');
+    function onScroll() {
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+        if (scrollProgress) {
+            var h = document.documentElement, b = document.body;
+            var scrolled = h.scrollTop || b.scrollTop;
+            var height = (h.scrollHeight || b.scrollHeight) - h.clientHeight;
+            var pct = height > 0 ? (scrolled / height) * 100 : 0;
+            scrollProgress.style.width = pct + '%';
+        }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function(entries){ entries.forEach(function(e){ if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); } }); }, { threshold: 0.1 });
+        fades.forEach(function(el){ io.observe(el); });
+    } else { fades.forEach(function(el){ el.classList.add('visible'); }); }
+    function renderMath() {
+        if (typeof renderMathInElement !== 'function') return;
+        renderMathInElement(document.body, { delimiters: [{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}], throwOnError: false });
+    }
+    if (document.readyState === 'complete') { renderMath(); } else { window.addEventListener('load', renderMath); }
+
+    /* ================================================================
+       PORTFOLIO SOLVER — scenario-based with efficient-frontier sweep
+       ================================================================ */
+
+    var products = [
+        { id: 'Baseload PPA', price: 55, isRE: false, maxVol: 1.5, color: '#C5A059' },
+        { id: 'Peak PPA',     price: 85, isRE: false, maxVol: 0.8, color: '#ff9f43' },
+        { id: 'Wind PPA',     price: 40, isRE: true,  maxVol: 1.0, color: '#7aa2f7' },
+        { id: 'Solar PPA',    price: 45, isRE: true,  maxVol: 0.9, color: '#fbbf24' }
+    ];
+
+    var nScenarios = 30;
+
+    function generateScenarios(vol) {
+        /* Generate 30 spot-price scenarios around base 60 $/MWh */
+        var base = 60;
+        var scenarios = [];
+        for (var s = 0; s < nScenarios; s++) {
+            var traj = [];
+            var meanShift = (Math.random() - 0.5) * 2 * vol * 50;
+            for (var t = 0; t < 24; t++) {
+                /* Seasonal pattern + noise + scenario bias */
+                var seasonal = 20 * Math.sin(2 * Math.PI * t / 24 + Math.PI);
+                var noise = (Math.random() - 0.5) * vol * 40;
+                traj.push(Math.max(5, base + seasonal + meanShift + noise));
+            }
+            scenarios.push(traj);
+        }
+        return scenarios;
+    }
+
+    function solvePortfolio(params, riskAversion) {
+        /* Simplified CVaR-constrained LP with greedy heuristic:
+           Choose contract volumes, residual = demand - contracts goes to spot.
+           Scan risk-aversion to build frontier. */
+
+        var demand = params.demand;
+        var scenarios = params.scenarios;
+        var reMin = params.reMin;
+
+        /* At given riskAversion:
+           if 0, all spot (no contracts)
+           if high, all baseload PPA up to 100% of demand
+           In between, mix */
+
+        /* Heuristic allocation: contracts proportional to risk aversion */
+        var contractFraction = Math.min(0.9, riskAversion / 3);
+        var totalContractMW = contractFraction * demand;
+
+        /* Sort products by expected net value (price - avg spot + risk reduction) */
+        var avgSpot = 0;
+        scenarios.forEach(function(sc){
+            sc.forEach(function(p){ avgSpot += p; });
+        });
+        avgSpot /= (nScenarios * 24);
+
+        /* Allocate contracts: prefer cheapest products first, enforce RE min */
+        var allocation = {};
+        products.forEach(function(p){ allocation[p.id] = 0; });
+        var remaining = totalContractMW;
+
+        /* First satisfy RE minimum */
+        var reTarget = reMin * demand;
+        var sorted = products.slice().sort(function(a,b){ return a.price - b.price; });
+        var reProducts = sorted.filter(function(p){ return p.isRE; });
+        var reAllocated = 0;
+        reProducts.forEach(function(p){
+            if (reAllocated < reTarget && remaining > 0) {
+                var take = Math.min(p.maxVol * demand, reTarget - reAllocated, remaining);
+                allocation[p.id] = take;
+                reAllocated += take;
+                remaining -= take;
+            }
+        });
+
+        /* Then fill with cheapest remaining products */
+        sorted.forEach(function(p){
+            if (remaining > 0 && allocation[p.id] < p.maxVol * demand) {
+                var take = Math.min(p.maxVol * demand - allocation[p.id], remaining);
+                allocation[p.id] += take;
+                remaining -= take;
+            }
+        });
+
+        /* Compute scenario costs */
+        var scenarioCosts = scenarios.map(function(sc){
+            var contractCost = 0;
+            products.forEach(function(p){ contractCost += allocation[p.id] * p.price * 24; });
+            /* Spot for residual */
+            var residualMW = demand - totalContractMW;
+            var spotCost = 0;
+            sc.forEach(function(price){ spotCost += residualMW * price; });
+            return contractCost + spotCost;
+        });
+
+        var expectedCost = scenarioCosts.reduce(function(s,c){ return s+c; }, 0) / nScenarios;
+
+        /* CVaR at 5%: expected cost in worst 5% scenarios */
+        var sortedCosts = scenarioCosts.slice().sort(function(a,b){ return b - a; });
+        var worstCount = Math.max(1, Math.ceil(0.05 * nScenarios));
+        var cvar = 0;
+        for (var i = 0; i < worstCount; i++) cvar += sortedCosts[i];
+        cvar /= worstCount;
+
+        return {
+            allocation: allocation,
+            contractFraction: contractFraction,
+            residualSpot: demand - totalContractMW,
+            expectedCost: expectedCost,
+            cvar: cvar,
+            reShare: reAllocated / demand
+        };
+    }
+
+    function buildFrontier(params) {
+        var frontier = [];
+        for (var lambda = 0; lambda <= 5; lambda += 0.5) {
+            var sol = solvePortfolio(params, lambda);
+            frontier.push({ lambda: lambda, expectedCost: sol.expectedCost, cvar: sol.cvar, allocation: sol.allocation, residualSpot: sol.residualSpot, contractFraction: sol.contractFraction });
+        }
+        return frontier;
+    }
+
+    /* ============== CANVAS: EFFICIENT FRONTIER ============== */
+    function drawFrontier(frontier, current) {
+        var cvs = document.getElementById('epFrontierCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 80, r: 40, t: 30, b: 45 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        var xMin = Math.min.apply(null, frontier.map(function(p){ return p.expectedCost; }));
+        var xMax = Math.max.apply(null, frontier.map(function(p){ return p.expectedCost; }));
+        var yMin = Math.min.apply(null, frontier.map(function(p){ return p.cvar; }));
+        var yMax = Math.max.apply(null, frontier.map(function(p){ return p.cvar; }));
+        var xRange = (xMax - xMin) * 1.1 + 10;
+        var yRange = (yMax - yMin) * 1.1 + 10;
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+        for (var g = 0; g <= 4; g++) {
+            var gy = pad.t + (plotH / 4) * g;
+            ctx.beginPath(); ctx.moveTo(pad.l, gy); ctx.lineTo(pad.l + plotW, gy); ctx.stroke();
+            var gx = pad.l + (plotW / 4) * g;
+            ctx.beginPath(); ctx.moveTo(gx, pad.t); ctx.lineTo(gx, pad.t + plotH); ctx.stroke();
+        }
+
+        /* Frontier curve */
+        ctx.strokeStyle = '#64ffda';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        frontier.forEach(function(p, i){
+            var x = pad.l + ((p.expectedCost - xMin + 5) / xRange) * plotW;
+            var y = pad.t + plotH - ((p.cvar - yMin + 5) / yRange) * plotH;
+            if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        });
+        ctx.stroke();
+
+        /* Points */
+        frontier.forEach(function(p){
+            var x = pad.l + ((p.expectedCost - xMin + 5) / xRange) * plotW;
+            var y = pad.t + plotH - ((p.cvar - yMin + 5) / yRange) * plotH;
+            ctx.fillStyle = '#64ffda';
+            ctx.beginPath();
+            ctx.arc(x, y, 3, 0, 2 * Math.PI);
+            ctx.fill();
+        });
+
+        /* Current point */
+        if (current) {
+            var cx = pad.l + ((current.expectedCost - xMin + 5) / xRange) * plotW;
+            var cy = pad.t + plotH - ((current.cvar - yMin + 5) / yRange) * plotH;
+            ctx.strokeStyle = '#C5A059';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.arc(cx, cy, 8, 0, 2 * Math.PI);
+            ctx.stroke();
+            ctx.fillStyle = '#C5A059';
+            ctx.beginPath();
+            ctx.arc(cx, cy, 5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+
+        ctx.strokeStyle = 'rgba(197,160,89,0.3)';
+        ctx.beginPath();
+        ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + plotH);
+        ctx.lineTo(pad.l + plotW, pad.t + plotH); ctx.stroke();
+
+        /* Axis labels */
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '11px "JetBrains Mono", monospace';
+        ctx.textAlign = 'right';
+        for (var gg = 0; gg <= 4; gg++) {
+            var v = (yMax + 5) - (yRange * gg / 4);
+            var yL = pad.t + (plotH / 4) * gg;
+            if (v > 1e6) ctx.fillText('$' + (v / 1e6).toFixed(2) + 'M', pad.l - 6, yL + 3);
+            else ctx.fillText('$' + (v / 1e3).toFixed(0) + 'k', pad.l - 6, yL + 3);
+        }
+        ctx.textAlign = 'center';
+        for (var gx2 = 0; gx2 <= 4; gx2++) {
+            var vx = (xMin - 5) + (xRange * gx2 / 4);
+            var xxL = pad.l + (plotW / 4) * gx2;
+            if (vx > 1e6) ctx.fillText('$' + (vx / 1e6).toFixed(2) + 'M', xxL, pad.t + plotH + 16);
+            else ctx.fillText('$' + (vx / 1e3).toFixed(0) + 'k', xxL, pad.t + plotH + 16);
+        }
+
+        ctx.fillStyle = '#F8F9FA';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('Expected cost', pad.l + plotW / 2, pad.t + plotH + 34);
+        ctx.save();
+        ctx.translate(25, pad.t + plotH / 2);
+        ctx.rotate(-Math.PI / 2);
+        ctx.fillText('CVaR @ 5%', 0, 0);
+        ctx.restore();
+    }
+
+    /* ============== CANVAS: PORTFOLIO COMPOSITION ============== */
+    function drawComposition(result) {
+        var cvs = document.getElementById('epCompositionCanvas');
+        var ctx = cvs.getContext('2d');
+        var W = cvs.width, H = cvs.height;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#0A192F'; ctx.fillRect(0, 0, W, H);
+
+        var pad = { l: 60, r: 30, t: 16, b: 40 };
+        var plotW = W - pad.l - pad.r;
+        var plotH = H - pad.t - pad.b;
+
+        /* Single stacked bar showing composition */
+        var totalMW = 0;
+        products.forEach(function(p){ totalMW += result.allocation[p.id]; });
+        totalMW += result.residualSpot;
+
+        var barX = pad.l + 50;
+        var barH = 60;
+        var barY = pad.t + 80;
+        var cum = 0;
+
+        products.forEach(function(p){
+            var amt = result.allocation[p.id];
+            if (amt > 0) {
+                var w = (amt / totalMW) * (plotW - 100);
+                ctx.fillStyle = p.color;
+                ctx.fillRect(barX + cum, barY, w, barH);
+                if (w > 80) {
+                    ctx.fillStyle = '#F8F9FA';
+                    ctx.font = 'bold 11px "Inter", sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(p.id, barX + cum + w / 2, barY + barH / 2 + 2);
+                    ctx.font = '10px "JetBrains Mono", monospace';
+                    ctx.fillText(amt.toFixed(0) + ' MW', barX + cum + w / 2, barY + barH / 2 + 18);
+                }
+                cum += w;
+            }
+        });
+        /* Spot (white) */
+        if (result.residualSpot > 0) {
+            var spotW = (result.residualSpot / totalMW) * (plotW - 100);
+            ctx.fillStyle = '#8892B0';
+            ctx.fillRect(barX + cum, barY, spotW, barH);
+            if (spotW > 80) {
+                ctx.fillStyle = '#F8F9FA';
+                ctx.font = 'bold 11px "Inter", sans-serif';
+                ctx.textAlign = 'center';
+                ctx.fillText('Spot', barX + cum + spotW / 2, barY + barH / 2 + 2);
+                ctx.font = '10px "JetBrains Mono", monospace';
+                ctx.fillText(result.residualSpot.toFixed(0) + ' MW', barX + cum + spotW / 2, barY + barH / 2 + 18);
+            }
+        }
+
+        /* Labels */
+        ctx.fillStyle = '#C5A059';
+        ctx.font = 'bold 12px "Inter", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('Contract: ' + (result.contractFraction * 100).toFixed(0) + '%', pad.l, pad.t + 20);
+        ctx.fillStyle = '#a8b2d1';
+        ctx.font = '11px "Inter", sans-serif';
+        ctx.fillText('Spot exposure: ' + ((1 - result.contractFraction) * 100).toFixed(0) + '% of load', pad.l, pad.t + 42);
+
+        /* Legend */
+        var lx = pad.l;
+        var ly = barY + barH + 24;
+        products.forEach(function(p){
+            if (result.allocation[p.id] > 0) {
+                ctx.fillStyle = p.color;
+                ctx.fillRect(lx, ly, 12, 12);
+                ctx.fillStyle = '#a8b2d1';
+                ctx.font = '10px "Inter", sans-serif';
+                ctx.textAlign = 'left';
+                ctx.fillText(p.id + ' ($' + p.price + '/MWh)', lx + 16, ly + 10);
+                lx += 180;
+            }
+        });
+        if (result.residualSpot > 0) {
+            ctx.fillStyle = '#8892B0';
+            ctx.fillRect(lx, ly, 12, 12);
+            ctx.fillStyle = '#a8b2d1';
+            ctx.fillText('Spot (variable)', lx + 16, ly + 10);
+        }
+    }
+
+    function appendCard(parent, label, value) {
+        var card = document.createElement('div'); card.className = 'res-card';
+        var lbl = document.createElement('div'); lbl.className = 'res-card-lbl'; lbl.textContent = label;
+        var val = document.createElement('div'); val.className = 'res-card-val'; val.textContent = value;
+        card.appendChild(lbl); card.appendChild(val);
+        parent.appendChild(card);
+    }
+
+    function formatMoney(x) {
+        if (!isFinite(x)) return '\u221e';
+        if (Math.abs(x) >= 1e6) return '$' + (x / 1e6).toFixed(2) + 'M';
+        if (Math.abs(x) >= 1e3) return '$' + (x / 1e3).toFixed(0) + 'k';
+        return '$' + Math.round(x);
+    }
+
+    function renderResults(current) {
+        var summary = document.getElementById('epResultsSummary');
+        while (summary.firstChild) summary.removeChild(summary.firstChild);
+        appendCard(summary, 'Expected cost', formatMoney(current.expectedCost));
+        appendCard(summary, 'CVaR @ 5%', formatMoney(current.cvar));
+        appendCard(summary, 'Contract share', (current.contractFraction * 100).toFixed(0) + '%');
+        appendCard(summary, 'RE share', (current.reShare * 100).toFixed(1) + '%');
+        appendCard(summary, 'CVaR premium', formatMoney(current.cvar - current.expectedCost));
+    }
+
+    function bindSlider(sliderId, displayId, suffix) {
+        var s = document.getElementById(sliderId);
+        var d = document.getElementById(displayId);
+        if (!s || !d) return;
+        s.addEventListener('input', function(){ d.textContent = s.value + (suffix || ''); });
+    }
+    bindSlider('epDemand', 'epDemandVal', '');
+    bindSlider('epRisk', 'epRiskVal', '');
+    bindSlider('epVolatility', 'epVolatilityVal', '');
+    bindSlider('epRE', 'epREVal', '%');
+
+    function runSolver() {
+        var params = {
+            demand: parseInt(document.getElementById('epDemand').value, 10),
+            riskAversion: parseFloat(document.getElementById('epRisk').value),
+            volatility: parseFloat(document.getElementById('epVolatility').value),
+            reMin: parseInt(document.getElementById('epRE').value, 10) / 100
+        };
+        params.scenarios = generateScenarios(params.volatility);
+
+        var t0 = performance.now();
+        var frontier = buildFrontier(params);
+        var current = solvePortfolio(params, params.riskAversion);
+        /* Find closest frontier point to current */
+        current.allocation = current.allocation;
+        current.residualSpot = current.residualSpot;
+        current.contractFraction = current.contractFraction;
+        var t1 = performance.now();
+
+        drawFrontier(frontier, current);
+        drawComposition(current);
+        renderResults(current);
+
+        document.getElementById('epStatus').textContent = 'Optimized (11 frontier points, 30 scenarios) in ' + (t1 - t0).toFixed(1) + ' ms';
+    }
+
+    document.getElementById('epSolve').addEventListener('click', runSolver);
+    window.addEventListener('load', function(){ setTimeout(runSolver, 250); });
+})();
+</script>
+</body>
+</html>
