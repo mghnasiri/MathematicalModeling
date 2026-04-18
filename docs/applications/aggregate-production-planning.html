@@ -1,0 +1,1039 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Aggregate Production Planning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive aggregate production planning (APP) demo in the HMMS tradition (Holt, Modigliani, Muth, Simon 1960): trade off production, inventory, workforce, hiring, firing, and overtime across a 12-month horizon using Level, Chase, Mixed and Smoothed strategies.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/aggregate-production-planning.html">
+    <meta property="og:title" content="Aggregate Production Planning | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="HMMS-style APP comparing Level, Chase, Mixed, and Smoothed strategies on a 12-month seasonal demand plan.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Aggregate Production Planning | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="HMMS-style APP: Level, Chase, Mixed, and Smoothed strategies with full cost decomposition.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/aggregate-production-planning.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        .navbar { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 1rem 0; z-index: 1000; border-bottom: 1px solid rgba(197, 160, 89, 0.1); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+
+        .breadcrumb-nav { padding: 1rem 0; background: var(--midnight-light); border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(197,160,89,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(197,160,89,0.04) 1px, transparent 1px), radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.05) 0%, transparent 65%); background-size: 40px 40px, 40px 40px, 100% 100%; pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero-icon--manufacturing { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)) drop-shadow(0 2px 16px rgba(197,160,89,0.2)); animation: gearRotateGlow 5s ease-in-out infinite; }
+        @keyframes gearRotateGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)); } 50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.65)) drop-shadow(0 0 35px rgba(197,160,89,0.2)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        .graham-block { display: inline-block; margin: 1rem auto; padding: 0.6rem 1.2rem; border: 1px solid rgba(197,160,89,0.35); border-left-width: 3px; border-radius: 4px; background: rgba(197,160,89,0.04); }
+        .graham-block .graham-label { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .graham-block .graham-notation { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--ivory); letter-spacing: 0.5px; }
+
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; margin-right: 0.5rem; }
+        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; text-decoration: none; transition: border-color 0.3s, color 0.3s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        .gen-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin: 1.5rem 0; }
+        .gen-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .gen-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
+        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
+        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; font-style: italic; }
+
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); flex-wrap: wrap; gap: 0.5rem; }
+        .solver-panel-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h3 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.6rem; font-weight: 500; margin-top: 1rem; }
+        .solver-section-label:first-child { margin-top: 0; }
+
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-type { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .solve-btn { width: 100%; padding: 0.7rem; font-size: 1rem; margin-bottom: 1.2rem; border: 1px solid var(--gold); border-radius: 4px; background: rgba(197,160,89,0.15); color: var(--gold); cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.3s; }
+        .solve-btn:hover { background: var(--gold); color: var(--midnight); }
+
+        .solver-canvas-wrap { background: var(--midnight-light); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 0.5rem; position: relative; }
+        .solver-canvas-wrap canvas { width: 100%; display: block; border-radius: 2px; }
+        .solver-status { font-size: 0.78rem; color: var(--slate); margin-top: 0.5rem; font-style: italic; }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .results-table .obj-col { text-align: right; }
+
+        .solver-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 1.5rem; }
+        .schedule-output { font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: var(--slate-light); margin-top: 0.8rem; padding: 0.8rem 1rem; background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.08); border-radius: 4px; line-height: 1.8; max-height: 260px; overflow-y: auto; white-space: pre; }
+
+        .param-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .param-cell { display: flex; flex-direction: column; padding: 0.5rem 0.7rem; border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; background: rgba(10,25,47,0.5); }
+        .param-cell label { font-size: 0.68rem; color: var(--slate); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem; }
+        .param-cell input { background: transparent; border: none; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.88rem; outline: none; width: 100%; }
+
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.6rem; color: var(--ivory); }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; margin-right: 0.4rem; }
+        .algo-card .algo-tag.optimal { border-color: rgba(100,255,218,0.3); color: var(--green); }
+
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+        .reference-list a { color: var(--gold); text-decoration: underline dotted; }
+
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: underline; }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+        .related-card { background: var(--midnight); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.9rem 1rem; text-decoration: none; transition: all 0.3s; display: block; }
+        .related-card:hover { border-color: var(--gold); background: rgba(197,160,89,0.05); }
+        .related-card-title { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.2rem; }
+        .related-card-tag { color: var(--slate); font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
+
+        @media (max-width: 768px) {
+            .solver-row { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Manufacturing",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/manufacturing-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Aggregate Production Planning",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/aggregate-production-planning.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="manufacturing-domain.html">Manufacturing</a></li>
+            <li class="active" style="color: var(--gold);">Aggregate Production Planning</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--manufacturing"><i class="fas fa-chart-line" aria-hidden="true"></i></div>
+        <h1>Aggregate <span>Production Planning</span></h1>
+        <p class="hero-subtitle">MPS level &middot; Tactical months &middot; HMMS 1960</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <span class="graham-block">
+            <span class="graham-label">Decision class</span>
+            <span class="graham-notation">APP &middot; LP / QP &middot; multi-period production-inventory-workforce</span>
+        </span>
+        <p class="hero-desc">
+            Aggregate production planning decides <em>how much to produce, how much to store, and how many workers
+            to employ</em> in each period of a medium-horizon plan &mdash; typically 6 to 18 months. Named and
+            formalised by <cite>Holt, Modigliani, Muth &amp; Simon (1960)</cite> at the Graduate School of Industrial
+            Administration (now Tepper / CMU), APP is the <strong>bridge between strategic capacity and weekly
+            scheduling</strong>, and the canonical setting for the hiring-firing vs inventory-holding trade-off that
+            dominates seasonal manufacturing.
+        </p>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>APICS planning hierarchy &mdash; the highlighted level is what this page optimises</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">S&amp;OP<span class="chain-sub">Years</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">MPS<span class="chain-sub">Months</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">MRP<span class="chain-sub">Weeks</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">CRP<span class="chain-sub">Days&ndash;Weeks</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">SFC<span class="chain-sub">Hours&ndash;Days</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Problem</span></h2>
+            <p>Twelve-month plan, six decision variables per period, one cost objective</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                A discrete-manufacturing company sees a 12-month demand forecast <em>d<sub>t</sub></em>. Each month it
+                chooses: <strong>regular production P<sub>t</sub></strong> and <strong>overtime O<sub>t</sub></strong>
+                (constrained by workforce capacity), <strong>workforce W<sub>t</sub></strong> adjusted via
+                <strong>hires H<sub>t</sub></strong> and <strong>fires F<sub>t</sub></strong>, and the resulting
+                <strong>end-of-period inventory I<sub>t</sub></strong>. The objective is to meet all demand at minimum
+                total cost, balancing regular production, overtime, holding, hiring, and firing costs.
+            </p>
+            <p>
+                Three pure strategies define the design space:
+                <strong>Level</strong> (constant workforce, absorb demand swings with inventory),
+                <strong>Chase</strong> (workforce tracks demand, zero inventory), and
+                <strong>Mixed</strong> (base workforce plus overtime for peaks). The HMMS contribution was recognising
+                this as an LP/QP problem and deriving closed-form <em>linear decision rules</em> from a quadratic cost
+                approximation &mdash; one of the first operations-research applications of control theory.
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">Linear cost model (extensive form)</span>
+                <span class="keyword">min</span> &Sigma;<sub>t=1..T</sub> [ <span class="variable">c<sub>R</sub>P<sub>t</sub> + c<sub>O</sub>O<sub>t</sub> + h&middot;I<sub>t</sub> + c<sub>H</sub>H<sub>t</sub> + c<sub>F</sub>F<sub>t</sub></span> ]<br>
+                <span class="keyword">s.t.</span><br>
+                &nbsp;&nbsp;<span class="variable">I<sub>t</sub> = I<sub>t&minus;1</sub> + P<sub>t</sub> + O<sub>t</sub> &minus; d<sub>t</sub></span> &nbsp;&nbsp;<span class="comment">// inventory balance</span><br>
+                &nbsp;&nbsp;<span class="variable">W<sub>t</sub> = W<sub>t&minus;1</sub> + H<sub>t</sub> &minus; F<sub>t</sub></span> &nbsp;&nbsp;<span class="comment">// workforce balance</span><br>
+                &nbsp;&nbsp;<span class="variable">P<sub>t</sub> &le; k &middot; W<sub>t</sub></span> &nbsp;&nbsp;<span class="comment">// regular capacity (k units/worker)</span><br>
+                &nbsp;&nbsp;<span class="variable">O<sub>t</sub> &le; &alpha; &middot; k &middot; W<sub>t</sub></span> &nbsp;&nbsp;<span class="comment">// overtime cap (fraction &alpha; of regular)</span><br>
+                &nbsp;&nbsp;<span class="variable">P<sub>t</sub>, O<sub>t</sub>, I<sub>t</sub>, H<sub>t</sub>, F<sub>t</sub>, W<sub>t</sub> &ge; 0</span> &nbsp;&nbsp;<span class="comment">// non-negativity</span>
+            </div>
+
+            <p>
+                The LP above is the standard industrial form (Bitran &amp; Hax 1977; Nahmias textbook). HMMS&rsquo;s
+                original quadratic form replaces the workforce-change cost with <em>(H<sub>t</sub>&nbsp;&minus;&nbsp;F<sub>t</sub>)<sup>2</sup></em>
+                and the inventory cost with <em>(I<sub>t</sub>&nbsp;&minus;&nbsp;I<sup>*</sup>)<sup>2</sup></em>, yielding
+                an unconstrained quadratic program whose optimal solution can be expressed in closed form as a
+                <strong>linear decision rule</strong> (current decisions are a linear function of current state plus a
+                weighted sum of forecasted demands). Modern practice uses LP directly with commercial solvers.
+            </p>
+
+            <table class="gen-table" id="params-table">
+                <thead><tr><th scope="col">Parameter</th><th scope="col">Symbol</th><th scope="col">Default</th><th scope="col">Unit</th></tr></thead>
+                <tbody>
+                    <tr><td style="color:var(--ivory)">Regular production cost</td><td>c<sub>R</sub></td><td>50</td><td>$ / unit</td></tr>
+                    <tr><td style="color:var(--ivory)">Overtime production cost</td><td>c<sub>O</sub></td><td>75</td><td>$ / unit</td></tr>
+                    <tr><td style="color:var(--ivory)">Inventory holding cost</td><td>h</td><td>5</td><td>$ / unit / period</td></tr>
+                    <tr><td style="color:var(--ivory)">Hiring cost</td><td>c<sub>H</sub></td><td>1,500</td><td>$ / worker</td></tr>
+                    <tr><td style="color:var(--ivory)">Firing cost</td><td>c<sub>F</sub></td><td>2,000</td><td>$ / worker</td></tr>
+                    <tr><td style="color:var(--ivory)">Production per worker</td><td>k</td><td>15</td><td>units / month</td></tr>
+                    <tr><td style="color:var(--ivory)">Overtime ceiling (fraction)</td><td>&alpha;</td><td>0.25</td><td>&mdash;</td></tr>
+                    <tr><td style="color:var(--ivory)">Initial workforce</td><td>W<sub>0</sub></td><td>8</td><td>workers</td></tr>
+                    <tr><td style="color:var(--ivory)">Initial inventory</td><td>I<sub>0</sub></td><td>10</td><td>units</td></tr>
+                </tbody>
+            </table>
+
+            <a href="manufacturing-domain.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Manufacturing framework
+            </a>
+            <a href="master-production-scheduling.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Next step: MPS
+            </a>
+            <a href="lot-sizing.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Lot sizing (MRP level)
+            </a>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Four strategies compared across the same 12-month demand forecast</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-chart-line" aria-hidden="true"></i> APP Planner</h3>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">T = 12 months &middot; 6 decisions/period</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Demand scenario</div>
+                <div class="scenario-switcher">
+                    <button class="scenario-btn active" data-scenario="0" type="button"><span class="scn-name">Stable</span><span class="scn-desc">Flat demand around 120/month &mdash; every strategy is competitive</span></button>
+                    <button class="scenario-btn" data-scenario="1" type="button"><span class="scn-name">Seasonal peak</span><span class="scn-desc">Holiday spike Nov&ndash;Dec &mdash; Level vs Chase is dramatic</span></button>
+                    <button class="scenario-btn" data-scenario="2" type="button"><span class="scn-name">Demand shock</span><span class="scn-desc">Stable then 50% jump mid-horizon &mdash; fast adjustment needed</span></button>
+                </div>
+                <div class="scenario-context" id="scenarioContext">Stable demand: roughly 120 units/month with small noise. Level production with a modest inventory buffer is nearly cost-optimal; Chase is overkill. Good baseline to see the solver before trying the more dramatic scenarios.</div>
+
+                <div class="solver-section-label">Strategy (select to inspect its plan)</div>
+                <div class="algo-select">
+                    <button class="algo-chip active" data-algo="level" type="button">Level <span class="chip-type">Constant P</span></button>
+                    <button class="algo-chip" data-algo="chase" type="button">Chase <span class="chip-type">P = d</span></button>
+                    <button class="algo-chip" data-algo="mixed" type="button">Mixed <span class="chip-type">Base + Overtime</span></button>
+                    <button class="algo-chip" data-algo="smoothed" type="button">Smoothed <span class="chip-type">3-period MA</span></button>
+                </div>
+
+                <button class="solve-btn" id="solveAllBtn" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.5rem;"></i>Solve &amp; Compare All Strategies
+                </button>
+
+                <div class="solver-section-label">Plan trajectory (demand vs production vs inventory)</div>
+                <div class="solver-canvas-wrap">
+                    <canvas id="planCanvas" width="960" height="340"></canvas>
+                </div>
+                <p class="solver-status" id="solverStatus">Click &ldquo;Solve &amp; Compare&rdquo; to run all four strategies on the current demand scenario.</p>
+
+                <div class="solver-row" style="margin-top: 1.5rem;">
+                    <div>
+                        <div class="solver-section-label">Cost comparison</div>
+                        <table class="results-table" id="resultsTable">
+                            <thead>
+                                <tr>
+                                    <th scope="col">Strategy</th>
+                                    <th scope="col" class="obj-col">Total $</th>
+                                    <th scope="col" class="obj-col">Reg. prod.</th>
+                                    <th scope="col" class="obj-col">Overtime</th>
+                                    <th scope="col" class="obj-col">Holding</th>
+                                    <th scope="col" class="obj-col">Hire/Fire</th>
+                                </tr>
+                            </thead>
+                            <tbody id="resultsBody">
+                                <tr><td colspan="6" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Click Solve to run</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div class="solver-section-label">Per-month plan (selected strategy)</div>
+                        <div class="schedule-output" id="scheduleOutput">Pick a strategy above and click Solve to see the monthly production, workforce, and inventory trajectory.</div>
+                    </div>
+                </div>
+
+                <div class="disclaimer-box" style="margin-top:1rem">
+                    <div class="disclaimer-title"><i class="fas fa-lightbulb" aria-hidden="true"></i> Reading the chart</div>
+                    Gold bars = regular production, red segments = overtime, blue line = demand, green line = end-of-period inventory. Green cells in the cost table mark the lowest total cost across strategies. These heuristics approximate the HMMS LP &mdash; the true optimum requires a real LP solver. The takeaway is the shape of the trade-off: Level dominates hiring cost; Chase dominates holding cost; Mixed and Smoothed balance the two.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Strategies</span></h2>
+            <p>Four canonical APP heuristics that span the design space</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-minus" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Level Production</h3>
+                    <span class="algo-tag">Heuristic</span>
+                    <p>Produce the same amount every period, chosen so that total production equals total demand over the horizon. Workforce is hired/fired once at the start; then held constant. Absorbs demand variability entirely through inventory.</p>
+                    <p><strong>Good when:</strong> hiring and firing are expensive, storage is cheap, product is non-perishable. <strong>Bad when:</strong> demand is highly seasonal or inventory turns over fast. Classic textbook example: cement, stable consumer goods.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-wave-square" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Chase Demand</h3>
+                    <span class="algo-tag">Heuristic</span>
+                    <p>Produce exactly the demand each period; adjust workforce every month to match. Inventory is near zero throughout.</p>
+                    <p><strong>Good when:</strong> inventory is extremely expensive or infeasible (perishables, fashion). <strong>Bad when:</strong> hiring/firing cost or ramp time is significant, or labour market is tight. Classic example: service operations, food processing, apparel.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-layer-group" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Mixed (Base + Overtime)</h3>
+                    <span class="algo-tag">Heuristic</span>
+                    <p>Size the base workforce to cover the <em>average</em> demand and use overtime (and possibly sub-contracting) for the peaks. Workforce is held constant; overtime absorbs variability.</p>
+                    <p><strong>Good when:</strong> overtime capacity exists and is relatively cheap. <strong>Constraint:</strong> overtime is capped at &alpha;&nbsp;&times;&nbsp;regular capacity (commonly 20&ndash;30%). If peaks exceed the cap, the strategy must also build inventory ahead of the peak.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-chart-area" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Smoothed (3-period moving average)</h3>
+                    <span class="algo-tag">Heuristic</span>
+                    <p>Produce a 3-period centred moving average of demand; adjust workforce monthly to support it. Reduces both workforce volatility (vs Chase) and inventory accumulation (vs Level). This is the spirit of HMMS linear decision rules: current production is a weighted function of past and forecasted demand.</p>
+                    <p>A simple smoothing rule is already quite competitive with the LP optimum on slowly-varying demand &mdash; the gap opens mainly at sharp transitions (e.g., the &ldquo;demand shock&rdquo; scenario).</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-cogs" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Exact LP / QP solvers (industrial deployment)</h3>
+                    <span class="algo-tag optimal">Optimal</span>
+                    <p>The formulation in Section 2 is a standard linear program with <em>6T</em> variables. Open-source (HiGHS, CBC) and commercial (Gurobi, CPLEX, Xpress) solvers reach the optimum in milliseconds for <em>T&nbsp;&le;&nbsp;100</em>. HMMS&rsquo;s quadratic variant is a QP solved by SLSQP or Gurobi QP.</p>
+                    <p>This page demonstrates heuristic strategies to build intuition; production systems (SAP IBP, Kinaxis, o9, OMP) embed an LP/QP solver inside a rolling-horizon APP loop with re-optimisation every month on updated forecasts.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>Problems</span></h2>
+            <p>APP hands off to MPS; MPS hands off to MRP; MRP hands off to shop-floor scheduling</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="related-grid">
+                <a href="master-production-scheduling.html" class="related-card">
+                    <div class="related-card-title">Master Production Schedule</div>
+                    <div class="related-card-tag">MPS &middot; MIP &middot; weekly</div>
+                </a>
+                <a href="mrp.html" class="related-card">
+                    <div class="related-card-title">Material Requirements Planning</div>
+                    <div class="related-card-tag">MRP &middot; BOM explosion</div>
+                </a>
+                <a href="lot-sizing.html" class="related-card">
+                    <div class="related-card-title">Lot Sizing</div>
+                    <div class="related-card-tag">Wagner-Whitin &middot; CLSP</div>
+                </a>
+                <a href="plant-location.html" class="related-card">
+                    <div class="related-card-title">Plant Location</div>
+                    <div class="related-card-tag">CFLP &middot; strategic</div>
+                </a>
+                <a href="manufacturing-balancing.html" class="related-card">
+                    <div class="related-card-title">Parallel Machine</div>
+                    <div class="related-card-tag">P<sub>m</sub> &vert;&vert; C<sub>max</sub> &middot; CRP</div>
+                </a>
+                <a href="workforce-assignment.html" class="related-card">
+                    <div class="related-card-title">Workforce Assignment (healthcare)</div>
+                    <div class="related-card-tag">LAP &middot; cross-domain</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2><span>References</span></h2>
+            <p>Foundational papers and textbooks for aggregate production planning</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li><span class="ref-author">Holt, C.&nbsp;C., Modigliani, F., Muth, J.&nbsp;F., &amp; Simon, H.&nbsp;A.</span> (1960). <span class="ref-title">Planning Production, Inventories, and Work Force.</span> <span class="ref-journal">Prentice-Hall, Englewood Cliffs NJ.</span> &mdash; HMMS: the canonical APP text, introduces linear decision rules from a quadratic cost model.</li>
+                <li><span class="ref-author">Holt, C.&nbsp;C., Modigliani, F., &amp; Simon, H.&nbsp;A.</span> (1955). <span class="ref-title">A linear decision rule for production and employment scheduling.</span> <span class="ref-journal">Management Science, 2(1), 1&ndash;30.</span> <a href="https://doi.org/10.1287/mnsc.2.1.1" target="_blank" rel="noopener">doi:10.1287/mnsc.2.1.1</a> &mdash; original linear decision rule derivation.</li>
+                <li><span class="ref-author">Bowman, E.&nbsp;H.</span> (1956). <span class="ref-title">Production scheduling by the transportation method of linear programming.</span> <span class="ref-journal">Operations Research, 4(1), 100&ndash;103.</span> <a href="https://doi.org/10.1287/opre.4.1.100" target="_blank" rel="noopener">doi:10.1287/opre.4.1.100</a> &mdash; transportation-LP formulation.</li>
+                <li><span class="ref-author">Bitran, G.&nbsp;R., &amp; Hax, A.&nbsp;C.</span> (1977). <span class="ref-title">On the design of hierarchical production planning systems.</span> <span class="ref-journal">Decision Sciences, 8(1), 28&ndash;55.</span> <a href="https://doi.org/10.1111/j.1540-5915.1977.tb01066.x" target="_blank" rel="noopener">doi:10.1111/j.1540-5915.1977.tb01066.x</a></li>
+                <li><span class="ref-author">Hax, A.&nbsp;C., &amp; Meal, H.&nbsp;C.</span> (1975). <span class="ref-title">Hierarchical integration of production planning and scheduling.</span> <span class="ref-journal">In Geisler (Ed.), <em>Studies in Management Sciences</em>, Vol.&nbsp;1, North-Holland/American Elsevier, pp.&nbsp;53&ndash;69.</span> <a href="https://dspace.mit.edu/handle/1721.1/1868" target="_blank" rel="noopener">dspace.mit.edu/handle/1721.1/1868</a></li>
+                <li><span class="ref-author">Nam, S.&nbsp;J., &amp; Logendran, R.</span> (1992). <span class="ref-title">Aggregate production planning &mdash; a survey of models and methodologies.</span> <span class="ref-journal">European Journal of Operational Research, 61(3), 255&ndash;272.</span> <a href="https://doi.org/10.1016/0377-2217(92)90356-E" target="_blank" rel="noopener">doi:10.1016/0377-2217(92)90356-E</a></li>
+                <li><span class="ref-author">Nahmias, S.</span> (2015). <span class="ref-title">Production and Operations Analysis</span> (7th ed.). <span class="ref-journal">Waveland Press.</span> &mdash; APP chapter with worked examples and LP/QP comparison.</li>
+                <li><span class="ref-author">Hax, A.&nbsp;C., &amp; Candea, D.</span> (1984). <span class="ref-title">Production and Inventory Management.</span> <span class="ref-journal">Prentice-Hall.</span> &mdash; hierarchical production planning textbook.</li>
+                <li><span class="ref-author">Vollmann, T.&nbsp;E., Berry, W.&nbsp;L., Whybark, D.&nbsp;C., &amp; Jacobs, F.&nbsp;R.</span> (2005). <span class="ref-title">Manufacturing Planning and Control for Supply Chain Management</span> (5th ed.). <span class="ref-journal">McGraw-Hill/Irwin.</span> &mdash; APICS-aligned text, S&amp;OP to SFC coverage.</li>
+                <li><span class="ref-author">Pinedo, M.&nbsp;L.</span> (2009). <span class="ref-title">Planning and Scheduling in Manufacturing and Services</span> (2nd ed.). <span class="ref-journal">Springer.</span> <a href="https://doi.org/10.1007/978-1-4419-0910-7" target="_blank" rel="noopener">doi:10.1007/978-1-4419-0910-7</a> &mdash; APP in the broader scheduling hierarchy.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Need to size<br>your production and workforce plan?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
+            Demand forecasts and cost parameters shown here are illustrative. The browser solver runs four heuristic strategies, not a full LP/QP optimum &mdash; serious industrial APP deployments use commercial LP solvers (Gurobi, CPLEX, Xpress) or suite software (SAP IBP, Kinaxis, o9) with rolling-horizon re-optimisation against updated forecasts.
+        </div>
+    </div>
+</section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="manufacturing-domain.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Manufacturing</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function () {
+    'use strict';
+
+    // ── Safe DOM helpers ──
+    function el(tag, attrs, text) {
+        var n = document.createElement(tag);
+        if (attrs) for (var k in attrs) {
+            if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+            if (k === 'class') n.className = attrs[k];
+            else if (k === 'style') n.setAttribute('style', attrs[k]);
+            else n.setAttribute(k, attrs[k]);
+        }
+        if (text !== undefined && text !== null) n.textContent = text;
+        return n;
+    }
+    function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+    function setEmptyRow(tbody, msg, colSpan) {
+        clear(tbody);
+        var tr = document.createElement('tr');
+        var td = el('td', { colspan: String(colSpan), style: 'text-align:center; color:var(--slate); font-family:Inter,sans-serif;' }, msg);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+    }
+
+    // ── Demand scenarios (T = 12 months) ──
+    var SCENARIOS = [
+        { name: 'Stable', context: 'Stable demand: roughly 120 units/month with small noise. Level production with a modest inventory buffer is nearly cost-optimal; Chase is overkill. Good baseline to see the solver before trying the more dramatic scenarios.', demand: [122, 118, 125, 119, 121, 123, 117, 124, 120, 118, 126, 121] },
+        { name: 'Seasonal peak', context: 'Seasonal peak: gentle baseline with a sharp Nov\u2013Dec holiday spike. Chase pays heavy hiring costs ramping up and firing costs coming back down. Level produces too much the other nine months and burns holding cost. Mixed and Smoothed split the difference.', demand: [90, 85, 92, 95, 100, 105, 110, 115, 125, 150, 220, 250] },
+        { name: 'Demand shock', context: 'Demand shock: six stable months then a step change to 50% higher. Workforce must ramp fast. Smoothed and Mixed adapt gracefully; Chase hires abruptly at month 7; Level under-produces early and over-produces late.', demand: [100, 105, 98, 102, 100, 103, 155, 160, 158, 162, 157, 160] }
+    ];
+
+    var PARAMS = {
+        cR: 50,       // regular production cost / unit
+        cO: 75,       // overtime cost / unit
+        h: 5,         // holding cost / unit / period
+        cH: 1500,     // hiring cost / worker
+        cF: 2000,     // firing cost / worker
+        k: 15,        // units per worker per period
+        alpha: 0.25,  // overtime ceiling as fraction of regular
+        W0: 8,        // initial workforce
+        I0: 10        // initial inventory
+    };
+
+    var state = { scenarioIdx: 0, selectedAlgo: 'level', results: null };
+
+    function getDemand() { return SCENARIOS[state.scenarioIdx].demand.slice(); }
+
+    // ── Core: evaluate a plan given a production sequence and workforce trajectory ──
+    // Plan: { P: [T], O: [T], W: [T], H: [T], F: [T] }  (I is derived)
+    function evaluate(plan, demand) {
+        var T = demand.length;
+        var I = new Array(T);
+        var prev = PARAMS.I0;
+        var total = { reg: 0, ot: 0, hold: 0, hire: 0, fire: 0 };
+        for (var t = 0; t < T; t++) {
+            var endInv = prev + plan.P[t] + plan.O[t] - demand[t];
+            if (endInv < 0) endInv = 0; // demand shortage handled by overtime in heuristics below
+            I[t] = endInv;
+            total.reg  += PARAMS.cR * plan.P[t];
+            total.ot   += PARAMS.cO * plan.O[t];
+            total.hold += PARAMS.h * endInv;
+            total.hire += PARAMS.cH * plan.H[t];
+            total.fire += PARAMS.cF * plan.F[t];
+            prev = endInv;
+        }
+        total.grand = total.reg + total.ot + total.hold + total.hire + total.fire;
+        return { I: I, totals: total };
+    }
+
+    function makeEmptyPlan(T) {
+        return { P: new Array(T).fill(0), O: new Array(T).fill(0), W: new Array(T).fill(0), H: new Array(T).fill(0), F: new Array(T).fill(0) };
+    }
+
+    // Compute required workforce to produce P+O units (regular covers P, overtime at most alpha*k*W)
+    function workforceRequired(P, O) {
+        // P <= k*W and O <= alpha*k*W  =>  W >= max(P/k, O/(alpha*k))
+        var Wp = P / PARAMS.k;
+        var Wo = PARAMS.alpha > 0 ? O / (PARAMS.alpha * PARAMS.k) : 0;
+        return Math.ceil(Math.max(Wp, Wo));
+    }
+
+    // ── Strategy 1: LEVEL ──
+    // Produce constant P_level each period = (sum(d) - I0) / T, round up. Workforce set once.
+    function algoLevel(demand) {
+        var T = demand.length;
+        var totalDemand = demand.reduce(function (s, d) { return s + d; }, 0);
+        var Plevel = Math.ceil((totalDemand - PARAMS.I0) / T);
+        if (Plevel < 0) Plevel = 0;
+        var Wreq = Math.ceil(Plevel / PARAMS.k);
+        var plan = makeEmptyPlan(T);
+        var Wcurr = PARAMS.W0;
+        for (var t = 0; t < T; t++) {
+            if (t === 0) {
+                var delta = Wreq - PARAMS.W0;
+                if (delta > 0) plan.H[0] = delta;
+                else if (delta < 0) plan.F[0] = -delta;
+                Wcurr = Wreq;
+            }
+            plan.W[t] = Wcurr;
+            plan.P[t] = Plevel;
+            plan.O[t] = 0;
+        }
+        return plan;
+    }
+
+    // ── Strategy 2: CHASE ──
+    // Produce P_t = max(d_t - I_{t-1}, 0); workforce adjusts monthly.
+    function algoChase(demand) {
+        var T = demand.length;
+        var plan = makeEmptyPlan(T);
+        var Wcurr = PARAMS.W0;
+        var Iprev = PARAMS.I0;
+        for (var t = 0; t < T; t++) {
+            var needed = Math.max(0, demand[t] - Iprev);
+            // Split into regular + overtime respecting alpha
+            var maxReg = function (W) { return PARAMS.k * W; };
+            // Solve for W such that P + O = needed, O <= alpha*k*W, P <= k*W
+            var Wtarget = workforceRequired(needed, 0);
+            // Check: if needed > k*Wtarget, use overtime
+            var Preg = Math.min(needed, maxReg(Wtarget));
+            var Oot = needed - Preg;
+            // If overtime needed, may require more workforce for overtime capacity
+            if (Oot > 0) {
+                Wtarget = workforceRequired(Preg, Oot);
+                Preg = Math.min(needed, maxReg(Wtarget));
+                Oot = needed - Preg;
+            }
+            var delta = Wtarget - Wcurr;
+            if (delta > 0) plan.H[t] = delta;
+            else if (delta < 0) plan.F[t] = -delta;
+            Wcurr = Wtarget;
+            plan.W[t] = Wcurr;
+            plan.P[t] = Preg;
+            plan.O[t] = Oot;
+            Iprev = Iprev + Preg + Oot - demand[t];
+            if (Iprev < 0) Iprev = 0;
+        }
+        return plan;
+    }
+
+    // ── Strategy 3: MIXED (base workforce + overtime peaks) ──
+    // Base workforce = ceil(avg demand / k). Overtime fills demand above regular capacity.
+    function algoMixed(demand) {
+        var T = demand.length;
+        var avg = demand.reduce(function (s, d) { return s + d; }, 0) / T;
+        var Wbase = Math.ceil(avg / PARAMS.k);
+        var plan = makeEmptyPlan(T);
+        var Wcurr = PARAMS.W0;
+        // Ramp workforce once at start
+        var delta = Wbase - PARAMS.W0;
+        if (delta > 0) plan.H[0] = delta;
+        else if (delta < 0) plan.F[0] = -delta;
+        Wcurr = Wbase;
+        var Iprev = PARAMS.I0;
+        for (var t = 0; t < T; t++) {
+            plan.W[t] = Wcurr;
+            var regCap = PARAMS.k * Wcurr;
+            var otCap = Math.floor(PARAMS.alpha * regCap);
+            var totalCap = regCap + otCap;
+            var need = Math.max(0, demand[t] - Iprev);
+            // Try to fill need without over-producing
+            var P, O;
+            if (need <= regCap) {
+                P = need; O = 0;
+                // Proactively build inventory in low-demand months to cover future peaks
+                // Produce at regCap unless we have plenty of inventory
+                var remainingDemand = 0;
+                for (var u = t + 1; u < T; u++) remainingDemand += demand[u];
+                var projectedEnd = Iprev + regCap - demand[t];
+                if (projectedEnd < remainingDemand / (T - t)) {
+                    P = regCap; O = 0;
+                }
+            } else if (need <= totalCap) {
+                P = regCap; O = need - regCap;
+            } else {
+                // Exceed capacity: run full cap; shortage will draw from prior inventory
+                P = regCap; O = otCap;
+            }
+            plan.P[t] = P; plan.O[t] = O;
+            Iprev = Iprev + P + O - demand[t];
+            if (Iprev < 0) Iprev = 0;
+        }
+        return plan;
+    }
+
+    // ── Strategy 4: SMOOTHED (3-period moving average) ──
+    // Target production for period t = avg(d_{t-1}, d_t, d_{t+1}); workforce adjusts.
+    function algoSmoothed(demand) {
+        var T = demand.length;
+        var plan = makeEmptyPlan(T);
+        var Wcurr = PARAMS.W0;
+        var Iprev = PARAMS.I0;
+        for (var t = 0; t < T; t++) {
+            var sum = 0, count = 0;
+            for (var j = Math.max(0, t - 1); j <= Math.min(T - 1, t + 1); j++) { sum += demand[j]; count++; }
+            var target = Math.round(sum / count);
+            var need = Math.max(0, target - Iprev);
+            // workforce decision
+            var Wtarget = Math.max(1, Math.ceil(target / PARAMS.k));
+            var delta = Wtarget - Wcurr;
+            if (delta > 0) plan.H[t] = delta;
+            else if (delta < 0) plan.F[t] = -delta;
+            Wcurr = Wtarget;
+            plan.W[t] = Wcurr;
+            var regCap = PARAMS.k * Wcurr;
+            var otCap = Math.floor(PARAMS.alpha * regCap);
+            var P = Math.min(target, regCap);
+            var O = Math.min(Math.max(0, target - P), otCap);
+            plan.P[t] = P; plan.O[t] = O;
+            Iprev = Iprev + P + O - demand[t];
+            if (Iprev < 0) Iprev = 0;
+        }
+        return plan;
+    }
+
+    var ALGOS = [
+        { key: 'level',    name: 'Level',    fn: algoLevel },
+        { key: 'chase',    name: 'Chase',    fn: algoChase },
+        { key: 'mixed',    name: 'Mixed',    fn: algoMixed },
+        { key: 'smoothed', name: 'Smoothed', fn: algoSmoothed }
+    ];
+
+    function solveAll() {
+        var demand = getDemand();
+        var rows = [];
+        for (var i = 0; i < ALGOS.length; i++) {
+            var plan = ALGOS[i].fn(demand);
+            var ev = evaluate(plan, demand);
+            rows.push({ algo: ALGOS[i].name, key: ALGOS[i].key, plan: plan, eval: ev });
+        }
+        state.results = { demand: demand, rows: rows };
+        renderResults();
+        renderPlanChart();
+        renderPlanDetail();
+        document.getElementById('solverStatus').textContent = 'Solved. Green cells mark the minimum total cost across strategies.';
+    }
+
+    function renderResults() {
+        var r = state.results;
+        if (!r) return;
+        var tbody = document.getElementById('resultsBody');
+        clear(tbody);
+        var bestTotal = Math.min.apply(null, r.rows.map(function (row) { return row.eval.totals.grand; }));
+        for (var i = 0; i < r.rows.length; i++) {
+            var row = r.rows[i];
+            var t = row.eval.totals;
+            var tr = document.createElement('tr');
+            tr.appendChild(el('td', { class: 'algo-label' }, row.algo));
+            var cls = (t.grand === bestTotal) ? 'obj-col best-val' : 'obj-col';
+            tr.appendChild(el('td', { class: cls }, '$' + Math.round(t.grand).toLocaleString()));
+            tr.appendChild(el('td', { class: 'obj-col' }, '$' + Math.round(t.reg).toLocaleString()));
+            tr.appendChild(el('td', { class: 'obj-col' }, '$' + Math.round(t.ot).toLocaleString()));
+            tr.appendChild(el('td', { class: 'obj-col' }, '$' + Math.round(t.hold).toLocaleString()));
+            tr.appendChild(el('td', { class: 'obj-col' }, '$' + Math.round(t.hire + t.fire).toLocaleString()));
+            tbody.appendChild(tr);
+        }
+    }
+
+    function renderPlanChart() {
+        var canvas = document.getElementById('planCanvas');
+        var ctx = canvas.getContext('2d');
+        var dpr = window.devicePixelRatio || 1;
+        var cssW = 960, cssH = 340;
+        canvas.style.width = cssW + 'px';
+        canvas.style.height = cssH + 'px';
+        canvas.width = cssW * dpr;
+        canvas.height = cssH * dpr;
+        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        ctx.clearRect(0, 0, cssW, cssH);
+        if (!state.results) return;
+        var row = null;
+        for (var i = 0; i < state.results.rows.length; i++) if (state.results.rows[i].key === state.selectedAlgo) { row = state.results.rows[i]; break; }
+        if (!row) row = state.results.rows[0];
+        var demand = state.results.demand;
+        var T = demand.length;
+        var plan = row.plan;
+        var I = row.eval.I;
+        var maxY = 0;
+        for (var t2 = 0; t2 < T; t2++) {
+            var stack = plan.P[t2] + plan.O[t2];
+            if (stack > maxY) maxY = stack;
+            if (demand[t2] > maxY) maxY = demand[t2];
+            if (I[t2] > maxY) maxY = I[t2];
+        }
+        maxY = Math.ceil(maxY * 1.1);
+        var padLeft = 70, padRight = 30, padTop = 60, padBot = 50;
+        var plotW = cssW - padLeft - padRight;
+        var plotH = cssH - padTop - padBot;
+        var barW = plotW / T * 0.7;
+        var gap = plotW / T * 0.3;
+
+        // Title
+        ctx.fillStyle = '#C5A059';
+        ctx.font = '600 12px Inter, sans-serif';
+        ctx.fillText(row.algo + ' \u2014 total cost $' + Math.round(row.eval.totals.grand).toLocaleString() + ', final inventory ' + I[T - 1] + ' units', padLeft, 24);
+
+        // Axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(padLeft, padTop);
+        ctx.lineTo(padLeft, padTop + plotH);
+        ctx.lineTo(padLeft + plotW, padTop + plotH);
+        ctx.stroke();
+
+        // Y ticks
+        ctx.fillStyle = '#8892B0';
+        ctx.font = '10px JetBrains Mono, monospace';
+        for (var yt = 0; yt <= 5; yt++) {
+            var y = padTop + plotH - (yt / 5) * plotH;
+            var v = Math.round((yt / 5) * maxY);
+            ctx.fillText(String(v), 20, y + 3);
+            ctx.strokeStyle = 'rgba(197,160,89,0.08)';
+            ctx.beginPath();
+            ctx.moveTo(padLeft, y);
+            ctx.lineTo(padLeft + plotW, y);
+            ctx.stroke();
+        }
+
+        // X labels (months 1..12)
+        ctx.fillStyle = '#8892B0';
+        for (var t3 = 0; t3 < T; t3++) {
+            var xc = padLeft + (t3 + 0.5) * (plotW / T);
+            ctx.fillText('M' + (t3 + 1), xc - 9, padTop + plotH + 18);
+        }
+
+        // Production bars (regular gold, overtime red stack)
+        for (var t4 = 0; t4 < T; t4++) {
+            var xb = padLeft + t4 * (plotW / T) + gap / 2;
+            var Ph = (plan.P[t4] / maxY) * plotH;
+            var Oh = (plan.O[t4] / maxY) * plotH;
+            // Regular
+            ctx.fillStyle = 'rgba(197,160,89,0.75)';
+            ctx.fillRect(xb, padTop + plotH - Ph, barW, Ph);
+            // Overtime on top
+            ctx.fillStyle = 'rgba(255,107,107,0.8)';
+            ctx.fillRect(xb, padTop + plotH - Ph - Oh, barW, Oh);
+        }
+
+        // Demand line (blue)
+        ctx.strokeStyle = '#7aa2f7';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        for (var t5 = 0; t5 < T; t5++) {
+            var xd = padLeft + (t5 + 0.5) * (plotW / T);
+            var yd = padTop + plotH - (demand[t5] / maxY) * plotH;
+            if (t5 === 0) ctx.moveTo(xd, yd); else ctx.lineTo(xd, yd);
+        }
+        ctx.stroke();
+        // Demand points
+        ctx.fillStyle = '#7aa2f7';
+        for (var t6 = 0; t6 < T; t6++) {
+            var xd2 = padLeft + (t6 + 0.5) * (plotW / T);
+            var yd2 = padTop + plotH - (demand[t6] / maxY) * plotH;
+            ctx.beginPath();
+            ctx.arc(xd2, yd2, 3, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        // Inventory line (green)
+        ctx.strokeStyle = '#64ffda';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        for (var t7 = 0; t7 < T; t7++) {
+            var xi = padLeft + (t7 + 0.5) * (plotW / T);
+            var yi = padTop + plotH - (I[t7] / maxY) * plotH;
+            if (t7 === 0) ctx.moveTo(xi, yi); else ctx.lineTo(xi, yi);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Legend
+        ctx.font = '10px Inter, sans-serif';
+        var lx = padLeft + plotW - 260;
+        ctx.fillStyle = 'rgba(197,160,89,0.75)'; ctx.fillRect(lx, 38, 12, 10); ctx.fillStyle = '#8892B0'; ctx.fillText('Regular production', lx + 18, 47);
+        ctx.fillStyle = 'rgba(255,107,107,0.8)'; ctx.fillRect(lx + 140, 38, 12, 10); ctx.fillStyle = '#8892B0'; ctx.fillText('Overtime', lx + 158, 47);
+        ctx.fillStyle = '#7aa2f7'; ctx.fillRect(lx, 54, 12, 3); ctx.fillStyle = '#8892B0'; ctx.fillText('Demand', lx + 18, 60);
+        ctx.strokeStyle = '#64ffda'; ctx.lineWidth = 2; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(lx + 100, 56); ctx.lineTo(lx + 118, 56); ctx.stroke(); ctx.setLineDash([]); ctx.fillStyle = '#8892B0'; ctx.fillText('End-of-period inventory', lx + 124, 60);
+    }
+
+    function renderPlanDetail() {
+        var div = document.getElementById('scheduleOutput');
+        if (!state.results) { div.textContent = 'No results.'; return; }
+        var row = null;
+        for (var i = 0; i < state.results.rows.length; i++) if (state.results.rows[i].key === state.selectedAlgo) { row = state.results.rows[i]; break; }
+        if (!row) { div.textContent = 'Select a strategy.'; return; }
+        var demand = state.results.demand;
+        var p = row.plan;
+        var I = row.eval.I;
+        var T = demand.length;
+        var lines = [];
+        lines.push(row.algo + ' plan (T=' + T + ')');
+        lines.push('');
+        lines.push('  t    d     P     O     W    H    F     I');
+        for (var t = 0; t < T; t++) {
+            var ln = ' ' + String(t + 1).padStart(2) + '   ' +
+                String(demand[t]).padStart(3) + '   ' +
+                String(p.P[t]).padStart(3) + '   ' +
+                String(p.O[t]).padStart(3) + '   ' +
+                String(p.W[t]).padStart(3) + '  ' +
+                String(p.H[t]).padStart(3) + '  ' +
+                String(p.F[t]).padStart(3) + '   ' +
+                String(I[t]).padStart(3);
+            lines.push(ln);
+        }
+        var t2 = row.eval.totals;
+        lines.push('');
+        lines.push('Cost breakdown:');
+        lines.push('  Regular production: $' + Math.round(t2.reg).toLocaleString());
+        lines.push('  Overtime:           $' + Math.round(t2.ot).toLocaleString());
+        lines.push('  Inventory holding:  $' + Math.round(t2.hold).toLocaleString());
+        lines.push('  Hiring:             $' + Math.round(t2.hire).toLocaleString());
+        lines.push('  Firing:             $' + Math.round(t2.fire).toLocaleString());
+        lines.push('  ----');
+        lines.push('  Total:              $' + Math.round(t2.grand).toLocaleString());
+        div.textContent = lines.join('\n');
+    }
+
+    // ── Event wiring ──
+    document.querySelectorAll('.scenario-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.scenario-btn').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.scenarioIdx = parseInt(btn.getAttribute('data-scenario'), 10);
+            document.getElementById('scenarioContext').textContent = SCENARIOS[state.scenarioIdx].context;
+            state.results = null;
+            document.getElementById('solverStatus').textContent = 'Scenario changed. Click Solve.';
+            setEmptyRow(document.getElementById('resultsBody'), 'Click Solve to run', 6);
+            var ctx = document.getElementById('planCanvas').getContext('2d');
+            ctx.clearRect(0, 0, 960, 340);
+            document.getElementById('scheduleOutput').textContent = 'Scenario changed. Solve to see plan.';
+        });
+    });
+
+    document.querySelectorAll('.algo-chip').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.algo-chip').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.selectedAlgo = btn.getAttribute('data-algo');
+            if (state.results) { renderPlanChart(); renderPlanDetail(); }
+        });
+    });
+
+    document.getElementById('solveAllBtn').addEventListener('click', solveAll);
+
+    // ── Fade-in ──
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function (el) { io.observe(el); });
+    } else {
+        fades.forEach(function (el) { el.classList.add('visible'); });
+    }
+})();
+</script>
+</body>
+</html>

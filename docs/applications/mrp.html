@@ -1,0 +1,978 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Material Requirements Planning (MRP) | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Interactive demonstration of Orlicky's Material Requirements Planning (MRP) procedure: bill-of-materials explosion, lead-time offsetting, and lot-sizing-within-MRP with four embedded rules (L4L, FOQ, POQ, Wagner-Whitin).">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/mrp.html">
+    <meta property="og:title" content="Material Requirements Planning (MRP) | Mathematical Modeling &amp; Operations Research">
+    <meta property="og:description" content="Orlicky's MRP procedure with BOM explosion, lead-time offsetting, and embedded lot-sizing.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Material Requirements Planning (MRP) | Mathematical Modeling &amp; Operations Research">
+    <meta name="twitter:description" content="Orlicky's MRP: BOM explosion + lead-time offsetting + lot-sizing.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/mrp.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <style>
+        :root {
+            --midnight: #0A192F;
+            --midnight-light: #112240;
+            --midnight-lighter: #1a2f4a;
+            --gold: #C5A059;
+            --gold-light: #D4AF37;
+            --gold-dim: rgba(197, 160, 89, 0.15);
+            --ivory: #F8F9FA;
+            --slate: #8892B0;
+            --slate-light: #a8b2d1;
+            --green: #64ffda;
+            --red: #ff6b6b;
+            --blue: #7aa2f7;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        .navbar { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 1rem 0; z-index: 1000; border-bottom: 1px solid rgba(197, 160, 89, 0.1); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+
+        .breadcrumb-nav { padding: 1rem 0; background: var(--midnight-light); border-bottom: 1px solid rgba(197, 160, 89, 0.05); }
+        .breadcrumb-nav ol { list-style: none; display: flex; align-items: center; gap: 0.5rem; margin: 0; padding: 0; }
+        .breadcrumb-nav li { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--gold); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold-light); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(197,160,89,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(197,160,89,0.04) 1px, transparent 1px), radial-gradient(ellipse at 50% 30%, rgba(197,160,89,0.05) 0%, transparent 65%); background-size: 40px 40px, 40px 40px, 100% 100%; pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.8; }
+        .hero-icon--manufacturing { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)) drop-shadow(0 2px 16px rgba(197,160,89,0.2)); animation: gearRotateGlow 5s ease-in-out infinite; }
+        @keyframes gearRotateGlow { 0%, 100% { filter: drop-shadow(0 0 8px rgba(197,160,89,0.45)); } 50% { filter: drop-shadow(0 0 14px rgba(197,160,89,0.65)) drop-shadow(0 0 35px rgba(197,160,89,0.2)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 1.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2.5rem; color: var(--slate-light); font-size: 1rem; line-height: 1.8; }
+
+        .graham-block { display: inline-block; margin: 1rem auto; padding: 0.6rem 1.2rem; border: 1px solid rgba(197,160,89,0.35); border-left-width: 3px; border-radius: 4px; background: rgba(197,160,89,0.04); }
+        .graham-block .graham-label { display: block; font-size: 0.65rem; color: var(--gold); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 0.2rem; }
+        .graham-block .graham-notation { font-family: 'JetBrains Mono', monospace; font-size: 1rem; color: var(--ivory); letter-spacing: 0.5px; }
+
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.5rem; font-weight: 300; letter-spacing: 3px; margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.95rem; letter-spacing: 1px; }
+
+        section { padding: 5rem 0; }
+        section:nth-of-type(even) { background: var(--midnight-light); }
+
+        .content-block { max-width: 800px; margin: 0 auto; color: var(--slate-light); font-size: 0.95rem; line-height: 1.9; }
+        .content-block p { margin-bottom: 1.2rem; }
+        .content-block strong { color: var(--ivory); font-weight: 500; }
+
+        .disclaimer-box { background: rgba(122, 162, 247, 0.08); border: 1px solid rgba(122, 162, 247, 0.2); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 2rem 0; font-size: 0.88rem; color: var(--slate-light); line-height: 1.7; }
+        .disclaimer-box .disclaimer-title { color: var(--blue); font-weight: 500; margin-bottom: 0.3rem; font-size: 0.9rem; }
+
+        .formulation { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.5rem 2rem; margin-bottom: 1.5rem; font-family: 'JetBrains Mono', monospace; font-size: 0.82rem; color: var(--slate-light); line-height: 2; overflow-x: auto; }
+        .formulation .form-label { color: var(--gold); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 0.8rem; display: block; font-family: 'Inter', sans-serif; font-weight: 500; }
+        .formulation .keyword { color: var(--green); }
+        .formulation .variable { color: var(--blue); }
+        .formulation .comment { color: var(--slate); font-style: italic; }
+
+        .theory-link { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.6rem 1.4rem; border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; transition: all 0.3s; margin-top: 1rem; margin-right: 0.5rem; }
+        .theory-link:hover { background: var(--gold); color: var(--midnight); border-color: var(--gold); }
+
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.85rem; color: var(--slate-light); text-align: center; min-width: 110px; text-decoration: none; transition: border-color 0.3s, color 0.3s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.72rem; color: var(--slate); margin-top: 0.3rem; font-weight: 400; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.7); }
+        .chain-arrow { color: var(--slate); font-size: 1.1rem; flex-shrink: 0; }
+
+        /* BOM tree */
+        .bom-tree { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin: 1.5rem 0; padding: 1rem; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .bom-level { display: flex; gap: 0.8rem; flex-wrap: wrap; justify-content: center; align-items: stretch; }
+        .bom-node { display: flex; flex-direction: column; align-items: center; padding: 0.6rem 1rem; border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; background: rgba(197,160,89,0.08); min-width: 120px; }
+        .bom-node.level-0 { border-color: var(--green); background: rgba(100,255,218,0.08); }
+        .bom-node.level-1 { border-color: var(--gold); }
+        .bom-node.level-2 { border-color: var(--blue); background: rgba(122,162,247,0.08); }
+        .bom-node-name { font-family: 'Cormorant Garamond', serif; font-size: 1rem; color: var(--ivory); letter-spacing: 1px; }
+        .bom-node-meta { font-family: 'JetBrains Mono', monospace; font-size: 0.7rem; color: var(--slate); margin-top: 0.2rem; text-align: center; }
+        .bom-connector { color: var(--slate); font-size: 1rem; }
+
+        /* Time-phased MRP table */
+        .mrp-record { background: var(--midnight); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 1rem; margin-bottom: 1rem; overflow-x: auto; }
+        .mrp-record h4 { font-family: 'Cormorant Garamond', serif; font-size: 1.15rem; color: var(--gold); letter-spacing: 1px; margin-bottom: 0.8rem; }
+        .mrp-record h4 .mrp-record-meta { font-size: 0.75rem; color: var(--slate); font-family: 'Inter', sans-serif; font-weight: 400; letter-spacing: 0; margin-left: 0.8rem; text-transform: none; }
+        .mrp-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; font-family: 'JetBrains Mono', monospace; min-width: 600px; }
+        .mrp-table thead th { font-family: 'Inter', sans-serif; font-size: 0.68rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; color: var(--gold); padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: right; }
+        .mrp-table thead th:first-child { text-align: left; }
+        .mrp-table tbody th { font-family: 'Inter', sans-serif; font-size: 0.72rem; font-weight: 500; text-align: left; padding: 0.4rem 0.6rem; color: var(--slate-light); border-bottom: 1px solid rgba(197, 160, 89, 0.05); text-transform: none; letter-spacing: 0; }
+        .mrp-table tbody td { padding: 0.4rem 0.6rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--ivory); text-align: right; }
+        .mrp-table tbody td.zero { color: var(--slate); }
+        .mrp-table tbody td.positive { color: var(--gold); }
+        .mrp-table tbody tr.gross th, .mrp-table tbody tr.gross td { color: var(--blue); }
+        .mrp-table tbody tr.net th, .mrp-table tbody tr.net td { color: var(--green); }
+        .mrp-table tbody tr.receipt th, .mrp-table tbody tr.receipt td { color: var(--gold); font-weight: 600; }
+        .mrp-table tbody tr.release th, .mrp-table tbody tr.release td { color: var(--red); font-weight: 600; }
+
+        .scenario-switcher { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 0.6rem; margin-bottom: 1rem; }
+        .scenario-btn { display: flex; flex-direction: column; padding: 0.75rem 1rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; background: transparent; cursor: pointer; text-align: left; transition: border-color 0.2s, background 0.2s; gap: 0.25rem; }
+        .scenario-btn:hover { border-color: rgba(197,160,89,0.5); }
+        .scenario-btn.active { border-color: var(--gold); background: rgba(197,160,89,0.07); }
+        .scn-name { font-family: 'Inter', sans-serif; font-size: 0.82rem; font-weight: 500; color: var(--ivory); letter-spacing: 0.02em; }
+        .scenario-btn.active .scn-name { color: var(--gold); }
+        .scn-desc { font-size: 0.72rem; color: var(--slate); line-height: 1.4; }
+        .scenario-context { font-size: 0.82rem; color: var(--slate-light); line-height: 1.6; padding: 0.6rem 0.8rem; border-left: 2px solid rgba(197,160,89,0.3); margin-bottom: 1.2rem; font-style: italic; }
+
+        .solver-panel { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 4px; overflow: hidden; }
+        .solver-panel-header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1.5rem; background: linear-gradient(135deg, rgba(197,160,89,0.08), transparent); border-bottom: 1px solid rgba(197, 160, 89, 0.15); flex-wrap: wrap; gap: 0.5rem; }
+        .solver-panel-header h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.3rem; font-weight: 500; letter-spacing: 1px; margin: 0; color: var(--gold); }
+        .solver-panel-header h3 i { margin-right: 0.5rem; }
+        .solver-body { padding: 1.5rem; }
+        .solver-section-label { font-size: 0.72rem; color: var(--gold); text-transform: uppercase; letter-spacing: 2px; margin-bottom: 0.6rem; font-weight: 500; margin-top: 1rem; }
+        .solver-section-label:first-child { margin-top: 0; }
+
+        .algo-select { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+        .algo-chip { padding: 6px 14px; border: 1px solid rgba(197, 160, 89, 0.2); border-radius: 2px; background: transparent; color: var(--slate-light); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.3s; font-family: 'Inter', sans-serif; user-select: none; }
+        .algo-chip:hover { border-color: var(--gold); color: var(--ivory); }
+        .algo-chip.active { background: rgba(197, 160, 89, 0.15); border-color: var(--gold); color: var(--gold); }
+        .algo-chip .chip-type { font-size: 0.6rem; margin-left: 4px; opacity: 0.7; }
+
+        .solve-btn { width: 100%; padding: 0.7rem; font-size: 1rem; margin-bottom: 1.2rem; border: 1px solid var(--gold); border-radius: 4px; background: rgba(197,160,89,0.15); color: var(--gold); cursor: pointer; font-family: 'Inter', sans-serif; letter-spacing: 1.5px; text-transform: uppercase; transition: all 0.3s; }
+        .solve-btn:hover { background: var(--gold); color: var(--midnight); }
+
+        .results-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; margin-top: 0.8rem; }
+        .results-table thead th { font-family: 'Inter', sans-serif; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; letter-spacing: 1.5px; color: var(--gold); padding: 0.6rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.2); text-align: left; }
+        .results-table tbody td { padding: 0.5rem 0.8rem; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+        .results-table tbody tr:hover td { color: var(--ivory); }
+        .results-table .best-val { color: var(--green); font-weight: 600; }
+        .results-table .algo-label { font-family: 'Inter', sans-serif; color: var(--ivory); font-weight: 500; }
+        .results-table .obj-col { text-align: right; }
+
+        .algo-card { background: var(--midnight); border: 1px solid rgba(197, 160, 89, 0.15); border-radius: 4px; padding: 2rem 2.5rem; margin-bottom: 1.5rem; }
+        .algo-card h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 500; letter-spacing: 1px; margin-bottom: 0.6rem; color: var(--ivory); }
+        .algo-card p { color: var(--slate-light); font-size: 0.9rem; line-height: 1.8; margin-bottom: 0.5rem; }
+        .algo-card .algo-tag { display: inline-block; padding: 2px 10px; border: 1px solid rgba(122, 162, 247, 0.3); border-radius: 2px; font-size: 0.68rem; color: var(--blue); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem; margin-right: 0.4rem; }
+        .algo-card .algo-tag.optimal { border-color: rgba(100,255,218,0.3); color: var(--green); }
+
+        .reference-list { list-style: none; padding: 0; }
+        .reference-list li { padding: 0.6rem 0; border-bottom: 1px solid rgba(197, 160, 89, 0.05); color: var(--slate-light); font-size: 0.88rem; line-height: 1.6; }
+        .reference-list li:last-child { border-bottom: none; }
+        .reference-list .ref-author { color: var(--ivory); font-weight: 500; }
+        .reference-list .ref-title { font-style: italic; }
+        .reference-list .ref-journal { color: var(--slate); }
+        .reference-list a { color: var(--gold); text-decoration: underline dotted; }
+
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+
+        .back-link { position: fixed; bottom: 2rem; right: 2rem; padding: 0.8rem 1.5rem; background: rgba(10, 25, 47, 0.9); border: 1px solid rgba(197, 160, 89, 0.3); border-radius: 4px; color: var(--gold); text-decoration: none; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 1.5px; backdrop-filter: blur(10px); transition: all 0.3s; z-index: 999; }
+        .back-link:hover { background: var(--gold); color: var(--midnight); }
+
+        footer { padding: 3rem 0; text-align: center; border-top: 1px solid rgba(197, 160, 89, 0.1); }
+        footer p { color: var(--slate); font-size: 0.82rem; letter-spacing: 1px; }
+        footer a { color: var(--gold); text-decoration: underline; }
+
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+
+        .related-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0.8rem; margin-top: 1rem; }
+        .related-card { background: var(--midnight); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; padding: 0.9rem 1rem; text-decoration: none; transition: all 0.3s; display: block; }
+        .related-card:hover { border-color: var(--gold); background: rgba(197,160,89,0.05); }
+        .related-card-title { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.2rem; }
+        .related-card-tag { color: var(--slate); font-size: 0.72rem; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.5px; }
+
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.2rem; letter-spacing: 2px; }
+            .decision-chain { gap: 0.3rem; }
+            .chain-step { min-width: 80px; padding: 0.5rem 0.75rem; font-size: 0.75rem; }
+        }
+    </style>
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Applications",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/" },
+        { "@type": "ListItem", "position": 3, "name": "Manufacturing",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/manufacturing-domain.html" },
+        { "@type": "ListItem", "position": 4, "name": "Material Requirements Planning",
+          "item": "https://mghnasiri.github.io/MathematicalModeling/applications/mrp.html" }
+      ]
+    }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="https://mghnasiri.github.io">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="#">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling" target="_blank"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="manufacturing-domain.html">Manufacturing</a></li>
+            <li class="active" style="color: var(--gold);">Material Requirements Planning</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--manufacturing"><i class="fas fa-sitemap" aria-hidden="true"></i></div>
+        <h1>Material <span>Requirements Planning</span></h1>
+        <p class="hero-subtitle">MRP level &middot; Tactical weeks &middot; Orlicky 1975</p>
+        <div class="gold-line" aria-hidden="true"></div>
+        <span class="graham-block">
+            <span class="graham-label">Decision class</span>
+            <span class="graham-notation">Time-phased BOM explosion + embedded lot sizing</span>
+        </span>
+        <p class="hero-desc">
+            Material Requirements Planning is a <strong>procedure</strong>, not an optimisation. Given a Master
+            Production Schedule, a Bill of Materials, lead times, and on-hand inventory, MRP deterministically computes
+            <em>when and how much</em> to order every component and sub-assembly. The optimisation inside MRP is the
+            <strong>lot-sizing rule</strong> applied at each BOM level. Orlicky (1975) formalised this at IBM and the
+            resulting loop &mdash; MPS &rarr; MRP &rarr; shop floor &rarr; feedback &mdash; became the backbone of every
+            modern ERP system (SAP, Oracle, NetSuite).
+        </p>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Where This <span>Decision Fits</span></h2>
+            <p>APICS planning hierarchy &mdash; the highlighted level is what this page covers</p>
+        </div>
+        <div class="decision-chain fade-in">
+            <div class="chain-step">S&amp;OP<span class="chain-sub">Years</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">MPS<span class="chain-sub">Months</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step active">MRP<span class="chain-sub">Weeks</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">CRP<span class="chain-sub">Days&ndash;Weeks</span></div>
+            <div class="chain-arrow">&rarr;</div>
+            <div class="chain-step">SFC<span class="chain-sub">Hours&ndash;Days</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="problem">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>The <span>Procedure</span></h2>
+            <p>Four steps, one BOM, T periods &mdash; executed level by level, top to bottom</p>
+        </div>
+        <div class="content-block fade-in">
+            <p>
+                Start with a Master Production Schedule (MPS): how many finished goods to produce each week over an
+                <em>T</em>-week horizon. MRP then <em>explodes</em> this schedule down through the bill of materials
+                and computes time-phased requirements for every lower-level component. The rules are simple and
+                recursive:
+            </p>
+
+            <div class="formulation">
+                <span class="form-label">MRP step-by-step (per item, per period t)</span>
+                <span class="comment">// Step 1: Gross requirements (GR_t)</span><br>
+                <span class="variable">GR<sub>t</sub></span> = <span class="keyword">sum of</span> parent release qty &times; usage-per-unit<br>
+                <br>
+                <span class="comment">// Step 2: Net requirements (NR_t) &mdash; deduct on-hand and scheduled receipts</span><br>
+                <span class="variable">NR<sub>t</sub></span> = <span class="keyword">max</span>(0, <span class="variable">GR<sub>t</sub> &minus; OH<sub>t&minus;1</sub> &minus; SR<sub>t</sub></span>)<br>
+                <br>
+                <span class="comment">// Step 3: Lot-sizing &mdash; the optimisation inside MRP</span><br>
+                <span class="variable">POR<sub>t</sub></span> = <span class="keyword">lot_size</span>(NR<sub>t</sub>, NR<sub>t+1</sub>, ..., setup cost s<sub>i</sub>, holding cost h<sub>i</sub>)<br>
+                <br>
+                <span class="comment">// Step 4: Lead-time offset &mdash; release orders early enough to arrive on time</span><br>
+                <span class="variable">PORel<sub>t</sub></span> = POR<sub>t+L<sub>i</sub></sub> &nbsp;&nbsp; <span class="comment">// L_i = lead time of item i</span>
+            </div>
+
+            <p>
+                <strong>Gross Requirements (GR)</strong> are what&rsquo;s needed in period <em>t</em> to support
+                parent orders. <strong>Net Requirements (NR)</strong> subtract on-hand inventory and any scheduled
+                receipts from prior orders. <strong>Planned Order Receipts (POR)</strong> come from the lot-sizing
+                rule. <strong>Planned Order Releases (PORel)</strong> are PORs pulled back by the lead time so orders
+                are placed early enough. The releases at a given level become the gross requirements for its
+                components.
+            </p>
+            <p>
+                <strong>Key distinction:</strong> MRP&rsquo;s mechanics are a deterministic procedure. The
+                <em>optimisation</em> lives in Step 3 &mdash; the choice of lot-sizing rule. Lot-for-Lot produces zero
+                inventory but incurs a setup every period; Wagner-Whitin solves an exact dynamic program to trade off
+                setup and holding. See the dedicated <a href="lot-sizing.html">lot sizing</a> page for the full family.
+            </p>
+            <p>
+                <strong>Push vs pull:</strong> MRP is a <em>push</em> system &mdash; it generates orders from a
+                forecast via the MPS, regardless of downstream signals. <em>Pull</em> systems (kanban, JIT) generate
+                orders only when downstream inventory is consumed. Hybrid systems (CONWIP) cap total WIP while allowing
+                MRP to set the schedule.
+            </p>
+            <p>
+                <strong>MRP-II</strong> extended MRP with capacity, labour, and financial integration (Wight 1984);
+                modern <strong>ERP</strong> wraps MRP-II inside an enterprise data layer. The core BOM-explosion loop,
+                though, is still the Orlicky 1975 procedure.
+            </p>
+
+            <a href="manufacturing-domain.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Manufacturing framework
+            </a>
+            <a href="master-production-scheduling.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Upstream: MPS
+            </a>
+            <a href="lot-sizing.html" class="theory-link">
+                <i class="fas fa-arrow-right" aria-hidden="true"></i> Lot sizing (optimisation inside MRP)
+            </a>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Try It <span>Yourself</span></h2>
+            <p>Walk a three-level BOM through an 8-week horizon with four embedded lot-sizing rules</p>
+        </div>
+
+        <div class="solver-panel fade-in">
+            <div class="solver-panel-header">
+                <h3><i class="fas fa-sitemap" aria-hidden="true"></i> MRP Explosion</h3>
+                <span id="configSummary" style="font-size:0.75rem;color:var(--slate);letter-spacing:1px;text-transform:uppercase;">3-level BOM &middot; 8 weeks &middot; 4 lot rules</span>
+            </div>
+            <div class="solver-body">
+                <div class="solver-section-label">Scenario</div>
+                <div class="scenario-switcher">
+                    <button class="scenario-btn active" data-scenario="0" type="button"><span class="scn-name">Simple BOM</span><span class="scn-desc">Chair: 4 legs + 1 seat; two raw materials</span></button>
+                    <button class="scenario-btn" data-scenario="1" type="button"><span class="scn-name">Shared component</span><span class="scn-desc">Cabinet + Desk both use the same leg</span></button>
+                    <button class="scenario-btn" data-scenario="2" type="button"><span class="scn-name">Long lead time</span><span class="scn-desc">Imported component with 3-week lead time</span></button>
+                </div>
+                <div class="scenario-context" id="scenarioContext">Simple BOM: a finished chair (parent) requires 4 legs (intermediate) and 1 seat (intermediate). Each leg uses 2 units of wood (raw); each seat uses 1 unit of wood and 1 unit of fabric. Lead times: chair 1 week, legs and seats 1 week, raw materials 2 weeks.</div>
+
+                <div class="solver-section-label">Embedded lot-sizing rule</div>
+                <div class="algo-select">
+                    <button class="algo-chip active" data-algo="l4l" type="button">L4L <span class="chip-type">Lot-for-Lot</span></button>
+                    <button class="algo-chip" data-algo="foq" type="button">FOQ <span class="chip-type">Fixed Order Qty</span></button>
+                    <button class="algo-chip" data-algo="poq" type="button">POQ <span class="chip-type">Periodic Order Qty</span></button>
+                    <button class="algo-chip" data-algo="ww" type="button">Wagner-Whitin <span class="chip-type">Optimal DP</span></button>
+                </div>
+
+                <button class="solve-btn" id="solveAllBtn" type="button">
+                    <i class="fas fa-play" aria-hidden="true" style="margin-right:0.5rem;"></i>Explode BOM &amp; Compare Rules
+                </button>
+
+                <div class="solver-section-label">Bill of materials</div>
+                <div class="bom-tree fade-in" id="bomTree"></div>
+
+                <div class="solver-section-label">MRP records (time-phased, per item)</div>
+                <div id="mrpOutput"></div>
+                <p class="solver-status" id="solverStatus">Click &ldquo;Explode BOM&rdquo; to run the MRP procedure for the selected scenario and lot rule.</p>
+
+                <div class="solver-section-label">Cost comparison across lot rules</div>
+                <table class="results-table" id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th scope="col">Rule</th>
+                            <th scope="col" class="obj-col">Setups</th>
+                            <th scope="col" class="obj-col">Avg inventory</th>
+                            <th scope="col" class="obj-col">Setup cost</th>
+                            <th scope="col" class="obj-col">Holding cost</th>
+                            <th scope="col" class="obj-col">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr><td colspan="6" style="text-align:center; color:var(--slate); font-family:'Inter',sans-serif;">Click Explode to run</td></tr>
+                    </tbody>
+                </table>
+
+                <div class="disclaimer-box" style="margin-top:1rem">
+                    <div class="disclaimer-title"><i class="fas fa-lightbulb" aria-hidden="true"></i> Reading the records</div>
+                    Each MRP record shows one item. <strong>Gross</strong> (blue) and <strong>Net</strong> (green) are inputs and derived requirements. <strong>Receipts</strong> (gold) are planned order receipts produced by the lot rule; <strong>Releases</strong> (red) are those receipts pulled back by the item&rsquo;s lead time. A red release in week <em>t</em>&nbsp;&minus;&nbsp;<em>L</em>&nbsp;at one BOM level becomes a blue gross requirement (multiplied by usage) at the next level down.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="algorithms">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Lot-sizing <span>rules inside MRP</span></h2>
+            <p>Four rules spanning the setup-vs-holding trade-off</p>
+        </div>
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-grip-lines" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Lot-for-Lot (L4L)</h3>
+                    <span class="algo-tag">Simplest</span>
+                    <p>Order exactly the net requirement each period. Zero inventory; one setup per period with a positive net requirement. Used as the default for expensive / perishable / made-to-order items, and for top-level items where MPS already smoothed demand.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-square" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Fixed Order Quantity (FOQ)</h3>
+                    <span class="algo-tag">EOQ-aligned</span>
+                    <p>Always order the same batch size, typically an EOQ-based round number (container load, pallet, mould run). Aligns with supplier constraints and is easy to manage. Inventory accumulates when demand is below FOQ; can fall behind if demand exceeds FOQ over multiple periods.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-calendar-week" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Periodic Order Quantity (POQ)</h3>
+                    <span class="algo-tag">Calendar-based</span>
+                    <p>Order every <em>K</em> periods, covering net requirements over the next <em>K</em>. <em>K</em> is derived from EOQ / average demand. Smooth orders, predictable supplier deliveries; inventory build-up depends on demand variability within each <em>K</em>-period window.</p>
+                </div>
+
+                <div class="algo-card fade-in">
+                    <h3><i class="fas fa-cube" aria-hidden="true" style="color:var(--gold);margin-right:0.5rem;"></i>Wagner-Whitin (WW)</h3>
+                    <span class="algo-tag optimal">Optimal DP</span>
+                    <p>Dynamic program that minimises setup + holding cost exactly over the horizon. Each decision is &ldquo;which set of periods does this order cover?&rdquo;. Optimal for uncapacitated single-item dynamic lot sizing (Wagner &amp; Whitin 1958). Polynomial-time with Wagelmans-Van Hoesel-Kolen 1992 speed-up to O(T log T). Often used as a benchmark &mdash; real shops use WW for critical / expensive items and L4L or FOQ elsewhere.</p>
+                    <p>See the <a href="lot-sizing.html">dedicated lot-sizing page</a> for the full recurrence, Silver-Meal heuristic, and the capacitated CLSP extension.</p>
+                </div>
+
+                <div class="disclaimer-box fade-in">
+                    <div class="disclaimer-title"><i class="fas fa-exclamation-circle" aria-hidden="true"></i> Common pitfalls</div>
+                    <ul style="margin-top:0.6rem; padding-left:1.2rem; line-height:1.9;">
+                        <li><strong>Nervousness.</strong> Small MPS changes propagate amplified down the BOM. Modern MRP uses firm planned orders (FPOs), time fences, and pegging to dampen this.</li>
+                        <li><strong>Lead-time inflation.</strong> Planners pad lead times for safety; padded lead times get exploded into longer horizons, which encourage more padding. Feedback loop.</li>
+                        <li><strong>Capacity blindness.</strong> Classical MRP treats capacity as infinite; CRP does the capacity check afterwards. If the check fails, the MPS must be revised and the entire explosion re-run.</li>
+                        <li><strong>Low-level coding.</strong> A component used at multiple BOM levels must be processed at its <em>lowest</em> appearance level to gather all its gross requirements before netting.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="related">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2>Related <span>Problems</span></h2>
+            <p>MRP sits between MPS and the shop floor; its optimisation layer is lot sizing</p>
+        </div>
+        <div class="content-block fade-in">
+            <div class="related-grid">
+                <a href="lot-sizing.html" class="related-card">
+                    <div class="related-card-title">Lot Sizing</div>
+                    <div class="related-card-tag">Wagner-Whitin &middot; CLSP</div>
+                </a>
+                <a href="master-production-scheduling.html" class="related-card">
+                    <div class="related-card-title">Master Production Schedule</div>
+                    <div class="related-card-tag">MPS &middot; MIP</div>
+                </a>
+                <a href="aggregate-production-planning.html" class="related-card">
+                    <div class="related-card-title">Aggregate Production Planning</div>
+                    <div class="related-card-tag">HMMS &middot; months</div>
+                </a>
+                <a href="job-shop-scheduling.html" class="related-card">
+                    <div class="related-card-title">Job Shop Scheduling</div>
+                    <div class="related-card-tag">J<sub>m</sub> &vert;&vert; C<sub>max</sub></div>
+                </a>
+                <a href="manufacturing-balancing.html" class="related-card">
+                    <div class="related-card-title">Capacity (Parallel Machine)</div>
+                    <div class="related-card-tag">P<sub>m</sub> &vert;&vert; C<sub>max</sub></div>
+                </a>
+                <a href="assembly-line-balancing.html" class="related-card">
+                    <div class="related-card-title">Assembly Line Balancing</div>
+                    <div class="related-card-tag">SALBP</div>
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in">
+            <h2><span>References</span></h2>
+            <p>Foundational papers and textbooks on MRP and its evolution</p>
+        </div>
+        <div class="content-block fade-in">
+            <ul class="reference-list">
+                <li><span class="ref-author">Orlicky, J.</span> (1975). <span class="ref-title">Material Requirements Planning: The New Way of Life in Production and Inventory Management.</span> <span class="ref-journal">McGraw-Hill.</span> ISBN 0-07-047708-6. &mdash; the foundational MRP text; defined BOM explosion and lead-time offsetting as practised industrially ever since.</li>
+                <li><span class="ref-author">Orlicky, J., Plossl, G.&nbsp;W., &amp; Wight, O.&nbsp;W.</span> (2011). <span class="ref-title">Orlicky&rsquo;s Material Requirements Planning</span> (3rd ed., revised by C. Ptak &amp; C. Smith). <span class="ref-journal">McGraw-Hill.</span> ISBN 978-0-07-175563-4. &mdash; modern revision including DDMRP.</li>
+                <li><span class="ref-author">Wight, O.&nbsp;W.</span> (1984). <span class="ref-title">Manufacturing Resource Planning: MRP II.</span> <span class="ref-journal">Oliver Wight Publications.</span> &mdash; the MRP-II extension (capacity, finance, closed loop).</li>
+                <li><span class="ref-author">Wagner, H.&nbsp;M., &amp; Whitin, T.&nbsp;M.</span> (1958). <span class="ref-title">Dynamic version of the economic lot size model.</span> <span class="ref-journal">Management Science, 5(1), 89&ndash;96.</span> <a href="https://doi.org/10.1287/mnsc.5.1.89" target="_blank" rel="noopener">doi:10.1287/mnsc.5.1.89</a> &mdash; optimal DP for the lot-sizing rule inside MRP.</li>
+                <li><span class="ref-author">Silver, E.&nbsp;A., &amp; Meal, H.&nbsp;C.</span> (1973). <span class="ref-title">A heuristic for selecting lot size requirements for the case of a deterministic time-varying demand rate and discrete opportunities for replenishment.</span> <span class="ref-journal">Production and Inventory Management, 14(2), 64&ndash;74.</span></li>
+                <li><span class="ref-author">Wagelmans, A., Van&nbsp;Hoesel, S., &amp; Kolen, A.</span> (1992). <span class="ref-title">Economic lot sizing: an O(n&nbsp;log&nbsp;n) algorithm that runs in linear time in the Wagner-Whitin case.</span> <span class="ref-journal">Operations Research, 40(S1), S145&ndash;S156.</span> <a href="https://doi.org/10.1287/opre.40.1.S145" target="_blank" rel="noopener">doi:10.1287/opre.40.1.S145</a></li>
+                <li><span class="ref-author">Vollmann, T.&nbsp;E., Berry, W.&nbsp;L., Whybark, D.&nbsp;C., &amp; Jacobs, F.&nbsp;R.</span> (2005). <span class="ref-title">Manufacturing Planning and Control for Supply Chain Management</span> (5th ed.). <span class="ref-journal">McGraw-Hill/Irwin.</span> &mdash; APICS-aligned coverage of MPS through SFC.</li>
+                <li><span class="ref-author">APICS / ASCM.</span> <span class="ref-title">APICS Dictionary</span> (14th ed.) and <span class="ref-title">APICS Operations Management Body of Knowledge Framework</span> (3rd ed.). <span class="ref-journal">APICS / ASCM.</span> <a href="http://www.apics.org/docs/default-source/industry-content/apics-ombok-framework.pdf" target="_blank" rel="noopener">apics.org/ombok-framework</a></li>
+                <li><span class="ref-author">Hopp, W.&nbsp;J., &amp; Spearman, M.&nbsp;L.</span> (2011). <span class="ref-title">Factory Physics</span> (3rd ed.). <span class="ref-journal">Waveland Press.</span> ISBN 978-1-57766-739-1. &mdash; critique of classical MRP and stochastic alternatives.</li>
+                <li><span class="ref-author">Monden, Y.</span> (2011). <span class="ref-title">Toyota Production System: An Integrated Approach to Just-In-Time</span> (4th ed.). <span class="ref-journal">CRC Press.</span> &mdash; pull-system counterpoint to MRP&rsquo;s push approach.</li>
+                <li><span class="ref-author">Ptak, C.&nbsp;A., &amp; Smith, C.</span> (2016). <span class="ref-title">Demand Driven Material Requirements Planning (DDMRP)</span> (2nd ed.). <span class="ref-journal">Industrial Press.</span> &mdash; modern decoupling-point variant addressing MRP nervousness.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Need help designing<br>your MRP / ERP explosion logic?</h2>
+        <div class="gold-line" aria-hidden="true"></div>
+        <a href="https://www.linkedin.com/in/mohammad-nasiri-0653aa83/" class="btn-cta" target="_blank" rel="noopener">
+            <i class="fab fa-linkedin" aria-hidden="true" style="margin-right: 0.5rem;"></i>Get in Touch
+        </a>
+    </div>
+</section>
+
+<section style="padding: 2rem 0;">
+    <div class="container">
+        <div class="disclaimer-box">
+            <div class="disclaimer-title"><i class="fas fa-info-circle" aria-hidden="true"></i> Disclaimer</div>
+            BOM structures, lead times, and demand shown here are illustrative. Production MRP systems manage BOMs with tens of thousands of items and run the explosion weekly or nightly against live ERP data; the core netting-and-offsetting loop remains the Orlicky 1975 procedure. Lot-sizing here uses simple L4L, FOQ, POQ, and Wagner-Whitin; industrial deployments embed these (or DDMRP decoupling points) behind an ERP parameter per item.
+        </div>
+    </div>
+</section>
+</main>
+
+<footer>
+    <div class="container">
+        <p>&copy; 2025 <a href="https://mghnasiri.github.io">Mohammad Ghafourian Nasiri</a>. Mathematical Modeling &amp; Operations Research.</p>
+    </div>
+</footer>
+
+<a href="manufacturing-domain.html" class="back-link"><i class="fas fa-arrow-left" aria-hidden="true"></i> Manufacturing</a>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+(function () {
+    'use strict';
+
+    // ── Safe DOM helpers ──
+    function el(tag, attrs, text) {
+        var n = document.createElement(tag);
+        if (attrs) for (var k in attrs) {
+            if (!Object.prototype.hasOwnProperty.call(attrs, k)) continue;
+            if (k === 'class') n.className = attrs[k];
+            else if (k === 'style') n.setAttribute('style', attrs[k]);
+            else n.setAttribute(k, attrs[k]);
+        }
+        if (text !== undefined && text !== null) n.textContent = text;
+        return n;
+    }
+    function clear(node) { while (node.firstChild) node.removeChild(node.firstChild); }
+    function setEmptyRow(tbody, msg, colSpan) {
+        clear(tbody);
+        var tr = document.createElement('tr');
+        var td = el('td', { colspan: String(colSpan), style: 'text-align:center; color:var(--slate); font-family:Inter,sans-serif;' }, msg);
+        tr.appendChild(td);
+        tbody.appendChild(tr);
+    }
+
+    var T = 8;
+    var SETUP_COST = 100;
+    var HOLDING_COST = 2;
+
+    // BOM scenarios. Each item: { id, name, level, lead, onHand, parents: [{id, qty}], initMPS?: [T] }
+    // Items at level 0 receive their gross requirements from MPS; deeper levels from their parents' planned-order releases.
+    var SCENARIOS = [
+        {
+            name: 'Simple BOM',
+            context: 'Simple BOM: a finished chair (parent) requires 4 legs (intermediate) and 1 seat (intermediate). Each leg uses 2 units of wood (raw); each seat uses 1 unit of wood and 1 unit of fabric. Lead times: chair 1 week, legs and seats 1 week, raw materials 2 weeks. MPS for chair: 0, 0, 10, 0, 15, 0, 20, 0.',
+            mps: [0, 0, 10, 0, 15, 0, 20, 0],
+            items: [
+                { id: 'chair', name: 'Chair (FG)', level: 0, lead: 1, onHand: 5, parents: [] },
+                { id: 'leg',   name: 'Leg',        level: 1, lead: 1, onHand: 8, parents: [{ id: 'chair', qty: 4 }] },
+                { id: 'seat',  name: 'Seat',       level: 1, lead: 1, onHand: 2, parents: [{ id: 'chair', qty: 1 }] },
+                { id: 'wood',  name: 'Wood (raw)', level: 2, lead: 2, onHand: 10, parents: [{ id: 'leg', qty: 2 }, { id: 'seat', qty: 1 }] },
+                { id: 'fab',   name: 'Fabric (raw)', level: 2, lead: 2, onHand: 4, parents: [{ id: 'seat', qty: 1 }] }
+            ]
+        },
+        {
+            name: 'Shared component',
+            context: 'Shared component: cabinet and desk are both finished goods; both use the same standard leg (4 per cabinet, 4 per desk). This is low-level coding in action — the leg is at BOM level 1 but must gather gross requirements from TWO parents. MPS: cabinet 0,5,0,5,0,5,0,5; desk 3,0,3,0,3,0,3,0.',
+            mps2: { cabinet: [0, 5, 0, 5, 0, 5, 0, 5], desk: [3, 0, 3, 0, 3, 0, 3, 0] },
+            items: [
+                { id: 'cabinet', name: 'Cabinet (FG)', level: 0, lead: 1, onHand: 2, parents: [] },
+                { id: 'desk',    name: 'Desk (FG)',    level: 0, lead: 1, onHand: 1, parents: [] },
+                { id: 'leg',     name: 'Leg (shared)', level: 1, lead: 1, onHand: 20, parents: [{ id: 'cabinet', qty: 4 }, { id: 'desk', qty: 4 }] },
+                { id: 'top',     name: 'Top panel',    level: 1, lead: 1, onHand: 3, parents: [{ id: 'cabinet', qty: 1 }, { id: 'desk', qty: 1 }] },
+                { id: 'wood',    name: 'Wood (raw)',   level: 2, lead: 2, onHand: 25, parents: [{ id: 'leg', qty: 2 }, { id: 'top', qty: 3 }] }
+            ]
+        },
+        {
+            name: 'Long lead time',
+            context: 'Long lead time: the motor for a household fan is an imported component with a 3-week lead time. Orders must be released 3 weeks before the need date. The rest of the BOM is domestic with 1-week lead times. MPS for fan: 0, 0, 0, 20, 25, 30, 20, 15.',
+            mps: [0, 0, 0, 20, 25, 30, 20, 15],
+            items: [
+                { id: 'fan',    name: 'Fan (FG)',       level: 0, lead: 1, onHand: 10, parents: [] },
+                { id: 'motor',  name: 'Motor (imp.)',   level: 1, lead: 3, onHand: 15, parents: [{ id: 'fan', qty: 1 }] },
+                { id: 'frame',  name: 'Frame',          level: 1, lead: 1, onHand: 5,  parents: [{ id: 'fan', qty: 1 }] },
+                { id: 'blade',  name: 'Blade',          level: 1, lead: 1, onHand: 40, parents: [{ id: 'fan', qty: 3 }] },
+                { id: 'steel',  name: 'Steel (raw)',    level: 2, lead: 2, onHand: 20, parents: [{ id: 'frame', qty: 1 }] },
+                { id: 'plastic', name: 'Plastic (raw)', level: 2, lead: 2, onHand: 30, parents: [{ id: 'blade', qty: 1 }] }
+            ]
+        }
+    ];
+
+    var state = { scenarioIdx: 0, selectedAlgo: 'l4l', results: null };
+
+    function getScenario() { return SCENARIOS[state.scenarioIdx]; }
+
+    // ── Lot-sizing rules ──
+    function lotL4L(net) { return net.slice(); } // POR = NR each period
+    function lotFOQ(net, Q) {
+        Q = Q || 30;
+        var T = net.length;
+        var por = new Array(T).fill(0);
+        var remaining = 0;
+        for (var t = 0; t < T; t++) {
+            if (net[t] > remaining) {
+                por[t] = Q;
+                remaining += Q;
+            }
+            remaining -= net[t];
+            if (remaining < 0) remaining = 0;
+        }
+        return por;
+    }
+    function lotPOQ(net, K) {
+        K = K || 2; // cover K periods per order
+        var T = net.length;
+        var por = new Array(T).fill(0);
+        var t = 0;
+        while (t < T) {
+            if (net[t] > 0) {
+                var cover = 0;
+                for (var u = t; u < Math.min(t + K, T); u++) cover += net[u];
+                por[t] = cover;
+                t += K;
+            } else {
+                t++;
+            }
+        }
+        return por;
+    }
+    function lotWW(net, s, h) {
+        // Wagner-Whitin DP: for each period t, compute min cost to cover through t.
+        var T = net.length;
+        var dp = new Array(T + 1).fill(Infinity);
+        var prev = new Array(T + 1).fill(-1);
+        dp[0] = 0;
+        for (var t = 1; t <= T; t++) {
+            // Consider ordering at period j (1..t), covering periods j..t
+            for (var j = 1; j <= t; j++) {
+                // Order size = net[j-1] + net[j] + ... + net[t-1]
+                var orderSize = 0;
+                for (var k = j - 1; k < t; k++) orderSize += net[k];
+                if (orderSize === 0) continue; // no order needed
+                // Holding cost for carrying net[k] from period j through period k+1, for k = j..t-1
+                var holdingCost = 0;
+                for (var k2 = j - 1; k2 < t; k2++) {
+                    holdingCost += h * (k2 - (j - 1)) * net[k2];
+                }
+                var cost = dp[j - 1] + s + holdingCost;
+                if (cost < dp[t]) { dp[t] = cost; prev[t] = j - 1; }
+            }
+            // If all net[0..t-1] are zero, dp[t] = dp[t-1]
+            if (prev[t] === -1) { dp[t] = dp[t - 1]; prev[t] = t - 1; }
+        }
+        // Reconstruct order periods
+        var por = new Array(T).fill(0);
+        var cur = T;
+        while (cur > 0) {
+            var orderPeriod = prev[cur];
+            var size = 0;
+            for (var k3 = orderPeriod; k3 < cur; k3++) size += net[k3];
+            if (size > 0) por[orderPeriod] = size;
+            cur = orderPeriod;
+        }
+        return por;
+    }
+
+    function applyLotRule(net, rule) {
+        if (rule === 'l4l') return lotL4L(net);
+        if (rule === 'foq') return lotFOQ(net, 30);
+        if (rule === 'poq') return lotPOQ(net, 2);
+        if (rule === 'ww') return lotWW(net, SETUP_COST, HOLDING_COST);
+        return net.slice();
+    }
+
+    // ── Core: full BOM explosion for one scenario + lot rule ──
+    function explode(scenario, rule) {
+        // Order items by BOM level ascending (level 0 first)
+        var items = scenario.items.slice().sort(function (a, b) { return a.level - b.level; });
+        var records = {};
+        // Initialise gross requirements from MPS for level-0 items
+        for (var i = 0; i < items.length; i++) {
+            records[items[i].id] = {
+                item: items[i],
+                gross: new Array(T).fill(0),
+                onHand: new Array(T).fill(0),
+                net: new Array(T).fill(0),
+                receipts: new Array(T).fill(0),
+                releases: new Array(T).fill(0)
+            };
+        }
+        // Seed level-0 MPS
+        for (var i2 = 0; i2 < items.length; i2++) {
+            var it = items[i2];
+            if (it.level === 0) {
+                if (scenario.mps) records[it.id].gross = scenario.mps.slice();
+                else if (scenario.mps2 && scenario.mps2[it.id]) records[it.id].gross = scenario.mps2[it.id].slice();
+            }
+        }
+        // Process in level order
+        for (var i3 = 0; i3 < items.length; i3++) {
+            var r = records[items[i3].id];
+            var it2 = items[i3];
+            // For non-level-0 items: accumulate gross requirements from parents' releases
+            if (it2.level > 0) {
+                for (var p = 0; p < it2.parents.length; p++) {
+                    var par = it2.parents[p];
+                    var parentReleases = records[par.id].releases;
+                    for (var t = 0; t < T; t++) r.gross[t] += parentReleases[t] * par.qty;
+                }
+            }
+            // Compute net = max(0, gross - onhand[t-1])
+            var prevOnHand = it2.onHand;
+            for (var t2 = 0; t2 < T; t2++) {
+                var nr = Math.max(0, r.gross[t2] - prevOnHand);
+                r.net[t2] = nr;
+                // Temporary on-hand after consumption (will be updated once receipts are known)
+                prevOnHand = Math.max(0, prevOnHand - r.gross[t2]);
+            }
+            // Apply lot rule to the net-requirements vector
+            r.receipts = applyLotRule(r.net, rule);
+            // Now compute final on-hand trajectory with receipts
+            prevOnHand = it2.onHand;
+            for (var t3 = 0; t3 < T; t3++) {
+                var afterReceipt = prevOnHand + r.receipts[t3] - r.gross[t3];
+                if (afterReceipt < 0) afterReceipt = 0;
+                r.onHand[t3] = afterReceipt;
+                prevOnHand = afterReceipt;
+            }
+            // Planned releases = receipts pulled back by lead time
+            for (var t4 = 0; t4 < T; t4++) {
+                var releaseT = t4 - it2.lead;
+                if (releaseT >= 0) r.releases[releaseT] = r.receipts[t4];
+            }
+        }
+        return records;
+    }
+
+    function computeCosts(records) {
+        var setups = 0, invTot = 0;
+        for (var id in records) {
+            if (!Object.prototype.hasOwnProperty.call(records, id)) continue;
+            var r = records[id];
+            for (var t = 0; t < T; t++) {
+                if (r.receipts[t] > 0) setups++;
+                invTot += r.onHand[t];
+            }
+        }
+        var avgInv = invTot / T;
+        var setupCost = setups * SETUP_COST;
+        var holdingCost = invTot * HOLDING_COST;
+        return { setups: setups, avgInv: avgInv, setupCost: setupCost, holdingCost: holdingCost, total: setupCost + holdingCost };
+    }
+
+    // ── Rendering ──
+    function renderBomTree() {
+        var tree = document.getElementById('bomTree');
+        clear(tree);
+        var scen = getScenario();
+        var byLevel = {};
+        for (var i = 0; i < scen.items.length; i++) {
+            var it = scen.items[i];
+            if (!byLevel[it.level]) byLevel[it.level] = [];
+            byLevel[it.level].push(it);
+        }
+        var levels = Object.keys(byLevel).map(Number).sort(function (a, b) { return a - b; });
+        for (var li = 0; li < levels.length; li++) {
+            var lvl = levels[li];
+            var row = el('div', { class: 'bom-level' });
+            for (var j = 0; j < byLevel[lvl].length; j++) {
+                var it2 = byLevel[lvl][j];
+                var node = el('div', { class: 'bom-node level-' + it2.level });
+                node.appendChild(el('div', { class: 'bom-node-name' }, it2.name));
+                var meta = 'L' + it2.level + ' · LT=' + it2.lead + 'w · OH=' + it2.onHand;
+                if (it2.parents.length > 0) {
+                    meta += ' · uses ' + it2.parents.map(function (p) { return p.qty + '× per ' + p.id; }).join(', ');
+                }
+                node.appendChild(el('div', { class: 'bom-node-meta' }, meta));
+                row.appendChild(node);
+            }
+            tree.appendChild(row);
+            if (li < levels.length - 1) {
+                var conn = el('div', { class: 'bom-connector' }, '↓');
+                tree.appendChild(conn);
+            }
+        }
+    }
+
+    function renderMrpRecord(r, container) {
+        var wrap = el('div', { class: 'mrp-record' });
+        var h4 = el('h4', null);
+        h4.textContent = r.item.name;
+        var meta = el('span', { class: 'mrp-record-meta' }, 'level ' + r.item.level + ' · lead ' + r.item.lead + 'w · OH₀=' + r.item.onHand);
+        h4.appendChild(meta);
+        wrap.appendChild(h4);
+        var tbl = el('table', { class: 'mrp-table' });
+        var thead = document.createElement('thead');
+        var htr = document.createElement('tr');
+        htr.appendChild(el('th', { scope: 'col' }, 'Week'));
+        for (var t = 1; t <= T; t++) htr.appendChild(el('th', { scope: 'col' }, String(t)));
+        thead.appendChild(htr);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        var rows = [
+            { key: 'gross', label: 'Gross Req.', data: r.gross, cls: 'gross' },
+            { key: 'onHand', label: 'On-Hand', data: r.onHand, cls: '' },
+            { key: 'net', label: 'Net Req.', data: r.net, cls: 'net' },
+            { key: 'receipts', label: 'Planned Receipts', data: r.receipts, cls: 'receipt' },
+            { key: 'releases', label: 'Planned Releases', data: r.releases, cls: 'release' }
+        ];
+        for (var rr = 0; rr < rows.length; rr++) {
+            var row = rows[rr];
+            var tr = el('tr', { class: row.cls });
+            tr.appendChild(el('th', { scope: 'row' }, row.label));
+            for (var t2 = 0; t2 < T; t2++) {
+                var v = row.data[t2];
+                var cellCls = v === 0 ? 'zero' : 'positive';
+                tr.appendChild(el('td', { class: cellCls }, v === 0 ? '·' : String(v)));
+            }
+            tbody.appendChild(tr);
+        }
+        tbl.appendChild(tbody);
+        wrap.appendChild(tbl);
+        container.appendChild(wrap);
+    }
+
+    function solveAll() {
+        var scen = getScenario();
+        var rules = ['l4l', 'foq', 'poq', 'ww'];
+        var resultsByRule = {};
+        for (var i = 0; i < rules.length; i++) {
+            var rec = explode(scen, rules[i]);
+            var cost = computeCosts(rec);
+            resultsByRule[rules[i]] = { records: rec, cost: cost };
+        }
+        state.results = resultsByRule;
+        renderMrpOutput();
+        renderResults();
+        document.getElementById('solverStatus').textContent = 'Exploded. Switch lot rules above to see how each one reshapes the planned releases across the BOM.';
+    }
+
+    function renderMrpOutput() {
+        var container = document.getElementById('mrpOutput');
+        clear(container);
+        if (!state.results) return;
+        var r = state.results[state.selectedAlgo];
+        if (!r) return;
+        var scen = getScenario();
+        // Sort items by BOM level
+        var items = scen.items.slice().sort(function (a, b) { return a.level - b.level; });
+        for (var i = 0; i < items.length; i++) {
+            renderMrpRecord(r.records[items[i].id], container);
+        }
+    }
+
+    function renderResults() {
+        var tbody = document.getElementById('resultsBody');
+        clear(tbody);
+        if (!state.results) return;
+        var rules = ['l4l', 'foq', 'poq', 'ww'];
+        var labels = { l4l: 'Lot-for-Lot', foq: 'FOQ (Q=30)', poq: 'POQ (K=2)', ww: 'Wagner-Whitin' };
+        var bestTotal = Infinity;
+        for (var r = 0; r < rules.length; r++) if (state.results[rules[r]].cost.total < bestTotal) bestTotal = state.results[rules[r]].cost.total;
+        for (var i = 0; i < rules.length; i++) {
+            var rule = rules[i];
+            var c = state.results[rule].cost;
+            var tr = document.createElement('tr');
+            tr.appendChild(el('td', { class: 'algo-label' }, labels[rule]));
+            tr.appendChild(el('td', { class: 'obj-col' }, c.setups));
+            tr.appendChild(el('td', { class: 'obj-col' }, c.avgInv.toFixed(1)));
+            tr.appendChild(el('td', { class: 'obj-col' }, '$' + c.setupCost.toLocaleString()));
+            tr.appendChild(el('td', { class: 'obj-col' }, '$' + c.holdingCost.toLocaleString()));
+            var cls = (c.total === bestTotal) ? 'obj-col best-val' : 'obj-col';
+            tr.appendChild(el('td', { class: cls }, '$' + c.total.toLocaleString()));
+            tbody.appendChild(tr);
+        }
+    }
+
+    // ── Event wiring ──
+    document.querySelectorAll('.scenario-btn').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.scenario-btn').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.scenarioIdx = parseInt(btn.getAttribute('data-scenario'), 10);
+            document.getElementById('scenarioContext').textContent = SCENARIOS[state.scenarioIdx].context;
+            state.results = null;
+            renderBomTree();
+            clear(document.getElementById('mrpOutput'));
+            document.getElementById('solverStatus').textContent = 'Scenario changed. Click Explode.';
+            setEmptyRow(document.getElementById('resultsBody'), 'Click Explode to run', 6);
+        });
+    });
+
+    document.querySelectorAll('.algo-chip').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            document.querySelectorAll('.algo-chip').forEach(function (b) { b.classList.remove('active'); });
+            btn.classList.add('active');
+            state.selectedAlgo = btn.getAttribute('data-algo');
+            if (state.results) renderMrpOutput();
+        });
+    });
+
+    document.getElementById('solveAllBtn').addEventListener('click', solveAll);
+
+    // ── Fade-in ──
+    var fades = document.querySelectorAll('.fade-in');
+    if ('IntersectionObserver' in window) {
+        var io = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) {
+                if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+            });
+        }, { threshold: 0.1 });
+        fades.forEach(function (el) { io.observe(el); });
+    } else {
+        fades.forEach(function (el) { el.classList.add('visible'); });
+    }
+
+    // ── Initial render ──
+    renderBomTree();
+})();
+</script>
+</body>
+</html>
