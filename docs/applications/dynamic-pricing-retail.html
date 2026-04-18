@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-X3F4KE0WSF"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-X3F4KE0WSF');
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+    <title>Dynamic Pricing with Learning | Mathematical Modeling &amp; Operations Research</title>
+    <meta name="description" content="Online price-learning under unknown demand: contextual bandits balance exploration (probe price-response) and exploitation (revenue-maximising price). Besbes &amp; Zeevi 2009; den Boer 2015 survey; LinUCB; Thompson sampling. Interactive solver.">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="Mohammad G. Nasiri">
+    <meta property="og:url" content="https://mghnasiri.github.io/MathematicalModeling/applications/dynamic-pricing-retail.html">
+    <meta property="og:title" content="Dynamic Pricing with Learning">
+    <meta property="og:description" content="Contextual bandits for retail pricing -- exploration vs exploitation, with interactive solver.">
+    <meta property="og:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Dynamic Pricing with Learning">
+    <meta name="twitter:description" content="Contextual bandits for retail pricing with interactive solver.">
+    <meta name="twitter:image" content="https://mghnasiri.github.io/MathematicalModeling/og-image.png">
+    <link rel="canonical" href="https://mghnasiri.github.io/MathematicalModeling/applications/dynamic-pricing-retail.html" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" media="print" onload="this.media='all'">
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css" integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV" crossorigin="anonymous">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js" integrity="sha384-XjKyOOlGwcjNTAIQHIpgOno0Hl1YQqzUOEleOLALmuqehneUG+vnGctmUb0ZY0l8" crossorigin="anonymous"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" integrity="sha384-+VBxd3r6XgURycqtZ117nYw44OOcIax56Z4dCRWbxyPt0Koah1uHoK0o4+/RRE05" crossorigin="anonymous" onload="renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true},{left: '\\(', right: '\\)', display: false}], throwOnError: false});"></script>
+    <style>
+        :root { --midnight: #0A192F; --midnight-light: #112240; --midnight-lighter: #1a2f4a; --gold: #C5A059; --gold-light: #D4AF37; --gold-dim: rgba(197, 160, 89, 0.15); --ivory: #F8F9FA; --slate: #8892B0; --slate-light: #a8b2d1; --green: #64ffda; --red: #ff6b6b; --blue: #7aa2f7; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: var(--midnight); color: var(--ivory); line-height: 1.7; overflow-x: hidden; }
+        a { color: var(--gold); text-decoration: none; }
+        a:hover { color: var(--gold-light); }
+        .navbar { background: transparent; padding: 1.5rem 0; transition: all 0.4s ease; z-index: 1000; }
+        .navbar.scrolled { background: rgba(10, 25, 47, 0.95); backdrop-filter: blur(10px); padding: 0.8rem 0; box-shadow: 0 4px 30px rgba(0,0,0,0.3); }
+        .navbar-brand { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; font-weight: 600; color: var(--gold) !important; letter-spacing: 2px; text-transform: uppercase; }
+        .nav-link { font-family: 'Inter', sans-serif; font-size: 0.85rem; color: var(--slate-light) !important; letter-spacing: 1.5px; text-transform: uppercase; padding: 0.5rem 1rem !important; transition: color 0.3s ease; }
+        .nav-link:hover, .nav-link.active { color: var(--gold) !important; }
+        .navbar-toggler { border-color: var(--gold); }
+        .navbar-toggler-icon { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'%3e%3cpath stroke='rgba(197,160,89,0.8)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/%3e%3c/svg%3e"); }
+        .scroll-progress { position: fixed; top: 0; left: 0; height: 3px; background: linear-gradient(90deg, var(--gold), var(--gold-light)); z-index: 9999; transition: width 0.1s linear; width: 0%; box-shadow: 0 0 8px rgba(197, 160, 89, 0.4); }
+        .breadcrumb-nav { padding: 1rem 0 0; margin-top: 70px; }
+        .breadcrumb-nav ol { background: transparent; padding: 0; margin: 0; list-style: none; display: flex; gap: 0.5rem; font-size: 0.8rem; letter-spacing: 1px; text-transform: uppercase; }
+        .breadcrumb-nav li { color: var(--slate); }
+        .breadcrumb-nav li a { color: var(--slate); text-decoration: none; transition: color 0.3s; }
+        .breadcrumb-nav li a:hover { color: var(--gold); }
+        .breadcrumb-nav li + li::before { content: '/'; margin-right: 0.5rem; color: var(--slate); opacity: 0.5; }
+        .breadcrumb-nav li.active { color: var(--gold); }
+        .hero { padding: 6rem 2rem 4rem; text-align: center; position: relative; overflow: hidden; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: radial-gradient(ellipse 60% 40% at 50% 100%, rgba(197,160,89,0.08) 0%, transparent 60%), radial-gradient(ellipse 45% 30% at 20% 90%, rgba(255,107,107,0.05) 0%, transparent 60%); pointer-events: none; }
+        .hero > .container { position: relative; z-index: 1; }
+        .hero-icon { font-size: 3rem; color: var(--gold); margin-bottom: 1.5rem; opacity: 0.9; }
+        .hero-icon--retail { filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)) drop-shadow(0 4px 20px rgba(197,160,89,0.15)); animation: retailPulse 3.5s ease-in-out infinite; }
+        @keyframes retailPulse { 0%, 100% { transform: scale(1); filter: drop-shadow(0 0 10px rgba(197,160,89,0.4)); } 50% { transform: scale(1.04); filter: drop-shadow(0 0 16px rgba(197,160,89,0.55)); } }
+        .hero h1 { font-family: 'Cormorant Garamond', serif; font-size: 3.5rem; font-weight: 300; letter-spacing: 4px; margin-bottom: 1rem; color: var(--ivory); }
+        .hero h1 span { color: var(--gold); }
+        .hero-subtitle { font-size: 1.05rem; color: var(--slate); letter-spacing: 3px; text-transform: uppercase; margin-bottom: 0.5rem; }
+        .gold-line { width: 60px; height: 1px; background: linear-gradient(90deg, transparent, var(--gold), transparent); margin: 1.5rem auto; }
+        .hero-desc { max-width: 780px; margin: 0 auto 2rem; color: var(--slate-light); font-size: 1rem; line-height: 1.9; }
+        section { padding: 4rem 0; }
+        .section-header { text-align: center; margin-bottom: 3rem; }
+        .section-header h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); margin-bottom: 0.5rem; }
+        .section-header h2 span { color: var(--gold); }
+        .section-header p { color: var(--slate); font-size: 0.88rem; letter-spacing: 1.5px; text-transform: uppercase; }
+        .impact-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.2rem; margin-top: 2rem; }
+        .impact-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.18); border-radius: 6px; padding: 1.5rem 1.4rem; }
+        .impact-val { font-family: 'JetBrains Mono', monospace; font-size: 2rem; font-weight: 600; color: var(--gold); margin-bottom: 0.4rem; }
+        .impact-label { color: var(--ivory); font-size: 0.95rem; margin-bottom: 0.6rem; }
+        .impact-src { color: var(--slate); font-size: 0.76rem; font-style: italic; }
+        .impact-src a { color: var(--slate-light); }
+        #context { padding: 3rem 0 2rem; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.1); border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .decision-chain { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; margin: 2rem 0; justify-content: center; }
+        .chain-step { display: flex; flex-direction: column; align-items: center; padding: 0.75rem 1.25rem; border: 1px solid rgba(197,160,89,0.2); border-radius: 6px; font-size: 0.82rem; color: var(--slate-light); text-align: center; min-width: 110px; transition: border-color 0.2s; }
+        .chain-step.active { border-color: var(--gold); color: var(--gold); background: rgba(197,160,89,0.07); }
+        .chain-sub { font-size: 0.7rem; color: var(--slate); margin-top: 0.3rem; }
+        .chain-step.active .chain-sub { color: rgba(197,160,89,0.65); }
+        .chain-arrow { color: var(--slate); font-size: 1rem; flex-shrink: 0; }
+        .problem-card { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 2rem; margin: 0 auto; max-width: 960px; }
+        .problem-meta { display: flex; flex-wrap: wrap; gap: 1.5rem; margin-bottom: 1.5rem; padding-bottom: 1.2rem; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .problem-meta-item { flex: 1; min-width: 160px; }
+        .problem-meta-label { font-size: 0.72rem; color: var(--slate); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 0.3rem; }
+        .problem-meta-value { font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: var(--gold); }
+        .problem-realism { display: inline-block; padding: 0.25rem 0.6rem; background: rgba(100,255,218,0.1); border: 1px solid rgba(100,255,218,0.3); border-radius: 4px; color: var(--green); font-size: 0.75rem; letter-spacing: 0.5px; }
+        .formula-block { background: rgba(10, 25, 47, 0.6); border: 1px solid rgba(197, 160, 89, 0.1); border-radius: 4px; padding: 1.2rem 1.5rem; margin: 1.2rem 0; font-size: 1rem; color: var(--ivory); overflow-x: auto; }
+        .formula-block .katex { color: var(--ivory); }
+        .formula-caption { font-size: 0.8rem; color: var(--slate); text-align: center; font-style: italic; margin-top: 0.5rem; }
+        .formulation-section h3 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-top: 2rem; margin-bottom: 0.8rem; font-size: 1.25rem; }
+        .notation-table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+        .notation-table th, .notation-table td { padding: 0.6rem 0.9rem; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.1); }
+        .notation-table th { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 1.5px; color: var(--slate); font-weight: 500; }
+        .notation-table td { font-size: 0.88rem; color: var(--slate-light); }
+        .notation-table td:first-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); width: 22%; }
+        .notation-table td:last-child { width: 18%; color: var(--slate); font-size: 0.82rem; }
+        .mapping-table { width: 100%; border-collapse: collapse; margin: 1rem 0; background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 6px; overflow: hidden; }
+        .mapping-table th { padding: 0.9rem 1.1rem; background: rgba(197,160,89,0.08); color: var(--gold); font-size: 0.78rem; letter-spacing: 1.5px; text-transform: uppercase; text-align: left; border-bottom: 1px solid rgba(197,160,89,0.2); }
+        .mapping-table td { padding: 0.75rem 1.1rem; color: var(--slate-light); font-size: 0.9rem; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .mapping-table td:last-child { font-family: 'JetBrains Mono', monospace; color: var(--gold); font-size: 0.85rem; }
+        .mapping-table tr:last-child td { border-bottom: none; }
+        .solver-panel { background: var(--midnight-light); border: 1px solid rgba(197,160,89,0.2); border-radius: 8px; padding: 0; margin: 2rem 0; overflow: hidden; }
+        .solver-header { padding: 1.2rem 1.5rem; border-bottom: 1px solid rgba(197,160,89,0.15); background: rgba(197,160,89,0.04); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; }
+        .solver-title { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; letter-spacing: 2px; color: var(--gold); }
+        .solver-subtitle { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; }
+        .solver-body { padding: 1.5rem; }
+        .solver-controls { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .control-group { display: flex; flex-direction: column; gap: 0.4rem; }
+        .control-group label { font-size: 0.78rem; color: var(--slate); letter-spacing: 1px; text-transform: uppercase; }
+        .control-group input, .control-group select { background: rgba(10,25,47,0.6); border: 1px solid rgba(197,160,89,0.25); border-radius: 4px; padding: 0.5rem 0.8rem; color: var(--ivory); font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; outline: none; transition: border-color 0.2s; }
+        .control-group input:focus, .control-group select:focus { border-color: var(--gold); }
+        .control-help { font-size: 0.72rem; color: var(--slate); }
+        .btn-run { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 2rem; background: var(--gold); color: var(--midnight); border: none; border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; font-weight: 500; }
+        .btn-run:hover { background: var(--gold-light); transform: translateY(-1px); box-shadow: 0 6px 18px rgba(197,160,89,0.2); }
+        .btn-reset { display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.8rem 1.6rem; background: transparent; color: var(--slate); border: 1px solid rgba(197,160,89,0.3); border-radius: 4px; font-size: 0.8rem; letter-spacing: 1.5px; text-transform: uppercase; cursor: pointer; transition: all 0.3s; margin-left: 0.8rem; }
+        .btn-reset:hover { color: var(--gold); border-color: var(--gold); }
+        .result-panel { margin-top: 2rem; padding: 1.5rem; background: rgba(10,25,47,0.6); border-left: 3px solid var(--gold); border-radius: 0 4px 4px 0; display: none; }
+        .result-panel.active { display: block; }
+        .result-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+        .result-kpi { padding: 0.9rem; background: rgba(197,160,89,0.05); border: 1px solid rgba(197,160,89,0.15); border-radius: 4px; }
+        .result-kpi-val { font-family: 'JetBrains Mono', monospace; font-size: 1.45rem; font-weight: 600; color: var(--gold); }
+        .result-kpi-label { font-size: 0.75rem; color: var(--slate-light); letter-spacing: 1px; text-transform: uppercase; margin-top: 0.25rem; }
+        canvas { max-width: 100%; background: rgba(10,25,47,0.4); border: 1px solid rgba(197,160,89,0.1); border-radius: 4px; display: block; }
+        .canvas-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.8rem; font-size: 0.78rem; color: var(--slate-light); }
+        .legend-swatch { display: inline-block; width: 14px; height: 4px; vertical-align: middle; margin-right: 0.4rem; }
+        .result-table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.82rem; font-family: 'JetBrains Mono', monospace; }
+        .result-table th, .result-table td { padding: 0.45rem 0.6rem; text-align: center; border-bottom: 1px solid rgba(197,160,89,0.07); }
+        .result-table th { background: rgba(197,160,89,0.06); color: var(--gold); text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem; }
+        .result-table td { color: var(--slate-light); }
+        .result-table td:first-child, .result-table th:first-child { text-align: left; color: var(--ivory); }
+        .info-panel { background: rgba(197,160,89,0.04); border: 1px solid rgba(197,160,89,0.15); border-radius: 6px; padding: 1.5rem 1.8rem; margin: 1.2rem 0; }
+        .info-panel h4 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; margin-bottom: 0.7rem; font-size: 1.2rem; }
+        .info-panel p { color: var(--slate-light); font-size: 0.92rem; line-height: 1.8; margin-bottom: 0.7rem; }
+        .info-panel ul { margin-left: 1.2rem; color: var(--slate-light); font-size: 0.9rem; }
+        .info-panel ul li { margin-bottom: 0.35rem; }
+        .extensions-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+        .extension-card { background: rgba(10,25,47,0.5); border: 1px solid rgba(197,160,89,0.12); border-radius: 4px; padding: 1.2rem; }
+        .extension-card h5 { font-family: 'Cormorant Garamond', serif; color: var(--gold); font-weight: 500; letter-spacing: 1.5px; font-size: 1.05rem; margin-bottom: 0.4rem; }
+        .extension-card p { color: var(--slate-light); font-size: 0.85rem; line-height: 1.7; }
+        .extension-card a { color: var(--gold); font-size: 0.78rem; letter-spacing: 1px; text-transform: uppercase; }
+        .reference-item { padding: 1rem 0; border-top: 1px solid rgba(197,160,89,0.1); }
+        .reference-item:first-child { border-top: none; }
+        .reference-authors { color: var(--ivory); font-size: 0.92rem; font-weight: 500; margin-bottom: 0.15rem; }
+        .reference-title { color: var(--slate-light); font-size: 0.88rem; font-style: italic; margin-bottom: 0.15rem; }
+        .reference-journal { color: var(--slate); font-size: 0.82rem; }
+        .reference-journal a { color: var(--gold); text-decoration: underline dotted; }
+        .cta-section { background: linear-gradient(180deg, var(--midnight) 0%, var(--midnight-light) 100%); text-align: center; padding: 5rem 2rem; }
+        .cta-section h2 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 300; letter-spacing: 3px; color: var(--ivory); line-height: 1.4; }
+        .btn-cta { display: inline-block; margin-top: 1.5rem; padding: 0.9rem 2.2rem; color: var(--midnight); background: var(--gold); border: 1px solid var(--gold); border-radius: 4px; font-size: 0.85rem; letter-spacing: 2px; text-transform: uppercase; text-decoration: none; transition: all 0.3s; }
+        .btn-cta:hover { background: transparent; color: var(--gold); }
+        footer { text-align: center; padding: 3rem 0; border-top: 1px solid rgba(197,160,89,0.1); color: var(--slate); font-size: 0.85rem; }
+        footer a { color: var(--gold); text-decoration: underline; }
+        .disclaimer { text-align: center; padding: 1rem; font-size: 0.78rem; color: var(--slate); font-style: italic; background: var(--midnight-light); border-top: 1px solid rgba(197,160,89,0.08); }
+        .fade-in { opacity: 0; transform: translateY(20px); transition: opacity 0.6s ease, transform 0.6s ease; }
+        .fade-in.visible { opacity: 1; transform: translateY(0); }
+        @media (max-width: 768px) { .hero h1 { font-size: 2.3rem; letter-spacing: 2px; } .hero-subtitle { font-size: 0.85rem; letter-spacing: 1.5px; } .hero-desc { font-size: 0.92rem; } section { padding: 3rem 0; } .section-header h2 { font-size: 1.8rem; letter-spacing: 2px; } }
+    </style>
+    <script type="application/ld+json">
+    { "@context": "https://schema.org", "@type": "BreadcrumbList",
+      "itemListElement": [
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://mghnasiri.github.io/MathematicalModeling/" },
+        { "@type": "ListItem", "position": 2, "name": "Retail & E-Commerce", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/retail-domain.html" },
+        { "@type": "ListItem", "position": 3, "name": "Dynamic Pricing with Learning", "item": "https://mghnasiri.github.io/MathematicalModeling/applications/dynamic-pricing-retail.html" }
+      ] }
+    </script>
+</head>
+<body>
+<a href="#main-content" class="skip-to-content" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;z-index:9999;" onfocus="this.style.position='static';this.style.width='auto';this.style.height='auto';" onblur="this.style.position='absolute';this.style.left='-9999px';this.style.width='1px';this.style.height='1px';">Skip to main content</a>
+<div class="scroll-progress" id="scrollProgress"></div>
+<nav class="navbar navbar-expand-lg fixed-top">
+    <div class="container">
+        <a class="navbar-brand" href="../index.html">M.G. NASIRI</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-expanded="false" aria-controls="navbarNav" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item"><a class="nav-link" href="../index.html">Home</a></li>
+                <li class="nav-item"><a class="nav-link" href="../families/scheduling.html">Families</a></li>
+                <li class="nav-item"><a class="nav-link active" href="retail-domain.html">Applications</a></li>
+                <li class="nav-item"><a class="nav-link" href="https://github.com/mghnasiri/MathematicalModeling"><i class="fab fa-github" aria-hidden="true"></i> GitHub</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+<main id="main-content">
+<nav aria-label="breadcrumb" class="breadcrumb-nav">
+    <div class="container">
+        <ol>
+            <li><a href="../index.html">Home</a></li>
+            <li><a href="retail-domain.html">Retail &amp; E-Commerce</a></li>
+            <li class="active">Dynamic Pricing with Learning</li>
+        </ol>
+    </div>
+</nav>
+
+<section class="hero">
+    <div class="container">
+        <div class="hero-icon hero-icon--retail"><i class="fas fa-tags" aria-hidden="true"></i></div>
+        <h1>Dynamic Pricing <span>with Learning</span></h1>
+        <p class="hero-subtitle">Contextual bandits &middot; Exploration vs exploitation</p>
+        <div class="gold-line"></div>
+        <p class="hero-desc">
+            Pricing under <em>unknown</em> demand response: each price the seller posts is both a revenue
+            decision and a probe that reveals information about the demand curve. The seller must balance
+            <strong>exploration</strong> (try uncertain prices to learn) against <strong>exploitation</strong>
+            (charge the current best price to earn). Distinct from <a href="markdown-optimization.html">markdown optimisation</a>,
+            which assumes the demand function is known. Foundational papers: Besbes &amp; Zeevi (2009, 2012);
+            den Boer (2015) survey; Auer-Cesa-Bianchi-Fischer (2002) UCB; Thompson sampling (1933).
+        </p>
+    </div>
+</section>
+
+<section id="why-matters">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Why it <span>matters</span></h2><p>Market scale &middot; revenue lift &middot; theoretical guarantees &middot; production deployments</p></div>
+        <div class="impact-row">
+            <div class="impact-card fade-in"><div class="impact-val">~$20B+</div><div class="impact-label">Estimated global market for dynamic-pricing software and consulting across retail, travel, and ride-hailing.</div><div class="impact-src">Source: Gartner / Forrester industry estimates.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">5&ndash;15%</div><div class="impact-label">Documented revenue lift when learning-based pricing replaces rule-based or static pricing in retail and e-commerce case studies.</div><div class="impact-src">Source: industry case studies; den Boer (2015) survey.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">\(\tilde{O}(d\sqrt{T})\)</div><div class="impact-label">LinUCB cumulative-regret guarantee: with d-dimensional context and T rounds, regret grows only as \(\sqrt{T}\) &mdash; the seller&rsquo;s loss vs. the omniscient oracle is sub-linear.</div><div class="impact-src">Li, Chu, Langford &amp; Schapire (2010), WWW.</div></div>
+            <div class="impact-card fade-in"><div class="impact-val">M+/day</div><div class="impact-label">Amazon retail makes millions of price changes daily; Uber surge, airline yield, and hotel revenue management run continuous learning loops on price.</div><div class="impact-src">Industry reports; Misic &amp; Perakis (2020) review.</div></div>
+        </div>
+    </div>
+</section>
+
+<section id="context">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Where the decision <span>sits</span></h2><p>Online price-setting &middot; e-commerce &middot; travel &middot; ride-hailing</p></div>
+        <p style="max-width:820px;margin:0 auto;color:var(--slate-light);font-size:0.95rem;text-align:center;line-height:1.9;">
+            Dynamic pricing with learning applies whenever a seller can <em>change</em> the offered price
+            many times during the selling horizon, observes the resulting sales, and faces an
+            <em>unknown</em> price-response curve. Unlike <a href="markdown-optimization.html">markdown
+            optimisation</a> (where demand parameters are known and the question is the optimal
+            <em>schedule</em>), here every posted price doubles as an experiment. Examples:
+            e-commerce SKUs without prior elasticity estimates, ride-hailing surge multipliers,
+            airline fare classes, hotel ADR, ad-auction bid pricing, and digital subscription pricing.
+        </p>
+        <div class="decision-chain fade-in">
+            <div class="chain-step"><strong>Observe</strong><span class="chain-sub">demand history</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Estimate</strong><span class="chain-sub">price-response \(\hat{\theta}_t\)</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step active"><strong>Choose price</strong><span class="chain-sub">explore vs exploit</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Observe sale</strong><span class="chain-sub">noisy demand \(D_t\)</span></div>
+            <div class="chain-arrow"><i class="fas fa-arrow-right" aria-hidden="true"></i></div>
+            <div class="chain-step"><strong>Update</strong><span class="chain-sub">posterior on \(\theta\)</span></div>
+        </div>
+    </div>
+</section>
+
+<section id="formulation" class="formulation-section">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Problem &amp; <span>formulation</span></h2><p>Stochastic bandit on a continuous (or discrete) price arm space</p></div>
+        <div class="problem-card fade-in">
+            <div class="problem-meta">
+                <div class="problem-meta-item"><div class="problem-meta-label">OR family</div><div class="problem-meta-value">Stochastic Bandits</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Regret bound</div><div class="problem-meta-value">\(\tilde{O}(d\sqrt{T})\) (LinUCB)</div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Solver realism</div><div class="problem-meta-value"><span class="problem-realism">&starf;&starf;&starf; Sub-linear regret</span></div></div>
+                <div class="problem-meta-item"><div class="problem-meta-label">Reference</div><div class="problem-meta-value">Besbes &amp; Zeevi (2009)</div></div>
+            </div>
+
+            <h3>True (unknown) demand model</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">A linear price-response with Gaussian noise; the parameter vector \(\theta = (a, b)\) is unknown to the seller:</p>
+            <div class="formula-block">
+                $$D(p) \;=\; a \;-\; b\,p \;+\; \varepsilon, \qquad \varepsilon \sim \mathcal{N}(0, \sigma^2)$$
+            </div>
+            <p class="formula-caption">Intercept \(a > 0\) (max demand at zero price), slope \(b > 0\) (price sensitivity), noise scale \(\sigma\).</p>
+
+            <h3>Sequential protocol</h3>
+            <table class="notation-table">
+                <thead><tr><th>Symbol</th><th>Meaning</th><th>Domain</th></tr></thead>
+                <tbody>
+                    <tr><td>\(t \in \{1, \ldots, T\}\)</td><td>Round in the selling horizon</td><td>discrete</td></tr>
+                    <tr><td>\(p_t \in [p_{\min}, p_{\max}]\)</td><td>Price posted in round \(t\) (decision)</td><td>bounded</td></tr>
+                    <tr><td>\(D_t\)</td><td>Realised noisy demand at price \(p_t\)</td><td>random</td></tr>
+                    <tr><td>\(\theta = (a, b)\)</td><td>True demand parameters (unknown)</td><td>\(\mathbb{R}^2_+\)</td></tr>
+                    <tr><td>\(H_t\)</td><td>History \(\{(p_s, D_s)\}_{s < t}\) up to round \(t\)</td><td>filtration</td></tr>
+                </tbody>
+            </table>
+
+            <h3>Objective &mdash; maximise expected revenue</h3>
+            <div class="formula-block">
+                $$\max_{\{p_t\}_{t=1}^{T}} \;\; \mathbb{E}\!\left[\, \sum_{t=1}^{T} p_t \cdot D_t \,\right] \qquad \text{subject to } p_t \;=\; \pi_t(H_t).$$
+            </div>
+            <p class="formula-caption">Each \(p_t\) is a function of the observed history &mdash; a <em>policy</em> rather than a fixed schedule.</p>
+
+            <h3>Regret &mdash; the standard performance metric</h3>
+            <div class="formula-block">
+                $$R(T) \;=\; T \cdot \max_{p} \bigl(\,p \cdot \mathbb{E}[D(p)]\,\bigr) \;-\; \mathbb{E}\!\left[\sum_{t=1}^{T} p_t \cdot D_t\right]$$
+            </div>
+            <p class="formula-caption">The shortfall versus a clairvoyant oracle who knew \(\theta\) from round 1 and always charged \(p^{\ast} = a / (2b)\).</p>
+
+            <h3>Algorithm 1 &mdash; Greedy (exploit-only)</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Estimate \(\hat{\theta}_t\) by least squares on \(H_t\); always pick the empirically best price:</p>
+            <div class="formula-block">
+                $$p_t^{\text{greedy}} \;=\; \arg\max_{p} \;\; p \cdot \bigl(\hat{a}_t \;-\; \hat{b}_t\,p\bigr) \;=\; \frac{\hat{a}_t}{2\,\hat{b}_t}.$$
+            </div>
+            <p class="formula-caption">Simple but can lock onto a wrong estimate forever &mdash; <em>incomplete learning</em> trap.</p>
+
+            <h3>Algorithm 2 &mdash; \(\varepsilon\)-greedy</h3>
+            <div class="formula-block">
+                $$p_t \;=\; \begin{cases} \text{uniform random in } [p_{\min}, p_{\max}] & \text{w.p. } \varepsilon, \\[2pt] \hat{a}_t / (2\,\hat{b}_t) & \text{w.p. } 1 - \varepsilon. \end{cases}$$
+            </div>
+            <p class="formula-caption">Forced exploration breaks the lock-in; regret is linear in \(T\) for fixed \(\varepsilon\) but practical.</p>
+
+            <h3>Algorithm 3 &mdash; UCB / LinUCB</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Pick the price with the highest <em>optimistic</em> expected revenue &mdash; mean plus a confidence-radius bonus:</p>
+            <div class="formula-block">
+                $$p_t^{\text{UCB}} \;=\; \arg\max_{p} \;\; \widehat{\mathbb{E}}[\,\text{Rev}(p)\,] \;+\; \alpha \cdot \sqrt{\widehat{\mathrm{Var}}[\,\text{Rev}(p)\,]}.$$
+            </div>
+            <p class="formula-caption">Optimism in the face of uncertainty. Cumulative regret \(\tilde{O}(d\sqrt{T})\) for d-dim context (Li et al., 2010).</p>
+
+            <h3>Algorithm 4 &mdash; Thompson sampling</h3>
+            <p style="color:var(--slate-light);font-size:0.92rem;">Sample a parameter from the posterior, then act greedily on the sample:</p>
+            <div class="formula-block">
+                $$\theta_t \;\sim\; \mathbb{P}\bigl(\theta \,\big|\, H_t\bigr), \qquad p_t \;=\; \arg\max_{p} \;\; p \cdot \mathbb{E}\bigl[D(p) \,\big|\, \theta_t\bigr].$$
+            </div>
+            <p class="formula-caption">Both Thompson sampling and UCB achieve sub-linear regret; Thompson is often better in practice.</p>
+        </div>
+    </div>
+</section>
+
+<section id="mapping">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Real-world &rarr; <span>OR mapping</span></h2><p>How a pricing manager&rsquo;s vocabulary translates to the bandit</p></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <table class="mapping-table fade-in">
+                <thead><tr><th>On the pricing desk</th><th>In the bandit</th></tr></thead>
+                <tbody>
+                    <tr><td>Number of price-tests over the horizon</td><td>\(T\)</td></tr>
+                    <tr><td>Allowed price band</td><td>\([p_{\min}, p_{\max}]\)</td></tr>
+                    <tr><td>Unknown elasticity / willingness-to-pay</td><td>\(\theta = (a, b)\)</td></tr>
+                    <tr><td>Posted price in week / hour / minute \(t\)</td><td>\(p_t\)</td></tr>
+                    <tr><td>Observed units sold</td><td>\(D_t\)</td></tr>
+                    <tr><td>&ldquo;A/B test budget&rdquo; (random-pricing share)</td><td>\(\varepsilon\) in \(\varepsilon\)-greedy</td></tr>
+                    <tr><td>Aggressiveness of exploration</td><td>\(\alpha\) in UCB</td></tr>
+                    <tr><td>Lost revenue vs. omniscient oracle</td><td>\(R(T)\)</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</section>
+
+<section id="solver">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Interactive <span>solver</span></h2><p>Simulate a learning seller against a true (hidden) demand curve; compare algorithms</p></div>
+        <div class="solver-panel fade-in">
+            <div class="solver-header">
+                <div><div class="solver-title">Bandit pricing simulator</div><div class="solver-subtitle">Linear demand &middot; Bayesian (Normal-inverse-gamma) posterior on \((a, b)\)</div></div>
+                <div class="problem-realism">&starf;&starf;&starf; Sub-linear regret</div>
+            </div>
+            <div class="solver-body">
+                <div class="solver-controls">
+                    <div class="control-group"><label for="trueA">True intercept \(a\)</label><input type="number" id="trueA" value="100" min="10" max="500" step="5"><div class="control-help">Hidden &mdash; the seller does not know</div></div>
+                    <div class="control-group"><label for="trueB">True slope \(b\)</label><input type="number" id="trueB" value="1.5" min="0.1" max="10" step="0.1"><div class="control-help">Hidden price sensitivity</div></div>
+                    <div class="control-group"><label for="sigma">Demand noise \(\sigma\)</label><input type="number" id="sigma" value="3" min="0" max="30" step="0.5"><div class="control-help">Std-dev of \(\varepsilon\)</div></div>
+                    <div class="control-group"><label for="T">Horizon \(T\)</label><input type="number" id="T" value="200" min="50" max="500" step="10"><div class="control-help">Number of pricing rounds</div></div>
+                    <div class="control-group"><label for="seed">Random seed</label><input type="number" id="seed" value="42" min="1" max="9999" step="1"><div class="control-help">Reproducible runs</div></div>
+                </div>
+                <div class="solver-controls">
+                    <div class="control-group"><label for="algo">Algorithm</label><select id="algo"><option value="egreedy">epsilon-greedy</option><option value="ucb" selected>UCB (LinUCB-style)</option><option value="thompson">Thompson sampling</option></select><div class="control-help">Choose the learning rule</div></div>
+                    <div class="control-group"><label for="pmin">Price floor \(p_{\min}\)</label><input type="number" id="pmin" value="5" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label for="pmax">Price ceiling \(p_{\max}\)</label><input type="number" id="pmax" value="60" min="1" max="500" step="1"></div>
+                    <div class="control-group"><label for="eps">\(\varepsilon\) (for epsilon-greedy)</label><input type="number" id="eps" value="0.1" min="0" max="1" step="0.05"><div class="control-help">Random-price probability</div></div>
+                    <div class="control-group"><label for="alpha">\(\alpha\) (UCB exploration)</label><input type="number" id="alpha" value="1.5" min="0" max="10" step="0.1"><div class="control-help">Confidence multiplier</div></div>
+                </div>
+                <div style="display:flex;align-items:center;gap:0.5rem;flex-wrap:wrap;">
+                    <button class="btn-run" id="btnRun"><i class="fas fa-play" aria-hidden="true"></i>Simulate</button>
+                    <button class="btn-reset" id="btnReset">Reset defaults</button>
+                </div>
+                <div class="result-panel" id="resultPanel" aria-live="polite">
+                    <div class="result-summary">
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiRev">&mdash;</div><div class="result-kpi-label">Cumulative revenue ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiRegret">&mdash;</div><div class="result-kpi-label">Regret vs oracle ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiPstar">&mdash;</div><div class="result-kpi-label">Final \(\hat{p}^{\ast}\) ($)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiExplore">&mdash;</div><div class="result-kpi-label">Exploration rounds</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiPostStd">&mdash;</div><div class="result-kpi-label">Posterior std on \(b\)</div></div>
+                        <div class="result-kpi"><div class="result-kpi-val" id="kpiGap">&mdash;</div><div class="result-kpi-label">Optimality gap (%)</div></div>
+                    </div>
+                    <canvas id="canvas" width="920" height="420" aria-label="Cumulative revenue vs oracle and price chosen each round"></canvas>
+                    <div class="canvas-legend">
+                        <span><span class="legend-swatch" style="background:#C5A059;"></span>Algorithm cumulative revenue</span>
+                        <span><span class="legend-swatch" style="background:#64ffda;"></span>Oracle (knows \(\theta\)) cumulative</span>
+                        <span><span class="legend-swatch" style="background:#7aa2f7;"></span>Random-price cumulative</span>
+                        <span><span class="legend-swatch" style="background:#ff6b6b;"></span>Posted price \(p_t\) (lower panel)</span>
+                        <span><span class="legend-swatch" style="background:#ffffff;"></span>Oracle price \(p^{\ast}\)</span>
+                    </div>
+                    <div style="overflow-x:auto;margin-top:1.2rem;"><table class="result-table" id="resultTable"></table></div>
+                </div>
+                <div class="info-panel" style="margin-top:2rem;">
+                    <h4>Under the hood</h4>
+                    <p>
+                        We maintain a conjugate Bayesian posterior on \((a, b)\) with a Normal prior and noise std \(\sigma\),
+                        updated via Bayesian linear regression on the design matrix \(X = [\,\mathbf{1}, -\mathbf{p}\,]\) and observations \(\mathbf{D}\).
+                        At each round, the chosen rule sees the current posterior mean \(\hat{\theta}_t\) and covariance \(\Sigma_t\) and emits a price.
+                        Greedy: \(p = \hat{a}_t / (2\hat{b}_t)\) clipped to the price band. UCB: scan a discretised price grid and
+                        pick the maximum of \(p\,(\hat{a}_t - \hat{b}_t p) + \alpha \sqrt{\mathrm{Var}[p\,D(p) \mid H_t]}\). Thompson:
+                        sample \(\theta_t \sim \mathcal{N}(\hat{\theta}_t, \Sigma_t)\), then act greedily on the sample. Posterior updates run
+                        in \(O(d^2)\) per round; total simulation cost is linear in \(T\). The oracle baseline always charges \(p^{\ast} = a / (2b)\)
+                        and the random baseline draws uniformly from \([p_{\min}, p_{\max}]\).
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="interpretation">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Reading the <span>solution</span></h2><p>What the cumulative-revenue and price-trace tell you</p></div>
+        <div style="max-width:920px;margin:0 auto;">
+            <div class="info-panel fade-in">
+                <h4>Three patterns to watch for</h4>
+                <ul>
+                    <li><strong>Sub-linear regret curve.</strong> The regret-vs-oracle gap should grow as \(\sqrt{T}\), not linearly. On the cumulative-revenue chart, the algorithm curve should run roughly parallel to (just below) the oracle line after a few dozen rounds &mdash; a clear sign learning is converging.</li>
+                    <li><strong>Convergence of \(p_t\) to \(p^{\ast}\).</strong> In the lower panel, the posted-price scatter should funnel toward the oracle-optimal price as \(t\) grows. UCB and Thompson tighten faster than \(\varepsilon\)-greedy, which keeps probing forever.</li>
+                    <li><strong>Posterior std on \(b\) shrinks like \(1/\sqrt{t}\).</strong> Wide posterior at \(t = 5\), narrow at \(t = 200\). If it does not shrink, the algorithm is not exploring enough &mdash; raise \(\alpha\) (UCB) or \(\varepsilon\) (greedy).</li>
+                </ul>
+            </div>
+            <div class="info-panel fade-in">
+                <h4>Sensitivity questions the simulator answers</h4>
+                <ul>
+                    <li>Push \(\sigma\) up &mdash; how much longer does it take to identify \(p^{\ast}\)? (Identification is hardest exactly when noise is high.)</li>
+                    <li>Switch from UCB to \(\varepsilon\)-greedy &mdash; does the regret gap widen at large \(T\)? (Yes, because \(\varepsilon\)-greedy has linear regret for fixed \(\varepsilon\).)</li>
+                    <li>Tighten the price band \([p_{\min}, p_{\max}]\) around the true \(p^{\ast}\) &mdash; how does final regret change? (Smaller band, less to lose from sub-optimal prices.)</li>
+                    <li>Drop \(\alpha\) toward zero &mdash; UCB collapses to greedy and risks getting stuck on a wrong estimate.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section id="extensions">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Model <span>extensions</span></h2><p>From single-SKU baseline to production retail-pricing variants</p></div>
+        <div class="extensions-grid">
+            <div class="extension-card fade-in"><h5>Contextual bandits</h5><p>Per-customer-segment pricing where the demand parameters depend on observed features (device, geography, channel). LinUCB reduces to ridge regression with a UCB bonus per arm.</p><a href="personalization-recommendation.html">Personalisation &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Inventory-constrained pricing</h5><p>Limited stock turns the bandit into a finite-horizon revenue management problem: each unit sold is one less to test on. Couples directly to clearance pricing.</p><a href="markdown-optimization.html">Markdown &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Competitor-aware pricing</h5><p>Demand depends on (own price, competitor price). The bandit becomes a two-player game; equilibrium learning replaces single-agent regret.</p></div>
+            <div class="extension-card fade-in"><h5>Fairness &amp; regulatory constraints</h5><p>Prohibitions on price discrimination by protected attributes; floors required by law (alcohol, tobacco). Constrained-bandit literature (Wu et al. 2016).</p></div>
+            <div class="extension-card fade-in"><h5>Robust / misspecified pricing</h5><p>The true demand may not be linear. Robust bandits hedge against model misspecification &mdash; pay a small price for guarantee.</p></div>
+            <div class="extension-card fade-in"><h5>Off-policy learning from logs</h5><p>Use historical sales logs (collected under a different pricing policy) to evaluate or train new policies without live experiments. IPS, doubly-robust estimators.</p></div>
+            <div class="extension-card fade-in"><h5>Joint pricing + assortment</h5><p>Decide which SKUs to display and at what prices, jointly. Demand for one product depends on the prices of substitutes shown.</p><a href="assortment-optimization.html">Assortment &rarr;</a></div>
+            <div class="extension-card fade-in"><h5>Reinforcement learning</h5><p>Long-horizon dynamics &mdash; today&rsquo;s low price affects tomorrow&rsquo;s reference price and customer expectations. Value-function methods replace one-shot bandits.</p></div>
+        </div>
+    </div>
+</section>
+
+<section id="references">
+    <div class="container">
+        <div class="section-header fade-in"><h2>Key <span>references</span></h2><p>Foundational dynamic-pricing-with-learning literature</p></div>
+        <div style="max-width:860px;margin:0 auto;">
+            <div class="reference-item fade-in"><div class="reference-authors">Besbes, O. &amp; Zeevi, A. (2009).</div><div class="reference-title">Dynamic pricing without knowing the demand function: Risk bounds and near-optimal algorithms.</div><div class="reference-journal">Operations Research 57(6): 1407&ndash;1420. <a href="https://doi.org/10.1287/opre.1080.0640" rel="noopener">doi:10.1287/opre.1080.0640</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Besbes, O. &amp; Zeevi, A. (2012).</div><div class="reference-title">Blind network revenue management.</div><div class="reference-journal">Operations Research 60(6): 1537&ndash;1550. <a href="https://doi.org/10.1287/opre.1120.1099" rel="noopener">doi:10.1287/opre.1120.1099</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">den Boer, A. V. (2015).</div><div class="reference-title">Dynamic pricing and learning: Historical origins, current research, and new directions.</div><div class="reference-journal">Surveys in Operations Research and Management Science 20(1): 1&ndash;18. <a href="https://doi.org/10.1016/j.sorms.2015.03.001" rel="noopener">doi:10.1016/j.sorms.2015.03.001</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Li, L., Chu, W., Langford, J. &amp; Schapire, R. E. (2010).</div><div class="reference-title">A contextual-bandit approach to personalised news article recommendation.</div><div class="reference-journal">WWW 2010: 661&ndash;670. <a href="https://doi.org/10.1145/1772690.1772758" rel="noopener">doi:10.1145/1772690.1772758</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Auer, P., Cesa-Bianchi, N. &amp; Fischer, P. (2002).</div><div class="reference-title">Finite-time analysis of the multiarmed bandit problem.</div><div class="reference-journal">Machine Learning 47(2): 235&ndash;256. <a href="https://doi.org/10.1023/A:1013689704352" rel="noopener">doi:10.1023/A:1013689704352</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Thompson, W. R. (1933).</div><div class="reference-title">On the likelihood that one unknown probability exceeds another in view of the evidence of two samples.</div><div class="reference-journal">Biometrika 25(3&ndash;4): 285&ndash;294. <a href="https://doi.org/10.1093/biomet/25.3-4.285" rel="noopener">doi:10.1093/biomet/25.3-4.285</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Misic, V. V. &amp; Perakis, G. (2020).</div><div class="reference-title">Data analytics in operations management: A review.</div><div class="reference-journal">M&amp;SOM 22(1): 158&ndash;169. <a href="https://doi.org/10.1287/msom.2019.0805" rel="noopener">doi:10.1287/msom.2019.0805</a></div></div>
+            <div class="reference-item fade-in"><div class="reference-authors">Bertsimas, D. &amp; Perakis, G. (2006).</div><div class="reference-title">Dynamic pricing: A learning approach.</div><div class="reference-journal">In <em>Mathematical and Computational Models for Congestion Charging</em>, Springer.</div></div>
+        </div>
+    </div>
+</section>
+
+<section class="cta-section">
+    <div class="container">
+        <h2>Back to the retail <span style="color: var(--gold);">domain</span></h2>
+        <p style="color: var(--slate-light); margin-top: 1rem; font-size: 0.95rem;">Dynamic pricing with learning lives in the <em>Price &times; Operational</em> cell of the 4P decision matrix &mdash; the always-on revenue lever for SKUs with unknown elasticity.</p>
+        <a href="retail-domain.html" class="btn-cta">Open Retail Landing</a>
+    </div>
+</section>
+
+<div class="disclaimer">Educational simulator &middot; linear-demand and Gaussian-noise assumptions &middot; production deployments need elasticity validation, fairness constraints, and competitive monitoring.</div>
+
+<footer>
+    <div class="container"><p><a href="../index.html">&larr; Back to Portfolio</a>&ensp;&middot;&ensp;&copy; 2026 Mohammad Ghafourian Nasiri&ensp;&middot;&ensp;<a href="https://github.com/mghnasiri/MathematicalModeling">GitHub</a></p></div>
+</footer>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" defer></script>
+<script>
+    window.addEventListener('scroll', function () {
+        var navbar = document.querySelector('.navbar');
+        if (window.scrollY > 50) navbar.classList.add('scrolled'); else navbar.classList.remove('scrolled');
+    });
+    window.addEventListener('scroll', function () {
+        var winScroll = document.body.scrollTop || document.documentElement.scrollTop;
+        var height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+        var scrolled = height > 0 ? (winScroll / height) * 100 : 0;
+        document.getElementById('scrollProgress').style.width = scrolled + '%';
+    });
+    (function () {
+        var observer = new IntersectionObserver(function (entries) {
+            entries.forEach(function (e) { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.1 });
+        document.querySelectorAll('.fade-in').forEach(function (el) { observer.observe(el); });
+    })();
+
+    // ─── Bandit pricing simulator (JS) ───
+    function getInputs() {
+        return {
+            trueA: parseFloat(document.getElementById('trueA').value),
+            trueB: parseFloat(document.getElementById('trueB').value),
+            sigma: parseFloat(document.getElementById('sigma').value),
+            T: parseInt(document.getElementById('T').value, 10),
+            seed: parseInt(document.getElementById('seed').value, 10),
+            algo: document.getElementById('algo').value,
+            pmin: parseFloat(document.getElementById('pmin').value),
+            pmax: parseFloat(document.getElementById('pmax').value),
+            eps: parseFloat(document.getElementById('eps').value),
+            alpha: parseFloat(document.getElementById('alpha').value)
+        };
+    }
+    function validate(inp) {
+        if (!(inp.trueA > 0 && inp.trueB > 0)) return 'True a and b must be positive.';
+        if (!(inp.sigma >= 0)) return 'Noise sigma must be >= 0.';
+        if (!(inp.T >= 50 && inp.T <= 500)) return 'T must be between 50 and 500.';
+        if (!(inp.pmin > 0 && inp.pmax > inp.pmin)) return 'Price band requires 0 < pmin < pmax.';
+        if (!(inp.eps >= 0 && inp.eps <= 1)) return 'Epsilon must be in [0, 1].';
+        if (!(inp.alpha >= 0)) return 'Alpha must be >= 0.';
+        return null;
+    }
+
+    // Mulberry32 deterministic PRNG (seeded)
+    function mulberry32(a) {
+        return function () {
+            a |= 0; a = (a + 0x6D2B79F5) | 0;
+            var t = a;
+            t = Math.imul(t ^ (t >>> 15), t | 1);
+            t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+            return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+        };
+    }
+    function gaussian(rng) {
+        // Box-Muller
+        var u = 0, v = 0;
+        while (u === 0) u = rng();
+        while (v === 0) v = rng();
+        return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+    }
+
+    // 2x2 matrix ops for posterior on theta = [a, b]
+    function matInv2(M) {
+        // M = [[a,b],[c,d]]
+        var det = M[0][0] * M[1][1] - M[0][1] * M[1][0];
+        if (Math.abs(det) < 1e-12) det = 1e-12;
+        return [[ M[1][1] / det, -M[0][1] / det ],
+                [ -M[1][0] / det, M[0][0] / det ]];
+    }
+    function matVec2(M, v) {
+        return [ M[0][0] * v[0] + M[0][1] * v[1],
+                 M[1][0] * v[0] + M[1][1] * v[1] ];
+    }
+    // Sample from N(mu, Sigma) for 2D
+    function sampleMVN2(mu, Sigma, rng) {
+        // Cholesky of Sigma = L L^T
+        var s11 = Math.max(Sigma[0][0], 1e-12);
+        var L11 = Math.sqrt(s11);
+        var L21 = Sigma[1][0] / L11;
+        var s22 = Math.max(Sigma[1][1] - L21 * L21, 1e-12);
+        var L22 = Math.sqrt(s22);
+        var z1 = gaussian(rng), z2 = gaussian(rng);
+        return [ mu[0] + L11 * z1,
+                 mu[1] + L21 * z1 + L22 * z2 ];
+    }
+
+    function simulate(inp) {
+        var rng = mulberry32(inp.seed);
+        var T = inp.T, sig2 = inp.sigma * inp.sigma + 1e-6;
+        var pStar = inp.trueA / (2 * inp.trueB);
+        // Clip oracle price to band
+        var pStarClipped = Math.min(inp.pmax, Math.max(inp.pmin, pStar));
+        var oracleExpRev = pStarClipped * (inp.trueA - inp.trueB * pStarClipped);
+
+        // Bayesian linear regression: D = a - b p + eps
+        // Design row x_t = [1, -p_t]; observation y_t = D_t
+        // Prior: theta ~ N(mu0, Sigma0)
+        var muPrior = [inp.trueA * 0.5, inp.trueB * 0.5]; // weakly informative around half of true
+        var SigmaPrior = [[1e4, 0], [0, 1e2]];
+        var SigmaInvPrior = matInv2(SigmaPrior);
+        // Sufficient statistics: XtX, Xty in inv-form
+        // Posterior: Sigma_n^{-1} = Sigma0^{-1} + (1/sig2) X^T X
+        //            mu_n = Sigma_n ( Sigma0^{-1} mu0 + (1/sig2) X^T y )
+        var XtX = [[0, 0], [0, 0]];
+        var Xty = [0, 0];
+
+        var path = [];
+        var cumAlgo = 0, cumOracle = 0, cumRandom = 0;
+        var nExplore = 0;
+
+        // Discretised price grid for UCB / argmax
+        var nGrid = 41;
+        var grid = new Array(nGrid);
+        for (var g = 0; g < nGrid; g++) grid[g] = inp.pmin + (inp.pmax - inp.pmin) * g / (nGrid - 1);
+
+        for (var t = 1; t <= T; t++) {
+            // Compute posterior
+            var SigmaInv = [
+                [SigmaInvPrior[0][0] + XtX[0][0] / sig2, SigmaInvPrior[0][1] + XtX[0][1] / sig2],
+                [SigmaInvPrior[1][0] + XtX[1][0] / sig2, SigmaInvPrior[1][1] + XtX[1][1] / sig2]
+            ];
+            var Sigma = matInv2(SigmaInv);
+            var rhs = [
+                SigmaInvPrior[0][0] * muPrior[0] + SigmaInvPrior[0][1] * muPrior[1] + Xty[0] / sig2,
+                SigmaInvPrior[1][0] * muPrior[0] + SigmaInvPrior[1][1] * muPrior[1] + Xty[1] / sig2
+            ];
+            var mu = matVec2(Sigma, rhs);
+            var aHat = mu[0], bHat = Math.max(mu[1], 1e-3);
+
+            // Choose price by algorithm
+            var p, isExplore = false;
+            if (inp.algo === 'egreedy') {
+                if (rng() < inp.eps) {
+                    p = inp.pmin + (inp.pmax - inp.pmin) * rng();
+                    isExplore = true;
+                } else {
+                    p = Math.min(inp.pmax, Math.max(inp.pmin, aHat / (2 * bHat)));
+                }
+            } else if (inp.algo === 'ucb') {
+                var bestP = grid[0], bestU = -Infinity;
+                for (var g2 = 0; g2 < nGrid; g2++) {
+                    var pp = grid[g2];
+                    var x = [1, -pp];
+                    var Sx = matVec2(Sigma, x);
+                    var pred = aHat - bHat * pp;
+                    var revMean = pp * pred;
+                    var revVar = pp * pp * (x[0] * Sx[0] + x[1] * Sx[1]);
+                    var u = revMean + inp.alpha * Math.sqrt(Math.max(revVar, 0));
+                    if (u > bestU) { bestU = u; bestP = pp; }
+                }
+                p = bestP;
+                // Mark as explore if chosen p deviates noticeably from greedy
+                var pGreedy = Math.min(inp.pmax, Math.max(inp.pmin, aHat / (2 * bHat)));
+                if (Math.abs(p - pGreedy) > 0.05 * (inp.pmax - inp.pmin)) isExplore = true;
+            } else { // thompson
+                var sample = sampleMVN2(mu, Sigma, rng);
+                var aS = sample[0], bS = Math.max(sample[1], 1e-3);
+                p = Math.min(inp.pmax, Math.max(inp.pmin, aS / (2 * bS)));
+                var pGreedy2 = Math.min(inp.pmax, Math.max(inp.pmin, aHat / (2 * bHat)));
+                if (Math.abs(p - pGreedy2) > 0.05 * (inp.pmax - inp.pmin)) isExplore = true;
+            }
+            if (isExplore) nExplore++;
+
+            // Observe noisy demand
+            var trueMean = inp.trueA - inp.trueB * p;
+            var D = trueMean + inp.sigma * gaussian(rng);
+            if (D < 0) D = 0;
+            var rev = p * D;
+
+            // Random baseline
+            var pRand = inp.pmin + (inp.pmax - inp.pmin) * rng();
+            var dRand = inp.trueA - inp.trueB * pRand + inp.sigma * gaussian(rng);
+            if (dRand < 0) dRand = 0;
+            var revRand = pRand * dRand;
+
+            // Oracle baseline (always pStarClipped, deterministic expectation realization)
+            var dOracle = inp.trueA - inp.trueB * pStarClipped + inp.sigma * gaussian(rng);
+            if (dOracle < 0) dOracle = 0;
+            var revOracle = pStarClipped * dOracle;
+
+            cumAlgo += rev;
+            cumOracle += revOracle;
+            cumRandom += revRand;
+
+            // Update sufficient statistics
+            XtX[0][0] += 1;
+            XtX[0][1] += -p;
+            XtX[1][0] += -p;
+            XtX[1][1] += p * p;
+            Xty[0] += D;
+            Xty[1] += -p * D;
+
+            path.push({
+                t: t,
+                p: p,
+                D: D,
+                rev: rev,
+                cumAlgo: cumAlgo,
+                cumOracle: cumOracle,
+                cumRandom: cumRandom,
+                aHat: aHat,
+                bHat: bHat,
+                stdB: Math.sqrt(Math.max(Sigma[1][1], 0)),
+                isExplore: isExplore
+            });
+        }
+
+        // Final posterior summary
+        var last = path[path.length - 1];
+        var pHatStar = Math.min(inp.pmax, Math.max(inp.pmin, last.aHat / (2 * last.bHat)));
+        var oracleTotal = T * oracleExpRev;
+        var regret = oracleTotal - cumAlgo;
+        var gapPct = oracleTotal > 0 ? 100 * regret / oracleTotal : 0;
+
+        return {
+            path: path,
+            pStar: pStarClipped,
+            cumAlgo: cumAlgo,
+            cumOracle: cumOracle,
+            cumRandom: cumRandom,
+            oracleTotal: oracleTotal,
+            regret: regret,
+            gapPct: gapPct,
+            pHatStar: pHatStar,
+            postStdB: last.stdB,
+            nExplore: nExplore
+        };
+    }
+
+    // Safe DOM-based table renderer (sample every Nth row to avoid 200+ rows)
+    function renderTable(tbl, res) {
+        while (tbl.firstChild) tbl.removeChild(tbl.firstChild);
+        var thead = document.createElement('thead');
+        var trH = document.createElement('tr');
+        ['t', 'Price', 'Demand', 'Revenue', 'a_hat', 'b_hat', 'std(b)', 'Mode'].forEach(function (h) {
+            var th = document.createElement('th');
+            th.textContent = h;
+            trH.appendChild(th);
+        });
+        thead.appendChild(trH);
+        tbl.appendChild(thead);
+        var tbody = document.createElement('tbody');
+        var stride = Math.max(1, Math.floor(res.path.length / 20));
+        for (var i = 0; i < res.path.length; i += stride) {
+            var row = res.path[i];
+            var tr = document.createElement('tr');
+            [String(row.t),
+             '$' + row.p.toFixed(2),
+             row.D.toFixed(1),
+             '$' + row.rev.toFixed(0),
+             row.aHat.toFixed(2),
+             row.bHat.toFixed(3),
+             row.stdB.toFixed(3),
+             row.isExplore ? 'explore' : 'exploit'].forEach(function (v) {
+                var td = document.createElement('td');
+                td.textContent = v;
+                tr.appendChild(td);
+            });
+            tbody.appendChild(tr);
+        }
+        tbl.appendChild(tbody);
+    }
+
+    function render(inp, res) {
+        document.getElementById('kpiRev').textContent     = '$' + res.cumAlgo.toFixed(0);
+        document.getElementById('kpiRegret').textContent  = '$' + res.regret.toFixed(0);
+        document.getElementById('kpiPstar').textContent   = '$' + res.pHatStar.toFixed(2);
+        document.getElementById('kpiExplore').textContent = String(res.nExplore);
+        document.getElementById('kpiPostStd').textContent = res.postStdB.toFixed(3);
+        document.getElementById('kpiGap').textContent     = res.gapPct.toFixed(1) + '%';
+
+        renderTable(document.getElementById('resultTable'), res);
+        drawCanvas(inp, res);
+        document.getElementById('resultPanel').classList.add('active');
+    }
+
+    function drawCanvas(inp, res) {
+        var c = document.getElementById('canvas'), ctx = c.getContext('2d');
+        var W = c.width, H = c.height, L = 60, R = 20, Tm = 30, B = 40;
+        var splitY = Math.floor(H * 0.55); // upper: cumulative; lower: prices
+        ctx.clearRect(0, 0, W, H);
+        var T = inp.T;
+
+        // Upper panel bounds
+        var maxCum = Math.max(res.cumAlgo, res.cumOracle, res.cumRandom);
+        if (maxCum <= 0) maxCum = 1;
+        function xT(t) { return L + (W - L - R) * (t / T); }
+        function yCum(v) { return Tm + (splitY - Tm - 10) * (1 - v / maxCum); }
+
+        // Upper axes
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(L, Tm); ctx.lineTo(L, splitY - 10); ctx.lineTo(W - R, splitY - 10); ctx.stroke();
+        ctx.fillStyle = '#8892B0'; ctx.font = '11px JetBrains Mono, monospace';
+        ctx.textAlign = 'right';
+        for (var i = 0; i <= 4; i++) {
+            var v = maxCum * i / 4;
+            var y0 = yCum(v);
+            ctx.fillText('$' + v.toFixed(0), L - 6, y0 + 3);
+            ctx.strokeStyle = 'rgba(197,160,89,0.07)';
+            ctx.beginPath(); ctx.moveTo(L, y0); ctx.lineTo(W - R, y0); ctx.stroke();
+        }
+        ctx.save(); ctx.translate(16, (Tm + splitY) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+        ctx.fillStyle = '#C5A059'; ctx.fillText('Cumulative revenue', 0, 0); ctx.restore();
+
+        function drawCum(field, color) {
+            ctx.strokeStyle = color; ctx.lineWidth = 2;
+            ctx.beginPath();
+            for (var k = 0; k < res.path.length; k++) {
+                var x = xT(res.path[k].t);
+                var y = yCum(res.path[k][field]);
+                if (k === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            }
+            ctx.stroke();
+        }
+        drawCum('cumOracle', '#64ffda');
+        drawCum('cumAlgo', '#C5A059');
+        drawCum('cumRandom', '#7aa2f7');
+
+        // Divider
+        ctx.strokeStyle = 'rgba(197,160,89,0.18)'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(L, splitY); ctx.lineTo(W - R, splitY); ctx.stroke();
+
+        // Lower panel: price scatter vs t
+        var pTop = inp.pmax, pBot = inp.pmin;
+        function yP(p) { return splitY + 15 + (H - B - splitY - 15) * (1 - (p - pBot) / Math.max(pTop - pBot, 1e-6)); }
+        ctx.strokeStyle = 'rgba(197,160,89,0.25)';
+        ctx.beginPath(); ctx.moveTo(L, splitY + 15); ctx.lineTo(L, H - B); ctx.lineTo(W - R, H - B); ctx.stroke();
+        ctx.fillStyle = '#8892B0'; ctx.textAlign = 'right';
+        for (var j = 0; j <= 4; j++) {
+            var pv = pBot + (pTop - pBot) * j / 4;
+            var y1 = yP(pv);
+            ctx.fillText('$' + pv.toFixed(0), L - 6, y1 + 3);
+        }
+        ctx.save(); ctx.translate(16, (splitY + H - B) / 2 + 8); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center';
+        ctx.fillStyle = '#ff6b6b'; ctx.fillText('Posted price', 0, 0); ctx.restore();
+
+        ctx.textAlign = 'center'; ctx.fillStyle = '#8892B0';
+        for (var t2 = 0; t2 <= 5; t2++) {
+            var tt = Math.round(T * t2 / 5);
+            ctx.fillText(String(tt), xT(tt), H - B + 16);
+        }
+        ctx.fillText('Round t', (L + W - R) / 2, H - B + 32);
+
+        // Oracle price line
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        var yStar = yP(Math.min(pTop, Math.max(pBot, res.pStar)));
+        ctx.beginPath(); ctx.moveTo(L, yStar); ctx.lineTo(W - R, yStar); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Price scatter
+        ctx.fillStyle = 'rgba(255,107,107,0.65)';
+        for (var k2 = 0; k2 < res.path.length; k2++) {
+            var rk = res.path[k2];
+            ctx.beginPath();
+            ctx.arc(xT(rk.t), yP(Math.min(pTop, Math.max(pBot, rk.p))), 2.5, 0, 2 * Math.PI);
+            ctx.fill();
+        }
+    }
+
+    document.getElementById('btnRun').addEventListener('click', function () {
+        var inp = getInputs();
+        var err = validate(inp);
+        if (err) { alert(err); return; }
+        render(inp, simulate(inp));
+    });
+    document.getElementById('btnReset').addEventListener('click', function () {
+        document.getElementById('trueA').value = 100;
+        document.getElementById('trueB').value = 1.5;
+        document.getElementById('sigma').value = 3;
+        document.getElementById('T').value = 200;
+        document.getElementById('seed').value = 42;
+        document.getElementById('algo').value = 'ucb';
+        document.getElementById('pmin').value = 5;
+        document.getElementById('pmax').value = 60;
+        document.getElementById('eps').value = 0.1;
+        document.getElementById('alpha').value = 1.5;
+        render(getInputs(), simulate(getInputs()));
+    });
+    window.addEventListener('load', function () {
+        render(getInputs(), simulate(getInputs()));
+    });
+</script>
+</body>
+</html>
